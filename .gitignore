@@ -1,0 +1,6 @@
+# editor exports and saves made while working (the delivered samples live in samples/)
+map_export_unity.zip
+map.json
+node_modules/
+.DS_Store
+Thumbs.db

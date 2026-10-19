@@ -1,0 +1,120 @@
+{
+ "structures": {
+  "groundUnderIsWalkable": true,
+  "small_centre": {
+   "walk": true,
+   "floor": 3.12
+  },
+  "large_centre": {
+   "walk": false,
+   "floor": 3.12
+  },
+  "small_edge1m": {
+   "walk": false,
+   "floor": 3.12
+  },
+  "small_0_8m": {
+   "walk": true,
+   "floor": 3.12
+  },
+  "beside_bridge": {
+   "walk": true,
+   "floor": 0
+  },
+  "forcedOff": {
+   "walk": false,
+   "floor": 3.12
+  },
+  "obstacleOnDeck": {
+   "walk": false,
+   "floor": 3.12
+  },
+  "stairs_small_centre": {
+   "walk": true,
+   "floor": 4
+  },
+  "stairs_small_off045": {
+   "walk": false,
+   "floor": 4
+  },
+  "stairs_large_centre": {
+   "walk": false,
+   "floor": 4
+  }
+ },
+ "yawOffset": {
+  "off0": {
+   "worstMismatch_m": 0,
+   "triggerArrivalShiftVsOff0_m": 0,
+   "catalogKeepsSolid": true,
+   "logOffsetsKept": "0,1.5"
+  },
+  "off90": {
+   "worstMismatch_m": 0,
+   "triggerArrivalShiftVsOff0_m": 0,
+   "catalogKeepsSolid": true,
+   "logOffsetsKept": "0,1.5"
+  },
+  "off-90": {
+   "worstMismatch_m": 0,
+   "triggerArrivalShiftVsOff0_m": 0,
+   "catalogKeepsSolid": true,
+   "logOffsetsKept": "0,1.5"
+  }
+ },
+ "load": {
+  "tries": {
+   "NaN height": {
+    "result": "不正な値が 1 件あります: 高さ: 不正な値（NaN・Infinity・±1000m 超）が 1 点あります",
+    "unchanged": true
+   },
+   "Infinity height": {
+    "result": "不正な値が 1 件あります: 高さ: 不正な値（NaN・Infinity・±1000m 超）が 1 点あります",
+    "unchanged": true
+   },
+   "1 element": {
+    "result": "不正な値が 1 件あります: heightsF32: 4 バイト（66564 バイトが必要）",
+    "unchanged": true
+   },
+   "too many elements": {
+    "result": "不正な値が 1 件あります: heightsF32: 66568 バイト（66564 バイトが必要）",
+    "unchanged": true
+   },
+   "odd byte length": {
+    "result": "不正な値が 1 件あります: heightsF32: 66563 バイト（66564 バイトが必要）",
+    "unchanged": true
+   },
+   "legacy cm short": {
+    "result": "不正な値が 1 件あります: heightsCm: 10 バイト（33282 バイトが必要）",
+    "unchanged": true
+   },
+   "splat wrong length": {
+    "result": "不正な値が 1 件あります: splat: 149772 バイト（16641 の 1〜9 倍が必要）",
+    "unchanged": true
+   },
+   "walkOverride value 7": {
+    "result": "不正な値が 1 件あります: walkOverride: 0〜3 以外の値があります",
+    "unchanged": true
+   },
+   "not base64": {
+    "result": "不正な値が 1 件あります: heightsF32: base64 として読めません",
+    "unchanged": true
+   },
+   "props missing": {
+    "result": "不正な値が 1 件あります: props: 配列ではありません",
+    "unchanged": true
+   }
+  },
+  "validLoads": {
+   "newFormat": true,
+   "oldFormat_maxHeightDiff_m": 0.005,
+   "oldFormat_idsKept": true
+  }
+ },
+ "sample": {
+  "errors": [],
+  "warnings": [],
+  "walkable": 8285,
+  "reachable": 6491
+ }
+}

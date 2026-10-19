@@ -1,0 +1,24 @@
+{
+ "size": 48,
+ "errors": [],
+ "warnings": [],
+ "passages": [
+  {
+   "id": "secret_32_51",
+   "cells": 88,
+   "entrances": 2,
+   "rockAboveMax": 5.36
+  }
+ ],
+ "insidePassage": {
+  "walkable": true,
+  "floor": 3,
+  "terrain": 8.09
+ },
+ "withoutPassage": [
+  "下り階段 link_0009 の入口（触れる範囲）に開始地点から歩いて行けません",
+  "下り階段 link_0009 の到着点から部屋へ出られません",
+  "宝箱の候補 mk_0006 に開始地点から歩いて行けません"
+ ]
+}
+no errors

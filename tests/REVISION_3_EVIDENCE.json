@@ -1,0 +1,142 @@
+{
+ "hash": {
+  "unedited": {
+   "sameHash": true,
+   "sameFiles": true,
+   "rev": [
+    1,
+    1
+   ]
+  },
+  "afterReload": {
+   "sameHash": true,
+   "idsKept": true,
+   "roomKept": true,
+   "rev": 1
+  },
+  "subCm": {
+   "rawChanged": true,
+   "mapJsonUnchanged": false,
+   "hashChanged": true,
+   "rev": 2
+  },
+  "catalogEdit": {
+   "hashChanged": true,
+   "rev": 3
+  },
+  "rawSha": "ba89f73a398cf0683c712ba749da722ea3a6795077029c56de59f25f8a54171f",
+  "emptySha": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "abcSha": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
+  "def": "SHA-256 of the UTF-8 text: exporterVersion, then one line \"<name> <sha256>\" per entry of files in order, joined with \\n. manifest.json itself is not included; exportedAt and revision live only here.",
+  "metaHasVolatile": [],
+  "nodeShaMatches": true,
+  "knownVectors": true
+ },
+ "catalog": {
+  "exported": [
+   "tdj/dungeon/warp_A",
+   "tdj/dungeon/up_A",
+   "tdj/dungeon/down_A"
+  ],
+  "afterReload": [
+   "tdj/dungeon/warp_A",
+   "tdj/dungeon/up_A",
+   "tdj/dungeon/down_A"
+  ],
+  "metaKeys": [
+   "tdj/dungeon/warp_A",
+   "tdj/dungeon/down_A",
+   "tdj/dungeon/up_A"
+  ],
+  "oakHeight": [
+   9.5,
+   9.5
+  ],
+  "logOffsets": [
+   -1.2,
+   0,
+   1.2
+  ],
+  "upSolidCount": 6,
+  "upSolidLast": [
+   1.5,
+   2,
+   0.3
+  ]
+ },
+ "axes": {
+  "rows": [
+   {
+    "yaw": 0,
+    "errT": 0,
+    "errA": 0,
+    "errC": 0,
+    "errF": 0
+   },
+   {
+    "yaw": -90,
+    "errT": 0,
+    "errA": 0,
+    "errC": 0,
+    "errF": 0
+   },
+   {
+    "yaw": -180,
+    "errT": 0,
+    "errA": 0,
+    "errC": 0,
+    "errF": 0
+   },
+   {
+    "yaw": 90,
+    "errT": 0,
+    "errA": 0,
+    "errC": 0,
+    "errF": 0
+   }
+  ],
+  "worst": 0,
+  "asym": {
+   "side": 1.5,
+   "ahead": 2
+  },
+  "worstLog": 0,
+  "logCount": 4
+ },
+ "bridge": {
+  "smallAgent": true,
+  "largeAgent": false,
+  "obstacleType": "bonepile",
+  "deckY": 3.12,
+  "obstacleOnDeck": false,
+  "under_height1": true,
+  "under_height5": false,
+  "forcedOffOnDeck": false,
+  "stillWalkable": true
+ },
+ "validation": {
+  "safeAreaOld": [
+   "出入口 port_0002 の着地点 の範囲（半径1.5m）に通れない点（足場・水深・傾斜・障害物・通行禁止）があります: Unity (4.25, 26.25)"
+  ],
+  "diagonal": [
+   "宝箱の候補 mk_0001 に開始地点から歩いて行けません"
+  ],
+  "isolatedArrival": [
+   "魔法陣 link_0001 の到着点から部屋へ出られません"
+  ],
+  "sample": {
+   "errors": [],
+   "warnings": [],
+   "notChecked": 6,
+   "checks": 9
+  },
+  "rejects": {
+   "NaN prop": "不正な値が 1 件あります: prop_000b: 座標が不正かマップの外です",
+   "Infinity marker": "不正な値が 1 件あります: port_0001: 座標が不正かマップの外です",
+   "negative radius": "不正な値が 1 件あります: mk_0003: 半径 -1 が不正です",
+   "zero-length bridge": "不正な値が 1 件あります: bridge_00ss: 長さがほぼ0です",
+   "out of map": "不正な値が 1 件あります: stairs_00su: 端の座標が不正かマップの外です",
+   "unknown kind": "不正な値が 1 件あります: port_0001: 種類 teleporter が不明です"
+  }
+ }
+}

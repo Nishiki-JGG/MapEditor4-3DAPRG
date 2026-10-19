@@ -1,0 +1,403 @@
+{
+ "24": {
+  "kind": "flat+passage",
+  "TN": 65,
+  "TS": 0.375,
+  "unityOK": true,
+  "holesRes": 64,
+  "rawBytes": [
+   true,
+   true
+  ],
+  "pngDims": {
+   "weights_0.png": 65,
+   "weights_1.png": 65,
+   "weights_2.png": 65,
+   "weights_3.png": 65,
+   "mask_0.png": 65,
+   "mask_1.png": 65,
+   "mask_2.png": 65,
+   "mask_3.png": 65,
+   "holes.png": 64,
+   "walkable.png": 65
+  },
+  "cornersErr_m": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "maxHeightDiffVsEditor_m": 0.3,
+  "spawnWorld": [
+   12,
+   18
+  ],
+  "spawnMeta": [
+   12,
+   18
+  ],
+  "spawnHeightErr_m": 0,
+  "exportGridReach": {
+   "reachableVertices": 3169,
+   "targets": 1,
+   "targetsReached": 1
+  },
+  "errors": [],
+  "warnings": [
+   "出入口マーカーがありません（ゲームの部屋として使うには必要です）"
+  ],
+  "passage": {
+   "outlineLoops": 1,
+   "holeCells": 96,
+   "holeCellsTouchingPassageRock": 96,
+   "passageUnderRock_m2": 11.25,
+   "passageUnderRockInsideHoles_m2": 11.25,
+   "holeArea_m2": 13.5,
+   "holeAreaNotCoveredByMesh_m2": 0,
+   "stairsDownPitHoleCells": 0,
+   "stairsDownPitHoleCellsInMeta": [],
+   "editorCheck": {
+    "passageArea_m2": 18.75,
+    "passageUnderRock_m2": 11.25,
+    "holeArea_m2": 13.5,
+    "cappedHole_m2": 11.625,
+    "uncoveredHole_m2": 0,
+    "rockIntrudingPassage_m2": 0,
+    "minClearWidth": 2.375,
+    "requiredWidth": 0.6,
+    "entranceSides": 2,
+    "ceilingHeight": 2.4
+   }
+  }
+ },
+ "32": {
+  "kind": "flat+passage",
+  "TN": 65,
+  "TS": 0.5,
+  "unityOK": true,
+  "holesRes": 64,
+  "rawBytes": [
+   true,
+   true
+  ],
+  "pngDims": {
+   "weights_0.png": 65,
+   "weights_1.png": 65,
+   "weights_2.png": 65,
+   "weights_3.png": 65,
+   "mask_0.png": 65,
+   "mask_1.png": 65,
+   "mask_2.png": 65,
+   "mask_3.png": 65,
+   "holes.png": 64,
+   "walkable.png": 65
+  },
+  "cornersErr_m": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "maxHeightDiffVsEditor_m": 0,
+  "spawnWorld": [
+   16,
+   22
+  ],
+  "spawnMeta": [
+   16,
+   22
+  ],
+  "spawnHeightErr_m": 0,
+  "exportGridReach": {
+   "reachableVertices": 3385,
+   "targets": 1,
+   "targetsReached": 1
+  },
+  "errors": [],
+  "warnings": [
+   "出入口マーカーがありません（ゲームの部屋として使うには必要です）"
+  ],
+  "passage": {
+   "outlineLoops": 1,
+   "holeCells": 60,
+   "holeCellsTouchingPassageRock": 60,
+   "passageUnderRock_m2": 11.25,
+   "passageUnderRockInsideHoles_m2": 11.25,
+   "holeArea_m2": 15,
+   "holeAreaNotCoveredByMesh_m2": 0,
+   "stairsDownPitHoleCells": 0,
+   "stairsDownPitHoleCellsInMeta": [],
+   "editorCheck": {
+    "passageArea_m2": 18.75,
+    "passageUnderRock_m2": 11.25,
+    "holeArea_m2": 15,
+    "cappedHole_m2": 11.875,
+    "uncoveredHole_m2": 0,
+    "rockIntrudingPassage_m2": 0,
+    "minClearWidth": 2.375,
+    "requiredWidth": 0.6,
+    "entranceSides": 2,
+    "ceilingHeight": 2.4
+   }
+  }
+ },
+ "48": {
+  "kind": "sample2",
+  "TN": 129,
+  "TS": 0.375,
+  "unityOK": true,
+  "holesRes": 128,
+  "rawBytes": [
+   true,
+   true
+  ],
+  "pngDims": {
+   "weights_0.png": 129,
+   "weights_1.png": 129,
+   "weights_2.png": 129,
+   "weights_3.png": 129,
+   "mask_0.png": 129,
+   "mask_1.png": 129,
+   "mask_2.png": 129,
+   "mask_3.png": 129,
+   "holes.png": 128,
+   "walkable.png": 129
+  },
+  "cornersErr_m": [
+   0,
+   0.0001,
+   0.0001,
+   0.0001
+  ],
+  "maxHeightDiffVsEditor_m": 0.5599,
+  "spawnWorld": [
+   24,
+   36
+  ],
+  "spawnMeta": [
+   24,
+   36
+  ],
+  "spawnHeightErr_m": 0.0001,
+  "exportGridReach": {
+   "reachableVertices": 8970,
+   "targets": 3,
+   "targetsReached": 3
+  },
+  "errors": [],
+  "warnings": [],
+  "passage": {
+   "outlineLoops": 1,
+   "holeCells": 128,
+   "holeCellsTouchingPassageRock": 128,
+   "passageUnderRock_m2": 14.5,
+   "passageUnderRockInsideHoles_m2": 14.5,
+   "holeArea_m2": 18,
+   "holeAreaNotCoveredByMesh_m2": 0,
+   "stairsDownPitHoleCells": 54,
+   "stairsDownPitHoleCellsInMeta": [
+    54
+   ],
+   "editorCheck": {
+    "passageArea_m2": 22,
+    "passageUnderRock_m2": 14.5,
+    "holeArea_m2": 18,
+    "cappedHole_m2": 15.594,
+    "uncoveredHole_m2": 0,
+    "rockIntrudingPassage_m2": 0,
+    "minClearWidth": 1.375,
+    "requiredWidth": 0.6,
+    "entranceSides": 2,
+    "ceilingHeight": 2.4
+   }
+  }
+ },
+ "64": {
+  "kind": "sample",
+  "TN": 129,
+  "TS": 0.5,
+  "unityOK": true,
+  "holesRes": 128,
+  "rawBytes": [
+   true,
+   true
+  ],
+  "pngDims": {
+   "weights_0.png": 129,
+   "weights_1.png": 129,
+   "weights_2.png": 129,
+   "weights_3.png": 129,
+   "mask_0.png": 129,
+   "mask_1.png": 129,
+   "mask_2.png": 129,
+   "mask_3.png": 129,
+   "holes.png": 128,
+   "walkable.png": 129
+  },
+  "cornersErr_m": [
+   0,
+   0.0001,
+   0,
+   0.0001
+  ],
+  "maxHeightDiffVsEditor_m": 0.0001,
+  "spawnWorld": [
+   33,
+   12
+  ],
+  "spawnMeta": [
+   33,
+   12
+  ],
+  "spawnHeightErr_m": 0.0001,
+  "exportGridReach": {
+   "reachableVertices": 6081,
+   "targets": 4,
+   "targetsReached": 4
+  },
+  "errors": [],
+  "warnings": []
+ },
+ "96": {
+  "kind": "flat+passage",
+  "TN": 257,
+  "TS": 0.375,
+  "unityOK": true,
+  "holesRes": 256,
+  "rawBytes": [
+   true,
+   true
+  ],
+  "pngDims": {
+   "weights_0.png": 257,
+   "weights_1.png": 257,
+   "weights_2.png": 257,
+   "weights_3.png": 257,
+   "mask_0.png": 257,
+   "mask_1.png": 257,
+   "mask_2.png": 257,
+   "mask_3.png": 257,
+   "holes.png": 256,
+   "walkable.png": 257
+  },
+  "cornersErr_m": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "maxHeightDiffVsEditor_m": 0.3,
+  "spawnWorld": [
+   48,
+   54
+  ],
+  "spawnMeta": [
+   48,
+   54
+  ],
+  "spawnHeightErr_m": 0,
+  "exportGridReach": {
+   "reachableVertices": 61537,
+   "targets": 1,
+   "targetsReached": 1
+  },
+  "errors": [],
+  "warnings": [
+   "出入口マーカーがありません（ゲームの部屋として使うには必要です）"
+  ],
+  "passage": {
+   "outlineLoops": 1,
+   "holeCells": 96,
+   "holeCellsTouchingPassageRock": 96,
+   "passageUnderRock_m2": 11.25,
+   "passageUnderRockInsideHoles_m2": 11.25,
+   "holeArea_m2": 13.5,
+   "holeAreaNotCoveredByMesh_m2": 0,
+   "stairsDownPitHoleCells": 0,
+   "stairsDownPitHoleCellsInMeta": [],
+   "editorCheck": {
+    "passageArea_m2": 18.75,
+    "passageUnderRock_m2": 11.25,
+    "holeArea_m2": 13.5,
+    "cappedHole_m2": 11.625,
+    "uncoveredHole_m2": 0,
+    "rockIntrudingPassage_m2": 0,
+    "minClearWidth": 2.375,
+    "requiredWidth": 0.6,
+    "entranceSides": 2,
+    "ceilingHeight": 2.4
+   }
+  }
+ },
+ "128": {
+  "kind": "flat+passage",
+  "TN": 257,
+  "TS": 0.5,
+  "unityOK": true,
+  "holesRes": 256,
+  "rawBytes": [
+   true,
+   true
+  ],
+  "pngDims": {
+   "weights_0.png": 257,
+   "weights_1.png": 257,
+   "weights_2.png": 257,
+   "weights_3.png": 257,
+   "mask_0.png": 257,
+   "mask_1.png": 257,
+   "mask_2.png": 257,
+   "mask_3.png": 257,
+   "holes.png": 256,
+   "walkable.png": 257
+  },
+  "cornersErr_m": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "maxHeightDiffVsEditor_m": 0,
+  "spawnWorld": [
+   64,
+   70
+  ],
+  "spawnMeta": [
+   64,
+   70
+  ],
+  "spawnHeightErr_m": 0,
+  "exportGridReach": {
+   "reachableVertices": 62521,
+   "targets": 1,
+   "targetsReached": 1
+  },
+  "errors": [],
+  "warnings": [
+   "出入口マーカーがありません（ゲームの部屋として使うには必要です）"
+  ],
+  "passage": {
+   "outlineLoops": 1,
+   "holeCells": 60,
+   "holeCellsTouchingPassageRock": 60,
+   "passageUnderRock_m2": 11.25,
+   "passageUnderRockInsideHoles_m2": 11.25,
+   "holeArea_m2": 15,
+   "holeAreaNotCoveredByMesh_m2": 0,
+   "stairsDownPitHoleCells": 0,
+   "stairsDownPitHoleCellsInMeta": [],
+   "editorCheck": {
+    "passageArea_m2": 18.75,
+    "passageUnderRock_m2": 11.25,
+    "holeArea_m2": 15,
+    "cappedHole_m2": 11.875,
+    "uncoveredHole_m2": 0,
+    "rockIntrudingPassage_m2": 0,
+    "minClearWidth": 2.375,
+    "requiredWidth": 0.6,
+    "entranceSides": 2,
+    "ceilingHeight": 2.4
+   }
+  }
+ }
+}
