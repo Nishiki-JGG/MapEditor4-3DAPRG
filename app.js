@@ -601,9 +601,13 @@ const detailU = { value: detailTex };
 const propShader = (sh) => {
   sh.uniforms.uDim = dimU; sh.uniforms.uTime = timeU; sh.uniforms.uDetail = detailU; Object.assign(sh.uniforms, BU);
   sh.vertexShader = sh.vertexShader
-    .replace('#include <common>', '#include <common>\n#ifdef DETAIL\nvarying vec3 vWP;\n#endif\nvarying float vPY; attribute float glow; varying float vGlow; attribute float sway; uniform vec3 uWind; uniform float uTime;\n#ifdef MOSS\nattribute float cliffI; varying float vCI;\n#endif')
+    .replace('#include <common>', '#include <common>\n#ifdef TOUCH\nattribute vec3 touch;\n#endif\n#ifdef DETAIL\nvarying vec3 vWP;\n#endif\nvarying float vPY; attribute float glow; varying float vGlow; attribute float sway; uniform vec3 uWind; uniform float uTime;\n#ifdef MOSS\nattribute float cliffI; varying float vCI;\n#endif')
     .replace('#include <begin_vertex>', `#include <begin_vertex>
 vGlow=glow;
+#if defined(TOUCH) && defined(USE_INSTANCING)
+// bent away from the hero (touch.xy = world-space bend of the top in m, touch.z = 1 / mesh height); base stays put
+{ vec2 tb=touch.xy; float bb=dot(tb,tb); if(bb>0.){ float hk=pow(clamp(position.y*touch.z,0.,1.),1.6); mat3 im=mat3(instanceMatrix); transformed+=transpose(im)*(vec3(tb.x,-bb*.8,tb.y)*hk)/dot(im[0],im[0]); } }
+#endif
 #ifdef MOSS
 vCI=cliffI;
 #endif
@@ -681,8 +685,26 @@ atlasTex.anisotropy = Math.min(2, renderer.capabilities.getMaxAnisotropy()); atl
 const cardMat = new THREE.MeshLambertMaterial({ vertexColors: true, map: atlasTex, alphaTest: .42, side: THREE.DoubleSide }); cardMat.defines = { FOLIAGE: '', CARDS: '' };
 cardMat.onBeforeCompile = propShader; cardMat.customProgramCacheKey = () => 'prop-dim-v6-cards';
 const CAP = 8000;
+// plants with touch: true bend away from the hero in walk mode (per-instance attribute 'touch', see updateTouch)
+const TOUCH_GLSL = `// bent away from the hero (touch.xy = world-space bend of the top in m, touch.z = 1 / mesh height); base stays put
+{ vec2 tb=touch.xy; float bb=dot(tb,tb); if(bb>0.){ float hk=pow(clamp(position.y*touch.z,0.,1.),1.6); mat3 im=mat3(instanceMatrix); transformed+=transpose(im)*(vec3(tb.x,-bb*.8,tb.y)*hk)/dot(im[0],im[0]); } }`;
+const touchMats = new Map();
+function touchMat(base) {
+  if (!touchMats.has(base)) {
+    const m = base.clone(); m.defines = { ...(base.defines || {}), TOUCH: '' };
+    if (base.onBeforeCompile === propShader) { m.onBeforeCompile = propShader; m.customProgramCacheKey = () => base.customProgramCacheKey() + '-touch'; }
+    else {   // shared assets (props/shared): the same material, plus the bend
+      m.onBeforeCompile = sh => { sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute vec3 touch;').replace('#include <begin_vertex>', '#include <begin_vertex>\n#ifdef USE_INSTANCING\n' + TOUCH_GLSL + '\n#endif'); };
+      m.customProgramCacheKey = () => 'shared-touch/' + base.name;
+    }
+    touchMats.set(base, m);
+  }
+  return touchMats.get(base);
+}
 const propMeshes = PROP.map(t => {
-  const m = new THREE.InstancedMesh(t.geo, t.sharedAsset ? TDSharedProps.material(t.sharedAsset) : t.material === 'rock' ? rockMat : t.material === 'stone' ? masonMat : t.material === 'cards' ? cardMat : t.material === 'foliage' ? foliageMat : propMat, CAP);
+  const base = t.sharedAsset ? TDSharedProps.material(t.sharedAsset) : t.material === 'rock' ? rockMat : t.material === 'stone' ? masonMat : t.material === 'cards' ? cardMat : t.material === 'foliage' ? foliageMat : propMat;
+  const m = new THREE.InstancedMesh(t.geo, t.touch ? touchMat(base) : base, CAP);
+  if (t.touch) { m.userData.touch = new THREE.InstancedBufferAttribute(new Float32Array(CAP * 3), 3).setUsage(THREE.DynamicDrawUsage); t.geo.setAttribute('touch', m.userData.touch); }
   m.castShadow = m.receiveShadow = true; m.frustumCulled = false; m.count = 0;
   if(t.sharedAsset==='pine'){m.customDepthMaterial=TDPineWind.shadowMaterial(m.material);m.customDistanceMaterial=TDPineWind.shadowMaterial(m.material,true);}
   if (t.canopy) m.receiveShadow = false;   // lumpy canopies shadow themselves in patches; their soft normals already shade them (and it is cheaper)
@@ -719,9 +741,47 @@ function updateGlowLights(cx, cz) {
     l.color.setHex(L[0]); l.userData.base = L[1] * p[4]; l.position.set(p[1], heightAt(p[1], p[2]) + L[2] * p[4], p[2]);
   });
 }
+// ---- plants the hero brushes through (touch: true): each one is a damped spring. The hero's overlap pushes its top
+// away (and a little along the walk), and when the hero leaves it swings back with a few fading wobbles.
+// Visual only: walkability, saving and the export do not change.
+const touchIdx = new Map(), touchState = new Map();   // prop -> instance index / spring { bx, bz, vx, vz, push }
+let touchProps = [], touchPrev = null;
+const TOUCH_K = 70, TOUCH_DAMP = 4.2;   // stiffness (1/s²) and damping (1/s): about 1.3 swings a second, fading in ~1.5 s
+function writeTouch(p, st) {
+  const a = propMeshes[p[0]].userData.touch, i = touchIdx.get(p) * 3;
+  a.array[i] = st.bx; a.array[i + 1] = st.bz; a.array[i + 2] = 1 / Math.max(PROP[p[0]].meshTop, .05); a.needsUpdate = true;
+}
+function updateTouch(dt) {
+  const play = state.mode === 'play' && hero.visible;
+  if (!play) { if (touchState.size) { for (const [p, st] of touchState) { st.bx = st.bz = 0; writeTouch(p, st); } touchState.clear(); } touchPrev = null; return; }
+  const h = Math.min(dt, 1 / 30), r0 = state.agent.radius;
+  let mvx = 0, mvz = 0;
+  if (touchPrev && dt > 0) { mvx = (player.x - touchPrev.x) / dt; mvz = (player.z - touchPrev.z) / dt; }
+  touchPrev = { x: player.x, z: player.z };
+  const mv = Math.hypot(mvx, mvz), mdx = mv > .1 ? mvx / mv : 0, mdz = mv > .1 ? mvz / mv : 0;
+  for (const p of touchProps) {
+    const t = PROP[p[0]], R = t.vis * p[4] * .6 + r0, dx = p[1] - player.x, dz = p[2] - player.z;
+    if (Math.abs(dx) > R || Math.abs(dz) > R) continue;
+    const d = Math.hypot(dx, dz); if (d >= R) continue;
+    let st = touchState.get(p); if (!st) touchState.set(p, st = { bx: 0, bz: 0, vx: 0, vz: 0, push: null });
+    const o = 1 - d / R, nx = d > .05 ? dx / d : mdx, nz = d > .05 ? dz / d : mdz, max = Math.min(.45, .38 * t.meshTop * p[4] * (p[6] ?? 1));
+    // push out of the way, plus drag along the walk while the hero moves
+    st.push = [(nx * .8 + mdx * .45 * Math.min(1, mv / 3)) * o * max * 1.6, (nz * .8 + mdz * .45 * Math.min(1, mv / 3)) * o * max * 1.6, max];
+  }
+  for (const [p, st] of touchState) {
+    const tx = st.push ? st.push[0] : 0, tz = st.push ? st.push[1] : 0;
+    st.vx += (TOUCH_K * (tx - st.bx) - TOUCH_DAMP * st.vx) * h; st.vz += (TOUCH_K * (tz - st.bz) - TOUCH_DAMP * st.vz) * h;
+    st.bx += st.vx * h; st.bz += st.vz * h;
+    const b = Math.hypot(st.bx, st.bz), max = st.push ? st.push[2] : .45; if (b > max) { st.bx *= max / b; st.bz *= max / b; }
+    const rest = !st.push && b < .002 && Math.hypot(st.vx, st.vz) < .01;
+    st.push = null;
+    if (rest) { st.bx = st.bz = 0; writeTouch(p, st); touchState.delete(p); } else writeTouch(p, st);
+  }
+}
 function rebuildProps(visualOnly = false) {
   glowTick = 0;
   const cnt = PROP.map(() => 0), gcnt = PROP.map(() => 0);
+  touchIdx.clear(); touchProps = [];
   for (const p of props) {
     const [t, x, z, r, s] = p, sy = p[6] ?? 1, by = p[7] ?? null, ghost = ghosts.has(p) && gcnt[t] < 256;
     const mesh = ghost ? ghostMeshes[t] : propMeshes[t], c = ghost ? gcnt : cnt;
@@ -734,8 +794,11 @@ function rebuildProps(visualOnly = false) {
     const v = .86 + .28 * hash2(x * 97 | 0, z * 89 | 0);
     mesh.setColorAt(c[t], shared ? _c.setRGB(1, 1, 1) : _c.setRGB(v * (.95 + .1 * hash2(x * 13 | 0, 7)), v, v * (.95 + .1 * hash2(3, z * 17 | 0))));
     if (!ghost && mesh.userData.cliffI) mesh.userData.cliffI.array[c[t]] = cliffIndexNear(x, z);
+    if (!ghost && mesh.userData.touch) { touchIdx.set(p, c[t]); touchProps.push(p); }
     c[t]++;
   }
+  for (const m of propMeshes) if (m.userData.touch) { m.userData.touch.array.fill(0); m.userData.touch.needsUpdate = true; }
+  for (const [p, st] of touchState) if (touchIdx.has(p)) writeTouch(p, st); else touchState.delete(p);
   propMeshes.forEach((m, t) => { m.count = cnt[t]; m.instanceMatrix.needsUpdate = true; m.instanceColor.needsUpdate = true; if (m.userData.cliffI) m.userData.cliffI.needsUpdate = true; });
   ghostMeshes.forEach((m, t) => { m.count = gcnt[t]; m.instanceMatrix.needsUpdate = true; m.instanceColor.needsUpdate = true; });
   if (!visualOnly) { colliders = null; walkDirty = true; }
@@ -3404,6 +3467,7 @@ const _tgt = new THREE.Vector3();
 let fpsAcc = 0, fpsN = 0, fps = 0;
 function update(dt) {
   timeU.value += dt;
+  updateTouch(dt);
   TDPineWind.set(timeU.value,BU.uWind.value.x,-BU.uWind.value.y,BU.uWind.value.z);
   for (const [o, sp] of linkSpin) { if (o.geometry.type === 'PlaneGeometry') o.rotation.z += dt * sp; else { o.rotation.y += dt * sp; o.material.opacity = .42 + Math.sin(timeU.value * 2.2) * .1; } }
   { const c = state.mode === 'edit' ? cam.target : player; WU.uCenter.value.set(c.x, (state.mode === 'edit' ? heightAt(c.x, c.z) : player.y) + 2, c.z); }

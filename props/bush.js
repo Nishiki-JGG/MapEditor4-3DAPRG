@@ -2,7 +2,7 @@
 TDProps.add({
   id: 'bush', name: '茂み',
   r: 0, min: 1.0, sc: [.7, 1.5], slope: .8, vis: .9,
-  sway: .5, tags: ['grassland', 'forest', 'jungle', 'canyon', 'ruins', 'castle', 'beach'], height: 0.93, material: 'cards',
+  sway: .5, tags: ['grassland', 'forest', 'jungle', 'canyon', 'ruins', 'castle', 'beach'], height: 0.93, touch: true, material: 'cards',
   build() {
     const { rng, col, mixc, clamp, makeGeo, limb, quadGeo, crossGeo, faceOut, ATLAS } = TDGeo;
     // a low dome of leaf clumps on crossed cards over a few stems; darker toward the ground and the middle

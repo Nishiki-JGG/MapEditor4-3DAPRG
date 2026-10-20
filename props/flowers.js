@@ -2,7 +2,7 @@
 TDProps.add({
   id: 'flowers', name: '花',
   r: 0, min: .6, sc: [.8, 1.4], slope: .8, vis: .45,
-  sway: .8, tags: ['grassland', 'forest', 'ruins'], height: 0.43, material: 'foliage',
+  sway: .8, tags: ['grassland', 'forest', 'ruins'], height: 0.43, touch: true, material: 'foliage',
   build() {
     const { rng, col, mixc, mat4, makeGeo, leafGeo, petalGeo, basisAt, limb } = TDGeo;
     // a rosette of leaves and stems with five-petal heads

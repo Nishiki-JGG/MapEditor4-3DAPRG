@@ -2,7 +2,7 @@
 TDProps.add({
   id: 'reed', name: '葦',
   r: 0, min: .7, sc: [.8, 1.3], slope: .7, vis: .5, anyGround: true,
-  sway: 1, tags: ['grassland', 'forest', 'jungle', 'beach'], height: 1.72, material: 'cards',
+  sway: 1, tags: ['grassland', 'forest', 'jungle', 'beach'], height: 1.72, touch: true, material: 'cards',
   build() {
     const { clamp, rng, col, mixc, mat4, makeGeo, stripLeafGeo, basisAt, limb, crossGeo, faceOut, ATLAS } = TDGeo;
     const R = rng(42), parts = [];
