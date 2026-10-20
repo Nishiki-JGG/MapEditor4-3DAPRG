@@ -3447,7 +3447,10 @@ function update(dt) {
       heroStyle(buried);
     }
     if (!buried) { const pu = state.onPoison ? .5 + .5 * Math.sin(timeU.value * 7) : 0; heroGlow(.38 * pu, .05 * pu, .5 * pu); }
-    hero.position.set(player.x, player.y + (player.moving ? Math.abs(Math.sin(player.t * 11)) * .08 : 0), player.z);
+    // Remy は歩きのアニメーション（速さに合わせて再生、hero/hero.js）、簡易の人形は上下に揺らすだけ
+    const remyShown = heroLook === 'remy';
+    if (remyShown) heroBody.animate(dt, player.moving ? sp / Math.max(dt, 1e-4) : 0);
+    hero.position.set(player.x, player.y + (player.moving && !remyShown ? Math.abs(Math.sin(player.t * 11)) * .08 : 0), player.z);
     hero.rotation.y = player.face;
     _tgt.set(player.x, player.y + 1, player.z);
     placeCamera(playCam, _tgt);
