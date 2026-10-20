@@ -596,26 +596,129 @@ function displace(g, amp, seed) {
   }
   return g;
 }
-function makeGeo(parts, seed) {
-  const R = rng(seed), P = [], C = [], G = [];
-  const a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3(), e1 = new THREE.Vector3(), e2 = new THREE.Vector3();
+function makeGeo(parts, seed, opt = {}) {
+  // opt.ao: height (m) over which the base darkens (fake contact shadow, baked into the vertex colours)
+  // part.sn = [x, y, z], part.snw: bend the normals toward "out of this point" (soft foliage shading; only the smooth foliage material uses normals)
+  const R = rng(seed), P = [], C = [], G = [], Nn = [], ao = opt.ao || 0;
+  const a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3(), e1 = new THREE.Vector3(), e2 = new THREE.Vector3(), fn = new THREE.Vector3(), q = new THREE.Vector3();
   for (const p of parts) {
     const g = p.g.index ? p.g.toNonIndexed() : p.g.clone(); g.applyMatrix4(p.m);
-    const pos = g.attributes.position, pr = R();
+    const pos = g.attributes.position, pr = R(), sn = p.sn ? new THREE.Vector3(...p.sn) : null, sw = p.snw ?? .75;
     for (let i = 0; i < pos.count; i += 3) {
       a.fromBufferAttribute(pos, i); b.fromBufferAttribute(pos, i + 1); c.fromBufferAttribute(pos, i + 2);
-      const ny = e1.subVectors(b, a).cross(e2.subVectors(c, a)).normalize().y;
-      const base = p.cfn ? p.cfn((a.y + b.y + c.y) / 3, ny, R, pr) : p.c;
-      const k = (1 + (R() - .5) * 2 * (p.j ?? .12)) * (.74 + .36 * Math.max(ny, -.4));
-      for (const v of [a, b, c]) { P.push(v.x, v.y, v.z); C.push(base[0] * k, base[1] * k, base[2] * k); G.push(p.glow || 0); }
+      fn.copy(e1.subVectors(b, a).cross(e2.subVectors(c, a)).normalize());
+      const ny = fn.y, cx = (a.x + b.x + c.x) / 3, cy = (a.y + b.y + c.y) / 3, cz = (a.z + b.z + c.z) / 3;
+      const lit = sn ? lerp(ny, q.set(cx, cy, cz).sub(sn).normalize().y, sw) : ny;
+      const base = p.cfn ? p.cfn(cy, ny, R, pr, cx, cz) : p.c;
+      const k = (1 + (R() - .5) * 2 * (p.j ?? .12)) * (.74 + .36 * Math.max(lit, -.4));
+      for (const v of [a, b, c]) {
+        let kv = k;
+        // bent normals: shade each corner by its own normal, so a canopy reads as one soft mass rather than facets
+        if (sn) { q.subVectors(v, sn).normalize().lerp(fn, 1 - sw).normalize(); Nn.push(q.x, q.y, q.z); kv = k / (.74 + .36 * Math.max(lit, -.4)) * (.74 + .36 * Math.max(q.y, -.4)); } else Nn.push(fn.x, fn.y, fn.z);
+        if (ao && !p.glow) kv *= .62 + .38 * smooth01(clamp(v.y / ao, 0, 1));
+        P.push(v.x, v.y, v.z); C.push(base[0] * kv, base[1] * kv, base[2] * kv); G.push(p.glow || 0);
+      }
     }
   }
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.Float32BufferAttribute(P, 3));
   geo.setAttribute('color', new THREE.Float32BufferAttribute(C, 3));
   geo.setAttribute('glow', new THREE.Float32BufferAttribute(G, 1));   // self-lit parts: flames, crystals, glowing caps
-  geo.computeVertexNormals();
+  geo.setAttribute('normal', new THREE.Float32BufferAttribute(Nn, 3));   // face normals (the same as computeVertexNormals on this non-indexed geometry), bent where part.sn is set
   return geo;
+}
+const smooth01 = t => t * t * (3 - 2 * t);
+// ---------- building blocks for plants, rocks and walls (all low-poly, vertex-coloured)
+// both sides of a list of triangles (thin leaves and petals have no thickness)
+function twoSided(tris) {
+  const P = [];
+  for (const [p, q, r] of tris) P.push(...p, ...q, ...r);
+  for (const [p, q, r] of tris) P.push(...p, ...r, ...q);
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); return g;
+}
+// a leaf along +x from the stem (origin), raised along the midrib, the tip curling down. 8 triangles
+function leafGeo(L, w, fold = .22, curl = 0) {
+  const B = [0, 0, 0], M = [L * .5, w * fold, 0], T = [L, -curl, 0], l = [L * .38, 0, -w / 2], r = [L * .38, 0, w / 2];
+  return twoSided([[B, M, l], [l, M, T], [B, r, M], [M, r, T]]);
+}
+// a flat diamond (petal, leaflet, ivy leaf). 4 triangles
+function petalGeo(L, w, at = .4) {
+  const B = [0, 0, 0], T = [L, 0, 0], l = [L * at, 0, -w / 2], r = [L * at, 0, w / 2];
+  return twoSided([[B, T, l], [B, r, T]]);
+}
+// a long leaf (banana, reed, grass blade) along +x, bending down along its length and folded on the midrib
+function stripLeafGeo(L, w, segs, lift, droop, fold = .2, shape = .7) {
+  const mid = [], tris = []; let x = 0, y = 0;
+  for (let s = 0; s <= segs; s++) {
+    const t = s / segs, ww = w * Math.pow(Math.sin(Math.PI * Math.min(t * .92 + .08, 1)), shape) / 2;
+    mid.push([[x, y + ww * fold * 2, 0], [x, y, -ww], [x, y, ww]]);
+    const ang = lift - droop * t * t, len = L / segs; x += Math.cos(ang) * len; y += Math.sin(ang) * len;
+  }
+  for (let s = 0; s < segs; s++) {
+    const [m0, l0, r0] = mid[s], [m1, l1, r1] = mid[s + 1];
+    tris.push([m0, m1, l0], [l0, m1, l1], [m0, r0, m1], [m1, r0, r1]);
+  }
+  return twoSided(tris);
+}
+// matrix that maps local +x to dir, local +y toward up (the face of a leaf), placed at p and scaled by s
+const _bx = new THREE.Vector3(), _by = new THREE.Vector3(), _bz = new THREE.Vector3();
+function basisAt(p, dir, up = [0, 1, 0], s = 1) {
+  _bx.set(...dir).normalize(); _bz.crossVectors(_bx, _by.set(...up)).normalize();
+  if (_bz.lengthSq() < 1e-6) _bz.set(0, 0, 1);
+  _by.crossVectors(_bz, _bx);
+  return new THREE.Matrix4().makeBasis(_bx.clone().multiplyScalar(s), _by.clone().multiplyScalar(s), _bz.clone().multiplyScalar(s)).setPosition(p[0], p[1], p[2]);
+}
+// a tapered branch / stem from a to b (open ends: they sit inside the trunk, ground or foliage)
+function limb(parts, a, b, r0, r1, seg, cfn, more = {}) {
+  const d = [b[0] - a[0], b[1] - a[1], b[2] - a[2]], L = Math.hypot(...d);
+  _by.set(...d).normalize(); _bx.set(1, 0, 0); if (Math.abs(_by.x) > .9) _bx.set(0, 0, 1);
+  _bz.crossVectors(_bx, _by).normalize(); _bx.crossVectors(_by, _bz);
+  const m = new THREE.Matrix4().makeBasis(_bx.clone(), _by.clone(), _bz.clone()).setPosition((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2);
+  parts.push({ g: new THREE.CylinderGeometry(r1, r0, L, seg, 1, true), m, cfn, j: .1, ...more });
+}
+// flatten a rock-like shape with a few random cutting planes: sharp facets and edges instead of a soft blob
+function chisel(g, cuts, seed, depth = .62, upBias = 0) {
+  const R = rng(seed), p = g.attributes.position, planes = [];
+  let rad = 0; for (let i = 0; i < p.count; i++) rad = Math.max(rad, Math.hypot(p.getX(i), p.getY(i), p.getZ(i)));
+  for (let k = 0; k < cuts; k++) {
+    const th = R() * 6.283, y = clamp(R() * 2 - 1 + upBias, -1, 1), s = Math.sqrt(1 - y * y);
+    planes.push([Math.cos(th) * s, y, Math.sin(th) * s, (depth + R() * (1 - depth) * .7) * rad]);
+  }
+  for (let i = 0; i < p.count; i++) {
+    let x = p.getX(i), y = p.getY(i), z = p.getZ(i);
+    for (const [nx, ny, nz, d] of planes) { const o = x * nx + y * ny + z * nz - d; if (o > 0) { x -= nx * o; y -= ny * o; z -= nz * o; } }
+    p.setXYZ(i, x, y, z);
+  }
+  return g;
+}
+// ribbed (cactus, fluted column): every other ring vertex pulled in toward the axis
+function ribbed(g, n, inner) {
+  const p = g.attributes.position;
+  for (let i = 0; i < p.count; i++) {
+    const x = p.getX(i), z = p.getZ(i), r = Math.hypot(x, z); if (r < 1e-4) continue;
+    const k = Math.round(((Math.atan2(z, x) / 6.2832 + 1) % 1) * n) % 2 ? inner : 1;
+    p.setX(i, x * k); p.setZ(i, z * k);
+  }
+  return g;
+}
+// rock strata: each horizontal ring of vertices pushed in or out by its own amount, giving ledges (same height -> same amount, no cracks)
+function strata(g, amp, seed) {
+  const p = g.attributes.position;
+  for (let i = 0; i < p.count; i++) { const k = 1 + amp * (hash2(Math.round(p.getY(i) * 100), seed) - .5) * 2; p.setX(i, p.getX(i) * k); p.setZ(i, p.getZ(i) * k); }
+  return g;
+}
+// masonry tone for round towers: one colour per block of a running bond (rows of rowH, n blocks around)
+const masonC = (lo, hi, rowH, n) => (y, ny, R, pr, cx, cz) => {
+  if (Math.abs(ny) > .7) return mixc(col(lo), col(hi), .55 + R() * .2);
+  const row = Math.floor(y / rowH), a = (Math.atan2(cz, cx) / 6.2832 + 1) * n + (row % 2) * .5;
+  return mixc(col(lo), col(hi), .15 + .7 * hash2(row, Math.floor(a) % n + 7));
+};
+// drop the bottom cap of a shape that stands in the ground (never seen; saves triangles)
+function dropBottom(g) {
+  g = g.index ? g.toNonIndexed() : g; const p = g.attributes.position, P = [];
+  let lo = Infinity; for (let i = 0; i < p.count; i++) lo = Math.min(lo, p.getY(i));
+  for (let i = 0; i < p.count; i += 3) { if (p.getY(i) < lo + 1e-4 && p.getY(i + 1) < lo + 1e-4 && p.getY(i + 2) < lo + 1e-4) continue; for (let k = 0; k < 3; k++) P.push(p.getX(i + k), p.getY(i + k), p.getZ(i + k)); }
+  const o = new THREE.BufferGeometry(); o.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); return o;
 }
 function tierGeo(r, h, seg, seed) {
   // cone whose rim droops and zig-zags like a fir branch layer
@@ -630,113 +733,7 @@ function tierGeo(r, h, seg, seed) {
   }
   return g;
 }
-function geoPine() {
-  const parts = [];
-  parts.push({ g: new THREE.CylinderGeometry(.11, .2, 1.8, 6), m: mat4(0, .9, 0, 1, 1, 1), c: col(0x46301e) });
-  const rs = [1.55, 1.36, 1.15, .94, .72, .5, .3], top = (y, ny, R) => ny > .55 ? mixc(col(0x3f7f45), col(0x6aa055), R()) : ny > .2 ? mixc(col(0x2a6038), col(0x3b7442), R()) : mixc(col(0x1a4128), col(0x24502f), R());
-  rs.forEach((r, k) => parts.push({ g: tierGeo(r, 1.35, 9 + (k % 2), k * 1.7), m: mat4(0, 1.45 + k * .66, 0, 1, 1, 1, k * .9), cfn: top, j: .12 }));
-  return makeGeo(parts, 11);
-}
-function geoOak() {
-  const parts = [{ g: new THREE.CylinderGeometry(.2, .32, 2.6, 6), m: mat4(0, 1.3, 0, 1, 1, 1), c: col(0x5a4028) }];
-  const greens = [0x2c6326, 0x3a7a2b, 0x4c8e30, 0x2a5a25].map(col);
-  [[0, 3.7, 0, 1.9], [1.15, 3.25, .5, 1.3], [-1.05, 3.35, -.45, 1.35], [.3, 4.65, -.55, 1.15], [-.45, 4.35, .95, 1.1], [.95, 2.95, -1.05, 1]]
-    .forEach(([x, y, z, r], k) => parts.push({ g: displace(new THREE.IcosahedronGeometry(1, 1), .38, k * 3.1), m: mat4(x, y, z, r, r * .85, r), c: greens[k % 4], j: .2 }));
-  return makeGeo(parts, 12);
-}
-function geoRock() {
-  const parts = [];
-  const cf = (y, ny, R) => ny > .8 && R() < .22 ? mixc(col(0x5d7a33), col(0x78924a), R()) : mixc(col(0x5c5750), col(0x9a9184), clamp(.35 + y * .35 + (R() - .5) * .4, 0, 1));
-  parts.push({ g: displace(new THREE.IcosahedronGeometry(1, 1), .35, 1.7), m: mat4(0, .4, 0, 1.05, .62, .85, .3), cfn: cf, j: .1 });
-  parts.push({ g: displace(new THREE.IcosahedronGeometry(1, 0), .4, 4.2), m: mat4(.95, .2, .45, .55, .45, .5, 1.1), cfn: cf, j: .1 });
-  parts.push({ g: displace(new THREE.IcosahedronGeometry(1, 0), .4, 7.9), m: mat4(-.8, .15, -.55, .42, .35, .4, 2.3), cfn: cf, j: .1 });
-  return makeGeo(parts, 13);
-}
-function geoCliff() {
-  const R = rng(77), parts = [];
-  const cf = (y, ny, Rr, pr) => ny > .7 ? (pr < .4 ? mixc(col(0x5d7a32), col(0x7f9a46), pr * 2) : mixc(col(0x9a917f), col(0xbdb4a0), pr))
-    : mixc(col(0x6f685d), col(0xc2b8a4), clamp(.3 + y * .2 + (Rr() - .5) * .5, 0, 1));
-  let x = -1.15;
-  while (x < 1.1) {
-    const w = .38 + R() * .5, h = 1.9 + R() * .55, d = .8 + R() * .4;
-    const g = displace(new THREE.BoxGeometry(w, h, d, 1, 2, 1), .16, x * 9.1);
-    parts.push({ g, m: mat4(x + w / 2, h / 2 - .1, (R() - .5) * .25, 1, 1, 1, (R() - .5) * .25, (R() - .5) * .06), cfn: cf, j: .1 });
-    if (R() < .12) {
-      const h2 = .2 + R() * .25, g2 = displace(new THREE.BoxGeometry(w * .9, h2, d * .85, 1, 1, 1), .2, x * 3.3);
-      parts.push({ g: g2, m: mat4(x + w / 2 + (R() - .5) * .1, h + h2 / 2 - .12, (R() - .5) * .2, 1, 1, 1, (R() - .5) * .4), cfn: cf, j: .1 });
-    }
-    x += w * .92;
-  }
-  return makeGeo(parts, 15);
-}
-function geoPebble() {
-  const cf = (y, ny, R, pr) => mixc(col(0x6d675e), col(0xb3ab9c), clamp(pr * .7 + (ny > .6 ? .25 : 0) + (R() - .5) * .2, 0, 1));
-  return makeGeo([{ g: displace(new THREE.IcosahedronGeometry(1, 0), .5, 2.2), m: mat4(0, .1, 0, .3, .17, .24, .4), cfn: cf, j: .08 },
-    { g: displace(new THREE.IcosahedronGeometry(1, 0), .5, 5.1), m: mat4(.38, .06, .2, .16, .1, .14, 1.3), cfn: cf, j: .08 }], 41);
-}
-function geoReed() {
-  const R = rng(42), parts = [];
-  for (let k = 0; k < 9; k++) {
-    const a = R() * 6.28, r = R() * .35, x = Math.cos(a) * r, z = Math.sin(a) * r, h = 1.0 + R() * .7, lean = (R() - .5) * .25;
-    parts.push({ g: new THREE.CylinderGeometry(.012, .025, h, 3), m: mat4(x, h / 2, z, 1, 1, 1, 0, lean, (R() - .5) * .2), c: mixc(col(0x557a2a), col(0x86a046), R()), j: .1 });
-    if (R() < .55) parts.push({ g: new THREE.CylinderGeometry(.045, .045, .22, 5), m: mat4(x + Math.sin(lean) * 0, h - .05, z + lean * h * .5, 1, 1, 1, 0, lean), c: col(0x5a3a1e), j: .1 });
-    parts.push({ g: new THREE.BoxGeometry(.05, h * .7, .01), m: mat4(x + .04, h * .33, z, 1, 1, 1, a, (R() - .5) * .5, .25), c: col(0x6a8c34), j: .15 });
-  }
-  return makeGeo(parts, 42);
-}
-function geoLog() {
-  const bark = (y, ny, R) => mixc(col(0x3e2a19), col(0x6a4a2e), R());
-  return makeGeo([
-    { g: displace(new THREE.CylinderGeometry(.3, .34, 3.2, 9, 3), .06, 3.3), m: mat4(0, .3, 0, 1, 1, 1, 0, 0, Math.PI / 2), cfn: bark, j: .1 },
-    { g: new THREE.CylinderGeometry(.27, .27, .03, 9), m: mat4(1.61, .3, 0, 1, 1, 1, 0, 0, Math.PI / 2), c: col(0xc9a274), j: .05 },
-    { g: new THREE.CylinderGeometry(.3, .3, .03, 9), m: mat4(-1.61, .3, 0, 1, 1, 1, 0, 0, Math.PI / 2), c: col(0xc9a274), j: .05 },
-    { g: new THREE.CylinderGeometry(.04, .07, .7, 5), m: mat4(.5, .55, .15, 1, 1, 1, 0, .6, .3), cfn: bark, j: .1 },
-    { g: displace(new THREE.IcosahedronGeometry(.28, 0), .3, 1.1), m: mat4(-.6, .55, 0, 1.4, .35, 1, 0), c: col(0x4f7a2a), j: .15 },
-  ], 43);
-}
-function geoStump() {
-  const bark = (y, ny, R) => ny > .8 ? mixc(col(0xb88c5c), col(0xd9b384), R()) : mixc(col(0x3e2a19), col(0x6a4a2e), R());
-  const parts = [{ g: displace(new THREE.CylinderGeometry(.36, .46, .62, 9, 2), .06, 7.7), m: mat4(0, .31, 0, 1, 1, 1), cfn: bark, j: .08 }];
-  for (let k = 0; k < 4; k++) { const a = k * 1.6 + .4; parts.push({ g: new THREE.CylinderGeometry(.05, .14, .7, 5), m: mat4(Math.cos(a) * .42, .08, Math.sin(a) * .42, 1, 1, 1, -a, 0, Math.PI / 2 - .25), cfn: bark, j: .1 }); }
-  parts.push({ g: displace(new THREE.IcosahedronGeometry(.12, 0), .3, 2.9), m: mat4(.25, .66, .1, 1, .5, 1), c: col(0xd8c39a), j: .1 });
-  return makeGeo(parts, 44);
-}
-function geoDeadTree() {
-  const bark = (y, ny, R) => mixc(col(0x4a4038), col(0x7a6e62), R());
-  const parts = [{ g: displace(new THREE.CylinderGeometry(.1, .3, 3.4, 7, 3), .12, 1.9), m: mat4(0, 1.7, 0, 1, 1, 1, 0, .05, .04), cfn: bark, j: .1 }];
-  [[1.5, .9, .7, 1.1], [2.1, -.8, 2.2, .9], [2.6, .7, 3.9, .8], [3.0, -.6, 5.1, .6], [1.1, .8, 4.5, .7]].forEach(([y, tilt, ry, L]) =>
-    parts.push({ g: new THREE.CylinderGeometry(.03, .08, L, 5), m: mat4(Math.sin(ry) * L * .35, y + L * .3, Math.cos(ry) * L * .35, 1, 1, 1, ry, tilt, 0), cfn: bark, j: .1 }));
-  return makeGeo(parts, 45);
-}
-function geoFlowers() {
-  const R = rng(46), parts = [], cols = [0xf2d23c, 0xf6f2e6, 0xe887b8, 0xa58ae0, 0xf08a4b].map(col);
-  for (let k = 0; k < 4; k++) parts.push({ g: displace(new THREE.IcosahedronGeometry(1, 0), .3, k), m: mat4((R() - .5) * .5, .08, (R() - .5) * .5, .2, .1, .2), c: mixc(col(0x3e6e28), col(0x5f8f34), R()), j: .1 });
-  const c0 = cols[(R() * cols.length) | 0], c1 = cols[(R() * cols.length) | 0];
-  for (let k = 0; k < 11; k++) {
-    const x = (R() - .5) * .7, z = (R() - .5) * .7, h = .18 + R() * .22;
-    parts.push({ g: new THREE.CylinderGeometry(.008, .01, h, 3), m: mat4(x, h / 2, z, 1, 1, 1), c: col(0x4f7a2a) });
-    parts.push({ g: new THREE.IcosahedronGeometry(.055, 0), m: mat4(x, h, z, 1, .6, 1), c: R() < .6 ? c0 : c1, j: .08 });
-  }
-  return makeGeo(parts, 46);
-}
-function geoMushroom() {
-  const R = rng(47), parts = [];
-  for (let k = 0; k < 4; k++) {
-    const x = (R() - .5) * .45, z = (R() - .5) * .45, h = .1 + R() * .14, r = .06 + R() * .07, red = R() < .5;
-    parts.push({ g: new THREE.CylinderGeometry(r * .3, r * .4, h, 5), m: mat4(x, h / 2, z, 1, 1, 1), c: col(0xe8ddc8) });
-    parts.push({ g: new THREE.SphereGeometry(r, 7, 3, 0, Math.PI * 2, 0, Math.PI / 2), m: mat4(x, h - .01, z, 1, .8, 1), c: red ? col(0xc8402e) : col(0x9a6a3e), j: .08 });
-  }
-  return makeGeo(parts, 47);
-}
 // ---------- cave
-function geoStalagmite() {
-  const cf = (y, ny, R) => mixc(col(0x5a5650), col(0xa8a092), clamp(.25 + y * .18 + (R() - .5) * .3, 0, 1));
-  const parts = [];
-  [[0, 0, 2.4, .5], [.55, .2, 1.4, .32], [-.4, .35, 1.0, .26], [.15, -.5, .8, .22]].forEach(([x, z, h, r], k) =>
-    parts.push({ g: displace(new THREE.ConeGeometry(r, h, 7, 4), .18, k * 2.3), m: mat4(x, h / 2 - .05, z, 1, 1, 1, k), cfn: cf, j: .08 }));
-  parts.push({ g: displace(new THREE.CylinderGeometry(.9, 1.05, .25, 9), .2, 9), m: mat4(0, .05, 0, 1, 1, 1), cfn: cf, j: .1 });
-  return makeGeo(parts, 51);
-}
 function geoCrystal() {
   const R = rng(52), parts = [], glowC = (y, ny, Rr) => mixc(col(0x6fe3ff), col(0xc39bff), Rr() * .6);
   for (let k = 0; k < 6; k++) {
@@ -767,56 +764,6 @@ function geoTorch() {
 // ---------- ruins
 const RUIN_STONE = (y, ny, R, pr) => mixc(col(0x8d877c), col(0xd2cab8), clamp(pr * .5 + R() * .3 + (ny > .7 ? .15 : 0), 0, 1));
 const MOSS = (y, ny, R) => mixc(col(0x4d6e2a), col(0x7a9a46), R());
-function geoColumn() {
-  const cf = RUIN_STONE;
-  return makeGeo([
-    { g: new THREE.BoxGeometry(1, .3, 1), m: mat4(0, .15, 0, 1, 1, 1), cfn: cf, j: .06 },
-    { g: new THREE.BoxGeometry(.85, .15, .85), m: mat4(0, .37, 0, 1, 1, 1), cfn: cf, j: .06 },
-    { g: displace(new THREE.CylinderGeometry(.34, .38, 2.7, 12, 4), .03, 5), m: mat4(0, 1.8, 0, 1, 1, 1), cfn: cf, j: .05 },
-    { g: new THREE.BoxGeometry(.85, .18, .85), m: mat4(0, 3.24, 0, 1, 1, 1), cfn: cf, j: .06 },
-    { g: new THREE.BoxGeometry(1.05, .22, 1.05), m: mat4(0, 3.43, 0, 1, 1, 1), cfn: cf, j: .06 },
-    { g: displace(new THREE.IcosahedronGeometry(.3, 0), .4, 2), m: mat4(.35, .32, .3, 1.2, .35, 1, .4), cfn: MOSS, j: .1 },
-  ], 55);
-}
-function geoBrokenCol() {
-  const cf = RUIN_STONE;
-  return makeGeo([
-    { g: new THREE.BoxGeometry(1, .3, 1), m: mat4(0, .15, 0, 1, 1, 1, .2), cfn: cf },
-    { g: displace(new THREE.CylinderGeometry(.3, .38, 1.5, 12, 3), .08, 7), m: mat4(0, 1.05, 0, 1, 1, 1, 0, .04), cfn: cf },
-    { g: displace(new THREE.CylinderGeometry(.34, .34, .9, 12, 1), .06, 2), m: mat4(1.0, .34, .5, 1, 1, 1, .6, 0, Math.PI / 2), cfn: cf },
-    { g: displace(new THREE.IcosahedronGeometry(.18, 0), .4, 4), m: mat4(-.6, .1, .5, 1, .7, 1), cfn: cf },
-    { g: displace(new THREE.IcosahedronGeometry(.13, 0), .4, 8), m: mat4(-.3, .08, -.7, 1, .7, 1), cfn: cf },
-    { g: displace(new THREE.IcosahedronGeometry(.25, 0), .4, 6), m: mat4(-.1, .3, .4, 1.4, .35, 1, 0), cfn: MOSS, j: .1 },
-  ], 56);
-}
-function geoRuinWall() {
-  const R = rng(57), parts = [], cf = RUIN_STONE;
-  for (let row = 0; row < 5; row++) {
-    let x = -1.5 + (row % 2) * .25; const y = .2 + row * .4;
-    while (x < 1.45) {
-      const w = Math.min(.5 + R() * .35, 1.5 - x), top = 1.9 - Math.abs(x) * .5 + (R() - .5) * .8;
-      if (y < top || row === 0) {
-        parts.push({ g: new THREE.BoxGeometry(w - .03, .38, .55), m: mat4(x + w / 2, y, (R() - .5) * .05, 1, 1, 1, (R() - .5) * .04), cfn: cf, j: .1 });
-        if (row > 0 && y + .4 >= top && R() < .6) parts.push({ g: displace(new THREE.IcosahedronGeometry(.22, 0), .4, x * 7), m: mat4(x + w / 2, y + .22, 0, 1.3, .45, 1.1), cfn: MOSS, j: .1 });
-      }
-      x += w;
-    }
-  }
-  for (let k = 0; k < 4; k++) parts.push({ g: displace(new THREE.IcosahedronGeometry(.2, 0), .4, k + 11), m: mat4((R() - .5) * 3, .1, .5 + R() * .4, 1, .7, 1, R() * 3), cfn: cf });
-  return makeGeo(parts, 57);
-}
-function geoArchGate() {
-  const cf = RUIN_STONE, parts = [];
-  for (const sx of [-1.25, 1.25]) {
-    parts.push({ g: new THREE.BoxGeometry(.7, .3, .8), m: mat4(sx, .15, 0, 1, 1, 1), cfn: cf });
-    parts.push({ g: displace(new THREE.BoxGeometry(.55, 2.5, .6, 1, 4, 1), .03, sx), m: mat4(sx, 1.55, 0, 1, 1, 1), cfn: cf });
-  }
-  const n = 9;
-  for (let k = 0; k < n; k++) { const a = Math.PI * (k + .5) / n; parts.push({ g: new THREE.BoxGeometry(.55, .42, .62), m: mat4(Math.cos(a) * 1.25, 2.8 + Math.sin(a) * 1.25, 0, 1, 1, 1, 0, 0, a - Math.PI / 2), cfn: cf, j: .08 }); }
-  parts.push({ g: new THREE.BoxGeometry(3.3, .35, .7), m: mat4(0, 4.25, 0, 1, 1, 1), cfn: cf });
-  parts.push({ g: displace(new THREE.IcosahedronGeometry(.35, 0), .4, 3), m: mat4(-.8, 4.45, .1, 1.5, .35, 1, .3), cfn: MOSS, j: .1 });
-  return makeGeo(parts, 58);
-}
 function geoStatue() {
   const cf = (y, ny, R) => ny > .75 && R() < .35 ? mixc(col(0x56743a), col(0x7d9a4c), R()) : mixc(col(0x7c776e), col(0xbdb6a6), clamp(R() * .4 + y * .08, 0, 1));
   return makeGeo([
@@ -917,14 +864,6 @@ function frond(parts, x0, y0, z0, a, L, w, segs, droop, cfn, lift = .15) {
   }
 }
 // ---------- beach
-function geoPalm() {
-  const R = rng(71), parts = [], bark = (y, ny, Rr) => mixc(col(0x6b5236), col(0x9a7a52), Rr());
-  let x = 0, y = 0;
-  for (let k = 0; k < 8; k++) { const h = .58, bend = k * .065; parts.push({ g: new THREE.CylinderGeometry(.13 - k * .008, .16 - k * .008, h + .06, 7), m: mat4(x + Math.sin(bend) * h / 2, y + Math.cos(bend) * h / 2, 0, 1, 1, 1, 0, 0, -bend), cfn: bark, j: .1 }); x += Math.sin(bend) * h; y += Math.cos(bend) * h; }
-  for (let k = 0; k < 9; k++) frond(parts, x, y, 0, k / 9 * 6.283 + R() * .3, 2.0 + R() * .5, .42, 4, 1.4, LEAF_C, .35);
-  for (let k = 0; k < 3; k++) parts.push({ g: new THREE.IcosahedronGeometry(.11, 0), m: mat4(x + Math.cos(k * 2.1) * .15, y - .12, Math.sin(k * 2.1) * .15, 1, 1, 1), c: col(0x5a3e1e) });
-  return makeGeo(parts, 71);
-}
 function geoRowboat() {
   const parts = [];
   parts.push({ g: new THREE.CylinderGeometry(.62, .62, 2.6, 12, 1, false, Math.PI, Math.PI), m: mat4(0, .42, 0, .55, 1, 1, 0, 0, Math.PI / 2), cfn: WOOD_C, j: .08 });
@@ -975,21 +914,6 @@ function geoObelisk() {
     { g: new THREE.BoxGeometry(.12, 2.8, .02), m: mat4(0, 2.3, .29, 1, 1, 1, 0, -.02), c: col(0x6a4e2a), j: .05 },
   ], 77);
 }
-function geoCactus() {
-  const g = (y, ny, R) => mixc(col(0x3f7a3a), col(0x6aa058), R());
-  const parts = [{ g: new THREE.CylinderGeometry(.22, .25, 2.6, 10), m: mat4(0, 1.3, 0, 1, 1, 1), cfn: g, j: .08 }, { g: new THREE.SphereGeometry(.22, 10, 5, 0, Math.PI * 2, 0, Math.PI / 2), m: mat4(0, 2.6, 0, 1, 1, 1), cfn: g }];
-  for (const [sx, y0, h] of [[1, 1.0, .9], [-1, 1.35, .7]]) {
-    parts.push({ g: new THREE.CylinderGeometry(.13, .13, .5, 8), m: mat4(sx * .38, y0, 0, 1, 1, 1, 0, 0, Math.PI / 2), cfn: g });
-    parts.push({ g: new THREE.CylinderGeometry(.14, .14, h, 8), m: mat4(sx * .6, y0 + h / 2 - .05, 0, 1, 1, 1), cfn: g });
-    parts.push({ g: new THREE.SphereGeometry(.14, 8, 4, 0, Math.PI * 2, 0, Math.PI / 2), m: mat4(sx * .6, y0 + h - .05, 0, 1, 1, 1), cfn: g });
-  }
-  return makeGeo(parts, 78);
-}
-function geoBarrelCactus() {
-  const R = rng(79), parts = [];
-  for (let k = 0; k < 3; k++) { const x = (R() - .5) * .6, z = (R() - .5) * .6, r = .18 + R() * .14; parts.push({ g: new THREE.SphereGeometry(r, 10, 6), m: mat4(x, r * .8, z, 1, 1.1, 1), cfn: (y, ny, Rr) => mixc(col(0x4f8a44), col(0x7aaa5a), Rr()), j: .1 }); parts.push({ g: new THREE.IcosahedronGeometry(.05, 0), m: mat4(x, r * 1.85, z, 1, .6, 1), c: R() < .5 ? col(0xf06aa0) : col(0xf6d040) }); }
-  return makeGeo(parts, 79);
-}
 function geoBones() {
   const parts = [{ g: displace(new THREE.IcosahedronGeometry(.18, 1), .1, 3), m: mat4(.3, .14, .1, 1.2, .9, 1, .4), cfn: BONE_C }];
   parts.push({ g: new THREE.BoxGeometry(.08, .04, .05), m: mat4(.43, .14, .2, 1, 1, 1, .4), c: col(0x1a1612) });
@@ -999,11 +923,6 @@ function geoBones() {
   return makeGeo(parts, 80);
 }
 // ---------- volcano
-function geoLavaRock() {
-  const R = rng(81), parts = [{ g: displace(new THREE.IcosahedronGeometry(.8, 1), .35, 4), m: mat4(0, .35, 0, 1.1, .62, .95, .3), cfn: (y, ny, Rr) => mixc(col(0x17120f), col(0x332822), Rr()), j: .1 }];
-  for (let k = 0; k < 4; k++) parts.push({ g: new THREE.BoxGeometry(.7 + R() * .5, .03, .05), m: mat4((R() - .5) * .6, .72 + R() * .05, (R() - .5) * .6, 1, 1, 1, R() * 3, 0, (R() - .5) * .3), c: col(0xff7a1a), glow: 2.2 });
-  return makeGeo(parts, 81);
-}
 function geoFumarole() {
   return makeGeo([
     { g: displace(new THREE.ConeGeometry(1.0, .9, 9, 2, true), .15, 3), m: mat4(0, .45, 0, 1, 1, 1), cfn: (y, ny, Rr) => mixc(col(0x2a201b), col(0x4a3a30), Rr()), j: .1 },
@@ -1017,11 +936,6 @@ function geoObsidian() {
   return makeGeo(parts, 83);
 }
 // ---------- snow
-function geoIceBlock() {
-  const R = rng(84), parts = [];
-  for (let k = 0; k < 3; k++) parts.push({ g: displace(new THREE.BoxGeometry(.9 + R() * .5, .7 + R() * .6, .8 + R() * .4), .12, k), m: mat4((R() - .5) * .9, .35 + R() * .2, (R() - .5) * .7, 1, 1, 1, R() * 3, (R() - .5) * .3, (R() - .5) * .3), cfn: ICE_C, j: .08, glow: .18 });
-  return makeGeo(parts, 84);
-}
 function geoIceSpike() {
   const R = rng(85), parts = [];
   for (let k = 0; k < 5; k++) { const a = k * 1.25 + R(), h = 1 + R() * 1.6; parts.push({ g: new THREE.OctahedronGeometry(1, 0), m: mat4(Math.cos(a) * .25, h * .45, Math.sin(a) * .25, .15 + R() * .1, h * .55, .15 + R() * .1, a, Math.cos(a) * .25, Math.sin(a) * .25), cfn: ICE_C, j: .1, glow: .25 }); }
@@ -1048,29 +962,6 @@ function geoKamakura() {
   ], 87);
 }
 // ---------- castle
-function geoCastleWall() {
-  const parts = [{ g: displace(new THREE.BoxGeometry(3, 2.8, 1, 3, 3, 1), .02, 1), m: mat4(0, 1.4, 0, 1, 1, 1), cfn: CASTLE_C, j: .08 }];
-  for (let k = 0; k < 5; k++) parts.push({ g: new THREE.BoxGeometry(.38, .45, 1.05), m: mat4(-1.31 + k * .655, 3.02, 0, 1, 1, 1), cfn: CASTLE_C });
-  parts.push({ g: new THREE.BoxGeometry(3.05, .15, 1.15), m: mat4(0, 2.78, 0, 1, 1, 1), cfn: CASTLE_C });
-  parts.push({ g: displace(new THREE.IcosahedronGeometry(.3, 0), .4, 2), m: mat4(.8, .1, .55, 1.4, .4, 1, .3), c: col(0x4e6a34), j: .1 });
-  return makeGeo(parts, 88);
-}
-function geoTower() {
-  const parts = [{ g: displace(new THREE.CylinderGeometry(1.1, 1.25, 5, 12, 4), .02, 3), m: mat4(0, 2.5, 0, 1, 1, 1), cfn: CASTLE_C, j: .06 }];
-  parts.push({ g: new THREE.CylinderGeometry(1.3, 1.15, .3, 12), m: mat4(0, 5.15, 0, 1, 1, 1), cfn: CASTLE_C });
-  for (let k = 0; k < 8; k++) { const a = k / 8 * 6.283; parts.push({ g: new THREE.BoxGeometry(.4, .45, .35), m: mat4(Math.cos(a) * 1.18, 5.52, Math.sin(a) * 1.18, 1, 1, 1, -a), cfn: CASTLE_C }); }
-  parts.push({ g: new THREE.ConeGeometry(1.15, 1.9, 12), m: mat4(0, 6.5, 0, 1, 1, 1), c: col(0x3a4458), j: .08 });
-  for (const [y, a] of [[2.2, .6], [3.6, 2.4], [3.0, 4.2]]) parts.push({ g: new THREE.BoxGeometry(.12, .5, .1), m: mat4(Math.cos(a) * 1.16, y, Math.sin(a) * 1.16, 1, 1, 1, -a + Math.PI / 2), c: col(0x14120f) });
-  return makeGeo(parts, 89);
-}
-function geoGatehouse() {
-  const parts = [], iron = (y, ny, R) => mixc(col(0x23252a), col(0x3e4148), R());
-  for (const sx of [-1.6, 1.6]) { parts.push({ g: displace(new THREE.BoxGeometry(1.2, 4.2, 1.4, 1, 3, 1), .02, sx), m: mat4(sx, 2.1, 0, 1, 1, 1), cfn: CASTLE_C, j: .07 }); for (let k = 0; k < 2; k++) parts.push({ g: new THREE.BoxGeometry(.4, .45, 1.45), m: mat4(sx - .3 + k * .6, 4.42, 0, 1, 1, 1), cfn: CASTLE_C }); }
-  parts.push({ g: new THREE.BoxGeometry(2.1, 1.1, 1.2), m: mat4(0, 3.6, 0, 1, 1, 1), cfn: CASTLE_C });
-  for (let k = 0; k < 7; k++) parts.push({ g: new THREE.BoxGeometry(.05, .75, .05), m: mat4(-.84 + k * .28, 2.68, .3, 1, 1, 1), cfn: iron });
-  parts.push({ g: new THREE.BoxGeometry(1.9, .05, .05), m: mat4(0, 2.6, .3, 1, 1, 1), cfn: iron });
-  return makeGeo(parts, 90);
-}
 function geoBanner() {
   return makeGeo([
     { g: new THREE.CylinderGeometry(.04, .05, 3.6, 6), m: mat4(0, 1.8, 0, 1, 1, 1), cfn: WOOD_C },
@@ -1110,18 +1001,6 @@ function geoBonePile() {
   return makeGeo(parts, 95);
 }
 // ---------- jungle / grassland
-function geoFern() {
-  const R = rng(96), parts = [];
-  for (let k = 0; k < 10; k++) frond(parts, 0, .05, 0, k / 10 * 6.283 + R() * .3, .9 + R() * .4, .22, 4, 1.6, LEAF_C, .9);
-  return makeGeo(parts, 96);
-}
-function geoBanana() {
-  const R = rng(97), parts = [], st = (y, ny, Rr) => mixc(col(0x5a6a2c), col(0x8a9a4a), Rr());
-  parts.push({ g: new THREE.CylinderGeometry(.16, .22, 2.4, 8), m: mat4(0, 1.2, 0, 1, 1, 1), cfn: st });
-  for (let k = 0; k < 7; k++) frond(parts, 0, 2.3, 0, k / 7 * 6.283 + R() * .4, 1.6 + R() * .4, .55, 3, 1.1, LEAF_C, .7);
-  for (let k = 0; k < 5; k++) parts.push({ g: new THREE.CylinderGeometry(.03, .04, .22, 5), m: mat4(.18 + Math.cos(k) * .06, 1.9 - k * .05, Math.sin(k) * .06, 1, 1, 1, 0, .3, -.5), c: col(0xd8c040) });
-  return makeGeo(parts, 97);
-}
 function geoWoodFence() {
   const parts = [];
   for (let k = 0; k < 3; k++) parts.push({ g: new THREE.BoxGeometry(.12, 1.0, .12), m: mat4(-.9 + k * .9, .5, 0, 1, 1, 1, (k - 1) * .05), cfn: WOOD_C });
@@ -1132,12 +1011,348 @@ function geoHaystack() {
   const hay = (y, ny, R) => mixc(col(0xb08a3a), col(0xe0c470), R());
   return makeGeo([{ g: displace(new THREE.CylinderGeometry(.75, .8, .9, 12, 2), .06, 3), m: mat4(0, .45, 0, 1, 1, 1), cfn: hay }, { g: displace(new THREE.ConeGeometry(.82, .8, 12, 2), .06, 5), m: mat4(0, 1.3, 0, 1, 1, 1), cfn: hay }], 99);
 }
-function geoBush() {
+// ---------- remodelled plants, rocks and walls (r10): leaf blades, chiselled stone, block walls
+function geoPine() {
   const parts = [];
-  const cf = (y, ny, R) => R() < .012 ? (R() < .7 ? col(0xc9aa36) : col(0xb8b29e)) : mixc(col(0x2a5c24), col(0x4f8a2e), R());
-  [[0, .45, 0, .65], [.5, .35, .2, .5], [-.45, .32, -.15, .48], [.1, .3, -.5, .42]]
-    .forEach(([x, y, z, r], k) => parts.push({ g: displace(new THREE.IcosahedronGeometry(1, 1), .3, k * 5.3), m: mat4(x, y, z, r, r * .8, r), cfn: cf, j: .15 }));
-  return makeGeo(parts, 14);
+  limb(parts, [0, -.1, 0], [0, 2.2, 0], .22, .1, 6, (y, ny, R) => mixc(col(0x3e2a1a), col(0x5c4129), R()));
+  const rs = [1.55, 1.36, 1.15, .94, .72, .5, .3];
+  const top = (y, ny, R, pr) => ny > .55 ? mixc(col(0x4f8f4f), col(0x7fb366), R() * .7 + y * .03) : ny > .2 ? mixc(col(0x2c6a3c), col(0x3f7f47), R()) : mixc(col(0x173a25), col(0x214a2d), R());
+  rs.forEach((r, k) => parts.push({ g: tierGeo(r, 1.35, 9 + (k % 2), k * 1.7), m: mat4(0, 1.45 + k * .66, 0, 1, 1, 1, k * .9), cfn: top, j: .1, sn: [0, 1.2 + k * .66, 0], snw: .55 }));
+  return makeGeo(parts, 11, { ao: 1.6 });
+}
+function geoOak() {
+  // trunk with root flare and branches into a canopy of clumps; leaf blades break up the outline
+  const R = rng(112), parts = [], C = [.05, 3.75, 0];
+  const bark = (y, ny, Rr) => mixc(col(0x4a3220), col(0x705236), Rr());
+  const leaf = (y, ny, Rr, pr) => mixc(mixc(col(0x24561f), col(0x3d7f2a), pr), mixc(col(0x6fa53c), col(0x9cc552), pr), clamp((y - 2.6) / 2.6 + (Rr() - .5) * .1, 0, 1));
+  limb(parts, [0, -.1, 0], [.05, 2.9, 0], .34, .19, 7, bark, { j: .08 });
+  for (let k = 0; k < 4; k++) { const a = k * 1.57 + .4; limb(parts, [Math.cos(a) * .12, .45, Math.sin(a) * .12], [Math.cos(a) * .62, -.05, Math.sin(a) * .62], .14, .05, 5, bark); }
+  const clumps = [[0, 3.85, 0, 1.45, 1], [1.1, 3.35, .5, 1.05], [-1.05, 3.45, -.45, 1.1], [.35, 4.55, -.5, 1.0], [-.45, 4.3, .9, .95], [.95, 3.0, -.9, .85], [-.9, 3.0, .75, .85]];
+  clumps.slice(1, 6).forEach(([x, y, z]) => limb(parts, [.04, 2.4, 0], [x * .7, y - .35, z * .7], .12, .05, 5, bark));
+  clumps.forEach(([x, y, z, r, big], k) => parts.push({ g: displace(new THREE.IcosahedronGeometry(1, big ? 1 : 0), .22, k * 3.1), m: mat4(x, y, z, r, r * .82, r, k), cfn: leaf, j: .05, sn: C, snw: .9 }));
+  for (let k = 0; k < 34; k++) {
+    const [x, y, z, r] = clumps[k % clumps.length], th = R() * 6.283, ph = .2 + R() * 1.6, d = [Math.cos(th) * Math.sin(ph), Math.cos(ph) * .82, Math.sin(th) * Math.sin(ph)];
+    const p = [x + d[0] * r * .86, y + d[1] * r * .86, z + d[2] * r * .86], out = [d[0], d[1] * .4 - .25, d[2]];
+    parts.push({ g: leafGeo(.55, .34, .25, .08), m: basisAt(p, out, [d[0] * .5, 1, d[2] * .5], .85 + R() * .4), cfn: leaf, j: .12, sn: C, snw: .7 });
+  }
+  return makeGeo(parts, 12, { ao: 1.4 });
+}
+function geoBush() {
+  const R = rng(14), parts = [], C = [0, .3, 0];
+  const leaf = (y, ny, Rr, pr) => mixc(col(0x2c5e22), col(0x6aa63c), clamp(y * 1.2 + (Rr() - .5) * .4, 0, 1));
+  [[0, .42, 0, .62], [.45, .3, .25, .45], [-.42, .3, -.18, .46]].forEach(([x, y, z, r], k) => parts.push({ g: displace(new THREE.IcosahedronGeometry(1, 0), .25, k * 5.3), m: mat4(x, y, z, r, r * .8, r, k), cfn: leaf, j: .1, sn: C, snw: .85 }));
+  for (let k = 0; k < 26; k++) {
+    const th = R() * 6.283, ph = .25 + R() * 1.35, d = [Math.cos(th) * Math.sin(ph), Math.cos(ph), Math.sin(th) * Math.sin(ph)];
+    const p = [d[0] * .6, .32 + d[1] * .42, d[2] * .55];
+    parts.push({ g: leafGeo(.34, .22, .25, .05), m: basisAt(p, [d[0], d[1] * .3 - .1, d[2]], [0, 1, 0], .8 + R() * .5), cfn: leaf, j: .12, sn: C, snw: .7 });
+  }
+  for (let k = 0; k < 4; k++) { const th = k * 1.7 + R(), p = [Math.cos(th) * .48, .55 + R() * .25, Math.sin(th) * .44]; parts.push({ g: new THREE.OctahedronGeometry(.045, 0), m: mat4(...p, 1, .8, 1), c: R() < .5 ? col(0xf4f0e0) : col(0xd04040), j: .05 }); }
+  return makeGeo(parts, 14, { ao: .55 });
+}
+function geoFlowers() {
+  // a rosette of leaves and stems with five-petal heads
+  const R = rng(46), parts = [], cols = [0xf2d23c, 0xf6f2e6, 0xe887b8, 0xa58ae0, 0xf08a4b].map(col);
+  const leafC = (y, ny, Rr) => mixc(col(0x356b24), col(0x62983a), Rr());
+  for (let k = 0; k < 6; k++) { const a = k * 1.05 + R() * .4; parts.push({ g: leafGeo(.26, .11, .3, .03), m: basisAt([0, .02, 0], [Math.cos(a), .35, Math.sin(a)], [0, 1, 0], .8 + R() * .4), cfn: leafC, sn: [0, -.2, 0], snw: .5 }); }
+  const c0 = cols[(R() * cols.length) | 0], c1 = cols[(R() * cols.length) | 0];
+  for (let k = 0; k < 7; k++) {
+    const a = R() * 6.283, d = .08 + R() * .26, x = Math.cos(a) * d, z = Math.sin(a) * d, h = .2 + R() * .24, hc = R() < .6 ? c0 : c1;
+    limb(parts, [x * .3, 0, z * .3], [x, h, z], .012, .009, 3, () => col(0x4f7a2a));
+    const tilt = [x * .8, 1, z * .8], s = .085 + R() * .03;
+    for (let q = 0; q < 5; q++) {
+      const pa = q * 1.2566 + a, dir = [Math.cos(pa), 0, Math.sin(pa)];
+      // petals spread out from the head, tilted up a little toward the head's facing
+      parts.push({ g: petalGeo(s, s * .62, .55), m: basisAt([x, h, z], [dir[0] + tilt[0] * .3, .35, dir[2] + tilt[2] * .3], tilt), c: hc, j: .06, sn: [x, h - .3, z], snw: .5 });
+    }
+    parts.push({ g: new THREE.OctahedronGeometry(.026, 0), m: mat4(x, h + .012, z, 1, .6, 1), c: hc === cols[0] ? col(0xb06a20) : col(0xf2c440), j: .05 });
+  }
+  return makeGeo(parts, 46);
+}
+function geoFern() {
+  // fronds with pairs of leaflets that shrink toward the curled tip
+  const R = rng(96), parts = [], C = [0, .15, 0];
+  const leaf = (y, ny, Rr, pr) => mixc(col(0x23601f), col(0x58993a), clamp(pr * .5 + y * .7, 0, 1));
+  for (let f = 0; f < 9; f++) {
+    const a = f / 9 * 6.283 + R() * .3, L = .95 + R() * .35, segs = 6, len = L / segs;
+    let x = 0, y = .04, z = 0;
+    for (let s = 0; s < segs; s++) {
+      const t = (s + .5) / segs, ang = 1.15 - 2.0 * t * t, dir = [Math.cos(a) * Math.cos(ang), Math.sin(ang), Math.sin(a) * Math.cos(ang)];
+      x += dir[0] * len; y += dir[1] * len; z += dir[2] * len;
+      const side = [-Math.sin(a), 0, Math.cos(a)], ll = .36 * (1 - t * .7) * (L / 1.1);
+      for (const sd of [-1, 1]) {
+        const d = [side[0] * sd + dir[0] * .55, side[1] * sd + dir[1] * .55 + .08, side[2] * sd + dir[2] * .55];
+        parts.push({ g: petalGeo(ll, ll * .5, .3), m: basisAt([x, y, z], d, [0, 1, 0]), cfn: leaf, j: .1, sn: C, snw: .6 });
+      }
+    }
+    parts.push({ g: petalGeo(.12, .05), m: basisAt([x, y, z], [Math.cos(a), -.6, Math.sin(a)]), cfn: leaf, sn: C, snw: .6 });
+  }
+  return makeGeo(parts, 96);
+}
+function geoReed() {
+  const R = rng(42), parts = [];
+  const blade = (y, ny, Rr) => mixc(col(0x4a7426), col(0x8aa848), clamp(y * .5 + (Rr() - .5) * .3, 0, 1));
+  for (let k = 0; k < 9; k++) {
+    const a = R() * 6.283, h = .9 + R() * .7;
+    parts.push({ g: stripLeafGeo(h, .07, 3, 1.35 - R() * .15, .7 + R() * .5, 0, .4), m: basisAt([Math.cos(a) * R() * .2, 0, Math.sin(a) * R() * .2], [Math.cos(a), 0, Math.sin(a)], [0, 1, 0]), cfn: blade, j: .1, sn: [0, -.3, 0], snw: .4 });
+  }
+  for (let k = 0; k < 5; k++) {
+    const a = R() * 6.283, r = R() * .28, x = Math.cos(a) * r, z = Math.sin(a) * r, h = 1.15 + R() * .55, lx = x + (R() - .5) * .15, lz = z + (R() - .5) * .15;
+    limb(parts, [x, 0, z], [lx, h, lz], .014, .01, 3, () => col(0x6a8a34));
+    parts.push({ g: new THREE.CylinderGeometry(.04, .045, .22, 6), m: mat4(lx, h - .12, lz, 1, 1, 1), c: col(0x5a3a1e), j: .1 });
+    limb(parts, [lx, h - .01, lz], [lx, h + .12, lz], .008, .004, 3, () => col(0x8a7a50));
+  }
+  return makeGeo(parts, 42, { ao: .5 });
+}
+function geoPalm() {
+  const R = rng(71), parts = [];
+  const bark = (y, ny, Rr) => mixc(col(0x6b5236), col(0x9a7a52), (Math.floor(y / .29) % 2 ? .65 : .2) + Rr() * .3);
+  const leaf = (y, ny, Rr, pr) => mixc(col(0x2e7a2e), col(0x7ab848), clamp(pr * .5 + Rr() * .4, 0, 1));
+  let x = 0, y = 0;
+  for (let k = 0; k < 8; k++) { const h = .58, bend = k * .065; limb(parts, [x, y - .04, 0], [x + Math.sin(bend) * (h + .04), y + Math.cos(bend) * (h + .04), 0], .16 - k * .008, .13 - k * .008, 7, bark, { j: .06 }); x += Math.sin(bend) * h; y += Math.cos(bend) * h; }
+  const C = [x, y - .4, 0];
+  for (let f = 0; f < 9; f++) {
+    const a = f / 9 * 6.283 + R() * .3, L = 2.0 + R() * .5, segs = 7, len = L / segs;
+    let px = x, py = y, pz = 0;
+    for (let s = 0; s < segs; s++) {
+      const t = (s + .5) / segs, ang = .35 - 1.4 * t * t, dir = [Math.cos(a) * Math.cos(ang), Math.sin(ang), Math.sin(a) * Math.cos(ang)];
+      px += dir[0] * len; py += dir[1] * len; pz += dir[2] * len;
+      const side = [-Math.sin(a), 0, Math.cos(a)], ll = .62 * Math.sin(Math.PI * (.15 + t * .8));
+      for (const sd of [-1, 1]) parts.push({ g: petalGeo(ll, .17, .3), m: basisAt([px, py, pz], [side[0] * sd + dir[0] * .7, -.45, side[2] * sd + dir[2] * .7], [0, 1, 0]), cfn: leaf, j: .1, sn: C, snw: .55 });
+    }
+  }
+  for (let k = 0; k < 3; k++) parts.push({ g: new THREE.IcosahedronGeometry(.11, 0), m: mat4(x + Math.cos(k * 2.1) * .15, y - .12, Math.sin(k * 2.1) * .15, 1, 1, 1), c: col(0x5a3e1e) });
+  return makeGeo(parts, 71, { ao: 1.2 });
+}
+function geoBanana() {
+  const R = rng(97), parts = [], st = (y, ny, Rr) => mixc(col(0x5a6a2c), col(0x8a9a4a), Rr());
+  const leaf = (y, ny, Rr, pr) => mixc(col(0x3a8a2c), col(0x86c050), clamp(pr * .6 + Rr() * .25, 0, 1));
+  limb(parts, [0, -.05, 0], [0, 2.35, 0], .22, .15, 8, st);
+  for (let k = 0; k < 7; k++) {
+    const a = k / 7 * 6.283 + R() * .4;
+    parts.push({ g: stripLeafGeo(1.7 + R() * .4, .62, 4, .55, 1.35 + R() * .4, .14, .6), m: basisAt([0, 2.2 + R() * .2, 0], [Math.cos(a), 0, Math.sin(a)], [0, 1, 0]), cfn: leaf, j: .08, sn: [0, 1.6, 0], snw: .55 });
+  }
+  for (let k = 0; k < 6; k++) parts.push({ g: new THREE.CylinderGeometry(.03, .04, .22, 5, 1, true), m: mat4(.2 + Math.cos(k) * .06, 1.9 - k * .05, Math.sin(k) * .06, 1, 1, 1, 0, .3, -.5), c: col(0xd8c040) });
+  parts.push({ g: new THREE.ConeGeometry(.07, .2, 6), m: mat4(.24, 1.55, 0, 1, 1, 1, 0, 0, Math.PI), c: col(0x7a2a4a) });
+  return makeGeo(parts, 97, { ao: 1 });
+}
+function geoCactus() {
+  const g = (y, ny, R) => mixc(col(0x4a8a42), col(0x7cb864), clamp(R() * .6 + (ny > .5 ? .3 : 0), 0, 1));
+  const parts = [{ g: ribbed(new THREE.CylinderGeometry(.22, .25, 2.6, 12, 2, true), 12, .8), m: mat4(0, 1.3, 0, 1, 1, 1), cfn: g, j: .06 },
+    { g: ribbed(new THREE.SphereGeometry(.22, 12, 3, 0, Math.PI * 2, 0, Math.PI / 2), 12, .8), m: mat4(0, 2.6, 0, 1, 1, 1), cfn: g }];
+  for (const [sx, y0, h] of [[1, 1.0, .9], [-1, 1.35, .7]]) {
+    parts.push({ g: ribbed(new THREE.CylinderGeometry(.13, .13, .5, 8, 1, true), 8, .82), m: mat4(sx * .38, y0, 0, 1, 1, 1, 0, 0, Math.PI / 2), cfn: g });
+    parts.push({ g: new THREE.IcosahedronGeometry(.14, 0), m: mat4(sx * .6, y0, 0, 1, 1, 1), cfn: g });
+    parts.push({ g: ribbed(new THREE.CylinderGeometry(.14, .14, h, 8, 1, true), 8, .82), m: mat4(sx * .6, y0 + h / 2 - .05, 0, 1, 1, 1), cfn: g });
+    parts.push({ g: ribbed(new THREE.SphereGeometry(.14, 8, 2, 0, Math.PI * 2, 0, Math.PI / 2), 8, .82), m: mat4(sx * .6, y0 + h - .05, 0, 1, 1, 1), cfn: g });
+  }
+  for (let q = 0; q < 5; q++) { const a = q * 1.2566; parts.push({ g: petalGeo(.1, .07, .55), m: basisAt([.05, 2.8, .05], [Math.cos(a), .5, Math.sin(a)]), c: col(0xf0709a), j: .05 }); }
+  return makeGeo(parts, 78, { ao: .8 });
+}
+function geoBarrelCactus() {
+  const R = rng(79), parts = [];
+  for (let k = 0; k < 3; k++) {
+    const x = (R() - .5) * .6, z = (R() - .5) * .6, r = .18 + R() * .14, fc = R() < .5 ? col(0xf06aa0) : col(0xf6d040);
+    parts.push({ g: ribbed(new THREE.SphereGeometry(r, 12, 5), 12, .84), m: mat4(x, r * .8, z, 1, 1.1, 1), cfn: (y, ny, Rr) => mixc(col(0x467f3c), col(0x7aaa5a), clamp(Rr() * .6 + (ny > .4 ? .35 : 0), 0, 1)), j: .08 });
+    for (let q = 0; q < 5; q++) { const a = q * 1.2566 + k; parts.push({ g: petalGeo(.07, .05, .55), m: basisAt([x, r * 1.84, z], [Math.cos(a), .6, Math.sin(a)]), c: fc, j: .05 }); }
+  }
+  return makeGeo(parts, 79, { ao: .3 });
+}
+function geoMushroom() {
+  const R = rng(47), parts = [];
+  for (let k = 0; k < 4; k++) {
+    const x = (R() - .5) * .45, z = (R() - .5) * .45, h = .1 + R() * .14, r = .06 + R() * .07, red = R() < .5;
+    parts.push({ g: new THREE.CylinderGeometry(r * .3, r * .4, h, 5, 1, true), m: mat4(x, h / 2, z, 1, 1, 1), c: col(0xe8ddc8) });
+    parts.push({ g: new THREE.SphereGeometry(r, 7, 3, 0, Math.PI * 2, 0, Math.PI / 2), m: mat4(x, h - .01, z, 1, .8, 1), c: red ? col(0xc8402e) : col(0x9a6a3e), j: .08 });
+    parts.push({ g: new THREE.CircleGeometry(r * .97, 7), m: mat4(x, h - .012, z, 1, 1, 1, 0, Math.PI / 2), c: col(0xd9c9a8), j: .05 });   // gills, seen from below
+    if (red) for (let s = 0; s < 3; s++) { const a = s * 2.1 + R(), e = .55 + R() * .2; parts.push({ g: new THREE.OctahedronGeometry(r * .16, 0), m: mat4(x + Math.cos(a) * r * e, h - .01 + r * .8 * Math.sqrt(1 - e * e) + .004, z + Math.sin(a) * r * e, 1, .4, 1), c: col(0xf6f0e4), j: .03 }); }
+  }
+  return makeGeo(parts, 47);
+}
+function geoDeadTree() {
+  const R = rng(45), bark = (y, ny, Rr) => mixc(col(0x4a4038), col(0x7a6e62), Rr());
+  const parts = [{ g: displace(new THREE.CylinderGeometry(.1, .3, 3.4, 7, 3), .12, 1.9), m: mat4(0, 1.7, 0, 1, 1, 1, 0, .05, .04), cfn: bark, j: .1 }];
+  [[1.5, .9, .7, 1.1], [2.1, -.8, 2.2, .9], [2.6, .7, 3.9, .8], [3.0, -.6, 5.1, .6], [1.1, .8, 4.5, .7]].forEach(([y, tilt, ry, L]) => {
+    const d = [Math.sin(ry) * Math.sin(Math.abs(tilt)), Math.cos(tilt), Math.cos(ry) * Math.sin(Math.abs(tilt))], a = [0, y, 0], b = [d[0] * L, y + d[1] * L * .8, d[2] * L];
+    limb(parts, a, b, .08, .03, 5, bark);
+    limb(parts, [lerp(a[0], b[0], .6), lerp(a[1], b[1], .6), lerp(a[2], b[2], .6)], [b[0] * 1.15 + (R() - .5) * .4, b[1] + .1, b[2] * 1.15 + (R() - .5) * .4], .03, .01, 4, bark);
+  });
+  for (let k = 0; k < 3; k++) { const a = k * 2.1 + .3; limb(parts, [Math.cos(a) * .1, .35, Math.sin(a) * .1], [Math.cos(a) * .55, -.05, Math.sin(a) * .55], .1, .03, 5, bark); }
+  return makeGeo(parts, 45, { ao: .8 });
+}
+function geoLog() {
+  const bark = (y, ny, R) => mixc(col(0x3e2a19), col(0x6a4a2e), R());
+  return makeGeo([
+    { g: displace(ribbed(new THREE.CylinderGeometry(.3, .34, 3.2, 12, 3), 12, .93), .06, 3.3), m: mat4(0, .3, 0, 1, 1, 1, 0, 0, Math.PI / 2), cfn: bark, j: .1 },
+    { g: new THREE.CylinderGeometry(.25, .25, .03, 9), m: mat4(1.61, .3, 0, 1, 1, 1, 0, 0, Math.PI / 2), c: col(0xc9a274), j: .05 },
+    { g: new THREE.CylinderGeometry(.12, .12, .04, 7), m: mat4(1.615, .3, 0, 1, 1, 1, 0, 0, Math.PI / 2), c: col(0xa07a50), j: .05 },
+    { g: new THREE.CylinderGeometry(.28, .28, .03, 9), m: mat4(-1.61, .3, 0, 1, 1, 1, 0, 0, Math.PI / 2), c: col(0xc9a274), j: .05 },
+    { g: new THREE.CylinderGeometry(.13, .13, .04, 7), m: mat4(-1.615, .3, 0, 1, 1, 1, 0, 0, Math.PI / 2), c: col(0xa07a50), j: .05 },
+    { g: new THREE.CylinderGeometry(.04, .07, .7, 5), m: mat4(.5, .55, .15, 1, 1, 1, 0, .6, .3), cfn: bark, j: .1 },
+    { g: displace(new THREE.IcosahedronGeometry(.28, 0), .3, 1.1), m: mat4(-.6, .55, 0, 1.4, .35, 1, 0), c: col(0x4f7a2a), j: .15 },
+    { g: displace(new THREE.IcosahedronGeometry(.22, 0), .3, 2.7), m: mat4(.2, .58, -.05, 1.6, .3, .9, .4), c: col(0x5f8a32), j: .15 },
+  ], 43, { ao: .5 });
+}
+function geoStump() {
+  const bark = (y, ny, R) => ny > .8 ? mixc(col(0xb88c5c), col(0xd9b384), R()) : mixc(col(0x3e2a19), col(0x6a4a2e), R());
+  const parts = [{ g: displace(ribbed(new THREE.CylinderGeometry(.36, .46, .62, 12, 2), 12, .92), .06, 7.7), m: mat4(0, .31, 0, 1, 1, 1), cfn: bark, j: .08 }];
+  parts.push({ g: new THREE.CircleGeometry(.2, 8), m: mat4(0, .625, 0, 1, 1, 1, 0, -Math.PI / 2), c: col(0xa27a4e), j: .05 });
+  parts.push({ g: new THREE.CircleGeometry(.07, 6), m: mat4(0, .628, 0, 1, 1, 1, 0, -Math.PI / 2), c: col(0x7a5636), j: .05 });
+  for (let k = 0; k < 4; k++) { const a = k * 1.6 + .4; parts.push({ g: new THREE.CylinderGeometry(.05, .14, .7, 5), m: mat4(Math.cos(a) * .42, .08, Math.sin(a) * .42, 1, 1, 1, -a, 0, Math.PI / 2 - .25), cfn: bark, j: .1 }); }
+  parts.push({ g: displace(new THREE.IcosahedronGeometry(.12, 0), .3, 2.9), m: mat4(.25, .66, .1, 1, .5, 1), c: col(0x5f8a32), j: .1 });
+  for (let k = 0; k < 2; k++) { parts.push({ g: new THREE.CylinderGeometry(.012, .016, .08, 4, 1, true), m: mat4(-.42 + k * .06, .04, .25, 1, 1, 1), c: col(0xe8ddc8) }); parts.push({ g: new THREE.SphereGeometry(.04 - k * .01, 6, 2, 0, Math.PI * 2, 0, Math.PI / 2), m: mat4(-.42 + k * .06, .075, .25, 1, .7, 1), c: col(0xb0763e) }); }
+  return makeGeo(parts, 44, { ao: .35 });
+}
+// ---------- rock and stone
+function geoRock() {
+  const parts = [];
+  const cf = (y, ny, R, pr) => ny > .78 && R() < .3 ? mixc(col(0x5d7a33), col(0x78924a), R())
+    : mixc(col(0x56514a), col(0xa59c8e), clamp(.3 + y * .3 + (Math.floor(y * 4.2 + pr * 3) % 2 ? .1 : -.06) + (R() - .5) * .25 + (ny > .5 ? .12 : 0), 0, 1));
+  parts.push({ g: chisel(displace(new THREE.IcosahedronGeometry(1, 1), .18, 1.7), 9, 13, .6, .2), m: mat4(0, .4, 0, 1.05, .62, .85, .3), cfn: cf, j: .08 });
+  parts.push({ g: chisel(new THREE.IcosahedronGeometry(1, 0), 4, 14, .6), m: mat4(.95, .2, .45, .55, .45, .5, 1.1), cfn: cf, j: .08 });
+  parts.push({ g: chisel(new THREE.IcosahedronGeometry(1, 0), 4, 15, .6), m: mat4(-.8, .15, -.55, .42, .35, .4, 2.3), cfn: cf, j: .08 });
+  return makeGeo(parts, 13, { ao: .45 });
+}
+function geoCliff() {
+  // angular rock columns with horizontal strata; grass and moss on the tops
+  const R = rng(77), parts = [];
+  const cf = (y, ny, Rr, pr) => ny > .7 ? (pr < .3 ? mixc(col(0x5d7a32), col(0x7f9a46), pr * 3) : mixc(col(0xa39a88), col(0xc8bfac), pr))
+    : mixc(col(0x6e665b), col(0xcfc5b0), clamp(.35 + y * .12 + (hash2(Math.floor(y / .44 + .5), 3) - .5) * .4 + (Rr() - .5) * .22 + (ny < -.2 ? -.2 : 0), 0, 1));
+  let x = -1.15, k = 0;
+  while (x < 1.1) {
+    const w = .62 + R() * .5, h = 1.9 + R() * .55, d = .8 + R() * .4;
+    const g = dropBottom(chisel(strata(displace(new THREE.CylinderGeometry(w * .5, w * .62, h, 5, 2), .12, x * 9.1), .16, k), 4, 300 + k++, .78, .5));   // rough five-sided column, 25 triangles
+    g.scale(1, 1, d / w);
+    parts.push({ g, m: mat4(x + w / 2, h / 2 - .1, (R() - .5) * .3, 1, 1, 1, (R() - .5) * .5, (R() - .5) * .08, (R() - .5) * .08), cfn: cf, j: .08 });
+    if (R() < .12) {
+      const h2 = .2 + R() * .25, g2 = chisel(new THREE.IcosahedronGeometry(.5, 0), 3, 400 + k, .7, .3).scale(w * .9, h2 * 1.4, d * .8);
+      parts.push({ g: g2, m: mat4(x + w / 2 + (R() - .5) * .1, h + h2 / 2 - .12, (R() - .5) * .2, 1, 1, 1, (R() - .5) * .4), cfn: cf, j: .1 });
+    }
+    x += w * .92;
+  }
+  return makeGeo(parts, 15, { ao: 1.1 });
+}
+function geoPebble() {
+  const cf = (y, ny, R, pr) => mixc(col(0x6d675e), col(0xb3ab9c), clamp(pr * .7 + (ny > .6 ? .25 : 0) + (R() - .5) * .2, 0, 1));
+  return makeGeo([{ g: chisel(displace(new THREE.IcosahedronGeometry(1, 0), .3, 2.2), 3, 41, .65, .5), m: mat4(0, .1, 0, .3, .17, .24, .4), cfn: cf, j: .08 },
+    { g: chisel(displace(new THREE.IcosahedronGeometry(1, 0), .3, 5.1), 3, 42, .65, .5), m: mat4(.38, .06, .2, .16, .1, .14, 1.3), cfn: cf, j: .08 }], 41);
+}
+function geoStalagmite() {
+  const cf = (y, ny, R) => mixc(col(0x5a5650), col(0xa8a092), clamp(.25 + y * .16 + (Math.floor(y * 3.3) % 2 ? .1 : -.05) + (R() - .5) * .25, 0, 1));
+  const parts = [];
+  [[0, 0, 2.4, .5], [.55, .2, 1.4, .32], [-.4, .35, 1.0, .26], [.15, -.5, .8, .22]].forEach(([x, z, h, r], k) =>
+    parts.push({ g: displace(new THREE.ConeGeometry(r, h, 7, 4), .18, k * 2.3), m: mat4(x, h / 2 - .05, z, 1, 1, 1, k), cfn: cf, j: .08 }));
+  parts.push({ g: chisel(displace(new THREE.CylinderGeometry(.9, 1.05, .25, 9), .2, 9), 3, 51, .8), m: mat4(0, .05, 0, 1, 1, 1), cfn: cf, j: .1 });
+  return makeGeo(parts, 51, { ao: .9 });
+}
+function geoLavaRock() {
+  const R = rng(81), parts = [{ g: chisel(displace(new THREE.IcosahedronGeometry(.8, 1), .25, 4), 7, 81, .62, .2), m: mat4(0, .35, 0, 1.1, .62, .95, .3), cfn: (y, ny, Rr) => mixc(col(0x17120f), col(0x3a2e27), clamp(Rr() * .7 + (ny > .6 ? .3 : 0), 0, 1)), j: .1 }];
+  for (let k = 0; k < 4; k++) parts.push({ g: new THREE.BoxGeometry(.7 + R() * .5, .03, .05), m: mat4((R() - .5) * .6, .72 + R() * .05, (R() - .5) * .6, 1, 1, 1, R() * 3, 0, (R() - .5) * .3), c: col(0xff7a1a), glow: 2.2 });
+  return makeGeo(parts, 81);
+}
+// ---------- walls: stone blocks over a darker mortar core, so the joints read
+const blockC = (lo, hi) => (y, ny, R, pr) => mixc(col(lo), col(hi), clamp(pr * .55 + R() * .2 + (ny > .7 ? .15 : 0) - (ny < -.3 ? .2 : 0), 0, 1));
+function stoneCourses(parts, x0, x1, y0, rows, rowH, depth, R, cfn, opt = {}) {
+  for (let row = 0; row < rows; row++) {
+    let x = x0 - (row % 2) * .3, lo = 1e9, hi = -1e9; const y = y0 + row * rowH + rowH / 2;
+    while (x < x1 - .05) {
+      const w0 = .55 + R() * .35, xa = Math.max(x, x0), xb = Math.min(x + w0, x1), w = xb - xa;
+      if (w > .08 && (!opt.keep || opt.keep(xa + w / 2, y))) {
+        parts.push({ g: displace(new THREE.BoxGeometry(w - .045, rowH - .045, depth + (R() - .5) * .04), .07, xa * 9 + row), m: mat4((xa + xb) / 2, y, (R() - .5) * .03, 1, 1, 1, (R() - .5) * .02), cfn, j: .07 });
+        lo = Math.min(lo, xa); hi = Math.max(hi, xb);
+      }
+      x += w0;
+    }
+    // dark mortar behind each course, only as long as the stones of that course (a broken top shows no core)
+    if (opt.core && hi > lo) parts.push({ g: new THREE.BoxGeometry(hi - lo - .02, rowH - .01, depth * .88), m: mat4((lo + hi) / 2, y, 0, 1, 1, 1), c: col(opt.core), j: .04 });
+  }
+}
+function geoRuinWall() {
+  const R = rng(57), parts = [], cf = blockC(0x837d72, 0xd2cab8), top = (x) => 1.9 - Math.abs(x) * .5;
+  const tops = Array.from({ length: 13 }, () => (R() - .5) * .8);
+  stoneCourses(parts, -1.5, 1.5, 0, 5, .4, .55, R, cf, { core: 0x4c4840, keep: (x, y) => y - .2 < top(x) + tops[Math.round((x + 1.5) * 4)] || y < .4 });
+  for (let k = 0; k < 4; k++) parts.push({ g: chisel(new THREE.IcosahedronGeometry(.2, 0), 3, 570 + k, .6), m: mat4((R() - .5) * 3, .1, .5 + R() * .4, 1, .7, 1, R() * 3), cfn: cf });
+  // moss on the broken top and ivy leaves down the face
+  for (let k = 0; k < 4; k++) { const x = -1 + k * .62 + (R() - .5) * .2; parts.push({ g: displace(new THREE.IcosahedronGeometry(.22, 0), .4, x * 7), m: mat4(x, Math.max(.6, top(x) - .05), 0, 1.3, .4, 1.4), cfn: MOSS, j: .1 }); }
+  for (let k = 0; k < 14; k++) { const x = -.9 + (R() - .5) * .5 + (k % 2) * 1.5, y = 1.5 - k * .09 + (R() - .5) * .2; parts.push({ g: petalGeo(.13, .1), m: basisAt([x + (R() - .5) * .3, Math.max(.1, y), .29], [(R() - .5), -1, .2], [0, 0, 1]), cfn: MOSS, j: .15 }); }
+  return makeGeo(parts, 57, { ao: .6 });
+}
+function geoCastleWall() {
+  const R = rng(88), parts = [], cf = blockC(0x5e5c57, 0xa8a59c);
+  parts.push({ g: new THREE.BoxGeometry(2.96, 2.74, .94), m: mat4(0, 1.37, 0, 1, 1, 1), c: col(0x3e3c38), j: .04 });   // mortar core (shows in the joints)
+  stoneCourses(parts, -1.5, 1.5, 0, 6, .46, 1.0, R, cf);
+  parts.push({ g: new THREE.BoxGeometry(3.05, .15, 1.15), m: mat4(0, 2.83, 0, 1, 1, 1), cfn: cf });
+  for (let k = 0; k < 5; k++) parts.push({ g: displace(new THREE.BoxGeometry(.38, .45, 1.05), .05, k), m: mat4(-1.31 + k * .655, 3.12 - .1, 0, 1, 1, 1), cfn: cf });
+  parts.push({ g: new THREE.BoxGeometry(.1, .55, 1.02), m: mat4(.33, 1.9, 0, 1, 1, 1), c: col(0x14120f) });   // arrow slit
+  parts.push({ g: displace(new THREE.IcosahedronGeometry(.3, 0), .4, 2), m: mat4(.8, .1, .55, 1.4, .4, 1, .3), c: col(0x4e6a34), j: .1 });
+  parts.push({ g: displace(new THREE.IcosahedronGeometry(.25, 0), .4, 5), m: mat4(-.9, .08, -.55, 1.5, .35, 1, .3), c: col(0x4e6a34), j: .1 });
+  return makeGeo(parts, 88, { ao: .7 });
+}
+function geoColumn() {
+  const cf = RUIN_STONE;
+  return makeGeo([
+    { g: new THREE.BoxGeometry(1, .3, 1), m: mat4(0, .15, 0, 1, 1, 1), cfn: cf, j: .06 },
+    { g: new THREE.BoxGeometry(.85, .15, .85), m: mat4(0, .37, 0, 1, 1, 1), cfn: cf, j: .06 },
+    { g: displace(ribbed(new THREE.CylinderGeometry(.34, .38, 2.7, 16, 4, true), 16, .9), .02, 5), m: mat4(0, 1.8, 0, 1, 1, 1), cfn: cf, j: .05 },
+    { g: new THREE.CylinderGeometry(.42, .36, .14, 12), m: mat4(0, 3.1, 0, 1, 1, 1), cfn: cf, j: .05 },
+    { g: new THREE.BoxGeometry(.85, .18, .85), m: mat4(0, 3.24, 0, 1, 1, 1), cfn: cf, j: .06 },
+    { g: new THREE.BoxGeometry(1.05, .22, 1.05), m: mat4(0, 3.43, 0, 1, 1, 1), cfn: cf, j: .06 },
+    { g: displace(new THREE.IcosahedronGeometry(.3, 0), .4, 2), m: mat4(.35, .32, .3, 1.2, .35, 1, .4), cfn: MOSS, j: .1 },
+    { g: displace(new THREE.IcosahedronGeometry(.25, 0), .4, 7), m: mat4(-.2, 3.56, -.15, 1.4, .3, 1.2, .4), cfn: MOSS, j: .1 },
+  ], 55, { ao: .9 });
+}
+function geoBrokenCol() {
+  const cf = RUIN_STONE;
+  return makeGeo([
+    { g: new THREE.BoxGeometry(1, .3, 1), m: mat4(0, .15, 0, 1, 1, 1, .2), cfn: cf },
+    { g: chisel(displace(ribbed(new THREE.CylinderGeometry(.3, .38, 1.5, 16, 3), 16, .9), .05, 7), 2, 56, .85, .9), m: mat4(0, 1.05, 0, 1, 1, 1, 0, .04), cfn: cf },
+    { g: displace(ribbed(new THREE.CylinderGeometry(.34, .34, .9, 16, 1), 16, .9), .04, 2), m: mat4(1.0, .34, .5, 1, 1, 1, .6, 0, Math.PI / 2), cfn: cf },
+    { g: chisel(new THREE.IcosahedronGeometry(.18, 0), 3, 561, .6), m: mat4(-.6, .1, .5, 1, .7, 1), cfn: cf },
+    { g: chisel(new THREE.IcosahedronGeometry(.13, 0), 3, 562, .6), m: mat4(-.3, .08, -.7, 1, .7, 1), cfn: cf },
+    { g: displace(new THREE.IcosahedronGeometry(.25, 0), .4, 6), m: mat4(-.1, .3, .4, 1.4, .35, 1, 0), cfn: MOSS, j: .1 },
+  ], 56, { ao: .6 });
+}
+function geoArchGate() {
+  const R = rng(58), cf = RUIN_STONE, parts = [];
+  for (const sx of [-1.25, 1.25]) {
+    parts.push({ g: new THREE.BoxGeometry(.7, .3, .8), m: mat4(sx, .15, 0, 1, 1, 1), cfn: cf });
+    for (let k = 0; k < 4; k++) parts.push({ g: displace(new THREE.BoxGeometry(.55 - (k % 2) * .04, .6, .6), .05, sx + k), m: mat4(sx, .6 + k * .625, 0, 1, 1, 1, (R() - .5) * .06), cfn: cf, j: .08 });
+  }
+  const n = 9;
+  for (let k = 0; k < n; k++) { const a = Math.PI * (k + .5) / n; parts.push({ g: new THREE.BoxGeometry(.52, .42, .62), m: mat4(Math.cos(a) * 1.25, 2.8 + Math.sin(a) * 1.25, 0, 1, 1, 1, 0, 0, a - Math.PI / 2), cfn: cf, j: .08 }); }
+  parts.push({ g: new THREE.BoxGeometry(3.3, .35, .7), m: mat4(0, 4.25, 0, 1, 1, 1), cfn: cf });
+  parts.push({ g: displace(new THREE.IcosahedronGeometry(.35, 0), .4, 3), m: mat4(-.8, 4.45, .1, 1.5, .35, 1, .3), cfn: MOSS, j: .1 });
+  for (let k = 0; k < 10; k++) { const y = 4.0 - k * .22; parts.push({ g: petalGeo(.14, .1), m: basisAt([-1.25 + (R() - .5) * .3, y, .31], [(R() - .5), -1, .2], [0, 0, 1]), cfn: MOSS, j: .15 }); }
+  return makeGeo(parts, 58, { ao: .7 });
+}
+function geoTower() {
+  const parts = [], cf = masonC(0x5e5c57, 0xa8a59c, 5 / 12, 12);
+  parts.push({ g: displace(new THREE.CylinderGeometry(1.1, 1.25, 5, 12, 12, true), .015, 3), m: mat4(0, 2.5, 0, 1, 1, 1), cfn: cf, j: .05 });
+  parts.push({ g: new THREE.CylinderGeometry(1.3, 1.15, .3, 12), m: mat4(0, 5.15, 0, 1, 1, 1), cfn: CASTLE_C });
+  for (let k = 0; k < 8; k++) { const a = k / 8 * 6.283; parts.push({ g: new THREE.BoxGeometry(.4, .45, .35), m: mat4(Math.cos(a) * 1.18, 5.52, Math.sin(a) * 1.18, 1, 1, 1, -a), cfn: CASTLE_C }); }
+  parts.push({ g: new THREE.ConeGeometry(1.15, 1.9, 12), m: mat4(0, 6.5, 0, 1, 1, 1), cfn: (y, ny, R) => mixc(col(0x2e3648), col(0x46526a), (Math.floor(y * 3) % 2 ? .7 : .2) + R() * .2), j: .05 });
+  for (const [y, a] of [[2.2, .6], [3.6, 2.4], [3.0, 4.2]]) parts.push({ g: new THREE.BoxGeometry(.12, .5, .1), m: mat4(Math.cos(a) * 1.16, y, Math.sin(a) * 1.16, 1, 1, 1, -a + Math.PI / 2), c: col(0x14120f) });
+  parts.push({ g: new THREE.BoxGeometry(.7, 1.1, .2), m: mat4(0, .55, 1.2, 1, 1, 1), c: col(0x3a2a1e) });   // door
+  parts.push({ g: displace(new THREE.IcosahedronGeometry(.4, 0), .4, 4), m: mat4(-.9, .1, .7, 1.4, .35, 1, .3), c: col(0x4e6a34), j: .1 });
+  return makeGeo(parts, 89, { ao: .9 });
+}
+function geoGatehouse() {
+  const R = rng(90), parts = [], cf = blockC(0x5e5c57, 0xa8a59c), iron = (y, ny, R) => mixc(col(0x23252a), col(0x3e4148), R());
+  for (const sx of [-1.6, 1.6]) {
+    parts.push({ g: new THREE.BoxGeometry(1.16, 4.18, 1.34), m: mat4(sx, 2.09, 0, 1, 1, 1), c: col(0x3e3c38), j: .04 });
+    stoneCourses(parts, sx - .6, sx + .6, 0, 6, .7, 1.4, R, cf);
+    for (let k = 0; k < 2; k++) parts.push({ g: displace(new THREE.BoxGeometry(.4, .45, 1.45), .05, k + sx), m: mat4(sx - .3 + k * .6, 4.42, 0, 1, 1, 1), cfn: cf });
+  }
+  parts.push({ g: new THREE.BoxGeometry(2.1, 1.1, 1.2), m: mat4(0, 3.6, 0, 1, 1, 1), c: col(0x3e3c38) });
+  stoneCourses(parts, -1.0, 1.0, 3.05, 2, .55, 1.26, R, cf);
+  parts.push({ g: displace(new THREE.BoxGeometry(2.2, .12, 1.3), .03, 9), m: mat4(0, 4.2, 0, 1, 1, 1), cfn: cf });
+  for (let k = 0; k < 7; k++) parts.push({ g: new THREE.BoxGeometry(.05, .75, .05), m: mat4(-.84 + k * .28, 2.68, .3, 1, 1, 1), cfn: iron });
+  parts.push({ g: new THREE.BoxGeometry(1.9, .05, .05), m: mat4(0, 2.6, .3, 1, 1, 1), cfn: iron });
+  return makeGeo(parts, 90, { ao: .8 });
+}
+function geoIceBlock() {
+  const R = rng(84), parts = [];
+  for (let k = 0; k < 3; k++) parts.push({ g: chisel(displace(new THREE.BoxGeometry(.9 + R() * .5, .7 + R() * .6, .8 + R() * .4), .12, k), 3, 840 + k, .8, .3), m: mat4((R() - .5) * .9, .35 + R() * .2, (R() - .5) * .7, 1, 1, 1, R() * 3, (R() - .5) * .3, (R() - .5) * .3), cfn: ICE_C, j: .08, glow: .18 });
+  return makeGeo(parts, 84);
 }
 const PROP = [
   { id: 'pine', name: '針葉樹', geo: geoPine(), r: .45, min: 1.7, sc: [.8, 1.4], slope: .9, vis: 1.5, tree: true },
@@ -1243,16 +1458,21 @@ diffuseColor.rgb=mix(diffuseColor.rgb, dimc(vec3(.92,.95,1.)), uSnow*smoothstep(
 diffuseColor.rgb=mix(diffuseColor.rgb, dimc(vec3(.93,.95,1.)), uCSWet[int(vCI+.5)].y*smoothstep(.5,.85,upw));
 #endif`)
     .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\n#ifdef MOSS\nroughnessFactor*=1.-.6*uCSWet[int(vCI+.5)].x;\n#endif')
-    .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance+=diffuseColor.rgb*vGlow*(.85+.15*sin(uTime*9.+vPY*13.))*(1.-.5*uDim);');
+    .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance+=diffuseColor.rgb*vGlow*(.85+.15*sin(uTime*9.+vPY*13.))*(1.-.5*uDim);\n#ifdef FOLIAGE\ntotalEmissiveRadiance+=diffuseColor.rgb*.06*(1.-uDim);\n#endif');
 };
 propMat.onBeforeCompile = propShader; propMat.customProgramCacheKey = () => 'prop-dim-v6';
 // rocks and cliff stones get their moss recoloured per biome (sand, ash, snow...)
 const rockMat = propMat.clone(); rockMat.defines = { MOSS: '' };
 rockMat.onBeforeCompile = propShader; rockMat.customProgramCacheKey = () => 'prop-dim-v6-moss';
+// plants: smooth shading from the bent normals (makeGeo part.sn), so canopies and leaves read soft instead of faceted
+const foliageMat = propMat.clone(); foliageMat.flatShading = false; foliageMat.roughness = .82; foliageMat.defines = { FOLIAGE: '' };
+foliageMat.onBeforeCompile = propShader; foliageMat.customProgramCacheKey = () => 'prop-dim-v6-foliage';
+const FOLIAGE_IDS = ['pine', 'oak', 'bush', 'flowers', 'fern', 'palm', 'banana', 'reed'], CANOPY_IDS = ['pine', 'oak', 'palm', 'banana'];
 const CAP = 8000;
 const propMeshes = PROP.map(t => {
-  const m = new THREE.InstancedMesh(t.geo, ['rock', 'cliff', 'pebble'].includes(t.id) ? rockMat : propMat, CAP);
+  const m = new THREE.InstancedMesh(t.geo, ['rock', 'cliff', 'pebble'].includes(t.id) ? rockMat : FOLIAGE_IDS.includes(t.id) ? foliageMat : propMat, CAP);
   m.castShadow = m.receiveShadow = true; m.frustumCulled = false; m.count = 0;
+  if (CANOPY_IDS.includes(t.id)) m.receiveShadow = false;   // lumpy canopies shadow themselves in patches; their soft normals already shade them (and it is cheaper)
   m.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(CAP * 3), 3);
   if (m.material === rockMat) { m.userData.cliffI = new THREE.InstancedBufferAttribute(new Float32Array(CAP), 1); t.geo.setAttribute('cliffI', m.userData.cliffI); }
   scene.add(m); return m;
@@ -2627,7 +2847,10 @@ function ensureIds() {
 
 // ---------- asset catalog: typeId -> assetKey and the proxy collider the editor uses for walkability
 const EXPORTER_VERSION = 'tdj-map-editor/2026.10.19-r9';
-for (const t of PROP) { t.geo.computeBoundingBox(); t.height = +t.geo.boundingBox.max.y.toFixed(2); t.base = { r: t.r, offs: t.offs, height: t.height }; t.offs = t.offs ? t.offs.map(o => [o, 0]) : null; }   // internal offsets are [x, z] (see applyCatalog)
+// collider tops published in asset_catalog.json (m, scaleY 1). Fixed values: they were measured from the preview meshes before the r10 remodel,
+// and the remodel keeps each silhouette within a few cm, so the catalog, the deck checks and the export stay the same.
+const PROP_HEIGHT = { pine: 6.09, oak: 5.53, rock: 1.1, bush: 0.93, cliff: 2.36, pebble: 0.23, reed: 1.72, log: 0.85, stump: 0.71, deadtree: 3.44, flowers: 0.43, mushroom: 0.23, stalagmite: 2.29, crystal: 1.63, glowmush: 0.48, torch: 2.07, column: 3.54, brokencol: 1.83, ruinwall: 1.99, archgate: 4.57, statue: 2.95, stele: 1.95, rubblepile: 0.82, gravestone: 1.13, crossgrave: 1.18, ironfence: 1.7, lantern: 1.9, palm: 4.77, rowboat: 0.62, driftwood: 0.68, shells: 0.03, lighthouse: 8.48, pyramid: 6, obelisk: 4.95, cactus: 2.82, barrelcactus: 0.55, bones: 0.39, lavarock: 0.82, fumarole: 0.88, obsidian: 1.58, iceblock: 1.09, icespike: 2.32, snowman: 2.1, kamakura: 1.19, castlewall: 3.24, tower: 7.45, gatehouse: 4.64, banner: 3.72, twisttree: 4.06, magiccircle: 0.07, demonspire: 4.64, bonepile: 0.53, fern: 0.58, banana: 2.97, woodfence: 1, haystack: 1.69, mausoleum: 3.6 };
+for (const t of PROP) { t.geo.computeBoundingBox(); t.meshTop = +t.geo.boundingBox.max.y.toFixed(2); t.height = PROP_HEIGHT[t.id] ?? t.meshTop; t.base = { r: t.r, offs: t.offs, height: t.height }; t.offs = t.offs ? t.offs.map(o => [o, 0]) : null; }   // internal offsets are [x, z] (see applyCatalog)
 const isNum = (v, ok) => typeof v === 'number' && Number.isFinite(v) && (!ok || ok(v));
 // version 1 catalogs were a flat {typeId: entry} map; version 2 has {types, floorLinks}
 function normalizeCatalog(d) {
