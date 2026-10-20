@@ -1,0 +1,165 @@
+{
+ "fail": 0,
+ "out": [
+  {
+   "name": "新エディター：ページエラーなし",
+   "ok": true,
+   "info": []
+  },
+  {
+   "name": "water_flow.png と water_mask.png が出る",
+   "ok": true,
+   "info": [
+    "water_flow.png",
+    "water_mask.png"
+   ]
+  },
+  {
+   "name": "meta.waterSim：available / 画像名 / 解像度",
+   "ok": true,
+   "info": {
+    "available": true,
+    "resolution": 129
+   }
+  },
+  {
+   "name": "meta.water は今までと同じ形（level・liquid・sea）",
+   "ok": true
+  },
+  {
+   "name": "waterSim の保存則と収束",
+   "ok": true,
+   "info": {
+    "flux": {
+     "in": 0.68946,
+     "sink": 0.11258,
+     "leak": 0.57696,
+     "balance": -0.00011
+    },
+    "cg": {
+     "iterations": 302,
+     "relResidual": 0.00003092213331446183
+    }
+   }
+  },
+  {
+   "name": "サンプルの滝が着水点を持ち、乾いていない",
+   "ok": true,
+   "info": [
+    {
+     "id": "fall_00sm",
+     "plunge": [
+      19.221,
+      1.8,
+      33.431
+     ],
+     "radius": 1.84,
+     "wetCells": 23,
+     "dry": false
+    }
+   ]
+  },
+  {
+   "name": "検査：エラー0",
+   "ok": true,
+   "info": []
+  },
+  {
+   "name": "画像の大きさ = 地形の解像度",
+   "ok": true,
+   "info": [
+    129,
+    129
+   ]
+  },
+  {
+   "name": "再現性：ブラウザの流れの画像 = node の画像（バイト一致）",
+   "ok": true,
+   "info": {
+    "browser": "4ba5ae92f26b",
+    "node": "4ba5ae92f26b"
+   }
+  },
+  {
+   "name": "再現性：ブラウザの泡の帯の画像 = node の画像（バイト一致）",
+   "ok": true,
+   "info": {
+    "browser": "bf50447884fe",
+    "node": "bf50447884fe"
+   }
+  },
+  {
+   "name": "水の印（A）：水のセルがあり、4 未満の水は無い",
+   "ok": true,
+   "info": {
+    "wet": 2365
+   }
+  },
+  {
+   "name": "既存ファイルのバイト列が元のエディターの書き出しと同じ（meta・manifest・README・validation 以外。asset_catalog は exporterVersion を除く）",
+   "ok": true,
+   "info": {
+    "same": 16,
+    "diff": []
+   }
+  },
+  {
+   "name": "meta.json は waterSim・exporterVersion・validation の数を除いて同じ",
+   "ok": true
+  },
+  {
+   "name": "validation：エラー増0、警告増0（サンプル）",
+   "ok": true,
+   "info": {
+    "orig": [
+     0,
+     0
+    ],
+    "now": [
+     0,
+     0
+    ]
+   }
+  },
+  {
+   "name": "manifest の一覧に水の画像が入り、SHA が実物と一致",
+   "ok": true
+  },
+  {
+   "name": "場面：海",
+   "ok": true,
+   "info": {
+    "available": false,
+    "reason": "sea (surf) is not supported yet",
+    "files": [],
+    "errs": [],
+    "validationErrors": 0,
+    "warnings": 0
+   }
+  },
+  {
+   "name": "場面：溶岩",
+   "ok": true,
+   "info": {
+    "available": false,
+    "reason": "liquid=lava is not supported yet",
+    "files": [],
+    "errs": [],
+    "validationErrors": 0,
+    "warnings": 0
+   }
+  },
+  {
+   "name": "場面：遺跡のサンプル",
+   "ok": true,
+   "info": {
+    "available": false,
+    "reason": "no terrain below the water level",
+    "files": [],
+    "errs": [],
+    "validationErrors": 0,
+    "warnings": 1
+   }
+  }
+ ]
+}

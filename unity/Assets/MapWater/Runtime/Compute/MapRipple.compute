@@ -1,0 +1,103 @@
+// 滝ごとの波紋（高さ場）と、その上を流れる泡の濃さ。CAV-002 の RippleSimulation.compute を、
+//  ・滝ごとの窓（128²）を1枚のアトラスに並べる形（_TileOrigin）
+//  ・水深を地図全体の符号つき水深(_DepthTex)から読む形（窓の世界座標 → 地図のuv）
+// にしたもの。式・係数は同じ。
+//   状態(_Dst)：R=今の高さ(m) G=1つ前の高さ(m) B=泡の濃さ
+//   描画用(_Out)：RG=傾き dh/dx,dh/dz  B=泡  A=高さ(m)
+#pragma kernel UpdateRipple
+#pragma kernel ClearRipple
+
+Texture2D<float4> _Src;
+RWTexture2D<float4> _Dst;
+RWTexture2D<float4> _Out;
+Texture2D<float> _DepthTex;       // 地図全体の符号つき水深(m)。負は陸
+SamplerState linear_clamp_sampler;
+float4 _MapRect;                  // 地図の原点xz、1/大きさxz
+float4 _Window;                   // 窓の最小xz、窓の一辺(m)、予備
+int2 _TileOrigin;                 // アトラスの中の窓の左下(テクセル)
+float2 _AtlasSize;                // アトラスの大きさ(テクセル)
+float4 _SimParams;                // x=解像度N y=(c dt/dx)^2 z=減衰 w=吸収帯(テクセル)
+float4 _FoamParams;               // x=泡の残り率 y=外向きの流れ(テクセル/ステップ) z=流れが落ちる距離(テクセル) w=渦
+float _CellSize;
+float4 _Contact;                  // 着水線の両端（窓のuv）
+StructuredBuffer<float4> _Impulses; int _ImpulseCount;       // xy=uv z=強さ(m) w=半径(uv)
+StructuredBuffer<float4> _FoamSources; int _FoamSourceCount; // xy=uv z=量 w=半径(uv)
+
+float Height(int2 p, int n) { p = clamp(p, 0, n - 1); return _Src.Load(int3(_TileOrigin + p, 0)).r; }
+
+float2 Outflow(float2 uv, float n)
+{
+    float2 a = _Contact.xy, b = _Contact.zw, ab = b - a;
+    float k = saturate(dot(uv - a, ab) / max(dot(ab, ab), 1e-6));
+    float2 d = (uv - (a + ab * k)) * n;
+    float r = max(length(d), 1e-3);
+    float2 dir = d / r;
+    float fall = _FoamParams.z / (r + _FoamParams.z);
+    float2 swirl = float2(-dir.y, dir.x) * _FoamParams.w;
+    return (dir + swirl) * _FoamParams.y * fall;
+}
+
+float DepthAt(float2 uv)
+{
+    float2 w = _Window.xy + uv * _Window.z;
+    float2 m = (w - _MapRect.xy) * _MapRect.zw;
+    if (m.x <= 0 || m.y <= 0 || m.x >= 1 || m.y >= 1) return 0;
+    return _DepthTex.SampleLevel(linear_clamp_sampler, m, 0);
+}
+
+[numthreads(8, 8, 1)]
+void UpdateRipple(uint3 id : SV_DispatchThreadID)
+{
+    int n = (int)_SimParams.x;
+    if (id.x >= (uint)n || id.y >= (uint)n) return;
+    int2 p = int2(id.xy);
+    float4 c = _Src.Load(int3(_TileOrigin + p, 0));
+    float2 uv = (float2(p) + 0.5) / n;
+    float depth = max(DepthAt(uv), 0.0);
+    float wet = depth > 0.02 ? 1.0 : 0.0;
+    float shallow = 0.9 + 0.1 * saturate(depth / 0.25);
+
+    float hr = Height(p + int2(1, 0), n), hl = Height(p - int2(1, 0), n);
+    float hu = Height(p + int2(0, 1), n), hd = Height(p - int2(0, 1), n);
+    float lap = hr + hl + hu + hd - 4.0 * c.r;
+    float h = (2.0 * c.r - c.g + _SimParams.y * lap) * (1.0 - _SimParams.z);
+
+    for (int i = 0; i < _ImpulseCount; i++)
+    {
+        float4 im = _Impulses[i];
+        float2 d = (uv - im.xy) / im.w;
+        float q = dot(d, d);
+        if (q < 6.0) h += im.z * (1.0 - q) * exp(-q);
+    }
+
+    float edge = (float)min(min(p.x, p.y), min(n - 1 - p.x, n - 1 - p.y));
+    float s = saturate(1.0 - edge / _SimParams.w);
+    float sponge = (1.0 - 0.16 * s * s) * wet * shallow;
+    h *= sponge;
+    float prev = c.r * sponge;
+
+    // 泡：流れを逆にたどった位置から持ってくる（窓の中に収める）
+    float2 back = clamp(uv - Outflow(uv, n) / n, 0.5 / n, 1.0 - 0.5 / n);
+    float2 auv = (float2(_TileOrigin) + back * n) / _AtlasSize;
+    float foam = _Src.SampleLevel(linear_clamp_sampler, auv, 0).b * _FoamParams.x;
+    for (int j = 0; j < _FoamSourceCount; j++)
+    {
+        float4 fs = _FoamSources[j];
+        float2 d = (uv - fs.xy) / fs.w;
+        foam += fs.z * exp(-dot(d, d));
+    }
+    foam = min(foam, 1.6) * (1.0 - s) * wet;
+
+    int2 o = _TileOrigin + p;
+    _Dst[o] = float4(h, prev, foam, 0);
+    _Out[o] = float4((hr - hl) / (2.0 * _CellSize), (hu - hd) / (2.0 * _CellSize), foam, c.r * wet);
+}
+
+[numthreads(8, 8, 1)]
+void ClearRipple(uint3 id : SV_DispatchThreadID)
+{
+    uint w, h; _Dst.GetDimensions(w, h);
+    if (id.x >= w || id.y >= h) return;
+    _Dst[id.xy] = 0;
+    _Out[id.xy] = 0;
+}

@@ -102,6 +102,9 @@
 
   <h2>水</h2>
   <label class="sl"><span>水位</span><input id="water" type="range" min="-2" max="5" step="0.05" value="0.8"><span id="waterV"></span></label>
+  <label class="hint" style="display:block;margin:4px 0"><input type="checkbox" id="waterShowFlow"> 流れを表示（矢印・速さの色。滝の着水点から出口へ）</label>
+  <label class="hint" style="display:block;margin:4px 0"><input type="checkbox" id="waterShowFoam"> 水際の帯（緑）と泡の帯（赤紫）を表示</label>
+  <div class="hint" id="waterInfo" style="white-space:pre-line"></div>
 
   <h2>自動</h2>
   <div class="row"><button id="autoRocks">崖に岩を自動配置</button></div>
@@ -124,6 +127,7 @@
 <div id="hud"></div>
 <div id="toast"></div>
 <script src="three.min.js"></script>
+<script src="water.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

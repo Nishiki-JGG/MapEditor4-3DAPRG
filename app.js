@@ -424,16 +424,51 @@ skirt.receiveShadow = true;
 scene.add(skirt);
 
 // ---------- water ----------
+// 水の解析（water.js）の結果を、画面の水の描き直しと「水」表示に使う。書き出しと同じ解析・同じ画像（flow / mask）。
+const WFLOW = new Uint8Array(N * N * 4), WMASK = new Uint8Array(N * N * 4);
+const mkWaterTex = data => { const tx = new THREE.DataTexture(data, N, N, THREE.RGBAFormat); tx.magFilter = tx.minFilter = THREE.LinearFilter; tx.wrapS = tx.wrapT = THREE.ClampToEdgeWrapping; tx.generateMipmaps = false; tx.needsUpdate = true; return tx; };
+const WATERU = {
+  uFlow: { value: mkWaterTex(WFLOW) }, uMask: { value: mkWaterTex(WMASK) }, uFlowMax: { value: 2 }, uBankRange: { value: 1.5 }, uTrailMax: { value: .65 }, uShow: { value: 0 }, uMapSize: { value: SIZE },
+  uFalls: { value: Array.from({ length: 8 }, () => new THREE.Vector4()) }, uFallCount: { value: 0 },
+};
+let waterTimer = 0, waterInfo = null;
+function refreshWaterData() {
+  waterTimer = 0;
+  const res = TDWater.analyze({ TN: N, TS: CELL, HALF, TH: H, level: state.water, falls: falls.map(f => ({ id: f.id, x: f.x, z: f.z, w: f.w })) });
+  const pk = TDWater.pack(res);
+  WFLOW.set(pk.flow); WMASK.set(pk.mask); WATERU.uFlow.value.needsUpdate = true; WATERU.uMask.value.needsUpdate = true;
+  WATERU.uFlowMax.value = res.options.maxSpeed; WATERU.uBankRange.value = res.options.bankRange; WATERU.uTrailMax.value = res.options.trailMaxCover;
+  let n = 0;
+  for (let i = 0; i < falls.length && n < 8; i++) {
+    const rf = res.falls[i]; if (!rf || rf.dry) continue; const f = falls[i];
+    WATERU.uFalls.value[n++].set(rf.cx, rf.cz, (Math.abs(Math.sin(f.x * 12.9898 + f.z * 78.233)) * 43758.5453) % 1, f.w);
+  }
+  WATERU.uFallCount.value = n; waterInfo = res; showWaterInfo();
+}
+function scheduleWater() { clearTimeout(waterTimer); waterTimer = setTimeout(refreshWaterData, 350); }
+function showWaterInfo() {
+  const el = typeof document !== 'undefined' && document.getElementById('waterInfo'); if (!el || !waterInfo) return;
+  const r = waterInfo, s = r.stats, lines = [];
+  if (!r.wetCount) lines.push('水位より低い所がありません（水は出ません）');
+  else {
+    lines.push(`水の所 ${(s.wetFraction * 100).toFixed(1)}%、最大の水深 ${s.maxDepth.toFixed(1)}m` + (r.hasFlow ? `、流れ 速さの上位5% ${s.speedP95.toFixed(2)}m/s` : '、流れなし'));
+    lines.push(`滝 ${r.falls.length}個（着水できる ${r.falls.filter(f => !f.dry).length}個）、地図の端から端へ流れる川 ${(r.inflows || []).length}本`);
+    for (const w of r.warnings) lines.push('⚠ ' + w);
+    if (BIOME().lava) lines.push('溶岩: Unity の水は未対応（書き出しは waterSim.available=false）');
+    else if (state.sea) lines.push('海: Unity の水は未対応（書き出しは waterSim.available=false）');
+  }
+  el.textContent = lines.join('\n');
+}
 const wGeo = new THREE.BufferGeometry();
 wGeo.setAttribute('position', new THREE.BufferAttribute(tGeo.attributes.position.array.map((v, k) => k % 3 === 1 ? 0 : v), 3));
 wGeo.setAttribute('depth', new THREE.BufferAttribute(new Float32Array(N * N), 1));
 wGeo.setIndex(gridIndex());
 const waterMat = new THREE.ShaderMaterial({
   transparent: true, depthWrite: false,
-  uniforms: { uTime: timeU, uDim: dimU, uSun: { value: sun.position.clone().normalize() }, uShallow: BU.uShallow, uDeep: BU.uDeep, uLava: BU.uLava, uSea: BU.uSea },
+  uniforms: { uTime: timeU, uDim: dimU, uSun: { value: sun.position.clone().normalize() }, uShallow: BU.uShallow, uDeep: BU.uDeep, uLava: BU.uLava, uSea: BU.uSea, ...WATERU },
   vertexShader: `attribute float depth; varying float vD; varying vec3 vWPos;
     void main(){ vD=depth; vec4 w=modelMatrix*vec4(position,1.); vWPos=w.xyz; gl_Position=projectionMatrix*viewMatrix*w; }`,
-  fragmentShader: `uniform float uTime; uniform float uDim; uniform vec3 uSun; uniform vec3 uShallow; uniform vec3 uDeep; uniform float uLava; uniform float uSea; varying float vD; varying vec3 vWPos;
+  fragmentShader: `uniform float uTime; uniform float uDim; uniform vec3 uSun; uniform vec3 uShallow; uniform vec3 uDeep; uniform float uLava; uniform float uSea; uniform sampler2D uFlow; uniform sampler2D uMask; uniform float uFlowMax; uniform float uBankRange; uniform float uTrailMax; uniform float uShow; uniform float uMapSize; uniform vec4 uFalls[8]; uniform float uFallCount; varying float vD; varying vec3 vWPos;
     ${DIM_GLSL}
     ${GLSL_NOISE}
     float caus(vec2 p){ vec3 a=vor(p+vec2(uTime*.12,uTime*.08)); vec3 b=vor(p*1.6-vec2(uTime*.09,-uTime*.11));
@@ -443,9 +478,18 @@ const waterMat = new THREE.ShaderMaterial({
       vec2 p=vWPos.xz; float d=vD;
       float t=1.-exp(-d*1.1);
       vec3 col=mix(uShallow, uDeep, t);
-      col+=caus(p*.55)*(1.-t)*vec3(.22,.3,.28);
-      float e=.15; float n0=fbm(p*1.3+uTime*.25);
-      vec2 g=vec2(fbm(p*1.3+vec2(e,0)+uTime*.25)-n0, fbm(p*1.3+vec2(0,e)+uTime*.25)-n0)/e;
+      // 流れ（書き出しと同じ画像）：細波・光の網・泡の模様を、半周期ずらした2層で下流へ運ぶ
+      vec2 muv=(p+uMapSize*.5)/uMapSize; vec4 fl=texture2D(uFlow,muv); vec4 mk=texture2D(uMask,muv);
+      float wetMap=clamp(fl.a*60.,0.,1.);
+      vec2 flow=vec2(fl.r*2.-1.,-(fl.g*2.-1.))*uFlowMax*wetMap;     // 画像は Unity の軸（z が逆）
+      float speed=length(flow);
+      float ph0=fract(uTime/1.6), ph1=fract(uTime/1.6+.5), w0=1.-abs(1.-2.*ph0);
+      vec2 pa=p-flow*ph0*1.6, pb=p-flow*ph1*1.6;
+      col+=mix(caus(pb*.55),caus(pa*.55),w0)*(1.-t)*vec3(.22,.3,.28);
+      float e=.15; float n0a=fbm(pa*1.3+uTime*.25), n0b=fbm(pb*1.3+uTime*.25);
+      vec2 ga=vec2(fbm(pa*1.3+vec2(e,0)+uTime*.25)-n0a, fbm(pa*1.3+vec2(0,e)+uTime*.25)-n0a)/e;
+      vec2 gb=vec2(fbm(pb*1.3+vec2(e,0)+uTime*.25)-n0b, fbm(pb*1.3+vec2(0,e)+uTime*.25)-n0b)/e;
+      vec2 g=mix(gb,ga,w0)*(1.+speed*.5);
       vec3 nr=normalize(vec3(-g.x*.25,1.,-g.y*.25));
       vec3 V=normalize(cameraPosition-vWPos);
       float spec=pow(max(dot(reflect(-uSun,nr),V),0.),140.)*.35;
@@ -453,12 +497,48 @@ const waterMat = new THREE.ShaderMaterial({
       col+=spec+fres*vec3(.6,.75,.85);
       float fz=smoothstep(.17,.0,d+(fbm(p*3.+uTime*.3)-.5)*.16);
       col=mix(col,vec3(.96,1.,1.),fz*.9);
+      // 泡の模様（流れに乗る）。覆う割合 cover は Unity の水と同じ式：lace = saturate((pattern-(1-cover))*4)
+      float patA=clamp((mix(fbm(pb*2.3+vec2(uTime*.03,0.)),fbm(pa*2.3+vec2(uTime*.03,0.)),w0)-.5)*2.6+.5,0.,1.);
+      float patB=clamp((fbm(p*3.9+vec2(-uTime*.02,uTime*.03))-.5)*2.6+.5,0.,1.);
+      float pat=patA*.6+patB*.4;
+      float rapids=clamp((speed-.6)/.6,0.,1.)*(1.-smoothstep(.8,2.2,d));
+      float lace=clamp((pat-(1.-.58*rapids))*4.,0.,1.)*step(.001,rapids);
+      float trail=mk.r*uTrailMax; float trailLace=clamp((patA-(1.-trail))*4.,0.,1.)*step(.001,trail);
+      float bankDist=fl.a*uBankRange; float bankNear=(1.-smoothstep(.15,.6,bankDist))*step(.04,bankDist);
+      float shoreBand=max(smoothstep(.10,.025,d)*smoothstep(0.,.012,d), bankNear*step(.02,d));
+      float lap=.5+.5*sin(uTime*1.25+fl.b*9.+(p.x+p.y)*.7);
+      float shore=shoreBand*clamp((pat-(1.-(.58+.06*lap)))*4.,0.,1.)*(.7+.3*clamp(speed,0.,1.))*.9;
+      // 滝の着水：中心が明るく外へ広がって薄れる輪（Unity の飛沫・波紋と同じ向きの動き）
+      float ringF=0.;
+      for(int i=0;i<8;i++){ if(float(i)>=uFallCount) break; vec2 rel=p-uFalls[i].xy; float r=length(rel);
+        ringF+=exp(-r*r/(.5+uFalls[i].w*.12))*.75;
+        for(int k=0;k<3;k++){ float ph=fract(uTime*.5+float(k)/3.+uFalls[i].z); float R=.3+ph*(2.4+uFalls[i].w*.5);
+          float arc=smoothstep(.30,.75,vn(vec2(atan(rel.y,rel.x)*2.2+float(k)*7.3+uFalls[i].z*5.,uTime*.25)));
+          ringF+=exp(-pow((r-R)/.26,2.))*(1.-ph)*(1.-ph)*arc*.9; } }
+      ringF=clamp(ringF,0.,1.);
+      float foamAdd=max(max(lace*.92,trailLace*.85),max(shore*.8,ringF*.8));
+      col=mix(col,vec3(.96,1.,1.),foamAdd*(1.-uLava));
+      fz=max(fz,foamAdd);
       // sea: rows of breaking waves rolling in toward the shore
       float wv=sin(d*5.5-uTime*1.6+fbm(p*.18)*5.);
       float surf=smoothstep(.82,.98,wv)*(1.-smoothstep(.15,2.2,d))*smoothstep(.0,.08,d)*(.6+.6*fbm(p*1.5+uTime*.2));
       col=mix(col,vec3(.97,1.,1.),surf*uSea);
       fz=max(fz,surf*uSea*.8);
       float alpha=max(mix(.42,.93,t),fz*.95);
+      if(uShow>.5){   // 水の表示：1 = 流れの矢印と速さの色、2 = 水際の帯（緑）と泡の帯（赤紫）
+        vec3 ov=col;
+        if(uShow<1.5){
+          ov=mix(ov,mix(vec3(.1,.35,1.),vec3(1.,.25,.1),clamp(speed/1.5,0.,1.)),.55);
+          vec2 cc=(floor(p/1.5)+.5)*1.5; vec2 cuv=(cc+uMapSize*.5)/uMapSize; vec4 cf=texture2D(uFlow,cuv);
+          vec2 cfl=vec2(cf.r*2.-1.,-(cf.g*2.-1.))*uFlowMax*clamp(cf.a*60.,0.,1.); float cs=length(cfl);
+          if(cs>.04){ vec2 dir=cfl/cs; vec2 q=p-cc; float al=dot(q,dir), pe=abs(dot(q,vec2(-dir.y,dir.x))); float len=.18+.42*clamp(cs/1.5,0.,1.);
+            float shaft=step(pe,.045)*step(-len,al)*step(al,len*.55); float head=step(len*.55,al)*step(al,len)*step(pe,(len-al)*.55);
+            ov=mix(ov,vec3(1.),clamp(shaft+head,0.,1.)); }
+        } else {
+          ov=mix(ov,vec3(.2,.9,.3),shoreBand*.55); ov=mix(ov,vec3(1.,.2,.8),clamp(mk.r*1.6,0.,1.)*.75);
+        }
+        col=ov; alpha=max(alpha,.85);
+      }
       if(uLava>.5){
         // molten rock: glowing flow under a drifting dark crust
         float n=fbm(p*.5+vec2(uTime*.03,0.));
@@ -496,6 +576,7 @@ function updateTerrain() {
   SIDES.forEach(([f], s) => { for (let t = 0; t < N; t++) { const [i, j] = f(t); spos[(s * N + t) * 2 * 3 + 1] = H[idx(i, j)]; } });
   sGeo.attributes.position.needsUpdate = true; sGeo.computeBoundingSphere();
   water.position.y = state.water; waterU.value = state.water;
+  scheduleWater();
 }
 
 // ============================================================
@@ -1562,6 +1643,7 @@ function fallGeometry(w, hgt, lean) {
   g.computeVertexNormals(); return g;
 }
 function rebuildFalls() {
+  scheduleWater();
   for (const c of [...fallGroup.children]) { if (c.geometry) c.geometry.dispose(); fallGroup.remove(c); }
   for (const f of falls) {
     if (f.sx !== undefined) { const st = new THREE.Mesh(streamGeometry(f), streamMat); st.renderOrder = 3; fallGroup.add(st); }
@@ -2544,7 +2626,7 @@ function ensureIds() {
 }
 
 // ---------- asset catalog: typeId -> assetKey and the proxy collider the editor uses for walkability
-const EXPORTER_VERSION = 'tdj-map-editor/2026.10.19-r8';
+const EXPORTER_VERSION = 'tdj-map-editor/2026.10.19-r9';
 for (const t of PROP) { t.geo.computeBoundingBox(); t.height = +t.geo.boundingBox.max.y.toFixed(2); t.base = { r: t.r, offs: t.offs, height: t.height }; t.offs = t.offs ? t.offs.map(o => [o, 0]) : null; }   // internal offsets are [x, z] (see applyCatalog)
 const isNum = (v, ok) => typeof v === 'number' && Number.isFinite(v) && (!ok || ok(v));
 // version 1 catalogs were a flat {typeId: entry} map; version 2 has {types, floorLinks}
@@ -3345,6 +3427,32 @@ async function buildExport() {
       ...(m.kind === 'down' ? { pitHoleCells: pitCells[m.id] || 0 } : {}) };
   };
   const zoneOut = m => ({ id: m.id, kind: m.kind === 'nobattle' ? 'noBattle' : 'noSpawn', center: P3(m.x, floorAt(m.x, m.z), m.z), radius: m.r });
+  // ---- water simulation data (water.js): flow / foam-trail images that the Unity water and the editor's water view both read
+  const waterIn = { TN, TS, HALF, TH, level: state.water, falls: falls.map(f => ({ id: f.id, x: f.x, z: f.z, w: f.w })) };
+  const waterRes = TDWater.analyze(waterIn);
+  buildExport.lastWater = { input: waterIn, result: waterRes };   // 試験とエディターの水の表示が、書き出しと同じ解析を使うための控え
+  const waterWhy = BIOME().lava ? 'liquid=lava is not supported yet' : state.sea ? 'sea (surf) is not supported yet' : !waterRes.wetCount ? 'no terrain below the water level' : null;
+  for (const w of waterRes.warnings) if (!waterWhy && w.includes('乾いた')) validation.warnings.push('水: ' + w);
+  const waterPack = !waterWhy ? TDWater.pack(waterRes) : null;
+  const waterPngs = waterPack ? [{ name: 'water_flow.png', data: TDWater.encodePngRGBA(TN, TN, waterPack.flow) }, { name: 'water_mask.png', data: TDWater.encodePngRGBA(TN, TN, waterPack.mask) }] : [];
+  const wo = waterRes.options;
+  const waterSim = {
+    version: 1, available: !waterWhy, ...(waterWhy ? { reason: waterWhy } : {}),
+    flowMap: waterPack ? 'water_flow.png' : null, maskMap: waterPack ? 'water_mask.png' : null, resolution: TN, cellSize: +TS.toFixed(6),
+    encoding: {
+      flowMap: 'RGBA8, linear, bilinear, no mips, clamp. R,G = flow (Unity x,z) = (value/255*2-1)*maxSpeed m/s. B = stream function psi 0..1. A = distance to the bank / bankRange (0 = land, wet >= 4/255).',
+      maskMap: 'RGBA8, same grid. R = foam-trail cover = value/255 * trailMaxCover (the main current traced from each waterfall). G,B reserved (0). A = 255.',
+      depth: 'not exported: signed depth = water.level - height from heightmap_r16.raw (positive = water).',
+      rows: 'PNG row 0 (top) is Unity z max, same as every other image of this export.',
+    },
+    maxSpeed: wo.maxSpeed, bankRange: wo.bankRange, trailMaxCover: wo.trailMaxCover, trailReach: wo.trailReach, params: { leakLength: wo.leakLength, speedP95: wo.speedP95, wetMin: wo.wetMin },
+    falls: waterRes.falls.map(f => ({ id: f.id, plunge: [U.x(f.cx ?? f.x), U.y(state.water), U.z(f.cz ?? f.z)], radius: +f.radius.toFixed(2), wetCells: f.wetCells, dry: !!f.dry })),
+    inflows: (waterRes.inflows || []).map(f => ({ kind: f.kind, position: [U.x(f.x), U.z(f.z)], cells: f.cells, outlets: f.outlets, note: 'a river with no waterfall: flows from the border segment with the highest bed (inflow) to the other border segments (outlets)' })),
+    currentPaths: waterRes.paths.map(p => ({ fall: p.fall, points: p.points.map(([x, z]) => [U.x(x), U.z(z)]) })),
+    stats: waterRes.stats, ...(waterRes.cg ? { cg: waterRes.cg } : {}), ...(waterRes.flux ? { flux: { in: +waterRes.flux.in.toFixed(5), sink: +waterRes.flux.sink.toFixed(5), leak: +waterRes.flux.leak.toFixed(5), balance: +waterRes.flux.balance.toFixed(5) } } : {}),
+    warnings: waterRes.warnings,
+    unsupported: ['contact foam and colour absorption of objects standing in the water (bridge piers, rocks, characters)', 'refraction of the bed', 'reflections of bridges / props', 'sea surf and lava surface'],
+  };
   const meta = {
     format: 'tdj-map-export', schemaVersion: 3, exporterVersion: EXPORTER_VERSION, roomId: state.roomId, manifest: 'manifest.json',
     coordinateSystem: {
@@ -3385,6 +3493,7 @@ async function buildExport() {
     weather: { ...state.weather, wind: WEATHER[state.weather.kind].wind || 0, windDir: [+WIND_DIR.x.toFixed(4), +(-WIND_DIR.y).toFixed(4)] },
     atmosphere: { ...state.atmo, color: ATMOS[state.atmo.kind].color || null },
     water: [{ id: 'water_main', type: 'plane', level: U.y(state.water), liquid: BIOME().lava ? 'lava' : 'water', sea: state.sea }],
+    waterSim,
     spawnPoints: [{ id: state.spawn.id, position: P3(state.spawn.x, spawnY, state.spawn.z), yawDeg: 0 }],
     ports: markers.filter(m => m.kind === 'port').map(portOut),
     enemySpots: markers.filter(m => m.kind === 'enemy').map(spotOut),
@@ -3429,6 +3538,7 @@ revision・書き出し日時・ファイルごとの SHA-256・contentHash は 
 - mask_0〜3.png    : 塗りの元データ（毒沼・溶岩などのゲーム判定用）。効果は groundTypes の effectId。
 - holes.png        : 隠し通路がある場合だけ。地形の穴（0 = 穴、(解像度-1)² セル）。
 - secret_passages_mesh.json : 隠し通路の床・壁・天井・ふた（穴と同じ形から作成。Unity 座標）。meta.secretPassages に輪郭・出入口・検査結果。route と width は目安。
+- water_flow.png / water_mask.png : 水の流れ（RG=流れ、B=流れ関数、A=岸からの距離）と、滝から流れの筋にそった泡の帯（R）。水の無い部屋・溶岩・海では出ません。読み方は meta.waterSim.encoding。水深は heightmap_r16.raw と水位から Unity 側で作ります。
 - cliff_style.png  : 岩壁の種類（場所ごと。R = meta.cliffStyles の番号）。岩・崖石・小石は props.csv の cliffStyle 列。
 - walkable.png     : 通行判定（離散値。補間しないでください）。meta.json の agentProfile の体格で計算。
 - props.csv        : 小物の配置。instanceId は再書き出しでも変わりません。assetKey は asset_catalog.json の対応表。
@@ -3456,6 +3566,7 @@ revision・書き出し日時・ファイルごとの SHA-256・contentHash は 
       submeshes: ['floor', 'wall', 'ceiling', 'cap'], note: 'cap = terrain surface over hole cells (follows the exported heightmap, bilinear inside each cell; Unity splits a terrain cell into two triangles, so the cap edge can differ from the terrain by the cell\'s bilinear-vs-triangle error).',
       passages: geo.passages.map(g => ({ id: g.id, vertices: g.verts.flatMap(([x, y, z]) => P3(x, y, z)), triangles: g.sub })),
     }) }] : []),
+    ...waterPngs,
     { name: 'walkable.png', data: walkPng }, { name: 'cliff_style.png', data: cliffPng }, { name: 'props.csv', data: csv },
     { name: 'asset_catalog.json', data: JSON.stringify(catalogExport(), null, 2) },
     { name: 'meta.json', data: JSON.stringify(meta, null, 2) }, { name: 'validation.json', data: JSON.stringify(validation, null, 2) },
@@ -3560,6 +3671,9 @@ function setTool(id) {
   for (const b of toolsEl.children) b.classList.toggle('on', b.dataset.tool === id);
   $('hint').textContent = TOOLS.find(t => t.id === id).hint;
 }
+const wsf = $('waterShowFlow'), wsm = $('waterShowFoam');
+const syncWaterShow = which => { if (which === 'flow' && wsf.checked) wsm.checked = false; if (which === 'foam' && wsm.checked) wsf.checked = false; WATERU.uShow.value = wsf.checked ? 1 : wsm.checked ? 2 : 0; };
+wsf.onchange = () => syncWaterShow('flow'); wsm.onchange = () => syncWaterShow('foam');
 const sliders = [['radius', v => v.toFixed(1)], ['strength', v => v.toFixed(2)], ['density', v => v.toFixed(1)], ['water', v => v.toFixed(2)]];
 function syncUI() { for (const [id, f] of sliders) { $(id).value = state[id]; $(id + 'V').textContent = f(state[id]); } }
 for (const [id, f] of sliders) {
@@ -3939,6 +4053,6 @@ window.__app = {
     stroke.active = false; updateTerrain(); rebuildProps();
   },
   render() { renderer.render(scene, camera); },
-  serialize, deserialize, buildExport, makeZip, undo, redo,
+  serialize, deserialize, buildExport, makeZip, undo, redo, refreshWaterData, WATERU, get waterInfo() { return waterInfo; }, syncWaterShow,
 };
 })();

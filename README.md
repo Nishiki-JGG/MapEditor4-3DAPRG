@@ -19,6 +19,7 @@
 - **地面**：土・石畳・砂地・荒れ地・沼地・毒沼・溶岩・雪・氷・海岸
 - **岩壁**：標準・土壁・黒い岩壁・濡れた岩壁・苔むした岩壁・砂漠の岩壁・雪山の岩壁。マップ全体の既定を選べるほか、「岩壁を塗る」ツールで場所ごとに塗り分けられます。
 - **構造物**：坂、階段（4 種）、橋（7 種）、滝
+- **水の流れ・泡**：滝の着水点から出口への流れ、滝の無い川の流れ、泡の帯を自動で計算します。「水」の欄で、流れの矢印と泡の帯を表示できます（`water.js`）。
 - **小物**：15 バイオーム分のパーツ。撒く・置く・消す・選んで消す
 - **通行判定**：自動判定の表示と、手動での上書き（通行可・通行不可・隠し通路）。体の大きさなどの体格も設定できます。
 - **ゲーム用マーカー**：出入口、敵・宝箱の候補、戦闘・出現の禁止範囲、開始地点
@@ -37,6 +38,7 @@
 | `walkable.png` | 通行判定（補間しないこと） |
 | `holes.png` / `secret_passages_mesh.json` | 地形の穴 / 隠し通路の床・壁・天井 |
 | `cliff_style.png` | 岩壁の種類（場所ごと） |
+| `water_flow.png` / `water_mask.png` | 水の流れ・流れ関数・岸からの距離 / 泡の帯（`meta.waterSim` に説明。水が無い・海・溶岩の時は出ません） |
 | `props.csv` / `asset_catalog.json` | 小物の配置 / 資産名と当たり判定の対応表 |
 | `meta.json` | 座標の決まり、マーカー、階層移動、橋・階段、水、天候など |
 | `validation.json` / `manifest.json` | 検証結果 / 各ファイルの SHA-256 と contentHash |
@@ -47,10 +49,12 @@
 
 ```
 index.html, app.js      エディター本体
+water.js                水の流れ・泡の計算（画面に依存しない。node でも動く）
 three.min.js            three.js r160（MIT License）
 samples/                書き出しのサンプル（通常サンプル 64m / 隠し通路サンプル 48m）
-docs/                   修正報告（REVISION_3〜6）と画像
-tests/                  受け入れテスト（Playwright）と、その結果
+docs/                   修正報告（REVISION_3〜8）と画像
+tests/                  受け入れテスト（Playwright、水は Chrome の CDP）と、その結果
+unity/Assets/MapWater/  Unity 側の水（書き出しから水面・滝・飛沫・波紋を作る。docs/REVISION_8_NOTES.md）
 ```
 
 ## テスト
@@ -66,6 +70,14 @@ PW=<playwright のパス> node tests/rev5_terrain_grid.js
 - `rev5_terrain_grid.js`：全サイズの Terrain 解像度、隠し通路と穴の一致
 - `sample2_secret.js`：隠し通路サンプルの検証
 
+水の試験は、Playwright なしで Chrome（または Edge）を直接動かします（`tests/cdp.js`。場所は環境変数 `BROWSER` でも指定できます）。
+
+- `node tests/water_unit.js`：`water.js` の単体試験
+- `node tests/water_export.js <元のエディターの写し>`：水の書き出しの中身、node との再現性、既存ファイルが変わらないこと
+- `node tests/water_view.js <出力フォルダ>`：画面の水の表示を画像にする
+- `node tests/water_perf.js`：128m の部屋での水の計算時間
+- `node tests/export_to_folder.js <出力フォルダ>`：サンプルを書き出してフォルダへ展開する（Unity の試験の入力）
+
 ## 確認の範囲
 
-エディター側の動作と書き出しデータは、上記のテストで確認しています。Unity 上での取り込み・描画・当たり判定・移動は、まだ確認していません。
+エディター側の動作と書き出しデータは、上記のテストで確認しています。Unity 上での取り込み・描画・当たり判定・移動は、まだ確認していません。ただし水だけは、試験用の Unity プロジェクトで描画を確かめました（`docs/REVISION_8_NOTES.md`）。
