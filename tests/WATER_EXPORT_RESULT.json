@@ -99,7 +99,7 @@
    "name": "既存ファイルのバイト列が元のエディターの書き出しと同じ（meta・manifest・README・validation 以外。asset_catalog は exporterVersion を除く）",
    "ok": true,
    "info": {
-    "same": 16,
+    "same": 18,
     "diff": []
    }
   },

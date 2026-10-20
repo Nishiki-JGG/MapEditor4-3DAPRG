@@ -1,0 +1,135 @@
+{
+ "rows": [
+  {
+   "name": "Remy のデータが読めた（部品 7）",
+   "ok": true,
+   "info": 7
+  },
+  {
+   "name": "テクスチャ 7 枚の読み込みが終わった",
+   "ok": true,
+   "info": true
+  },
+  {
+   "name": "既定の見た目が Remy（選択欄も同じ）",
+   "ok": true,
+   "info": {
+    "look": "remy",
+    "select": "remy",
+    "label": "Remy（ゲームの体・身長 1.72m）"
+   }
+  },
+  {
+   "name": "身長がゲームと同じ 1.70〜1.74m",
+   "ok": true,
+   "info": 1.719
+  },
+  {
+   "name": "足の裏が立つ位置（±2cm）",
+   "ok": true,
+   "info": 0
+  },
+  {
+   "name": "足の裏が地面の高さ（floorAt）から ±2cm",
+   "ok": true,
+   "info": 0
+  },
+  {
+   "name": "顔が進む向き（前）を向く",
+   "ok": true,
+   "info": 0.998
+  },
+  {
+   "name": "目の高さ 1.55〜1.65m",
+   "ok": true,
+   "info": 1.591
+  },
+  {
+   "name": "普段は不透明（描く順が乱れない）",
+   "ok": true,
+   "info": true
+  },
+  {
+   "name": "岩の中で透けて前に描き（全メッシュ）、外で元に戻る",
+   "ok": true,
+   "info": {
+    "on": true,
+    "off": true,
+    "glow": true,
+    "glow0": true,
+    "sample": [
+     [
+      false,
+      10,
+      0.62,
+      true
+     ],
+     [
+      true,
+      0,
+      1,
+      false
+     ]
+    ]
+   }
+  },
+  {
+   "name": "毒の光が Remy の材質に入り、消える",
+   "ok": true,
+   "info": {
+    "glow": true,
+    "glow0": true
+   }
+  },
+  {
+   "name": "簡易の人形に切り替えられる",
+   "ok": true,
+   "info": {
+    "look": "box",
+    "box": true,
+    "body": false
+   }
+  },
+  {
+   "name": "歩くモード・見た目の切り替えの後も、書き出しが同じ（22 ファイル）",
+   "ok": true,
+   "info": []
+  },
+  {
+   "name": "ページのエラーが 0",
+   "ok": true,
+   "info": []
+  }
+ ],
+ "measured": {
+  "body": true,
+  "parts": 7,
+  "look": "remy",
+  "select": "remy",
+  "label": "Remy（ゲームの体・身長 1.72m）",
+  "height": 1.719,
+  "feet": 0,
+  "ground": 0,
+  "width": 0.892,
+  "depth": 0.328,
+  "facing": 0.998,
+  "eyesY": 1.591,
+  "opaque": true,
+  "boxHidden": true,
+  "bodyShown": true,
+  "meta": {
+   "id": "remy",
+   "name": "Remy（凸ダンの主人公の体）",
+   "source": "Mixamo Remy（凸ダン game/client の PlayerRemy/Remy.fbx）",
+   "hipsHeight": 0.95,
+   "height": 1.719,
+   "width": 0.892,
+   "depth": 0.328,
+   "pose": "腕を 68 度下ろし、肘を 14 度曲げた立ち姿",
+   "verts": 21459,
+   "tris": 35196
+  }
+ },
+ "loadMs": 5041,
+ "fail": 0
+}

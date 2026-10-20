@@ -1456,8 +1456,28 @@ function geoHero() {
   ];
   return makeGeo(parts, 21);
 }
-const hero = new THREE.Mesh(geoHero(), heroMat);
-hero.castShadow = true; hero.visible = false; scene.add(hero);
+// 主人公の見た目（hero/）：ゲームの体（Remy、hero/remy.js）と簡易の人形（geoHero）。見た目だけで、歩きの判定（state.agent）と書き出しには関わらない
+const heroBox = new THREE.Mesh(geoHero(), heroMat);
+heroBox.castShadow = true;
+const heroBody = window.TDHero ? TDHero.build('remy') : null;   // null = hero/remy.js が無い（簡易の人形だけ）
+const hero = new THREE.Group(); hero.add(heroBox); if (heroBody) hero.add(heroBody.group);
+hero.visible = false; scene.add(hero);
+const heroMats = [heroMat, ...(heroBody ? heroBody.mats : [])];
+let heroLook = 'box';
+function setHeroLook(v) {
+  heroLook = heroBody && v === 'remy' ? 'remy' : 'box';
+  heroBox.visible = heroLook === 'box'; if (heroBody) heroBody.group.visible = heroLook === 'remy';
+  if ($('heroLook')) $('heroLook').value = heroLook;
+}
+// 岩の中（隠し通路）では透かして前に描く。毒の上では光らせる
+function heroStyle(buried) {
+  for (const m of heroMats) {
+    m.depthTest = !buried; m.opacity = buried ? .62 : 1; m.emissive.setHex(buried ? 0x2a6a90 : 0x000000);
+    if (m !== heroMat && m.transparent !== buried) { m.transparent = buried; m.needsUpdate = true; }   // Remy の部品は透かす時だけ透過（hero/hero.js）
+  }
+  hero.traverse(o => { if (o.isMesh) o.renderOrder = buried ? 10 : 0; });
+}
+function heroGlow(r, g, b) { for (const m of heroMats) m.emissive.setRGB(r, g, b); }
 const spawnMarker = new THREE.Mesh(new THREE.ConeGeometry(.5, 1.4, 6), new THREE.MeshBasicMaterial({ color: 0xffcc33 }));
 spawnMarker.rotation.x = Math.PI; scene.add(spawnMarker);
 const player = { x: 0, z: 0, y: 0, face: 0, moving: 0, t: 0 };
@@ -3107,6 +3127,9 @@ $('modeEdit').onclick = () => setMode('edit');
 $('modePlay').onclick = () => setMode('play');
 $('undo').onclick = undo; $('redo').onclick = redo;
 $('walkView').onclick = () => setWalkView(!state.showWalk);
+if (heroBody) $('heroLookRemy').textContent = `Remy（ゲームの体・身長 ${heroBody.meta.height.toFixed(2)}m）`; else $('heroLookRemy').disabled = true;
+$('heroLook').onchange = e => setHeroLook(e.target.value);
+setHeroLook(heroBody ? 'remy' : 'box');
 $('autoRocks').onclick = () => { pushUndo(); autoRocks(); toast('崖のまわりに岩を配置しました'); };
 $('newSample').onclick = () => { if (SIZE !== 64) { reloadAtSize(64, 'sample'); return; } pushUndo(); genSample((Math.random() * 1e6) | 0); syncUI(); updateTerrain(); rebuildProps(); rebuildFalls(); rebuildBridges(); rebuildStairs(); };
 $('newSample2').onclick = () => {
@@ -3149,7 +3172,7 @@ function setMode(m) {
   $('modeEdit').classList.toggle('on', m === 'edit'); $('modePlay').classList.toggle('on', m === 'play');
   hero.visible = m === 'play'; spawnMarker.visible = ring.visible = markerGroup.visible = m === 'edit'; preview.visible = false;
   if (m !== 'play' && ghosts.size) { ghosts = new Set(); rebuildProps(true); }
-  heroMat.depthTest = true; hero.renderOrder = 0; heroMat.opacity = 1; heroMat.emissive.setHex(0x000000);
+  heroStyle(false);
   if (m === 'play') {
     if (walkDirty) computeWalk();
     player.x = state.spawn.x; player.z = state.spawn.z; player.y = heightAt(player.x, player.z);
@@ -3421,10 +3444,9 @@ function update(dt) {
     const buried = inSecret && heightAt(player.x, player.z) > player.y + 1.2;
     if (heroMat.depthTest === buried) {
       // x-ray look while buried in rock, so it reads as "inside the wall", not "on top of it"
-      heroMat.depthTest = !buried; hero.renderOrder = buried ? 10 : 0;
-      heroMat.opacity = buried ? .62 : 1; heroMat.emissive.setHex(buried ? 0x2a6a90 : 0x000000);
+      heroStyle(buried);
     }
-    if (!buried) { const pu = state.onPoison ? .5 + .5 * Math.sin(timeU.value * 7) : 0; heroMat.emissive.setRGB(.38 * pu, .05 * pu, .5 * pu); }
+    if (!buried) { const pu = state.onPoison ? .5 + .5 * Math.sin(timeU.value * 7) : 0; heroGlow(.38 * pu, .05 * pu, .5 * pu); }
     hero.position.set(player.x, player.y + (player.moving ? Math.abs(Math.sin(player.t * 11)) * .08 : 0), player.z);
     hero.rotation.y = player.face;
     _tgt.set(player.x, player.y + 1, player.z);
@@ -3461,7 +3483,7 @@ requestAnimationFrame(frame);
 
 // hooks for automated checks
 window.__app = {
-  SIZE, state, H, S, O, F, C, cliffIndexAt, BIOMES, CLIFF_STYLES, applyCliffStyle, deckAt, linkDeckAt, runValidation, genSample, genSample2, secretRegions, secretLineX, passageGeometry, terrainRes, TERRAIN_RES, snapshot, sha256, LINK_KINDS, normalizeCatalog, catalogExport, valueIssues, areaIssue, deckAt, getColliders, PROP, get colliderMaxR() { return colliderMaxR; }, rebuildMarkers, linkTrigger, linkArrival, LINK_SPEC, get markers() { return markers; }, placeMarker, ensureIds, applyCatalog, ATMOS, WEATHER, applyAtmo, makeCoast, glowLights, applyBiome, applyPalette, propVisible, toolVisible, updateTerrain, rebuildProps, genFlat, floorAt, bridgeAt, stairsAt, placeSlope, placeStairs, placeBridge, pickTarget, regenGroundProps, rebuildBridges, get stairs() { return stairs; }, get bridges() { return bridges; }, get falls() { return falls; }, overrideAt, heroMat, get ghosts() { return ghosts; }, get props() { return props; }, cam, playCam, player, keys, setMode, setTool, update, heightAt, walkable, slope: slopeAt,
+  SIZE, state, H, S, O, F, C, cliffIndexAt, BIOMES, CLIFF_STYLES, applyCliffStyle, deckAt, linkDeckAt, runValidation, genSample, genSample2, secretRegions, secretLineX, passageGeometry, terrainRes, TERRAIN_RES, snapshot, sha256, LINK_KINDS, normalizeCatalog, catalogExport, valueIssues, areaIssue, deckAt, getColliders, PROP, get colliderMaxR() { return colliderMaxR; }, rebuildMarkers, linkTrigger, linkArrival, LINK_SPEC, get markers() { return markers; }, placeMarker, ensureIds, applyCatalog, ATMOS, WEATHER, applyAtmo, makeCoast, glowLights, applyBiome, applyPalette, propVisible, toolVisible, updateTerrain, rebuildProps, genFlat, floorAt, bridgeAt, stairsAt, placeSlope, placeStairs, placeBridge, pickTarget, regenGroundProps, rebuildBridges, get stairs() { return stairs; }, get bridges() { return bridges; }, get falls() { return falls; }, overrideAt, heroMat, hero, heroBody, get heroLook() { return heroLook; }, setHeroLook, heroStyle, heroGlow, get ghosts() { return ghosts; }, get props() { return props; }, cam, playCam, player, keys, setMode, setTool, update, heightAt, walkable, slope: slopeAt,
   stroke(x, z, frames = 20, opts = {}) {
     hit = new THREE.Vector3(x, heightAt(x, z), z); beginStroke({ shiftKey: !!opts.shift });
     for (let f = 0; f < frames; f++) { if (stroke.active && !['scatter', 'erase'].includes(state.tool)) { applyBrush(x, z, 1 / 60); } }
