@@ -52,4 +52,6 @@ TDProps.add({
 
 ## 注意
 
-- 小物の形は、エディターの画面用です。Unity には形は書き出さず、位置・向き・大きさと `asset_catalog.json`（当たり判定など）だけを出します。Unity 側の見た目は Prefab で作ります。
+- `rock` と `fern` は共有化の検証版です。同じ形・PNG・材質値をブラウザとUnityで使います。契約・三角形数・制約・取り込み方法は [共有小物の検証](../docs/SHARED_PROPS_PILOT.md) を参照してください。
+- `pine`・`log`・`stump` と新規 `rootfan` も共通資産経路を使います。枝下の寸法、縮尺制限、草地の由来、検証結果は [草地・自然物の試作](../docs/TERRAIN_NATURE_BATCH.md) を参照してください。
+- その他の小物の形は、エディターの画面用です。Unity には位置・向き・大きさと `asset_catalog.json`（当たり判定など）を出し、見た目は Prefab で作ります。

@@ -230,8 +230,13 @@ function applyCliffStyle() {
   BU.uCliffMossK.value = st.mossK ?? 1; BU.uCliffWet.value = st.wet || 0; BU.uCliffSnow.value = st.snow || 0;
   fillCliffAttrs(); if (typeof rebuildProps === 'function' && typeof propMeshes !== 'undefined') rebuildProps(true);
 }
+// Shared grass (4 m) and soil (2 m); mipmapped raw sRGB enters the existing single terrain decode.
+const groundTexture = TDGround.texture;
+groundTexture.anisotropy = Math.min(2, renderer.capabilities.getMaxAnisotropy());
+const groundTrial = { value: 0 };
 const terrainMat = new THREE.MeshStandardMaterial({ roughness: .92, metalness: 0 });
 terrainMat.onBeforeCompile = (sh) => {
+  Object.assign(sh.uniforms, TDGround.uniforms); sh.uniforms.uGroundTrial = groundTrial;
   sh.uniforms.uWater = waterU; sh.uniforms.uDim = dimU; sh.uniforms.uTime = timeU; Object.assign(sh.uniforms, BU);
   sh.vertexShader = sh.vertexShader
     .replace('#include <common>', '#include <common>\nattribute vec4 splatA; attribute vec4 splatB; attribute float splatC; attribute vec3 cliffT; attribute vec4 cliffM; attribute vec2 cliffW; varying vec3 vCT; varying vec4 vCM; varying vec2 vCW; varying vec4 vSA; varying vec4 vSB; varying float vSC; varying vec3 vWPos; varying vec3 vWNor;')
@@ -241,6 +246,8 @@ terrainMat.onBeforeCompile = (sh) => {
 varying vec4 vSA; varying vec4 vSB; varying float vSC; varying vec3 vWPos; varying vec3 vWNor; uniform float uWater; uniform float uDim; uniform float uTime;
 uniform vec3 uG0; uniform vec3 uG1; uniform vec3 uGH; uniform vec3 uRockTint; uniform float uFlowers; uniform float uSnow; uniform float uSnowLine; uniform float uWet;
 varying vec3 vCT; varying vec4 vCM; varying vec2 vCW; uniform int uPitN; uniform vec4 uPitA[8]; uniform vec4 uPitB[8];
+${TDGround.GLSL}
+uniform float uGroundTrial;
 float gGloss=0.; vec3 gGlow=vec3(0.);
 ${GLSL_NOISE}
 ${DIM_GLSL}
@@ -252,17 +259,20 @@ vec3 terrainColor(){
   vec3 grass=mix(uG0, uG1, clamp(a*1.2+b*.7-.5,0.,1.));
   grass=mix(grass, uGH, smoothstep(.62,.95,b)*.35);
   grass*=.86+.28*c;
+  // Preserve broad colour variation without repeating the tiny hard-edged flower dots.
+  if(uGroundTrial>0.) grass=sharedGrass(p);
   vec2 fc=floor(p*4.5), fg=fract(p*4.5)-.5;
   float fl=step(.968,h21(fc+3.1))*step(length(fg-(vec2(h21(fc),h21(fc+9.))-.5)*.5),.1);
   vec3 fcol=h21(fc+7.7)<.55?vec3(.97,.95,.86):vec3(.98,.82,.22);
   // dirt
   vec3 dirt=mix(vec3(.36,.25,.14), vec3(.66,.52,.33), clamp(b*1.25+c*.35-.2,0.,1.));
+  if(uGroundTrial>0.) dirt=sharedDirt(p);
   // cobble
   vec3 cv=vor(p*1.5); float ce=smoothstep(.02,.1,cv.y-cv.x);
   vec3 cob=mix(vec3(.20,.17,.14), mix(vec3(.42,.38,.33),vec3(.70,.65,.57),cv.z)*(.9+.2*c), ce);
   vec3 col=mix(grass,dirt,smoothstep(.2,.55,vSA.x+(b-.5)*.35));
   col=mix(col,cob,smoothstep(.3,.55,vSA.y+(c-.5)*.15));
-  col=mix(col,fcol,uFlowers*fl*step(slope,.12)*(1.-smoothstep(.2,.4,vSA.x+vSA.y+vSA.z+vSA.w+vSB.x+vSB.y)));
+  col=mix(col,fcol,uFlowers*fl*(1.-uGroundTrial)*step(slope,.12)*(1.-smoothstep(.2,.4,vSA.x+vSA.y+vSA.z+vSA.w+vSB.x+vSB.y)));
   // sand: wind ripples
   float sdw=smoothstep(.25,.6,vSA.z+(b-.5)*.3);
   if(sdw>0.){
@@ -365,7 +375,7 @@ for(int i=0;i<8;i++){ if(i>=uPitN) break; vec2 d=vWPos.xz-uPitA[i].xy; float lx=
     .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor=mix(roughnessFactor,.55,gGloss);')
     .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance+=pow(gGlow,vec3(2.2))*(1.-.6*uDim);');
 };
-terrainMat.customProgramCacheKey = () => 'terrain-v6';
+terrainMat.customProgramCacheKey = () => 'terrain-grass-soil-shared-v3';
 
 function gridIndex() {
   const ix = new Uint32Array((N - 1) * (N - 1) * 6); let o = 0;
@@ -672,8 +682,9 @@ const cardMat = new THREE.MeshLambertMaterial({ vertexColors: true, map: atlasTe
 cardMat.onBeforeCompile = propShader; cardMat.customProgramCacheKey = () => 'prop-dim-v6-cards';
 const CAP = 8000;
 const propMeshes = PROP.map(t => {
-  const m = new THREE.InstancedMesh(t.geo, t.material === 'rock' ? rockMat : t.material === 'stone' ? masonMat : t.material === 'cards' ? cardMat : t.material === 'foliage' ? foliageMat : propMat, CAP);
+  const m = new THREE.InstancedMesh(t.geo, t.sharedAsset ? TDSharedProps.material(t.sharedAsset) : t.material === 'rock' ? rockMat : t.material === 'stone' ? masonMat : t.material === 'cards' ? cardMat : t.material === 'foliage' ? foliageMat : propMat, CAP);
   m.castShadow = m.receiveShadow = true; m.frustumCulled = false; m.count = 0;
+  if(t.sharedAsset==='pine'){m.customDepthMaterial=TDPineWind.shadowMaterial(m.material);m.customDistanceMaterial=TDPineWind.shadowMaterial(m.material,true);}
   if (t.canopy) m.receiveShadow = false;   // lumpy canopies shadow themselves in patches; their soft normals already shade them (and it is cheaper)
   m.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(CAP * 3), 3);
   if (m.material === rockMat) { m.userData.cliffI = new THREE.InstancedBufferAttribute(new Float32Array(CAP), 1); t.geo.setAttribute('cliffI', m.userData.cliffI); }
@@ -682,7 +693,7 @@ const propMeshes = PROP.map(t => {
 const ghostMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .88, metalness: 0, flatShading: true, transparent: true, opacity: .28, depthWrite: false });
 const ghostCardMat = ghostMat.clone(); ghostCardMat.map = atlasTex; ghostCardMat.alphaTest = .42; ghostCardMat.side = THREE.DoubleSide;
 const ghostMeshes = PROP.map(t => {
-  const m = new THREE.InstancedMesh(t.geo, t.material === 'cards' ? ghostCardMat : ghostMat, 256);
+  const m = new THREE.InstancedMesh(t.geo, t.sharedAsset ? TDSharedProps.material(t.sharedAsset, true) : t.material === 'cards' ? ghostCardMat : ghostMat, 256);
   m.frustumCulled = false; m.count = 0; m.renderOrder = 8;
   m.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(256 * 3), 3);
   scene.add(m); return m;
@@ -715,10 +726,13 @@ function rebuildProps(visualOnly = false) {
     const [t, x, z, r, s] = p, sy = p[6] ?? 1, by = p[7] ?? null, ghost = ghosts.has(p) && gcnt[t] < 256;
     const mesh = ghost ? ghostMeshes[t] : propMeshes[t], c = ghost ? gcnt : cnt;
     if (c[t] >= CAP) continue;
-    _p.set(x, by ?? heightAt(x, z) - (t === 2 ? .12 * s : .05), z); _q.setFromAxisAngle(_up, r); _s.set(s, s * sy, s);
+    // Shared meshes have an explicit ground pivot; their catalog yaw offset applies to visuals too.
+    const shared = PROP[t].sharedAsset;
+    _p.set(x, by ?? (heightAt(x, z) - (shared ? 0 : t === 2 ? .12 * s : .05)), z);
+    _q.setFromAxisAngle(_up, r - (shared ? PROP[t].yawOffset * Math.PI / 180 : 0)); _s.set(s, s * sy, s);
     mesh.setMatrixAt(c[t], _m.compose(_p, _q, _s));
     const v = .86 + .28 * hash2(x * 97 | 0, z * 89 | 0);
-    mesh.setColorAt(c[t], _c.setRGB(v * (.95 + .1 * hash2(x * 13 | 0, 7)), v, v * (.95 + .1 * hash2(3, z * 17 | 0))));
+    mesh.setColorAt(c[t], shared ? _c.setRGB(1, 1, 1) : _c.setRGB(v * (.95 + .1 * hash2(x * 13 | 0, 7)), v, v * (.95 + .1 * hash2(3, z * 17 | 0))));
     if (!ghost && mesh.userData.cliffI) mesh.userData.cliffI.array[c[t]] = cliffIndexNear(x, z);
     c[t]++;
   }
@@ -2104,7 +2118,8 @@ function catalogExport() {
       height: 'collider top above the pivot (m, scaleY 1). Used by the editor for obstacles standing on bridge / stairs decks (overlap with agentProfile.height). Ground walkability ignores it. Headroom under ceilings is not checked.',
       solid: 'floorLinks: circle colliders [x, z, radius] in prefab-local coordinates.',
     },
-    types: Object.fromEntries(PROP.map(t => [t.id, { name: t.name, assetKey: t.assetKey, solid: t.r > 0, radius: t.r, offsets: t.offsPrefab || [0], height: t.height, yawOffsetDeg: t.yawOffset || 0, footprint: t.vis, tags: t.tags }])),
+    types: Object.fromEntries(PROP.map(t => [t.id, { name: t.name, assetKey: t.assetKey, solid: t.r > 0, radius: t.r, offsets: t.offsPrefab || [0], height: t.height, yawOffsetDeg: t.yawOffset || 0, footprint: t.vis, tags: t.tags,
+      ...(t.sharedAsset && t.assetKey === TDSharedProps.asset(t.sharedAsset).assetKey ? { sharedModel: { file: 'shared_props.json', id: t.sharedAsset, version: TDSharedProps.asset(t.sharedAsset).version } } : {}) }])),
     floorLinks: Object.fromEntries(LINK_KINDS.map(([k, name]) => { const sp = LINK_SPEC[k]; return [sp.id, {
       name, kind: sp.game, assetKey: sp.assetKey, yawOffsetDeg: sp.yawOffset || 0, height: sp.height,
       footprint: { width: sp.size[0], length: sp.size[1] }, solid: sp.solidPrefab.map(([x, z, r]) => [r3(x), r3(z), r3(r)]),
@@ -3004,6 +3019,9 @@ revision・書き出し日時・ファイルごとの SHA-256・contentHash は 
     ...waterPngs,
     { name: 'walkable.png', data: walkPng }, { name: 'cliff_style.png', data: cliffPng }, { name: 'props.csv', data: csv },
     { name: 'asset_catalog.json', data: JSON.stringify(catalogExport(), null, 2) },
+    { name: 'shared_props.json', data: TDSharedProps.exportJson() },
+    { name: 'pine_wind.json', data: TDPineWind.exportJson() },
+    { name: 'shared_ground.json', data: JSON.stringify(TDGroundData) },
     { name: 'meta.json', data: JSON.stringify(meta, null, 2) }, { name: 'validation.json', data: JSON.stringify(validation, null, 2) },
     { name: 'map.json', data: mapJson }, { name: 'README.txt', data: readme },
   ];
@@ -3078,6 +3096,7 @@ function showVariants() {
 }
 function applyBiome(id) {
   state.biome = (BIOMES.find(b => b.id === id) || BIOMES[1]).id;
+  groundTrial.value = TDGroundData.biomes.includes(state.biome) && !location.hash.includes('ground=legacy') ? 1 : 0;
   const B = BIOME(), v3 = (u, c) => u.value.setRGB(c[0], c[1], c[2]);
   scene.background.setHex(B.bg); scene.fog.color.setHex(B.fog ?? B.bg); scene.fog.near = (B.fogNear ?? 140) * FOG_K; scene.fog.far = (B.fogFar ?? 280) * FOG_K;
   hemi.color.setHex(B.sky); hemi.groundColor.setHex(B.ground); hemi.intensity = B.hemi;
@@ -3385,6 +3404,7 @@ const _tgt = new THREE.Vector3();
 let fpsAcc = 0, fpsN = 0, fps = 0;
 function update(dt) {
   timeU.value += dt;
+  TDPineWind.set(timeU.value,BU.uWind.value.x,-BU.uWind.value.y,BU.uWind.value.z);
   for (const [o, sp] of linkSpin) { if (o.geometry.type === 'PlaneGeometry') o.rotation.z += dt * sp; else { o.rotation.y += dt * sp; o.material.opacity = .42 + Math.sin(timeU.value * 2.2) * .1; } }
   { const c = state.mode === 'edit' ? cam.target : player; WU.uCenter.value.set(c.x, (state.mode === 'edit' ? heightAt(c.x, c.z) : player.y) + 2, c.z); }
   if (WEATHER[state.weather.kind]?.lightning) {
@@ -3486,7 +3506,7 @@ requestAnimationFrame(frame);
 
 // hooks for automated checks
 window.__app = {
-  SIZE, state, H, S, O, F, C, cliffIndexAt, BIOMES, CLIFF_STYLES, applyCliffStyle, deckAt, linkDeckAt, runValidation, genSample, genSample2, secretRegions, secretLineX, passageGeometry, terrainRes, TERRAIN_RES, snapshot, sha256, LINK_KINDS, normalizeCatalog, catalogExport, valueIssues, areaIssue, deckAt, getColliders, PROP, get colliderMaxR() { return colliderMaxR; }, rebuildMarkers, linkTrigger, linkArrival, LINK_SPEC, get markers() { return markers; }, placeMarker, ensureIds, applyCatalog, ATMOS, WEATHER, applyAtmo, makeCoast, glowLights, applyBiome, applyPalette, propVisible, toolVisible, updateTerrain, rebuildProps, genFlat, floorAt, bridgeAt, stairsAt, placeSlope, placeStairs, placeBridge, pickTarget, regenGroundProps, rebuildBridges, get stairs() { return stairs; }, get bridges() { return bridges; }, get falls() { return falls; }, overrideAt, heroMat, hero, heroBody, get heroLook() { return heroLook; }, setHeroLook, heroStyle, heroGlow, get ghosts() { return ghosts; }, get props() { return props; }, cam, playCam, player, keys, setMode, setTool, update, heightAt, walkable, slope: slopeAt,
+  groundTrial, groundTexture, terrain, renderer, camera, SIZE, state, H, S, O, F, C, propMeshes, ghostMeshes, cliffIndexAt, BIOMES, CLIFF_STYLES, applyCliffStyle, deckAt, linkDeckAt, runValidation, genSample, genSample2, secretRegions, secretLineX, passageGeometry, terrainRes, TERRAIN_RES, snapshot, sha256, LINK_KINDS, normalizeCatalog, catalogExport, valueIssues, areaIssue, deckAt, getColliders, PROP, get colliderMaxR() { return colliderMaxR; }, rebuildMarkers, linkTrigger, linkArrival, LINK_SPEC, get markers() { return markers; }, placeMarker, ensureIds, applyCatalog, ATMOS, WEATHER, applyAtmo, makeCoast, glowLights, applyBiome, applyPalette, propVisible, toolVisible, updateTerrain, rebuildProps, genFlat, floorAt, bridgeAt, stairsAt, placeSlope, placeStairs, placeBridge, pickTarget, regenGroundProps, rebuildBridges, get stairs() { return stairs; }, get bridges() { return bridges; }, get falls() { return falls; }, overrideAt, heroMat, hero, heroBody, get heroLook() { return heroLook; }, setHeroLook, heroStyle, heroGlow, get ghosts() { return ghosts; }, get props() { return props; }, cam, playCam, player, keys, setMode, setTool, update, heightAt, walkable, slope: slopeAt,
   stroke(x, z, frames = 20, opts = {}) {
     hit = new THREE.Vector3(x, heightAt(x, z), z); beginStroke({ shiftKey: !!opts.shift });
     for (let f = 0; f < frames; f++) { if (stroke.active && !['scatter', 'erase'].includes(state.tool)) { applyBrush(x, z, 1 / 60); } }

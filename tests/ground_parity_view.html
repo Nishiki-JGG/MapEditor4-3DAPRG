@@ -1,0 +1,18 @@
+<!DOCTYPE html><meta charset="utf-8"><title>Shared grass comparison</title><style>html,body{margin:0}canvas{display:block}</style><body>
+<script src="../three.min.js"></script><script src="../terrain/grass.js"></script><script src="../terrain/dirt.js"></script><script src="../terrain/shared.js"></script><script>
+const renderer=new THREE.WebGLRenderer({antialias:false,preserveDrawingBuffer:true});renderer.setSize(1280,800);renderer.setPixelRatio(1);renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.NoToneMapping;document.body.append(renderer.domElement);
+TDGround.texture.anisotropy=2;
+const scene=new THREE.Scene();scene.background=new THREE.Color('#b8c4cc');scene.add(new THREE.AmbientLight(0xffffff,1));const sun=new THREE.DirectionalLight(0xffffff,Math.PI);sun.position.set(-3,8,5);scene.add(sun);
+const camera=new THREE.PerspectiveCamera(38,1.6,.1,100);
+const g=new THREE.PlaneGeometry(32,32).rotateX(-Math.PI/2);
+TDGround.uniforms.uSoilPaint={value:0};
+const soilGLSL='uniform float uSoilPaint;'+TDGround.GLSL+`
+float shash(vec2 p){p=fract(p*vec2(123.34,456.21));p+=dot(p,p+45.32);return fract(p.x*p.y);}
+float snoise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(shash(i),shash(i+vec2(1,0)),f.x),mix(shash(i+vec2(0,1)),shash(i+vec2(1,1)),f.x),f.y);}
+vec3 referenceGround(vec2 p){float a=.5,b=0.;vec2 q=p*1.6+5.;for(int i=0;i<4;i++){b+=a*snoise(q);q=q*2.03+17.1;a*=.5;}float paint=uSoilPaint<0.?clamp((p.x+4.)/8.,0.,1.):uSoilPaint;float w=smoothstep(.2,.55,paint+(b-.5)*.35);return mix(sharedGrass(p),sharedDirt(p),w);}`;
+const unlit=new THREE.ShaderMaterial({uniforms:TDGround.uniforms,vertexShader:'varying vec3 wp;void main(){vec4 p=modelMatrix*vec4(position,1.);wp=p.xyz;gl_Position=projectionMatrix*viewMatrix*p;}',fragmentShader:`varying vec3 wp;${soilGLSL}\nvoid main(){gl_FragColor=vec4(pow(referenceGround(wp.xz),vec3(2.2)),1.);\n#include <colorspace_fragment>\n}`});
+const lit=new THREE.MeshStandardMaterial({roughness:.92,metalness:0});lit.onBeforeCompile=sh=>{Object.assign(sh.uniforms,TDGround.uniforms);sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 wp;').replace('#include <begin_vertex>','#include <begin_vertex>\nwp=(modelMatrix*vec4(position,1.)).xyz;');sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying vec3 wp;\n'+soilGLSL).replace('#include <color_fragment>','#include <color_fragment>\ndiffuseColor.rgb=pow(referenceGround(wp.xz),vec3(2.2));');};
+const plane=new THREE.Mesh(g,unlit);scene.add(plane);
+window.preview=(dist=17,mode='unlit',repeat='mixed',surface='grass')=>{TDGround.uniforms.uSoilPaint.value=surface==='soil'?1:surface==='blend'?-1:0;plane.material=mode==='lit'?lit:unlit;TDGround.uniforms.uGroundParams.value.y=repeat==='single'?0:TDGroundData.secondWeight;camera.position.set(0,Math.sin(.9)*dist,Math.cos(.9)*dist);camera.lookAt(0,0,0);renderer.render(scene,camera);};
+window.preview();
+</script>

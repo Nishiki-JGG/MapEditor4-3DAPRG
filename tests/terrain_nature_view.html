@@ -1,0 +1,20 @@
+<!DOCTYPE html><meta charset="utf-8"><title>自然物の比較</title><style>html,body{margin:0;background:#b8c4cc}canvas{display:block}</style><body><script src="../three.min.js"></script><script src="../props/common.js"></script><script src="../props/foliage.js"></script><script src="../tools/nature/pine-before.js"></script><script src="../props/shared/assets.js"></script><script src="../props/shared/pine-wind.js"></script><script src="../props/shared/shared.js"></script><script>
+const renderer=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});renderer.setSize(1280,800);renderer.setPixelRatio(1);renderer.outputColorSpace=THREE.SRGBColorSpace;document.body.append(renderer.domElement);
+const scene=new THREE.Scene();scene.background=new THREE.Color('#b8c4cc');scene.add(new THREE.AmbientLight(0xffffff,1.5));const sun=new THREE.DirectionalLight(0xffffff,2);sun.position.set(-3,8,5);scene.add(sun);
+const camera=new THREE.OrthographicCamera(-6.4,6.4,4,-4,.1,100);camera.position.set(0,5,15);camera.lookAt(0,3,0);
+const plane=new THREE.Mesh(new THREE.BoxGeometry(30,.1,20),new THREE.MeshLambertMaterial({color:'#889873'}));plane.position.y=-.05;scene.add(plane);
+const cv=document.createElement('canvas');cv.width=cv.height=1024;cv.getContext('2d').putImageData(new ImageData(new Uint8ClampedArray(TDGeo.ATLAS.paint()),1024,1024),0,0);const tx=new THREE.CanvasTexture(cv);tx.colorSpace=THREE.SRGBColorSpace;tx.flipY=false;
+const old=new THREE.Mesh(TDProps.build()[0].geo,new THREE.MeshLambertMaterial({map:tx,vertexColors:true,alphaTest:.42,side:THREE.DoubleSide}));old.position.x=-3;scene.add(old);
+const pine=new THREE.Mesh(TDSharedProps.geometry('pine'),TDSharedProps.material('pine'));pine.position.x=3;scene.add(pine);
+const people=[];for(const x of [-2.1,3.9]){const group=new THREE.Group(),mat=new THREE.MeshLambertMaterial({color:'#e0ad76'});
+ const body=new THREE.Mesh(new THREE.CylinderGeometry(.19,.17,.7,8),mat);body.position.y=1.1;group.add(body);
+ const head=new THREE.Mesh(new THREE.SphereGeometry(.15,8,6),mat);head.position.y=1.65;group.add(head);
+ for(const side of [-1,1]){const leg=new THREE.Mesh(new THREE.CylinderGeometry(.065,.07,.75,6),mat);leg.position.set(side*.1,.375,0);group.add(leg);const arm=new THREE.Mesh(new THREE.CylinderGeometry(.05,.055,.6,6),mat);arm.position.set(side*.25,1.05,0);group.add(arm);}
+ group.position.set(x,0,.1);scene.add(group);people.push(group);}
+// Labelled y=2.15 reference, restricted to the after-tree comparison.
+const line=new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(.65,2.15,0),new THREE.Vector3(5.4,2.15,0)]),new THREE.LineBasicMaterial({color:'#b66a21'}));scene.add(line);
+const label=(text,x,y)=>{const c=document.createElement('canvas');c.width=600;c.height=64;const g=c.getContext('2d');g.font='28px sans-serif';g.fillStyle='#172b30';g.fillText(text,5,43);const m=new THREE.Mesh(new THREE.PlaneGeometry(4.8,.512),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(c),transparent:true}));m.position.set(x,y,1);scene.add(m);return m;};
+const labels=[label('変更前 314 triangles',-3,7),label('変更後 134 triangles',3,7),label('基準人型 1.8 m / 枝下 2.15 m',3,.3)];
+const extras=['log','stump','rootfan','rock','fern'].map((id,k)=>{const o=new THREE.Mesh(TDSharedProps.geometry(id),TDSharedProps.material(id));o.position.set(...[[-3,0,0],[0,0,0],[3,0,0],[-1.8,0,-3],[1.8,0,-3]][k]);o.visible=false;scene.add(o);return o;});
+window.preview=(mode='pine')=>{const isPine=mode==='pine';old.visible=pine.visible=line.visible=isPine;people.forEach(o=>o.visible=isPine);labels.forEach(o=>o.visible=isPine);extras.forEach(o=>o.visible=!isPine);camera.position.set(0,isPine?5:4,isPine?15:9);camera.lookAt(0,isPine?3:.4,0);camera.top=4;camera.bottom=-camera.top;camera.left=-camera.top*1.6;camera.right=-camera.left;camera.updateProjectionMatrix();renderer.render(scene,camera);};window.preview();setInterval(()=>window.preview(window.mode||'pine'),200);
+</script>

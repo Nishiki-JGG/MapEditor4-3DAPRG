@@ -9,7 +9,7 @@
 
 - `hero.js`：体のデータを three.js の形にします（`TDHero.add` で登録、`TDHero.build(id)` で作る）。
 - `remy.js`：Remy の体のデータ（`build_remy.py` で作った物。手で直さないこと）。
-  - 凸ダンの主人公に使う予定の体（Mixamo の Remy）です。
+  - ゲームの主人公用の体（Mixamo の Remy）です。
   - 大きさはゲームと同じで、腰の高さが 0.95m、身長が 1.719m です。
   - 骨付きです（骨 67 本、頂点ごとに 4 本までの骨と重み）。
   - 動きは 3 つです。止まっている時は腕を下ろした立ち姿、遅い時は歩き、速い時は走りです（Mixamo の Action Adventure Pack の walking・running、Remy 用）。

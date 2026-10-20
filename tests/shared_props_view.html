@@ -1,0 +1,28 @@
+<!DOCTYPE html><meta charset="utf-8"><title>共有小物の比較</title>
+<style>html,body{margin:0;background:#b8c4cc}canvas{display:block}</style>
+<body>
+<script src="../three.min.js"></script><script src="../props/shared/assets.js"></script><script src="../props/shared/pine-wind.js"></script><script src="../props/shared/shared.js"></script>
+<script>
+const renderer=new THREE.WebGLRenderer({antialias:false,preserveDrawingBuffer:true});renderer.setSize(1024,640);renderer.setPixelRatio(1);renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.NoToneMapping;document.body.append(renderer.domElement);
+const scene=new THREE.Scene();scene.background=new THREE.Color('#b8c4cc');
+scene.add(new THREE.AmbientLight(0xffffff,1));const light=new THREE.DirectionalLight(0xffffff,Math.PI);light.position.set(-3,5,4);scene.add(light);
+const camera=new THREE.OrthographicCamera(-3.2,3.2,2,-2,.1,100);
+const meshes=['rock','fern'].map((id,k)=>{const lit=TDSharedProps.material(id),m=new THREE.Mesh(TDSharedProps.geometry(id),lit);m.userData={id,x:k?1.2:-1.4,lit,unlit:new THREE.MeshBasicMaterial({map:lit.map,alphaTest:lit.alphaTest,side:lit.side})};scene.add(m);return m;});
+const plane=new THREE.Mesh(new THREE.BoxGeometry(8,.1,6),new THREE.MeshBasicMaterial({color:'#929c9c'}));plane.position.y=-.05;scene.add(plane);
+const cv=document.createElement('canvas');cv.width=cv.height=64;const ctx=cv.getContext('2d');
+for(const[c,x,y]of [['#ff0000',0,0],['#00ff00',32,0],['#0000ff',0,32],['#ffff00',32,32]]){ctx.fillStyle=c;ctx.fillRect(x,y,32,32);}ctx.fillStyle='#ffffff';ctx.fillRect(3,3,4,23);ctx.fillRect(3,22,20,4);
+window.orientationPNG=cv.toDataURL('image/png').split(',')[1];
+const mark=new THREE.Mesh(new THREE.PlaneGeometry(2,2),new THREE.MeshBasicMaterial({map:new THREE.TextureLoader().load(cv.toDataURL('image/png')),side:THREE.DoubleSide}));mark.position.y=1;scene.add(mark);
+const perspective=new THREE.PerspectiveCamera(38,1.6,.1,100);window.mode='lit';
+window.preview=(back=false)=>{
+ const mode=window.mode;camera.left=-3.2;camera.right=3.2;camera.top=2;camera.bottom=-2;let active=camera;
+ for(const m of meshes){m.position.set(m.userData.x,0,0);m.visible=true;m.material=mode==='lit'?m.userData.lit:m.userData.unlit;}
+ plane.visible=mode!=='unlit'&&mode!=='orientation';mark.visible=mode==='orientation';
+ camera.position.set(-.2,2.5,back?-6:6);camera.lookAt(0,.35,0);
+ if(mode==='orientation'){meshes.forEach(m=>m.visible=false);camera.position.set(0,1,6);camera.lookAt(0,1,0);}
+ if(mode.startsWith('ground-')){const id=mode.slice(7);meshes.forEach(m=>{m.visible=m.userData.id===id;m.position.x=0;});camera.left=-1.6;camera.right=1.6;camera.top=1;camera.bottom=-1;camera.position.set(0,.5,6);camera.lookAt(0,.5,0);}
+ if(mode.startsWith('plant-')){const distance=mode==='plant-7m'?7:17,shift=mode.endsWith('shift')?.01:0;meshes.forEach(m=>{m.visible=m.userData.id==='fern';m.position.x=0;m.material=m.userData.lit;});perspective.position.set(shift,.25+Math.sin(.9)*distance,Math.cos(.9)*distance);perspective.lookAt(shift,.25,0);active=perspective;}
+ camera.updateProjectionMatrix();renderer.render(scene,active);
+};
+window.preview();setInterval(()=>window.preview(window.backView||false),100);
+</script>

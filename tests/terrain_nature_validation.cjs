@@ -1,0 +1,33 @@
+const fs=require('fs'),path=require('path'),assert=require('assert'),crypto=require('crypto');const {withPage}=require('./cdp');
+const repo=path.resolve(__dirname,'..'),out=path.resolve(repo,'../ground-texture-evidence'),base=path.resolve(repo,'../MapEditor4-3DAPRG-shared-props');
+const url=d=>'file:///'+path.join(d,'index.html').replaceAll('\\','/')+'#size=24';
+const hash=x=>crypto.createHash('sha256').update(JSON.stringify(x)).digest('hex');
+(async()=>{const checks=[];const check=(name,ok,detail)=>{checks.push({name,status:ok?'Passed':'Failed',detail});assert(ok,name)};
+ const old=await withPage(url(base),async p=>p.eval(`(()=>{const A=__app;A.genFlat();A.props.splice(0);for(const [id,x]of [['pine',-3],['log',0],['stump',3]])A.props.push([A.PROP.findIndex(t=>t.id===id),x,0,.63,1,0,1,null]);A.ensureIds();return{map:A.serialize(),ids:A.PROP.map(t=>t.id),ground:A.state.agent};})()`),{wait:6000});
+ const result=await withPage(url(repo),async p=>{
+  await p.eval('__app.deserialize('+JSON.stringify(old.map)+');__app.rebuildProps();1');
+  const state=await p.eval(`(()=>{const A=__app;return{ids:A.PROP.map(t=>t.id),oldPlacements:A.props.map(p=>({id:A.PROP[p[0]].id,x:p[1],rot:p[3],scale:p[4]})),agent:A.state.agent,stats:TDSharedData.assets.map(a=>({id:a.id,triangles:a.triangles.length/3,minY:Math.min(...a.positions.filter((v,i)=>i%3===1)),height:Math.max(...a.positions.filter((v,i)=>i%3===1)),texture:a.material.texture})),sharedTexturesSame:['log','stump','rootfan'].every(id=>TDSharedProps.material(id).map===TDSharedProps.material('pine').map),rootPalette:!!document.querySelector('[data-type="'+A.PROP.findIndex(t=>t.id==='rootfan')+'"]')};})()`);
+  check('Existing numeric type order preserved; one noncolliding ID appended',old.ids.every((id,i)=>state.ids[i]===id)&&state.ids.length===old.ids.length+1&&new Set(state.ids).size===state.ids.length,state.ids.length);
+  check('Old map restores pine/log/stump transforms',state.oldPlacements.every((p,i)=>p.id===['pine','log','stump'][i]&&p.rot===.63&&p.scale===1),state.oldPlacements);
+  check('Existing human profile is 1.8m tall and radius 0.3m',state.agent.height===1.8&&state.agent.radius===.3,state.agent);
+  check('All shared ground pivots contact y=0',state.stats.every(t=>Math.abs(t.minY)<1e-6),state.stats);
+  check('Forest texture is shared across four prop materials',state.sharedTexturesSame);
+  check('New root type appears in selection palette',state.rootPalette);
+  const placed=await p.eval(`(()=>{const A=__app,i=A.PROP.findIndex(t=>t.id==='rootfan'),n=A.props.length;A.setTool('place');A.state.variant.place=i;A.state.placeRandom=false;A.state.placeScale=1;A.state.placeRot=0;window.dispatchEvent(new KeyboardEvent('keydown',{key:'r',code:'KeyR'}));A.stroke(6,6,1);const p=A.props[A.props.length-1];const result={added:A.props.length-n,id:A.PROP[p[0]].id,rotation:p[3],scale:p[4]};A.props.splice(n);A.rebuildProps();return result;})()`);
+  check('Place-tool path and R-key rotation place the new type',placed.added===1&&placed.id==='rootfan'&&Math.abs(placed.rotation-Math.PI/4)<1e-9,placed);
+  await p.eval(`(()=>{const A=__app,i=A.PROP.findIndex(t=>t.id==='rootfan');const input=document.querySelector('[data-type="'+i+'"]');if(!input.checked)input.click();A.props.push([i,4,3,1.17,.85,0,.7,null]);A.ensureIds();A.rebuildProps();window.roundTrip=A.serialize();A.deserialize(roundTrip);A.rebuildProps();return 1;})()`);
+  const restored=await p.eval(`(()=>{const A=__app,p=A.props.find(p=>A.PROP[p[0]].id==='rootfan'),i=A.PROP.findIndex(t=>t.id==='rootfan'),m=new THREE.Matrix4();A.propMeshes[i].getMatrixAt(0,m);return{type:A.PROP[p[0]].id,x:p[1],z:p[2],rotation:p[3],scale:p[4],scaleY:p[6],id:p[8],matrix:m.toArray()};})()`);
+  check('New root placement/rotation/nonuniform scale survives save/load',restored.type==='rootfan'&&restored.x===4&&restored.z===3&&restored.rotation===1.17&&restored.scale===.85&&restored.scaleY===.7,restored);
+  const files=await p.eval(`(async()=>{const e=await __app.buildExport();const o={};for(const f of e.files){const b=typeof f.data==='string'?new TextEncoder().encode(f.data):f.data;let s='';for(let i=0;i<b.length;i+=8192)s+=String.fromCharCode(...b.subarray(i,i+8192));o[f.name]=btoa(s);}return o;})()`);
+  const ed=path.join(out,'nature-export');fs.mkdirSync(ed,{recursive:true});for(const[n,b]of Object.entries(files))fs.writeFileSync(path.join(ed,n),Buffer.from(b,'base64'));
+  const expected=await p.eval(`(()=>{const A=__app,rows=[];for(const p of A.props){const t=A.PROP[p[0]],g=t.geo,m=A.propMeshes[p[0]],matrix=new THREE.Matrix4();m.getMatrixAt(0,matrix);const world=[];for(let i=0;i<g.attributes.position.count;i++){const v=new THREE.Vector3().fromBufferAttribute(g.attributes.position,i).applyMatrix4(matrix);world.push(v.x+A.SIZE/2,v.y,A.SIZE/2-v.z);}rows.push({instanceId:p[8],world});}return{instances:rows};})()`);
+  const meta=JSON.parse(Buffer.from(files['meta.json'],'base64'));for(const row of expected.instances)for(let i=1;i<row.world.length;i+=3)row.world[i]-=meta.terrain.editorYOfZero;fs.writeFileSync(path.join(out,'unity-expected-nature.json'),JSON.stringify(expected));
+  const catalog=JSON.parse(Buffer.from(files['asset_catalog.json'],'base64'));check('All six types export shared model references',state.stats.every(t=>catalog.types[t.id].sharedModel?.id===t.id));
+  check('No uncaught runtime errors',p.errors.length===0,p.errors);return{state,restored,exportDirectory:ed};
+ },{wait:6000});
+ // The completed rock/fern arrays and PNG definitions remain byte-identical.
+ const read=d=>{const s=fs.readFileSync(path.join(d,'props/shared/assets.js'),'utf8');return JSON.parse(s.slice(s.indexOf('window.TDSharedData = ')+22).trim().slice(0,-1))};
+ const before=read(base),after=read(repo);check('Rock and fern authoritative mesh/material data preserved',before.assets.every(a=>hash(a)===hash(after.assets.find(b=>b.id===a.id))));check('Rock and fern PNG/settings preserved',before.textures.every(a=>hash(a)===hash(after.textures.find(b=>b.id===a.id))));
+ await withPage('file:///'+path.join(repo,'tests/terrain_nature_view.html').replaceAll('\\','/'),async p=>{await p.screenshot(path.join(out,'pine-before-after.png'));await p.eval("window.mode='set';preview('set');1");await new Promise(r=>setTimeout(r,300));await p.screenshot(path.join(out,'nature-set-browser.png'));check('Comparison renderer has no uncaught errors',p.errors.length===0,p.errors);},{wait:3000,w:1296,h:895});
+ fs.writeFileSync(path.join(out,'nature-browser.json'),JSON.stringify({status:'Passed',checks,...result},null,2));console.log('Passed '+checks.length+' checks');
+})().catch(e=>{console.error(e);process.exit(1)});
