@@ -584,10 +584,14 @@ const PROP = TDProps.build();
 const propMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .88, metalness: 0, flatShading: true });
 const heroMat = propMat.clone();
 heroMat.transparent = true;   // lets it be drawn last, on top of rock, while inside a tunnel
+// stone detail (props/detail.js), projected in world space from three sides onto rocks, cliffs and masonry
+const detailTex = new THREE.DataTexture(TDGeo.DETAIL.paint(), TDGeo.DETAIL.size, TDGeo.DETAIL.size);
+detailTex.wrapS = detailTex.wrapT = THREE.RepeatWrapping; detailTex.generateMipmaps = true; detailTex.minFilter = THREE.LinearMipmapLinearFilter; detailTex.needsUpdate = true;
+const detailU = { value: detailTex };
 const propShader = (sh) => {
-  sh.uniforms.uDim = dimU; sh.uniforms.uTime = timeU; Object.assign(sh.uniforms, BU);
+  sh.uniforms.uDim = dimU; sh.uniforms.uTime = timeU; sh.uniforms.uDetail = detailU; Object.assign(sh.uniforms, BU);
   sh.vertexShader = sh.vertexShader
-    .replace('#include <common>', '#include <common>\nvarying float vPY; attribute float glow; varying float vGlow; attribute float sway; uniform vec3 uWind; uniform float uTime;\n#ifdef MOSS\nattribute float cliffI; varying float vCI;\n#endif')
+    .replace('#include <common>', '#include <common>\n#ifdef DETAIL\nvarying vec3 vWP;\n#endif\nvarying float vPY; attribute float glow; varying float vGlow; attribute float sway; uniform vec3 uWind; uniform float uTime;\n#ifdef MOSS\nattribute float cliffI; varying float vCI;\n#endif')
     .replace('#include <begin_vertex>', `#include <begin_vertex>
 vGlow=glow;
 #ifdef MOSS
@@ -607,9 +611,12 @@ vec4 pw4=vec4(transformed,1.);
 #ifdef USE_INSTANCING
 pw4=instanceMatrix*pw4;
 #endif
-vPY=(modelMatrix*pw4).y;`);
+vPY=(modelMatrix*pw4).y;
+#ifdef DETAIL
+vWP=(modelMatrix*pw4).xyz;
+#endif`);
   sh.fragmentShader = sh.fragmentShader
-    .replace('#include <common>', '#include <common>\nuniform float uDim; uniform float uTime; varying float vGlow; uniform vec3 uPropTint; uniform vec3 uMoss; uniform float uMossAmt; uniform float uSnow; uniform float uSnowLine; varying float vPY;\nuniform vec3 uCSTint[7]; uniform vec4 uCSMoss[7]; uniform vec2 uCSWet[7];\n#ifdef MOSS\nvarying float vCI;\n#endif\n' + DIM_GLSL)
+    .replace('#include <common>', '#include <common>\n#ifdef DETAIL\nvarying vec3 vWP; uniform sampler2D uDetail;\n#endif\nuniform float uDim; uniform float uTime; varying float vGlow; uniform vec3 uPropTint; uniform vec3 uMoss; uniform float uMossAmt; uniform float uSnow; uniform float uSnowLine; varying float vPY;\nuniform vec3 uCSTint[7]; uniform vec4 uCSMoss[7]; uniform vec2 uCSWet[7];\n#ifdef MOSS\nvarying float vCI;\n#endif\n' + DIM_GLSL)
     .replace('#include <color_fragment>', `#include <color_fragment>
 #ifdef MOSS
 float mg=diffuseColor.g-max(diffuseColor.r,diffuseColor.b);
@@ -619,7 +626,25 @@ diffuseColor.rgb=mix(diffuseColor.rgb, mossC*(.8+.5*dot(diffuseColor.rgb,vec3(.3
 diffuseColor.rgb*=uCSTint[ci]*(1.-.3*cw.x);
 #endif
 diffuseColor.rgb=dimc(diffuseColor.rgb*uPropTint);`)
+    .replace('#include <normal_fragment_begin>', `#include <normal_fragment_begin>
+#ifdef CARDS
+normal *= faceDirection;   // a leaf card is lit the same from both faces (its normals point out of the crown)
+#endif`)
     .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
+#ifdef DETAIL
+// grain, pits and hairline cracks at two scales; blend weights from the world normal (flat-shaded facets pick one side each)
+vec3 wn=inverseTransformDirection(normal,viewMatrix), tw=pow(abs(wn),vec3(4.)); tw/=tw.x+tw.y+tw.z;
+vec3 q1=vWP*.42, q2=vWP*1.7+.37;
+float dt1=texture2D(uDetail,q1.yz).r*tw.x+texture2D(uDetail,q1.xz).r*tw.y+texture2D(uDetail,q1.xy).r*tw.z;
+float dt2=texture2D(uDetail,q2.yz).r*tw.x+texture2D(uDetail,q2.xz).r*tw.y+texture2D(uDetail,q2.xy).r*tw.z;
+diffuseColor.rgb*=.5+(dt1*.62+dt2*.38);
+#ifdef MOSS
+// moss / grass / sand (cliff style and biome colour) settles on faces turned up, in patches that follow the grain
+vec3 mc=mix(cm.rgb,uMoss,uMossAmt*(1.-cm.a));   // the cliff style's moss, else the biome's, else green
+float mk=smoothstep(.5,.85,wn.y)*smoothstep(.53,.62,dt1*.6+dt2*.4+cm.a*.08)*.9;
+diffuseColor.rgb=mix(diffuseColor.rgb, dimc(mc*(.5+.6*dt2)*uPropTint), mk);
+#endif
+#endif
 float upw=dot(normal, normalize((viewMatrix*vec4(0.,1.,0.,0.)).xyz));
 diffuseColor.rgb=mix(diffuseColor.rgb, dimc(vec3(.92,.95,1.)), uSnow*smoothstep(.45,.8,upw)*smoothstep(uSnowLine-.3,uSnowLine+.5,vPY)*(1.-step(.01,vGlow)));
 #ifdef MOSS
@@ -630,14 +655,24 @@ diffuseColor.rgb=mix(diffuseColor.rgb, dimc(vec3(.93,.95,1.)), uCSWet[int(vCI+.5
 };
 propMat.onBeforeCompile = propShader; propMat.customProgramCacheKey = () => 'prop-dim-v6';
 // rocks and cliff stones get their moss recoloured per biome (sand, ash, snow...)
-const rockMat = propMat.clone(); rockMat.defines = { MOSS: '' };
+const rockMat = propMat.clone(); rockMat.defines = { MOSS: '', DETAIL: '' }; rockMat.flatShading = false;   // smoothed normals (makeGeo opt.smooth)
 rockMat.onBeforeCompile = propShader; rockMat.customProgramCacheKey = () => 'prop-dim-v6-moss';
+// walls, columns and other masonry: the same stone detail, no per-biome moss
+const masonMat = propMat.clone(); masonMat.defines = { DETAIL: '' };
+masonMat.onBeforeCompile = propShader; masonMat.customProgramCacheKey = () => 'prop-dim-v6-stone';
 // plants: smooth shading from the bent normals (makeGeo part.sn), so canopies and leaves read soft instead of faceted
 const foliageMat = propMat.clone(); foliageMat.flatShading = false; foliageMat.roughness = .82; foliageMat.defines = { FOLIAGE: '' };
 foliageMat.onBeforeCompile = propShader; foliageMat.customProgramCacheKey = () => 'prop-dim-v6-foliage';
+// semi-real plants: leaves on alpha-tested cards sampling the foliage atlas painted by props/foliage.js (both faces lit from outside)
+const atlasTex = new THREE.DataTexture(TDGeo.ATLAS.paint(), TDGeo.ATLAS.size, TDGeo.ATLAS.size);
+atlasTex.colorSpace = THREE.SRGBColorSpace; atlasTex.generateMipmaps = true; atlasTex.minFilter = THREE.LinearMipmapLinearFilter; atlasTex.magFilter = THREE.LinearFilter;
+atlasTex.anisotropy = Math.min(2, renderer.capabilities.getMaxAnisotropy()); atlasTex.needsUpdate = true;
+// Lambert (diffuse only): leaves need no specular, and alpha-tested cards shade every covered pixel, so the cheap model matters
+const cardMat = new THREE.MeshLambertMaterial({ vertexColors: true, map: atlasTex, alphaTest: .42, side: THREE.DoubleSide }); cardMat.defines = { FOLIAGE: '', CARDS: '' };
+cardMat.onBeforeCompile = propShader; cardMat.customProgramCacheKey = () => 'prop-dim-v6-cards';
 const CAP = 8000;
 const propMeshes = PROP.map(t => {
-  const m = new THREE.InstancedMesh(t.geo, t.material === 'rock' ? rockMat : t.material === 'foliage' ? foliageMat : propMat, CAP);
+  const m = new THREE.InstancedMesh(t.geo, t.material === 'rock' ? rockMat : t.material === 'stone' ? masonMat : t.material === 'cards' ? cardMat : t.material === 'foliage' ? foliageMat : propMat, CAP);
   m.castShadow = m.receiveShadow = true; m.frustumCulled = false; m.count = 0;
   if (t.canopy) m.receiveShadow = false;   // lumpy canopies shadow themselves in patches; their soft normals already shade them (and it is cheaper)
   m.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(CAP * 3), 3);
@@ -645,8 +680,9 @@ const propMeshes = PROP.map(t => {
   scene.add(m); return m;
 });
 const ghostMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .88, metalness: 0, flatShading: true, transparent: true, opacity: .28, depthWrite: false });
+const ghostCardMat = ghostMat.clone(); ghostCardMat.map = atlasTex; ghostCardMat.alphaTest = .42; ghostCardMat.side = THREE.DoubleSide;
 const ghostMeshes = PROP.map(t => {
-  const m = new THREE.InstancedMesh(t.geo, ghostMat, 256);
+  const m = new THREE.InstancedMesh(t.geo, t.material === 'cards' ? ghostCardMat : ghostMat, 256);
   m.frustumCulled = false; m.count = 0; m.renderOrder = 8;
   m.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(256 * 3), 3);
   scene.add(m); return m;

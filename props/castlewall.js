@@ -2,7 +2,7 @@
 TDProps.add({
   id: 'castlewall', name: '城壁',
   r: .55, offs: [-1.1, 0, 1.1], min: 3.2, sc: [.9, 1.1], slope: .4, vis: 1.6, anyGround: true,
-  tags: ['castle', 'ruins'], height: 3.24,
+  tags: ['castle', 'ruins'], height: 3.24, material: 'stone',
   build() {
     const { rng, col, mat4, displace, makeGeo, blockC, stoneCourses } = TDGeo;
     const R = rng(88), parts = [], cf = blockC(0x5e5c57, 0xa8a59c);

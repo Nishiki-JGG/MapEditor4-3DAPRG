@@ -2,7 +2,7 @@
 TDProps.add({
   id: 'stele', name: '石碑',
   r: .4, min: 1.6, sc: [.8, 1.2], slope: .6, vis: .6, anyGround: true,
-  tags: ['ruins', 'desert', 'graveyard'], height: 1.95,
+  tags: ['ruins', 'desert', 'graveyard'], height: 1.95, material: 'stone',
   build() {
     const { col, mat4, makeGeo, RUIN_STONE, halfDisc } = TDGeo;
     const cf = RUIN_STONE;

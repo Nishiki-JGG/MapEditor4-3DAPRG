@@ -2,7 +2,7 @@
 TDProps.add({
   id: 'rubblepile', name: '瓦礫の山',
   r: .55, min: 1.6, sc: [.7, 1.3], slope: 1, vis: .9, anyGround: true,
-  tags: ['ruins', 'castle', 'desert', 'graveyard'], height: 0.82,
+  tags: ['ruins', 'castle', 'desert', 'graveyard'], height: 0.82, material: 'stone',
   build() {
     const { rng, mat4, displace, makeGeo, RUIN_STONE } = TDGeo;
     const R = rng(61), parts = [];

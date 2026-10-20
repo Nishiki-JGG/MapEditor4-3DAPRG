@@ -2,7 +2,7 @@
 TDProps.add({
   id: 'lighthouse', name: '灯台',
   r: 1.5, min: 6, sc: [.9, 1.1], slope: .4, vis: 1.8, anyGround: true, light: [0xfff0c0, 60, 7.5],
-  tags: ['beach'], height: 8.48,
+  tags: ['beach'], height: 8.48, material: 'stone',
   build() {
     const { col, mixc, mat4, displace, makeGeo } = TDGeo;
     const parts = [], white = (y, ny, R) => mixc(col(0xe9e6e0), col(0xffffff), R() * .5), red = (y, ny, R) => mixc(col(0xa8302a), col(0xc8443a), R());

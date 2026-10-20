@@ -2,7 +2,7 @@
 TDProps.add({
   id: 'stalagmite', name: '石筍',
   r: .5, min: 1.6, sc: [.7, 1.4], slope: 1.2, vis: 1, anyGround: true,
-  tags: ['cave', 'volcano', 'mountain'], height: 2.29,
+  tags: ['cave', 'volcano', 'mountain'], height: 2.29, material: 'stone',
   build() {
     const { clamp, col, mixc, mat4, displace, makeGeo, chisel } = TDGeo;
     const cf = (y, ny, R) => mixc(col(0x5a5650), col(0xa8a092), clamp(.25 + y * .16 + (Math.floor(y * 3.3) % 2 ? .1 : -.05) + (R() - .5) * .25, 0, 1));

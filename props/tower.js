@@ -2,7 +2,7 @@
 TDProps.add({
   id: 'tower', name: '塔',
   r: 1.3, min: 4, sc: [.9, 1.15], slope: .4, vis: 1.3, anyGround: true,
-  tags: ['castle'], height: 7.45,
+  tags: ['castle'], height: 7.45, material: 'stone',
   build() {
     const { col, mixc, mat4, displace, makeGeo, masonC, CASTLE_C } = TDGeo;
     const parts = [], cf = masonC(0x5e5c57, 0xa8a59c, 5 / 12, 12);

@@ -2,9 +2,9 @@
 TDProps.add({
   id: 'reed', name: '葦',
   r: 0, min: .7, sc: [.8, 1.3], slope: .7, vis: .5, anyGround: true,
-  sway: 1, tags: ['grassland', 'forest', 'jungle', 'beach'], height: 1.72, material: 'foliage',
+  sway: 1, tags: ['grassland', 'forest', 'jungle', 'beach'], height: 1.72, material: 'cards',
   build() {
-    const { clamp, rng, col, mixc, mat4, makeGeo, stripLeafGeo, basisAt, limb } = TDGeo;
+    const { clamp, rng, col, mixc, mat4, makeGeo, stripLeafGeo, basisAt, limb, crossGeo, faceOut, ATLAS } = TDGeo;
     const R = rng(42), parts = [];
     const blade = (y, ny, Rr) => mixc(col(0x4a7426), col(0x8aa848), clamp(y * .5 + (Rr() - .5) * .3, 0, 1));
     for (let k = 0; k < 9; k++) {
@@ -17,6 +17,8 @@ TDProps.add({
       parts.push({ g: new THREE.CylinderGeometry(.04, .045, .22, 6), m: mat4(lx, h - .12, lz, 1, 1, 1), c: col(0x5a3a1e), j: .1 });
       limb(parts, [lx, h - .01, lz], [lx, h + .12, lz], .008, .004, 3, () => col(0x8a7a50));
     }
-    return makeGeo(parts, 42, { ao: .5 });
+    // a tuft of grass blades at the foot (atlas: grass)
+    for (let k = 0; k < 2; k++) parts.push({ g: crossGeo(1, 1, .5), m: faceOut([0, -.02, 0], [Math.cos(k * 1.2), 0, Math.sin(k * 1.2)], [0, 1, 0], .85 - k * .2), cfn: (y, ny, Rr, pr) => mixc(col(0x9ab070), col(0xd0dca0), pr), uvr: ATLAS.uvr('grass'), j: .05, sn: [0, -.4, 0], snw: .5 });
+    return makeGeo(parts, 42, { ao: .5, uv: ATLAS.white });
   },
 });

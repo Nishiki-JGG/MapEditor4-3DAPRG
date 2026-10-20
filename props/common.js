@@ -26,11 +26,14 @@ function displace(g, amp, seed) {
 function makeGeo(parts, seed, opt = {}) {
   // opt.ao: height (m) over which the base darkens (fake contact shadow, baked into the vertex colours)
   // part.sn = [x, y, z], part.snw: bend the normals toward "out of this point" (soft foliage shading; only the smooth foliage material uses normals)
-  const R = rng(seed), P = [], C = [], G = [], Nn = [], ao = opt.ao || 0;
+  // opt.smooth = degrees: average the normals of faces meeting at a corner when they bend less than this (soft rock, crisp ridges)
+  // opt.uv = [u, v]: also write texture coordinates (foliage atlas). Parts with part.uvr = [u0, v0, u1, v1] map their own uv into
+  // that rectangle; every other part samples the single texel opt.uv (the atlas' white patch), so it keeps its vertex colour.
+  const R = rng(seed), P = [], C = [], G = [], Nn = [], UV = [], ao = opt.ao || 0;
   const a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3(), e1 = new THREE.Vector3(), e2 = new THREE.Vector3(), fn = new THREE.Vector3(), q = new THREE.Vector3();
   for (const p of parts) {
     const g = p.g.index ? p.g.toNonIndexed() : p.g.clone(); g.applyMatrix4(p.m);
-    const pos = g.attributes.position, pr = R(), sn = p.sn ? new THREE.Vector3(...p.sn) : null, sw = p.snw ?? .75;
+    const pos = g.attributes.position, pr = R(), sn = p.sn ? new THREE.Vector3(...p.sn) : null, sw = p.snw ?? .75, uv = p.uvr && g.attributes.uv;
     for (let i = 0; i < pos.count; i += 3) {
       a.fromBufferAttribute(pos, i); b.fromBufferAttribute(pos, i + 1); c.fromBufferAttribute(pos, i + 2);
       fn.copy(e1.subVectors(b, a).cross(e2.subVectors(c, a)).normalize());
@@ -45,16 +48,31 @@ function makeGeo(parts, seed, opt = {}) {
         if (ao && !p.glow) kv *= .62 + .38 * smooth01(clamp(v.y / ao, 0, 1));
         P.push(v.x, v.y, v.z); C.push(base[0] * kv, base[1] * kv, base[2] * kv); G.push(p.glow || 0);
       }
+      if (opt.uv) for (let k = 0; k < 3; k++) {
+        if (uv) UV.push(lerp(p.uvr[0], p.uvr[2], uv.getX(i + k)), lerp(p.uvr[1], p.uvr[3], uv.getY(i + k))); else UV.push(opt.uv[0], opt.uv[1]);
+      }
     }
   }
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.Float32BufferAttribute(P, 3));
   geo.setAttribute('color', new THREE.Float32BufferAttribute(C, 3));
   geo.setAttribute('glow', new THREE.Float32BufferAttribute(G, 1));   // self-lit parts: flames, crystals, glowing caps
+  if (opt.uv) geo.setAttribute('uv', new THREE.Float32BufferAttribute(UV, 2));
+  if (opt.smooth) smoothNormals(P, Nn, Math.cos(opt.smooth * Math.PI / 180));
   geo.setAttribute('normal', new THREE.Float32BufferAttribute(Nn, 3));   // face normals (the same as computeVertexNormals on this non-indexed geometry), bent where part.sn is set
   return geo;
 }
 const smooth01 = t => t * t * (3 - 2 * t);
+// corners at the same place share the normals of the faces that meet there within the angle (cosine) limit
+function smoothNormals(P, Nn, cosLim) {
+  const F = Float32Array.from(Nn), groups = new Map(), key = i => `${Math.round(P[i * 3] * 1e4)},${Math.round(P[i * 3 + 1] * 1e4)},${Math.round(P[i * 3 + 2] * 1e4)}`;
+  for (let i = 0; i < P.length / 3; i++) { const k = key(i); if (!groups.has(k)) groups.set(k, []); groups.get(k).push(i); }
+  for (const g of groups.values()) for (const i of g) {
+    let x = 0, y = 0, z = 0;
+    for (const j of g) { const d = F[i * 3] * F[j * 3] + F[i * 3 + 1] * F[j * 3 + 1] + F[i * 3 + 2] * F[j * 3 + 2]; if (d >= cosLim) { x += F[j * 3]; y += F[j * 3 + 1]; z += F[j * 3 + 2]; } }
+    const l = Math.hypot(x, y, z) || 1; Nn[i * 3] = x / l; Nn[i * 3 + 1] = y / l; Nn[i * 3 + 2] = z / l;
+  }
+}
 // ---------- building blocks for plants, rocks and walls (all low-poly, vertex-coloured)
 // both sides of a list of triangles (thin leaves and petals have no thickness)
 function twoSided(tris) {

@@ -2,7 +2,7 @@
 TDProps.add({
   id: 'ruinwall', name: '崩れた壁',
   r: .4, offs: [-1.2, -.4, .4, 1.2], min: 3.2, sc: [.85, 1.15], slope: .5, vis: 1.6, anyGround: true,
-  tags: ['ruins', 'castle', 'graveyard'], height: 1.99,
+  tags: ['ruins', 'castle', 'graveyard'], height: 1.99, material: 'stone',
   build() {
     const { rng, mat4, displace, makeGeo, petalGeo, basisAt, chisel, MOSS, blockC, stoneCourses } = TDGeo;
     const R = rng(57), parts = [], cf = blockC(0x837d72, 0xd2cab8), top = (x) => 1.9 - Math.abs(x) * .5;

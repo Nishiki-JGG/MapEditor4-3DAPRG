@@ -2,7 +2,7 @@
 TDProps.add({
   id: 'brokencol', name: '折れた石柱',
   r: .5, min: 2, sc: [.8, 1.2], slope: .6, vis: 1, anyGround: true,
-  tags: ['ruins', 'desert', 'graveyard'], height: 1.83,
+  tags: ['ruins', 'desert', 'graveyard'], height: 1.83, material: 'stone',
   build() {
     const { mat4, displace, makeGeo, chisel, ribbed, RUIN_STONE, MOSS } = TDGeo;
     const cf = RUIN_STONE;

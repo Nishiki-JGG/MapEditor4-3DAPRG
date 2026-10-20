@@ -7,7 +7,7 @@ TDProps.add({
     const { clamp, hash2, rng, col, mixc, mat4, displace, makeGeo, chisel, strata, dropBottom } = TDGeo;
     // angular rock columns with horizontal strata; grass and moss on the tops
     const R = rng(77), parts = [];
-    const cf = (y, ny, Rr, pr) => ny > .7 ? (pr < .3 ? mixc(col(0x5d7a32), col(0x7f9a46), pr * 3) : mixc(col(0xa39a88), col(0xc8bfac), pr))
+    const cf = (y, ny, Rr, pr) => ny > .7 ? mixc(col(0x8a8274), col(0xa29a8a), pr)
       : mixc(col(0x6e665b), col(0xcfc5b0), clamp(.35 + y * .12 + (hash2(Math.floor(y / .44 + .5), 3) - .5) * .4 + (Rr() - .5) * .22 + (ny < -.2 ? -.2 : 0), 0, 1));
     let x = -1.15, k = 0;
     while (x < 1.1) {
@@ -21,6 +21,6 @@ TDProps.add({
       }
       x += w * .92;
     }
-    return makeGeo(parts, 15, { ao: 1.1 });
+    return makeGeo(parts, 15, { ao: 1.1, smooth: 50 });
   },
 });

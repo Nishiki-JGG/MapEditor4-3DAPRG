@@ -2,7 +2,7 @@
 TDProps.add({
   id: 'column', name: '石柱',
   r: .5, min: 2.2, sc: [.85, 1.15], slope: .5, vis: .6, anyGround: true,
-  tags: ['ruins', 'castle', 'desert'], height: 3.54,
+  tags: ['ruins', 'castle', 'desert'], height: 3.54, material: 'stone',
   build() {
     const { mat4, displace, makeGeo, ribbed, RUIN_STONE, MOSS } = TDGeo;
     const cf = RUIN_STONE;

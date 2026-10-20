@@ -2,7 +2,7 @@
 TDProps.add({
   id: 'gatehouse', name: '城門',
   r: .75, offs: [-1.6, 1.6], min: 5, sc: [.9, 1.1], slope: .3, vis: 2.2, anyGround: true,
-  tags: ['castle'], height: 4.64,
+  tags: ['castle'], height: 4.64, material: 'stone',
   build() {
     const { rng, col, mixc, mat4, displace, makeGeo, blockC, stoneCourses } = TDGeo;
     const R = rng(90), parts = [], cf = blockC(0x5e5c57, 0xa8a59c), iron = (y, ny, R) => mixc(col(0x23252a), col(0x3e4148), R());

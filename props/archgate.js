@@ -2,7 +2,7 @@
 TDProps.add({
   id: 'archgate', name: 'アーチ門',
   r: .45, offs: [-1.25, 1.25], min: 4, sc: [.9, 1.1], slope: .4, vis: 1.9, anyGround: true,
-  tags: ['ruins', 'castle'], height: 4.57,
+  tags: ['ruins', 'castle'], height: 4.57, material: 'stone',
   build() {
     const { rng, mat4, displace, makeGeo, petalGeo, basisAt, RUIN_STONE, MOSS } = TDGeo;
     const R = rng(58), cf = RUIN_STONE, parts = [];

@@ -2,7 +2,7 @@
 TDProps.add({
   id: 'demonspire', name: '魔界の尖塔',
   r: .6, min: 2.5, sc: [.8, 1.4], slope: .8, vis: .8, anyGround: true, light: [0xff3050, 8, 2],
-  tags: ['demon'], height: 4.64,
+  tags: ['demon'], height: 4.64, material: 'stone',
   build() {
     const { rng, col, mat4, displace, makeGeo, DARK_C } = TDGeo;
     const R = rng(94), parts = [];

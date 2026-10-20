@@ -2,7 +2,7 @@
 TDProps.add({
   id: 'statue', name: '石像',
   r: .6, min: 2.5, sc: [.9, 1.2], slope: .4, vis: .7, anyGround: true,
-  tags: ['ruins', 'castle', 'graveyard'], height: 2.95,
+  tags: ['ruins', 'castle', 'graveyard'], height: 2.95, material: 'stone',
   build() {
     const { clamp, col, mixc, mat4, displace, makeGeo } = TDGeo;
     const cf = (y, ny, R) => ny > .75 && R() < .35 ? mixc(col(0x56743a), col(0x7d9a4c), R()) : mixc(col(0x7c776e), col(0xbdb6a6), clamp(R() * .4 + y * .08, 0, 1));

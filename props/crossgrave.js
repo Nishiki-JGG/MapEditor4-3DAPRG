@@ -2,7 +2,7 @@
 TDProps.add({
   id: 'crossgrave', name: '十字の墓',
   r: .3, min: 1.2, sc: [.8, 1.2], slope: .5, vis: .5, anyGround: true,
-  tags: ['graveyard'], height: 1.18,
+  tags: ['graveyard'], height: 1.18, material: 'stone',
   build() {
     const { col, mixc, mat4, displace, makeGeo } = TDGeo;
     const cf = (y, ny, R) => mixc(col(0x75716a), col(0xb0aba0), R() * .7);

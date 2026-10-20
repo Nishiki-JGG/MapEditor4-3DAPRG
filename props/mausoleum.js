@@ -2,7 +2,7 @@
 TDProps.add({
   id: 'mausoleum', name: '霊廟',
   r: 1.5, min: 4.5, sc: [.9, 1.1], slope: .3, vis: 1.9, anyGround: true,
-  tags: ['graveyard'], height: 3.6,
+  tags: ['graveyard'], height: 3.6, material: 'stone',
   build() {
     const { clamp, col, mixc, mat4, makeGeo, halfDisc } = TDGeo;
     const cf = (y, ny, R, pr) => ny > .7 && R() < .2 ? mixc(col(0x4e6a34), col(0x6f8c46), R()) : mixc(col(0x6c6a66), col(0xa6a29a), clamp(pr * .4 + R() * .4, 0, 1));

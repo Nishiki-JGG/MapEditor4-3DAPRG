@@ -2,7 +2,7 @@
 TDProps.add({
   id: 'obelisk', name: 'オベリスク',
   r: .5, min: 2.5, sc: [.9, 1.2], slope: .5, vis: .6, anyGround: true,
-  tags: ['desert', 'ruins'], height: 4.95,
+  tags: ['desert', 'ruins'], height: 4.95, material: 'stone',
   build() {
     const { col, mat4, makeGeo, SANDSTONE } = TDGeo;
     const r = .3 * Math.SQRT2;

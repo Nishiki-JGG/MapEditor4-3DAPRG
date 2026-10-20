@@ -2,7 +2,7 @@
 TDProps.add({
   id: 'gravestone', name: '墓石',
   r: .3, min: 1.1, sc: [.8, 1.2], slope: .5, vis: .45, anyGround: true,
-  tags: ['graveyard'], height: 1.13,
+  tags: ['graveyard'], height: 1.13, material: 'stone',
   build() {
     const { col, mixc, mat4, displace, makeGeo, halfDisc } = TDGeo;
     const cf = (y, ny, R) => ny > .7 && R() < .3 ? mixc(col(0x56743a), col(0x7d9a4c), R()) : mixc(col(0x6e6b66), col(0xa9a59c), R() * .7);

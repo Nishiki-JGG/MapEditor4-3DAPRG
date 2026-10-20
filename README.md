@@ -49,11 +49,11 @@
 
 ```
 index.html, app.js      エディター本体
-props/                  小物（1 種類 1 ファイル）と共通の部品 common.js。直し方は props/README.md
+props/                  小物（1 種類 1 ファイル）、共通の部品 common.js、葉と樹皮のテクスチャ foliage.js、岩肌のテクスチャ detail.js。直し方は props/README.md
 water.js                水の流れ・泡の計算（画面に依存しない。node でも動く）
 three.min.js            three.js r160（MIT License）
 samples/                書き出しのサンプル（通常サンプル 64m / 隠し通路サンプル 48m）
-docs/                   修正報告（REVISION_3〜10）と画像
+docs/                   修正報告（REVISION_3〜11）と画像
 tests/                  受け入れテスト（Playwright、水は Chrome の CDP）と、その結果
 unity/Assets/MapWater/  Unity 側の水（書き出しから水面・滝・飛沫・波紋を作る。docs/REVISION_8_NOTES.md）
 ```
