@@ -1,5 +1,7 @@
 # MapEditor4-3DAPRG
 
+ユーカリ・龍血樹の葉塊と、エルフの木・世界樹の根元を磨き込みました（96種を維持）。[4つの実用配置](tests/nature_scene_view.html) / [改善と負荷・検証](docs/NATURE_SCENE_POLISH.md)。
+
 紅葉・桜・ケヤキ・ナラ・スギ・ヒノキ・シマトネリコ・オリーブ・ユーカリ・龍血樹・エルフの森の木・世界樹を追加し、既存の木も樹冠・色・影・風を改善しました（計96種）。[木の確認一覧](tests/tree_view.html) / [寸法・負荷・検証](docs/TREE_CANOPIES.md)。
 
 

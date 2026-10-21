@@ -10,7 +10,7 @@ const specs=[
  {id:'hinoki',name:'ヒノキ',kind:'sprays',h:7.3,r:2.05,n:12,clumps:3,low:0x3e6550,high:0x95b18a,cell:'needle'},
  {id:'islandash',name:'シマトネリコ',kind:'multistem',h:5.4,r:2.2,rx:2.25,rz:1.9,n:6,clumps:3,low:0x627f52,high:0xb8c7a0,cell:'fine'},
  {id:'olive',name:'オリーブ',kind:'olive',h:4.6,r:2.35,rx:2.65,rz:2.0,n:7,clumps:3,low:0x76816b,high:0xc1c9ac,cell:'fine'},
- {id:'eucalyptus',name:'ユーカリ',kind:'eucalypt',h:8.4,r:2.3,rx:2.0,rz:2.8,n:7,clumps:2,low:0x638b86,high:0xb9d5cd,cell:'fine'},
+ {id:'eucalyptus',name:'ユーカリ',kind:'eucalypt',h:8.4,r:2.3,rx:2.0,rz:2.8,n:7,clumps:3,low:0x638b86,high:0xb9d5cd,cell:'fine'},
  {id:'dragontree',name:'龍血樹',kind:'dragon',h:5.8,r:3.0,n:6,low:0x4e7759,high:0x9fba83},
  {id:'elftree',name:'エルフの森の木',kind:'elf',h:10.5,r:4.6,rx:4.5,rz:3.9,n:10,clumps:3,low:0x4a7b6c,high:0xb5ddba},
  {id:'worldtree',name:'世界樹',kind:'world',h:24,r:10.5,rx:11.5,rz:9.0,n:14,clumps:4,low:0x3b6f58,high:0xb4d1a0},
@@ -27,7 +27,7 @@ const specs=[
  {id:'hazel',name:'株立ちの低木',kind:'shrub',h:1.9,r:1.1,n:4,clumps:2,low:0x5e7948,high:0xacc18c,legacy:true,shrub:true},
  {id:'juniper',name:'地を這う針葉低木',kind:'creeping',h:.34,r:1.1,n:5,clumps:2,low:0x53735c,high:0x98ad8b,cell:'needle',legacy:true,shrub:true}
 ];
-const cells={broad:[0,0,256,256],fine:[256,0,256,256],needle:[512,0,256,128],bark:[768,0,128,256],white:[896,0,128,256],palm:[0,256,512,128],banana:[512,256,512,128],leaf:[0,384,256,128],blossom:[256,384,256,128]};
+const cells={broad:[0,0,256,256],fine:[256,0,256,256],needle:[512,0,256,128],dragon:[512,384,256,128],bark:[768,0,128,256],white:[896,0,128,256],palm:[0,256,512,128],banana:[512,256,512,128],leaf:[0,384,256,128],blossom:[256,384,256,128]};
 function build(id,legacy){const spec=specs.find(s=>s.id===id),index=specs.indexOf(spec),m=new M(47191+index*173),R=m.R,H=spec.legacy?legacy[id].bounds[1][1]:spec.h,r=spec.r,parts=[],branches=[],clumps=[];m.tree=true;const G=[];let glow=0;
  const original=m.tri.bind(m);m.tri=(...a)=>{const first=m.P.length/3;original(...a);for(let i=first;i<m.P.length/3;i++)G[i]=glow;};
  m.uv=(cell,u=.5,v=.5)=>{const box=cells[cell]||cells.broad;return[(box[0]+3+Math.min(1,Math.max(0,u))*(box[2]-6))/1024,(box[1]+3+Math.min(1,Math.max(0,v))*(box[3]-6))/512];};
@@ -52,7 +52,16 @@ function build(id,legacy){const spec=specs.find(s=>s.id===id),index=specs.indexO
  }else{
   const lean=spec.kind==='eucalypt'?.60:spec.kind==='umbrella'?.65:spec.kind==='palm'?.75:spec.kind==='twist'?.45:spec.kind==='dead'?.20:isElf?.45:.10,stems=['birch','olive','multistem','shrub'].includes(spec.kind)?(spec.kind==='multistem'?3:2):1,trunkTop=small?H*.67:['dead','twist'].includes(spec.kind)?H*.83:['banana','palm'].includes(spec.kind)?H*.78:spec.kind==='spire'||spec.kind==='pine'||spec.kind==='sprays'?H*.96:H*.73;
   for(let j=0;j<stems;j++){const x=(j-(stems-1)*.5)*(small?.15:.22),p=[[x,0,0],[x+lean*(spec.kind==='palm'?.02:.18),H*.24,.02],[x+lean*(spec.kind==='palm'?.20:spec.kind==='twist'?-.55:.55),H*.46,spec.kind==='twist'?.17:-.02],[x+lean,trunkTop,.05]];tube(p,[trunkRadius,trunkRadius*.82,trunkRadius*.55,.025],isWorld?10:6,bark,0,0,'trunk',spec.kind==='birch'?'white':'bark');if(spec.kind==='birch')for(let k=0;k<5;k++){const y=.4+k*.72,first=m.P.length/3;m.tri([x-.05,y,.095],[x+.05,y+.02,.095],[x,y+.05,.096],[white(),white(),white()],0x66695e,[0,0,1]);mark('trunk',first);}}
-  const roots=small?0:isWorld?7:3;for(let j=0;j<roots;j++){const a=j*2.399+.4,L=isWorld?3.8+R()*1.4:trunkRadius*2.5;tube([[Math.cos(a)*trunkRadius*.45,.16,Math.sin(a)*trunkRadius*.45],[Math.cos(a)*L*.48,.10,Math.sin(a)*L*.48],[Math.cos(a)*L,.012,Math.sin(a)*L]],[trunkRadius*.38,trunkRadius*.19,.014],4,bark,0,0,'root');}
+  const roots=small?0:isWorld?7:3;for(let j=0;j<roots;j++){
+   const a=j*2.399+.4,L=isWorld?3.8+R()*1.4:trunkRadius*2.5;
+   if(isWorld||isElf){
+    // A low triangular buttress joins the trunk; outside the existing body radius its ridge stays below 0.12 m.
+    const first=m.P.length/3,centres=[[Math.cos(a)*trunkRadius*.86,0,Math.sin(a)*trunkRadius*.86],[Math.cos(a+.10)*(isWorld?1.60:L*.45),0,Math.sin(a+.10)*(isWorld?1.60:L*.45)],[Math.cos(a)*L,0,Math.sin(a)*L]],widths=isWorld?[.48,.24,.018]:[.12,.065,.01],heights=isWorld?[1.1+.35*(.5+.5*Math.sin(j*2.41)),.12,.025]:[.35,.08,.02],rings=centres.map((p,k)=>[[p[0]-Math.sin(a)*widths[k],.005,p[2]+Math.cos(a)*widths[k]],[p[0]+(k===0?Math.cos(a)*trunkRadius*.23:0),heights[k],p[2]+(k===0?Math.sin(a)*trunkRadius*.23:0)],[p[0]+Math.sin(a)*widths[k],.005,p[2]-Math.cos(a)*widths[k]]]);
+    for(let k=0;k<2;k++)for(let side=0;side<3;side++){const next=(side+1)%3,hint=side===2?[0,-1,0]:[Math.sin(a)*(side===0?-1:1),1,Math.cos(a)*(side===0?1:-1)],uv=(x,y)=>m.uv('bark',x/3,y/2);m.tri(rings[k][side],rings[k+1][side],rings[k][next],[uv(side,k),uv(side,k+1),uv(next,k)],bark,hint);m.tri(rings[k][next],rings[k+1][side],rings[k+1][next],[uv(next,k),uv(side,k+1),uv(next,k+1)],bark,hint);}
+    m.tri(...rings[0],[m.uv('bark',0,0),m.uv('bark',.5,1),m.uv('bark',1,0)],bark,[-Math.cos(a),0,-Math.sin(a)]);m.tri(...rings[2],[m.uv('bark',0,0),m.uv('bark',.5,1),m.uv('bark',1,0)],bark,[Math.cos(a),0,Math.sin(a)]);
+    for(let i=first;i<m.P.length/3;i++){m.W[i]=0;if(m.N[i*3+1]>-.7){const up=new T.Vector3(m.P[i*3],0,m.P[i*3+2]).normalize().multiplyScalar(.32);up.y=.85;const normal=V(m.N.slice(i*3,i*3+3)).lerp(up,.35).normalize();m.N.splice(i*3,3,...normal.toArray());}const shade=.86+.14*Math.min(1,m.P[i*3+1]/(isWorld?1.1:.35));for(let k=0;k<3;k++)m.C[i*3+k]*=shade;}mark('root',first);
+   }else tube([[Math.cos(a)*trunkRadius*.45,.16,Math.sin(a)*trunkRadius*.45],[Math.cos(a)*L*.48,.10,Math.sin(a)*L*.48],[Math.cos(a)*L,.012,Math.sin(a)*L]],[trunkRadius*.38,trunkRadius*.19,.014],4,bark,0,0,'root');
+  }
   if(['palm','banana'].includes(spec.kind)){
    const base=[lean,trunkTop,.05];for(let j=0;j<spec.n;j++){const a=j*2.399+R()*.45,L=r*(.75+R()*.25),rise=spec.kind==='banana'?.43:.48,drop=spec.kind==='banana'?.03:.30;frond(base,a,L,spec.kind==='banana'?.40:.38,rise,drop,.8+R()*.2,spec.kind==='banana'?'banana':'palm');}
    for(let j=0;j<(spec.kind==='banana'?6:3);j++)fruit([lean+.13,trunkTop-.15-j*.035,.10],spec.kind==='banana'?.055:.10,spec.kind==='banana'?0xb6ac53:0x8f7050,0);
@@ -64,7 +73,7 @@ function build(id,legacy){const spec=specs.find(s=>s.id===id),index=specs.indexO
     if(spec.kind==='twist')fruit(tip,.085,0xb571e4,.8,2.2);
    }
   }else if(spec.kind==='dragon'){
-   for(let j=0;j<3;j++){const a=j*2.399+.25,base=[0,H*.58,0],fork=[Math.cos(a)*r*.36,H*.77,Math.sin(a)*r*.36];tube([base,[fork[0]*.55,H*.70,fork[2]*.55],fork],[.18,.12,.065],5,bark,0,.55);for(let side=0;side<2;side++){const b=a+(side?-.6:.55),tip=[fork[0]+Math.cos(b)*r*.27,H*(.84+side*.025)+R()*.15,fork[2]+Math.sin(b)*r*.27];tube([fork,tip],[.066,.027],4,bark,.55,.85);for(let k=0;k<8;k++)frond(tip,k*2.399+b,1.0+R()*.24,.105,.20,.07,.85,'leaf',2);}}
+   for(let j=0;j<3;j++){const a=j*2.399+.25,base=[0,H*.58,0],fork=[Math.cos(a)*r*.36,H*.77,Math.sin(a)*r*.36];tube([base,[fork[0]*.55,H*.70,fork[2]*.55],fork],[.18,.12,.065],5,bark,0,.55);for(let side=0;side<2;side++){const b=a+(side?-.6:.55),tip=[fork[0]+Math.cos(b)*r*.27,H*(.84+side*.025)+R()*.15,fork[2]+Math.sin(b)*r*.27];tube([fork,tip],[.066,.027],4,bark,.55,.85);const leaves=10+(j+side)%3;for(let k=0;k<leaves;k++)frond(tip,k*2.399+b+(R()-.5)*.32,.78+R()*.54,.075+R()*.055,.12+R()*.20,.03+R()*.14,.85,'dragon',2);}}
   }else{
    if(spec.kind==='fan')for(const a of [.15,2.45,4.35])tube([[.01,2.45,0],[Math.cos(a)*r*.29,H*.51,Math.sin(a)*r*.18],[Math.cos(a)*r*.56,H*.72,Math.sin(a)*r*.40]],[.12,.075,.022],5,bark,0,.68);
    for(let j=0;j<spec.n;j++){
@@ -90,6 +99,8 @@ function build(id,legacy){const spec=specs.find(s=>s.id===id),index=specs.indexO
 function coniferKind(s){return ['pine','spire','sprays'].includes(s.kind);}
 async function paint(data){const cv=document.createElement('canvas');cv.width=1024;cv.height=512;const ctx=cv.getContext('2d'),wood=data.textures.find(t=>t.id==='woodland-plants-atlas-v1'),image=new Image();image.src='data:image/png;base64,'+wood.png;await image.decode();const src=document.createElement('canvas');src.width=src.height=1024;src.getContext('2d').putImageData(new ImageData(new Uint8ClampedArray(TDGeo.ATLAS.paint()),1024,1024),0,0);
  ctx.drawImage(image,0,0,256,256,0,0,256,256);ctx.drawImage(image,256,0,256,256,256,0,256,256);ctx.drawImage(image,0,256,256,128,512,0,256,128);ctx.drawImage(image,256,256,128,128,768,0,128,256);ctx.fillStyle='#fff';ctx.fillRect(896,0,128,256);ctx.drawImage(src,0,512,1024,128,0,256,512,128);ctx.drawImage(src,512,640,512,128,512,256,512,128);ctx.drawImage(image,0,384,128,128,0,384,256,128);
+
+ const blade=ctx.createLinearGradient(512,384,768,384);blade.addColorStop(0,'#8b8b8b');blade.addColorStop(.48,'#c5c5c5');blade.addColorStop(1,'#ababab');ctx.fillStyle=blade;ctx.fillRect(512,384,256,128);ctx.strokeStyle='#dddddd';ctx.lineWidth=1.4;ctx.beginPath();ctx.moveTo(512,448);ctx.lineTo(768,448);ctx.stroke();ctx.strokeStyle='rgba(90,90,90,.20)';ctx.lineWidth=.6;for(let j=0;j<28;j++){const x=516+j*9;ctx.beginPath();ctx.moveTo(x,448);ctx.lineTo(x+14,388);ctx.moveTo(x,448);ctx.lineTo(x+14,508);ctx.stroke();}
  const R=TDGeo.rng(76231);for(let i=0;i<220;i++){const a=R()*Math.PI*2,r=Math.sqrt(R()),x=384+Math.cos(a)*r*112,y=449+Math.sin(a)*r*54,size=2.8+R()*2.4;for(let j=0;j<5;j++){ctx.fillStyle=['#d4d4d4','#ececec','#bababa'][Math.floor(R()*3)];ctx.beginPath();ctx.ellipse(x+Math.cos(j*1.256)*size*.52,y+Math.sin(j*1.256)*size*.52,size*.61,size*.42,j*1.256,0,Math.PI*2);ctx.fill();}}
  const pixels=ctx.getImageData(0,0,1024,512);for(let i=0;i<pixels.data.length;i+=4){const a=pixels.data[i+3],l=.2126*pixels.data[i]+.7152*pixels.data[i+1]+.0722*pixels.data[i+2],y=i/4/1024|0,x=i/4%1024;const value=a<8?190:x>=896&&y<256?255:Math.min(232,Math.max(140,178+(l-120)*.52));pixels.data[i]=pixels.data[i+1]=pixels.data[i+2]=value;}ctx.putImageData(pixels,0,0);return cv.toDataURL('image/png').split(',')[1];}
 window.TDTreeCanopies={specs,build,paint,cells};
