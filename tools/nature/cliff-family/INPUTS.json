@@ -1,0 +1,27 @@
+[
+  {
+    "source": "MapEditor4-3DAPRG/props/cliff.js（改良前）",
+    "copy": "inputs/broad-cliff.js",
+    "sha256": "6222cd22c385ef53b6dd4ee45d392f83fe536ebb724dac9d47aec83818481304",
+    "inputSha256": "6222cd22c385ef53b6dd4ee45d392f83fe536ebb724dac9d47aec83818481304"
+  },
+  {
+    "source": "回収済み旧縦岩原稿（原文SHAで固定）",
+    "copy": "inputs/vertical-cliff.js",
+    "sha256": "30d0b03f0909a06427aee654d2bf6d6db809f9fe993db3ff1f9ff2aabceda3d5",
+    "inputSha256": "30d0b03f0909a06427aee654d2bf6d6db809f9fe993db3ff1f9ff2aabceda3d5"
+  },
+  {
+    "source": "MapEditor4-3DAPRG/props/pebble.js",
+    "copy": "inputs/pebble.js",
+    "sha256": "bd1e1331454d13a9537b9ba41175021d622942329a039d43d94d9f85ff4175ec",
+    "inputSha256": "bd1e1331454d13a9537b9ba41175021d622942329a039d43d94d9f85ff4175ec"
+  },
+  {
+    "source": "MapEditor4-3DAPRG/props/shared/assets.js のrockを抽出",
+    "extracted": "rock",
+    "copy": "inputs/rock.json",
+    "sha256": "78014e40432d11b80d3313ba9a4f65ce1cd13e27b0109117c8600c07651a8f02",
+    "inputSha256": "68f1af8292829a88a81af9d1271f5bfb5f8a3506413ab35660d25e08a1f0bf27"
+  }
+]

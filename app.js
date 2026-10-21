@@ -2131,49 +2131,83 @@ function nearFeature(x, z) {
   return false;
 }
 const nearEdge = (x, z) => Math.max(Math.abs(x), Math.abs(z)) > HALF - 2.5;   // the map's outer rim is left alone
-function autoRocks(seed = Date.now()) {
-  const R = rng(seed | 0);
-  props = props.filter(p => p[5] !== 1);
-  const hash = buildPropHash();
-  // stacked stone columns that dress every cliff face
-  const ch = new SpatialHash(3), e = .4;
-  const pts = [];
-  for (let j = 1; j < N - 1; j++) for (let i = 1; i < N - 1; i++) pts.push([vx(i) + (R() - .5) * .4, vx(j) + (R() - .5) * .4]);
-  for (let k = pts.length - 1; k > 0; k--) { const m = (R() * (k + 1)) | 0; [pts[k], pts[m]] = [pts[m], pts[k]]; }
-  for (const [x, z] of pts) {
-    if (nearEdge(x, z) || slopeAt(x, z) < 1.3 || nearFeature(x, z)) continue;
-    const gx = (heightAt(x + e, z) - heightAt(x - e, z)) / (2 * e), gz = (heightAt(x, z + e) - heightAt(x, z - e)) / (2 * e), gl = Math.hypot(gx, gz);
-    const ux = gx / gl, uz = gz / gl;
-    let hT = heightAt(x, z), hB = hT;
-    for (let d = .25; d <= 2.5; d += .25) { hT = Math.max(hT, heightAt(x + ux * d, z + uz * d)); hB = Math.min(hB, heightAt(x - ux * d, z - uz * d)); }
-    const drop = hT - hB; if (drop < .9) continue;
-    const px = x - ux * .35, pz = z - uz * .35;
-    if (nearEdge(px, pz)) continue;
-    let ok = true; ch.query(px, pz, 2, p => { if (ok && Math.hypot(p[1] - px, p[2] - pz) < 1.45) ok = false; });
-    if (!ok) continue;
-    const below = Math.max(hB, state.water - .6), span = hT - below - .05;
-    const layers = Math.max(1, Math.round(span / 2.3)), rot = Math.atan2(-ux, -uz);
-    for (let L = 0; L < layers; L++) {
-      // upper layers step back into the cliff a little, like weathered strata
-      const back = (L - (layers - 1) / 2) * .18, w = .95 + R() * .25;
-      const p = [4, px + ux * back, pz + uz * back, rot + (R() - .5) * .35, w, 1, span / layers / 2.25, below - .1 + span * L / layers];
-      props.push(p); if (L === 0) ch.add(p, px, pz);
-    }
+// 岩の中心ではなく、回転・拡縮後の占有輪郭を使って橋/階段/出入口を保護する。
+const cliffHulls = new Map();
+function cliffHull(t) {
+  if(cliffHulls.has(t))return cliffHulls.get(t);
+  const a=PROP[t].geo.attributes.position,points=[];
+  for(let i=0;i<a.count;i++)points.push([a.getX(i),a.getZ(i)]);
+  points.sort((a,b)=>a[0]-b[0]||a[1]-b[1]);
+  const cross=(a,b,c)=>(b[0]-a[0])*(c[1]-a[1])-(b[1]-a[1])*(c[0]-a[0]);
+  const half=pts=>{const h=[];for(const p of pts){while(h.length>1&&cross(h.at(-2),h.at(-1),p)<=0)h.pop();h.push(p);}h.pop();return h;};
+  const hull=half(points).concat(half([...points].reverse()));cliffHulls.set(t,hull);return hull;
+}
+function cliffWorldHull(p){const c=Math.cos(p[3]),s=Math.sin(p[3]);return cliffHull(p[0]).map(([x,z])=>[p[1]+(x*c+z*s)*p[4],p[2]+(-x*s+z*c)*p[4]]);}
+function cliffSegmentDistance(a,b,c,d){
+  const orient=(p,q,r)=>(q[0]-p[0])*(r[1]-p[1])-(q[1]-p[1])*(r[0]-p[0]);
+  const point=(p,a,b)=>{const x=b[0]-a[0],z=b[1]-a[1],t=clamp(((p[0]-a[0])*x+(p[1]-a[1])*z)/(x*x+z*z||1),0,1);return Math.hypot(p[0]-a[0]-x*t,p[1]-a[1]-z*t);};
+  if(orient(a,b,c)*orient(a,b,d)<0&&orient(c,d,a)*orient(c,d,b)<0)return 0;
+  return Math.min(point(a,c,d),point(b,c,d),point(c,a,b),point(d,a,b));
+}
+function cliffOverlapsLink(hull,a,b,r){
+  const inside=p=>{let hit=false;for(let i=0,j=hull.length-1;i<hull.length;j=i++){const q=hull[i],s=hull[j];if((q[1]>p[1])!==(s[1]>p[1])&&p[0]<(s[0]-q[0])*(p[1]-q[1])/(s[1]-q[1])+q[0])hit=!hit;}return hit;};
+  return inside(a)||inside(b)||hull.some((p,i)=>cliffSegmentDistance(p,hull[(i+1)%hull.length],a,b)<r);
+}
+function cliffProtected(p){
+  const hull=cliffWorldHull(p),margin=state.agent.radius+.15;
+  for(const b of bridges)if(cliffOverlapsLink(hull,[b.x1,b.z1],[b.x2,b.z2],b.w/2+margin))return true;
+  for(const st of stairs)if(cliffOverlapsLink(hull,[st.x1,st.z1],[st.x2,st.z2],st.w/2+margin))return true;
+  for(const m of markers)if(m.kind==='port'&&cliffOverlapsLink(hull,[m.x,m.z],[m.x,m.z],Math.max(m.r||0,(m.w||2)/2)+margin))return true;
+  if(cliffOverlapsLink(hull,[state.spawn.x,state.spawn.z],[state.spawn.x,state.spawn.z],1+margin))return true;
+  // 滝の落下域と上流溝。輪郭の頂点だけでなく辺も一定間隔で確認する。
+  for(let i=0;i<hull.length;i++){const a=hull[i],b=hull[(i+1)%hull.length],n=Math.max(1,Math.ceil(Math.hypot(b[0]-a[0],b[1]-a[1])/.2));for(let k=0;k<=n;k++)if(nearFeature(lerp(a[0],b[0],k/n),lerp(a[1],b[1],k/n)))return true;}
+  return false;
+}
+function autoRocks(seed=Date.now()){
+  const R=rng(seed|0),shapeR=rng((seed|0)^0x7b0d37e);
+  props=props.filter(p=>p[5]!==1);
+  const hash=buildPropHash(),ch=new SpatialHash(3),e=.4;
+  const types=['cliff','cliff_split','cliff_shoulder'].map(TYPE),joint=TYPE('cliff_joint'),slab=TYPE('cliff_slab'),talus=TYPE('cliff_talus');
+  const pts=[];for(let j=1;j<N-1;j++)for(let i=1;i<N-1;i++)pts.push([vx(i)+(R()-.5)*.4,vx(j)+(R()-.5)*.4]);
+  for(let k=pts.length-1;k>0;k--){const m=R()*(k+1)|0;[pts[k],pts[m]]=[pts[m],pts[k]];}
+  for(const [x,z]of pts){
+    if(nearEdge(x,z)||slopeAt(x,z)<1.3||nearFeature(x,z))continue;
+    const gx=(heightAt(x+e,z)-heightAt(x-e,z))/(2*e),gz=(heightAt(x,z+e)-heightAt(x,z-e))/(2*e),gl=Math.hypot(gx,gz);if(gl<1e-5)continue;
+    const ux=gx/gl,uz=gz/gl;let hT=heightAt(x,z),hB=hT;
+    for(let d=.25;d<=2.5;d+=.25){hT=Math.max(hT,heightAt(x+ux*d,z+uz*d));hB=Math.min(hB,heightAt(x-ux*d,z-uz*d));}
+    if(hT-hB<.9)continue;
+    const px=x-ux*.35,pz=z-uz*.35;if(nearEdge(px,pz))continue;
+    let ok=true,neighbor=null,near=Infinity;
+    ch.query(px,pz,3,p=>{const d=Math.hypot(p[1]-px,p[2]-pz);if(d<1.45)ok=false;if(d<near){neighbor=p;near=d;}});if(!ok)continue;
+    const below=Math.max(hB,state.water-.6),targetH=hT-below+.10;if(targetH<.5)continue;
+    // 元と同じR消費を保つ。部品選択は別乱数なので密度を意図せず変えない。
+    const legacyLayers=Math.max(1,Math.round((hT-below-.05)/2.3));let width=.95,rot=Math.atan2(-ux,-uz);
+    for(let L=0;L<legacyLayers;L++){const w=.95+R()*.25,r=rot+(R()-.5)*.35;if(L===0){width=w;rot=r;}}
+    let chosen=types[Math.floor(shapeR()*3)];if(neighbor&&near<3&&chosen===neighbor[0])chosen=types[(types.indexOf(chosen)+1+(shapeR()>.5?1:0))%3];
+    function fit(t,s){const g=PROP[t].geo;g.computeBoundingBox();const b=g.boundingBox,sy=targetH/((b.max.y-b.min.y)*s),by=below-.10-b.min.y*s*sy;return[t,px,pz,rot,s,1,sy,by];}
+    let p=fit(chosen,width);
+    // 幅が厳しい橋際/終端では細岩へ。広い岩を地中へ消さない。
+    if(cliffProtected(p)){p=fit(joint,.95);if(cliffProtected(p))continue;}
+    props.push(p);ch.add(p,px,pz);
   }
-  for (let j = 2; j < N - 2; j++) for (let i = 2; i < N - 2; i++) {
-    const x = vx(i) + (R() - .5) * .5, z = vx(j) + (R() - .5) * .5, s = slopeAt(x, z);
-    if (nearEdge(x, z) || s < 1.1 || R() > .07 || nearFeature(x, z)) continue;
-    // drop to the foot or the lip of the cliff, whichever is lower-risk to overlap
-    const e = .4, gx = (heightAt(x + e, z) - heightAt(x - e, z)) / (2 * e), gz = (heightAt(x, z + e) - heightAt(x, z - e)) / (2 * e), gl = Math.hypot(gx, gz) || 1;
-    const foot = R() < .7, off = foot ? -1.1 : .9;
-    const px = x + gx / gl * off, pz = z + gz / gl * off;
-    if (nearEdge(px, pz)) continue;
-    let ok = true; hash.query(px, pz, 3, p => { if (ok && Math.hypot(p[1] - px, p[2] - pz) < 1.2) ok = false; });
-    if (!ok) continue;
-    const p = [2, px, pz, R() * Math.PI * 2, (foot ? 1.1 : .7) + R() * 1.1, 1]; props.push(p); hash.add(p, px, pz);
+  for(let j=2;j<N-2;j++)for(let i=2;i<N-2;i++){
+    const x=vx(i)+(R()-.5)*.5,z=vx(j)+(R()-.5)*.5,s=slopeAt(x,z);
+    if(nearEdge(x,z)||s<1.1||R()>.07||nearFeature(x,z))continue;
+    const gx=(heightAt(x+e,z)-heightAt(x-e,z))/(2*e),gz=(heightAt(x,z+e)-heightAt(x,z-e))/(2*e),gl=Math.hypot(gx,gz)||1,foot=R()<.7,off=foot?-1.1:.9;
+    const px=x+gx/gl*off,pz=z+gz/gl*off;if(nearEdge(px,pz))continue;
+    let ok=true;hash.query(px,pz,3,p=>{if(Math.hypot(p[1]-px,p[2]-pz)<1.2)ok=false;});if(!ok)continue;
+    const yaw=R()*Math.PI*2;R(); // 旧倍率用の乱数消費を保ち、配置地点を再現する。
+    const t=shapeR()<.6?slab:talus,scale=.78+.22*shapeR();
+    const p=[t,px,pz,yaw,scale,1,1,heightAt(px,pz)-.04];
+    if(cliffProtected(p))continue;
+    const heights=cliffWorldHull(p).map(([x,z])=>heightAt(x,z));
+    if(Math.max(...heights)-Math.min(...heights)>.35)continue; // 低い裾岩が斜面から独立して浮かない。
+    p[7]=Math.min(...heights)-.025;
+    props.push(p);hash.add(p,px,pz);
   }
   rebuildProps();
 }
+
 
 // ============================================================
 // Sample / new maps
