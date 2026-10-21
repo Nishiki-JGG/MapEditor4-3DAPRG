@@ -1,2 +1,2 @@
-// 針葉樹。正本は共有データ、生成元は tools/nature/。
-TDProps.add({id:'pine',name:'針葉樹',r:.45,min:1.7,sc:[1,1.4],slope:.9,vis:1.5,tree:true,tags:['forest','mountain','canyon','snow','castle','graveyard'],height:6.408,canopy:true,material:'shared',sharedAsset:'pine',build(){return TDSharedProps.geometry('pine');}});
+// 針葉樹。生成元 tools/plants/tree-canopies.js。
+TDProps.add({...{"id":"pine","name":"針葉樹","r":0.45,"min":1.7,"sc":[1,1.4],"slope":0.9,"vis":1.5,"tree":true,"tags":["forest","mountain","canyon","snow","castle","graveyard"],"height":6.408,"canopy":true,"material":"shared","meshTop":6.41,"base":{"r":0.45,"height":6.408},"offs":null,"assetKey":"tdj/pine","offsPrefab":null,"yawOffset":0,"sharedAsset":"pine","touch":true},build(){return TDSharedProps.geometry("pine");}});

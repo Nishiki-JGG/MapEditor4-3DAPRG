@@ -1,2 +1,2 @@
-// 地を這う針葉低木。生成元: tools/plants/understory.js
-TDProps.add({...{"id":"juniper","name":"地を這う針葉低木","r":0,"min":1.5,"sc":[0.85,1.2],"slope":0.6,"vis":1.1,"tags":["forest","mountain","canyon"],"height":0.34,"material":"shared","sharedAsset":"juniper","touch":true},build(){return TDSharedProps.geometry("juniper");}});
+// 地を這う針葉低木。生成元 tools/plants/tree-canopies.js。
+TDProps.add({...{"id":"juniper","name":"地を這う針葉低木","r":0,"min":1.5,"sc":[0.85,1.2],"slope":0.6,"vis":1.1,"tags":["forest","mountain","canyon"],"height":0.34,"material":"shared","touch":true,"meshTop":0.34,"base":{"r":0,"height":0.34},"offs":null,"assetKey":"tdj/juniper","offsPrefab":null,"yawOffset":0,"sharedAsset":"juniper"},build(){return TDSharedProps.geometry("juniper");}});

@@ -906,7 +906,7 @@ function updateTouch(dt) {
     const t = PROP[p[0]], contact=t.sharedAsset?TDSharedProps.asset(t.sharedAsset).contact:null, R = (contact?contact.radius:t.vis*.6)*p[4]+r0, dx = p[1] - player.x, dz = p[2] - player.z;
     if (Math.abs(dx) > R || Math.abs(dz) > R) continue;
     const d = Math.hypot(dx, dz); if (d >= R) continue;
-    const baseY=p[7]??heightAt(p[1],p[2]),scaleY=p[4]*(p[6]??1);if(contact&&(baseY+contact.minY*scaleY>=player.y+state.agent.height||baseY+contact.maxY*scaleY<=player.y))continue;
+    const baseY=p[7]??(heightAt(p[1],p[2])-(t.groundSink||0)),scaleY=p[4]*(p[6]??1);if(contact&&(baseY+contact.minY*scaleY>=player.y+state.agent.height||baseY+contact.maxY*scaleY<=player.y))continue;
     let st = touchState.get(p); if (!st) touchState.set(p, st = { bx: 0, bz: 0, vx: 0, vz: 0, push: null });
     const o = 1 - d / R, nx = d > .05 ? dx / d : mdx, nz = d > .05 ? dz / d : mdz, max = contact?Math.min(.3,contact.maxDisplacementMetres*p[4]):Math.min(.45, .38 * t.meshTop * p[4] * (p[6] ?? 1));st.motion=!!contact;st.max=max;
     // push out of the way, plus drag along the walk while the hero moves
@@ -934,7 +934,7 @@ function rebuildProps(visualOnly = false) {
     if (c[t] >= CAP) continue;
     // Shared meshes have an explicit ground pivot; their catalog yaw offset applies to visuals too.
     const shared = PROP[t].sharedAsset;
-    _p.set(x, by ?? (heightAt(x, z) - (shared ? 0 : t === 2 ? .12 * s : .05)), z);
+    _p.set(x, by ?? (heightAt(x, z) - (shared ? PROP[t].groundSink || 0 : t === 2 ? .12 * s : .05)), z);
     _q.setFromAxisAngle(_up, r - (shared ? PROP[t].yawOffset * Math.PI / 180 : 0)); _s.set(s, s * sy, s);
     mesh.setMatrixAt(c[t], _m.compose(_p, _q, _s));
     const v = .86 + .28 * hash2(x * 97 | 0, z * 89 | 0);
@@ -3238,7 +3238,7 @@ async function buildExport() {
     return [walkable(x, z, auto) ? 255 : 0, d ? (d.kind === 'bridge' ? 32 : 48) : o === 1 ? 128 : o === 2 ? 255 : o === 3 ? 64 : 0, auto ? 255 : 0];
   });
   const ROCKY = ['rock', 'cliff', 'pebble'];
-  const csv = ['instanceId,type,assetKey,x,y,z,rotY_deg,scale,scaleY,auto,cliffStyle'].concat(props.map(p => { const t = PROP[p[0]]; return [p[8], t.id, t.assetKey, U.x(p[1]), U.y(p[7] ?? heightAt(p[1], p[2])), U.z(p[2]), U.yaw(p[3]), p[4].toFixed(3), (p[4] * (p[6] ?? 1)).toFixed(3), p[5], ROCKY.includes(t.id) ? CLIFF_STYLES[cliffIndexNear(p[1], p[2])][0] : ''].join(','); })).join('\n');
+  const csv = ['instanceId,type,assetKey,x,y,z,rotY_deg,scale,scaleY,auto,cliffStyle'].concat(props.map(p => { const t = PROP[p[0]]; return [p[8], t.id, t.assetKey, U.x(p[1]), U.y(p[7] ?? (heightAt(p[1], p[2]) - (t.groundSink || 0))), U.z(p[2]), U.yaw(p[3]), p[4].toFixed(3), (p[4] * (p[6] ?? 1)).toFixed(3), p[5], ROCKY.includes(t.id) ? CLIFF_STYLES[cliffIndexNear(p[1], p[2])][0] : ''].join(','); })).join('\n');
   const spawnY = floorAt(state.spawn.x, state.spawn.z);
   const portOut = m => { const [ix, iz] = portInward(m), L = portLanding(m); return { id: m.id, tag: m.tag || '', position: P3(m.x, floorAt(m.x, m.z), m.z), yawDeg: U.yaw(m.rot), inward: [+ix.toFixed(4), +(-iz).toFixed(4)], width: m.w, landing: P3(L.x, floorAt(L.x, L.z), L.z), safeRadius: m.r }; };
   const spotOut = m => ({ id: m.id, tag: m.tag || '', position: P3(m.x, floorAt(m.x, m.z), m.z), reserveRadius: m.r });
@@ -3456,7 +3456,7 @@ $('cliffStyle').onchange = e => { pushUndo(); state.cliffStyle = e.target.value;
 // prop types as a folding tree: one group per kind, a group's box checks all its (shown) types
 const placeOpen = new Set();   // groups of the 置く list the user opened
 const PROP_GROUPS = [
-  ['木・倒木', ['pine', 'oak', 'scotspine', 'birch', 'willow', 'hazel', 'rowan', 'juniper', 'deadtree', 'twisttree', 'palm', 'banana', 'log', 'stump', 'rootfan', 'driftwood']],
+  ['木・倒木', ['pine', 'oak', 'scotspine', 'birch', 'willow', 'hazel', 'rowan', 'juniper', 'deadtree', 'twisttree', 'palm', 'banana', 'maple', 'cherry', 'zelkova', 'nara', 'sugi', 'hinoki', 'islandash', 'olive', 'eucalyptus', 'dragontree', 'elftree', 'worldtree', 'log', 'stump', 'rootfan', 'driftwood']],
   ['草花・低木', ['grass', 'meadowwhite', 'meadowyellow', 'meadowpink', 'meadowred', 'meadowviolet', 'bush', 'fern', 'bramble', 'ivy', 'sedge', 'foxglove', 'horsetail', 'dock', 'clover', 'reed', 'flowers', 'mushroom', 'glowmush', 'shelfshroom', 'cactus', 'barrelcactus']],
   ['岩・崖', ['rock', 'mossrock', 'pebble', 'cliff', 'cliff_split', 'cliff_shoulder', 'cliff_joint', 'cliff_slab', 'cliff_talus', 'rubblepile', 'stalagmite', 'crystal', 'lavarock', 'obsidian', 'fumarole', 'iceblock', 'icespike']],
   ['遺跡・墓', ['column', 'brokencol', 'ruinwall', 'archgate', 'statue', 'stele', 'obelisk', 'pyramid', 'gravestone', 'crossgrave', 'mausoleum', 'bones', 'bonepile', 'magiccircle', 'demonspire']],

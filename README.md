@@ -1,5 +1,7 @@
 # MapEditor4-3DAPRG
 
+紅葉・桜・ケヤキ・ナラ・スギ・ヒノキ・シマトネリコ・オリーブ・ユーカリ・龍血樹・エルフの森の木・世界樹を追加し、既存の木も樹冠・色・影・風を改善しました（計96種）。[木の確認一覧](tests/tree_view.html) / [寸法・負荷・検証](docs/TREE_CANOPIES.md)。
+
 
 倒木・切り株・露出根・流木・木の柵を磨き込み、寸法を保ったまま三角形を削減した。[確認一覧](tests/prop_refine_view.html) / [変更と検証](docs/PROP_REFINE.md)。
 

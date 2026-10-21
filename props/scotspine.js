@@ -1,2 +1,2 @@
-// 傘形の松。生成元 tools/plants/new-plants.js。
-TDProps.add({...{"id":"scotspine","name":"傘形の松","r":0.3,"min":3.5,"sc":[1,1.2],"slope":0.7,"vis":2.6,"tags":["forest","mountain","canyon","beach"],"height":5.408,"material":"shared","sharedAsset":"scotspine","touch":true,"tree":true,"canopy":true},build(){return TDSharedProps.geometry("scotspine");}});
+// 傘形の松。生成元 tools/plants/tree-canopies.js。
+TDProps.add({...{"id":"scotspine","name":"傘形の松","r":0.3,"min":3.5,"sc":[1,1.2],"slope":0.7,"vis":2.6,"tags":["forest","mountain","canyon","beach"],"height":5.408,"material":"shared","touch":true,"tree":true,"canopy":true,"meshTop":5.41,"base":{"r":0.3,"height":5.408},"offs":null,"assetKey":"tdj/scotspine","offsPrefab":null,"yawOffset":0,"sharedAsset":"scotspine"},build(){return TDSharedProps.geometry("scotspine");}});

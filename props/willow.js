@@ -1,2 +1,2 @@
-// しだれ柳。生成元 tools/plants/new-plants.js。
-TDProps.add({...{"id":"willow","name":"しだれ柳","r":0.33,"min":4.5,"sc":[1,1.2],"slope":0.7,"vis":3.4,"tags":["forest","grassland","jungle"],"height":6.082,"material":"shared","sharedAsset":"willow","touch":true,"tree":true,"canopy":true},build(){return TDSharedProps.geometry("willow");}});
+// しだれ柳。生成元 tools/plants/tree-canopies.js。
+TDProps.add({...{"id":"willow","name":"しだれ柳","r":0.33,"min":4.5,"sc":[1,1.2],"slope":0.7,"vis":3.4,"tags":["forest","grassland","jungle"],"height":6.082,"material":"shared","touch":true,"tree":true,"canopy":true,"meshTop":6.08,"base":{"r":0.33,"height":6.082},"offs":null,"assetKey":"tdj/willow","offsPrefab":null,"yawOffset":0,"sharedAsset":"willow"},build(){return TDSharedProps.geometry("willow");}});

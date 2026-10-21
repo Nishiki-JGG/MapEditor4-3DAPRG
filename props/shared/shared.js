@@ -19,7 +19,7 @@ function geometry(id) {
   const indices = a.triangles.slice();
   for (let k = 0; k < indices.length; k += 3) [indices[k + 1], indices[k + 2]] = [indices[k + 2], indices[k + 1]];
   g.setIndex(indices);
-  if(a.motionWeights)g.setAttribute('plantWeight',new THREE.Float32BufferAttribute(a.motionWeights,2));
+  if(a.motionWeights)g.setAttribute('plantWeight',new THREE.Float32BufferAttribute(a.motionWeights,2));if(a.glow)g.setAttribute('sharedGlow',new THREE.Float32BufferAttribute(a.glow,1));
   g.computeBoundingBox(); g.computeBoundingSphere();if(a.wind||id==='pine'){const pad=(a.wind||TDPineWind.spec).maxDisplacementMetres+(a.contact?.maxDisplacementMetres||0);g.boundingBox.min.x-=pad;g.boundingBox.min.z-=pad;g.boundingBox.max.x+=pad;g.boundingBox.max.z+=pad;g.boundingSphere.radius+=pad;}
   return g;
 }
@@ -41,6 +41,7 @@ function material(id, ghost = false) {
   const m = new THREE.MeshLambertMaterial({map, vertexColors: true, color: new THREE.Color().fromArray(d.baseColor),
     alphaTest: d.alphaCutoff, side: d.doubleSided ? THREE.DoubleSide : THREE.FrontSide});
   if(id==='pine'||asset(id).wind) TDPineWind.attach(m,asset(id).wind||null,!!asset(id).motionWeights);
+  if(a.glow){const compile=m.onBeforeCompile,key=m.customProgramCacheKey.bind(m);m.onBeforeCompile=sh=>{compile(sh);sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nattribute float sharedGlow;varying vec2 vSharedGlow;').replace('#include <begin_vertex>','#include <begin_vertex>\nvSharedGlow=vec2(sharedGlow,position.y);');sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying vec2 vSharedGlow;uniform vec4 uPineWind;').replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\ntotalEmissiveRadiance+=diffuseColor.rgb*vSharedGlow.x*(.85+.15*sin(uPineWind.w*9.+vSharedGlow.y*13.));');};m.customProgramCacheKey=()=>key()+'/shared-glow/1';}
   m.name = data.libraryVersion + '/' + id; materials.set(id, m); return m;
 }
 window.TDSharedProps = {asset, geometry, material, data, exportJson: () => JSON.stringify(data)};
