@@ -27,7 +27,7 @@ const state = {
   agent: { radius: .3, height: 1.8, maxSlopeDeg: 51.3, maxWaterDepth: .9, maxStep: .5, arrivalClearance: .5 },   // who the walkability is computed for
   biome: 'forest', palette: 'all', cliffStyle: 'standard', sunOn: true, sea: false, weather: { kind: 'none', amount: .7 }, atmo: { kind: 'none', amount: .6, height: 3 },
   variant: { bridge: 'wood', stairs: 'stone', place: 0, marker: 'port', link: 'warp', cliffpaint: 1 }, placeScale: 1, placeRot: 0, placeRandom: true,
-  mode: 'edit', tool: 'plateau', radius: 4, strength: .6, density: .6,
+  mode: 'edit', tool: 'plateau', radius: 4, strength: .6, density: .6, brushShape: 'circle',
   types: new Set([0, 1]), water: .8, spawn: { x: 0, z: 22 },
 };
 
@@ -2049,26 +2049,28 @@ function redo() { if (!redoStack.length) return; undoStack.push(snapshot()); res
 
 const stroke = { active: false, base: 0, lower: false, lastStamp: null };
 let hit = null;
-function forBrush(x, z, r, fn) {
+// brush distance: a circle, or with the square brush the larger of the two axis distances (an axis-aligned square of half side r)
+const brushDist = (dx, dz, sq = state.brushShape === 'square') => sq ? Math.max(Math.abs(dx), Math.abs(dz)) : Math.hypot(dx, dz);
+function forBrush(x, z, r, fn, sq = false) {
   const i0 = clamp(Math.floor((x - r + HALF) * RES), 0, N - 1), i1 = clamp(Math.ceil((x + r + HALF) * RES), 0, N - 1);
   const j0 = clamp(Math.floor((z - r + HALF) * RES), 0, N - 1), j1 = clamp(Math.ceil((z + r + HALF) * RES), 0, N - 1);
-  for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) { const d = Math.hypot(vx(i) - x, vx(j) - z); if (d < r) fn(idx(i, j), d, vx(i), vx(j)); }
+  for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) { const d = brushDist(vx(i) - x, vx(j) - z, sq); if (d < r) fn(idx(i, j), d, vx(i), vx(j)); }
 }
 const soft = (d, r) => { const t = 1 - d / r; return t <= 0 ? 0 : t * t * (3 - 2 * t); };
 function applyBrush(x, z, dt) {
-  const r = state.radius, k = state.strength, tool = state.tool;
+  const r = state.radius, k = state.strength, tool = state.tool, sq = state.brushShape === 'square';
   if (tool === 'plateau') {
     const target = stroke.base + (stroke.lower ? -STEP : STEP);
     forBrush(x, z, r * 1.1, (i, d, px, pz) => {
       const dd = d + (fbm(px * .45 + 3, pz * .45) - .5) * r * .35;
       const w = sstep(r, r * .8, dd);
       if (w > 0) H[i] = lerp(H[i], target, Math.min(1, w * (.35 + k)));
-    });
+    }, sq);
   } else if (tool === 'raise' || tool === 'lower') {
     const sgn = tool === 'raise' ? 1 : -1;
-    forBrush(x, z, r, (i, d) => { H[i] += sgn * soft(d, r) * k * 4 * dt; });
+    forBrush(x, z, r, (i, d) => { H[i] += sgn * soft(d, r) * k * 4 * dt; }, sq);
   } else if (tool === 'flat') {
-    forBrush(x, z, r, (i, d) => { H[i] = lerp(H[i], stroke.base, Math.min(1, soft(d, r) * k * 8 * dt)); });
+    forBrush(x, z, r, (i, d) => { H[i] = lerp(H[i], stroke.base, Math.min(1, soft(d, r) * k * 8 * dt)); }, sq);
   } else if (tool === 'smooth') {
     const src = H.slice();
     forBrush(x, z, r, (i, d) => {
@@ -2076,14 +2078,14 @@ function applyBrush(x, z, dt) {
       if (ii < 1 || jj < 1 || ii > N - 2 || jj > N - 2) return;
       const avg = (src[i - 1] + src[i + 1] + src[i - N] + src[i + N] + src[i]) / 5;
       H[i] = lerp(H[i], avg, Math.min(1, soft(d, r) * k * 10 * dt));
-    });
+    }, sq);
   } else if (tool === 'cliffpaint') {
     const v = state.variant.cliffpaint;
-    forBrush(x, z, r, (i, d, px, pz) => { if (d + (fbm(px * .5 + 7, pz * .5) - .5) * r * .3 < r) C[i] = v; });
+    forBrush(x, z, r, (i, d, px, pz) => { if (d + (fbm(px * .5 + 7, pz * .5) - .5) * r * .3 < r) C[i] = v; }, sq);
     stroke.cliffChanged = true;
   } else if (tool === 'walkOn' || tool === 'walkOff' || tool === 'walkAuto' || tool === 'secret') {
     const v = tool === 'walkOn' ? 1 : tool === 'walkOff' ? 2 : tool === 'secret' ? 3 : 0;
-    forBrush(x, z, r, i => { O[i] = v; });
+    forBrush(x, z, r, i => { O[i] = v; }, sq);
     walkDirty = true;
   } else if (tool === 'grass' || GROUND.includes(tool)) {
     const ch = GROUND.indexOf(tool);
@@ -2091,7 +2093,7 @@ function applyBrush(x, z, dt) {
     forBrush(x, z, r, (i, d) => {
       const a = soft(d, r) * k * 700 * dt;
       for (let c = 0; c < NS; c++) S[i * NS + c] = clamp(S[i * NS + c] + (c === ch ? a : -a), 0, 255);
-    });
+    }, sq);
   }
 }
 function buildPropHash() { const h = new SpatialHash(4); for (const p of props) h.add(p, p[1], p[2]); return h; }
@@ -2108,9 +2110,10 @@ function canPlace(t, x, z, hash) {
 }
 function scatterAt(x, z, R = Math.random) {
   const types = [...state.types].filter(propVisible); if (!types.length) return;
-  const r = state.radius, hash = buildPropHash(), n = Math.max(1, Math.round(Math.PI * r * r * state.density * .22));
+  const r = state.radius, sq = state.brushShape === 'square', hash = buildPropHash(), n = Math.max(1, Math.round((sq ? 4 : Math.PI) * r * r * state.density * .22));
   for (let k = 0; k < n; k++) {
-    const a = R() * Math.PI * 2, d = Math.sqrt(R()) * r, px = x + Math.cos(a) * d, pz = z + Math.sin(a) * d, t = types[(R() * types.length) | 0];
+    const a = R() * Math.PI * 2, d = Math.sqrt(R()) * r, t = types[(R() * types.length) | 0];
+    const px = sq ? x + (a / Math.PI - 1) * r : x + Math.cos(a) * d, pz = sq ? z + (R() * 2 - 1) * r : z + Math.sin(a) * d;   // square: uniform over the square
     if (!canPlace(t, px, pz, hash)) continue;
     const s = lerp(PROP[t].sc[0], PROP[t].sc[1], R());
     const p = [t, px, pz, R() * Math.PI * 2, s, 0]; props.push(p); hash.add(p, px, pz);
@@ -2156,7 +2159,7 @@ function regenGroundProps() {
 }
 function eraseAt(x, z) {
   const r = state.radius, n0 = props.length;
-  props = props.filter(p => !(state.types.has(p[0]) && propVisible(p[0]) && Math.hypot(p[1] - x, p[2] - z) < r));
+  props = props.filter(p => !(state.types.has(p[0]) && propVisible(p[0]) && brushDist(p[1] - x, p[2] - z) < r));
   if (props.length !== n0) rebuildProps();
 }
 // keeps generated rocks off waterfalls (their sheet and stream) and bridge decks
@@ -3439,9 +3442,93 @@ paletteSel.onchange = e => { state.palette = e.target.value; applyPalette(); };
 $('cliffStyle').innerHTML = CLIFF_STYLES.map(([v, name]) => `<option value="${v}">${name}</option>`).join('');
 $('cliffStyle').value = state.cliffStyle;
 $('cliffStyle').onchange = e => { pushUndo(); state.cliffStyle = e.target.value; applyCliffStyle(); };
+// prop types as a folding tree: one group per kind, a group's box checks all its (shown) types
+const PROP_GROUPS = [
+  ['木・倒木', ['pine', 'oak', 'scotspine', 'birch', 'willow', 'hazel', 'rowan', 'juniper', 'deadtree', 'twisttree', 'palm', 'banana', 'log', 'stump', 'rootfan', 'driftwood']],
+  ['草花・低木', ['grass', 'bush', 'fern', 'bramble', 'ivy', 'sedge', 'foxglove', 'horsetail', 'dock', 'clover', 'reed', 'flowers', 'mushroom', 'glowmush', 'shelfshroom', 'cactus', 'barrelcactus']],
+  ['岩・崖', ['rock', 'mossrock', 'pebble', 'cliff', 'cliff_split', 'cliff_shoulder', 'cliff_joint', 'cliff_slab', 'cliff_talus', 'rubblepile', 'stalagmite', 'crystal', 'lavarock', 'obsidian', 'fumarole', 'iceblock', 'icespike']],
+  ['遺跡・墓', ['column', 'brokencol', 'ruinwall', 'archgate', 'statue', 'stele', 'obelisk', 'pyramid', 'gravestone', 'crossgrave', 'mausoleum', 'bones', 'bonepile', 'magiccircle', 'demonspire']],
+  ['建物・道具', ['torch', 'lantern', 'banner', 'woodfence', 'ironfence', 'castlewall', 'tower', 'gatehouse', 'lighthouse', 'rowboat', 'haystack', 'shells', 'snowman', 'kamakura']],
+];
 const typesEl = $('types');
-PROP.forEach((p, i) => { const l = document.createElement('label'); l.innerHTML = `<input type="checkbox" data-type="${i}" ${state.types.has(i) ? 'checked' : ''}> ${p.name}`; typesEl.appendChild(l); });
-typesEl.addEventListener('change', e => { const i = +e.target.dataset.type; e.target.checked ? state.types.add(i) : state.types.delete(i); });
+{
+  const groups = PROP_GROUPS.map(([name, ids]) => [name, ids.map(TYPE).filter(i => i >= 0)]);
+  const known = new Set(groups.flatMap(g => g[1])), rest = PROP.map((_, i) => i).filter(i => !known.has(i));   // types added later land in "その他"
+  if (rest.length) groups.push(['その他', rest]);
+  for (const [name, list] of groups) {
+    const d = document.createElement('details'); d.className = 'pg'; d.open = list.some(i => state.types.has(i));
+    d.innerHTML = `<summary><input type="checkbox" class="gall"> ${name}<span class="cnt"></span></summary><div class="pgl"></div>`;
+    for (const i of list) { const l = document.createElement('label'); l.dataset.type = i; l.innerHTML = `<input type="checkbox" data-type="${i}"> ${PROP[i].name}`; d.lastChild.appendChild(l); }
+    typesEl.appendChild(d);
+  }
+}
+function syncTypesUI() {
+  for (const d of typesEl.children) {
+    let shown = 0, on = 0;
+    for (const l of d.querySelectorAll('label[data-type]')) {
+      const i = +l.dataset.type, vis = propVisible(i); l.hidden = !vis; l.firstChild.checked = state.types.has(i);
+      if (vis) { shown++; if (state.types.has(i)) on++; }
+    }
+    d.hidden = !shown; d.querySelector('.cnt').textContent = `${on}/${shown}`;
+    const g = d.querySelector('.gall'); g.checked = shown > 0 && on === shown; g.indeterminate = on > 0 && on < shown;
+  }
+}
+typesEl.addEventListener('change', e => {
+  if (e.target.classList.contains('gall')) {
+    for (const l of e.target.closest('details').querySelectorAll('label[data-type]')) if (!l.hidden) { const i = +l.dataset.type; e.target.checked ? state.types.add(i) : state.types.delete(i); }
+  } else { const i = +e.target.dataset.type; e.target.checked ? state.types.add(i) : state.types.delete(i); }
+  syncTypesUI();
+});
+syncTypesUI();
+
+// brush shape (top bar)
+function setBrushShape(v) { state.brushShape = v; $('shapeCircle').classList.toggle('on', v === 'circle'); $('shapeSquare').classList.toggle('on', v === 'square'); }
+$('shapeCircle').onclick = () => setBrushShape('circle'); $('shapeSquare').onclick = () => setBrushShape('square');
+
+// slots 1-9: a number recalls the tool, its kind, the brush (size, strength, density, shape) and the checked props saved
+// with Shift+number (or Shift+click on the top bar). Unregistered numbers keep their tool from TOOLS. Kept in this browser.
+const SLOT_KEY = 'tdj-map-editor/slots';
+let slots = {}, slotNow = 0;
+try { slots = JSON.parse(localStorage.getItem(SLOT_KEY)) || {}; } catch { slots = {}; }
+const slotOf = n => slots[n] || (TOOLS.find(t => t.key === String(n)) ? { tool: TOOLS.find(t => t.key === String(n)).id } : null);
+function slotLabel(sl) {
+  const t = TOOLS.find(t => t.id === sl.tool); if (!t) return '？';
+  if (sl.tool === 'place' && sl.variant) return `${t.name}：${PROP[TYPE(sl.variant)]?.name || sl.variant}`;
+  if ((sl.tool === 'scatter' || sl.tool === 'erase') && sl.types) { const n = sl.types.map(id => PROP[TYPE(id)]?.name).filter(Boolean); return `${t.name}：${n.slice(0, 2).join('・')}${n.length > 2 ? ` 他${n.length - 2}` : ''}`; }
+  return t.name;
+}
+const storeSlots = () => { try { localStorage.setItem(SLOT_KEY, JSON.stringify(slots)); } catch { } };
+function saveSlot(n) {
+  const v = state.variant[state.tool];
+  slots[n] = { tool: state.tool, variant: v === undefined ? undefined : state.tool === 'place' ? PROP[v].id : v, radius: state.radius, strength: state.strength, density: state.density,
+    shape: state.brushShape, types: [...state.types].map(i => PROP[i].id), placeScale: state.placeScale, placeRot: state.placeRot };
+  storeSlots(); slotNow = n; renderSlots(); toast(`${n} に登録しました：${slotLabel(slots[n])}`);
+}
+function useSlot(n) {
+  const sl = slotOf(n); if (!sl) return;
+  if (!toolVisible(sl.tool)) { toast(`${n}：${slotLabel(sl)} は、いまのパレットでは使えません`); return; }
+  if (sl.radius !== undefined) { state.radius = sl.radius; state.strength = sl.strength; state.density = sl.density; syncUI(); }
+  if (sl.shape) setBrushShape(sl.shape);
+  if (sl.types) { state.types = new Set(sl.types.map(TYPE).filter(i => i >= 0)); syncTypesUI(); }
+  if (sl.variant !== undefined) {
+    state.variant[sl.tool] = sl.tool === 'place' ? Math.max(0, TYPE(sl.variant)) : sl.variant;
+    if (sl.tool === 'place') { preview.geometry = PROP[state.variant.place].geo; state.placeScale = sl.placeScale ?? 1; state.placeRot = sl.placeRot ?? 0; syncPlaceUI(); }
+  }
+  setTool(sl.tool); slotNow = n; renderSlots(); toast(`${n}：${slotLabel(sl)}`);
+}
+function renderSlots() {
+  const box = $('slots'); box.innerHTML = '';
+  for (let n = 1; n <= 9; n++) {
+    const sl = slotOf(n), b = document.createElement('button');
+    b.className = (slots[n] ? 'own' : '') + (slotNow === n ? ' on' : '');
+    b.innerHTML = `<b>${n}</b><span>${sl ? slotLabel(sl) : '（空き）'}</span>`;
+    b.title = `${n}：${sl ? slotLabel(sl) : '空き'}\nクリック／${n} キー：使う\nShift+クリック／Shift+${n}：いまの設定を登録\n右クリック：登録を消す`;
+    b.onclick = e => e.shiftKey ? saveSlot(n) : useSlot(n);
+    b.oncontextmenu = e => { e.preventDefault(); if (slots[n]) { delete slots[n]; storeSlots(); renderSlots(); toast(`${n} の登録を消しました`); } };
+    box.appendChild(b);
+  }
+}
+renderSlots();
 const DRAG_TOOLS = ['bridge', 'slope', 'stairs', 'coast'];
 const dragWidth = tool => tool === 'link' ? 2.2 : tool === 'marker' ? clamp(state.radius * .5, 1.5, 6) : tool === 'coast' ? 1 : tool === 'slope' ? clamp(state.radius, 2, 12) : tool === 'stairs' ? clamp(state.radius * .5, 1.2, 4) : clamp(state.radius * .5, 1.6, 4);
 function showVariants() {
@@ -3479,7 +3566,7 @@ function applyBiome(id) {
 }
 function applyPalette() {
   for (const b of toolsEl.children) b.hidden = !toolVisible(b.dataset.tool);
-  for (const l of typesEl.children) l.hidden = !propVisible(+l.querySelector('input').dataset.type);
+  syncTypesUI();
   if (!toolVisible(state.tool)) setTool('plateau'); else showVariants();
   if (state.palette === 'all') { $('paletteInfo').textContent = '全てのパーツを表示しています。'; return; }
   const all = [...PROP.map(t => t.tags), ...Object.values(GTOOL_TAGS), ...Object.values(BRIDGE_TAGS), ...Object.values(STAIR_TAGS)];
@@ -3557,7 +3644,7 @@ syncAgentUI();
 function setMode(m) {
   state.mode = m; document.body.classList.toggle('play', m === 'play');
   $('modeEdit').classList.toggle('on', m === 'edit'); $('modePlay').classList.toggle('on', m === 'play');
-  hero.visible = m === 'play'; spawnMarker.visible = ring.visible = markerGroup.visible = m === 'edit'; preview.visible = false;
+  hero.visible = m === 'play'; spawnMarker.visible = markerGroup.visible = m === 'edit'; preview.visible = false;
   if (m !== 'play' && ghosts.size) { ghosts = new Set(); rebuildProps(true); }
   heroStyle(false);
   if (m === 'play') {
@@ -3575,7 +3662,7 @@ const ring = new THREE.LineLoop(new THREE.BufferGeometry().setAttribute('positio
 ring.renderOrder = 5; scene.add(ring);
 function updateRing() {
   preview.visible = false;
-  ring.visible = state.mode === 'edit' && !!hit;
+  ring.visible = !!hit;
   if (!ring.visible) return;
   const a = ring.geometry.attributes.position.array, r = state.tool === 'spawn' ? .8 : state.radius;
   preview.visible = false;
@@ -3615,7 +3702,8 @@ function updateRing() {
     ring.geometry.attributes.position.needsUpdate = true; ring.material.color.set(ok ? 0xffd27a : 0xff7a6a);
     return;
   }
-  for (let k = 0; k < RING_N; k++) { const t = k / RING_N * Math.PI * 2, x = hit.x + Math.cos(t) * r, z = hit.z + Math.sin(t) * r; a[k * 3] = x; a[k * 3 + 1] = Math.max(heightAt(x, z), state.water) + .15; a[k * 3 + 2] = z; }
+  if (state.brushShape === 'square' && state.tool !== 'spawn' && state.tool !== 'fall') outline([[hit.x - r, hit.z - r], [hit.x + r, hit.z - r], [hit.x + r, hit.z + r], [hit.x - r, hit.z + r]], 0xffffff, .15);
+  else for (let k = 0; k < RING_N; k++) { const t = k / RING_N * Math.PI * 2, x = hit.x + Math.cos(t) * r, z = hit.z + Math.sin(t) * r; a[k * 3] = x; a[k * 3 + 1] = Math.max(heightAt(x, z), state.water) + .15; a[k * 3 + 2] = z; }
   ring.geometry.attributes.position.needsUpdate = true;
   ring.material.color.set(state.tool === 'erase' ? 0xff7a6a : state.tool === 'scatter' || state.tool === 'walkOn' ? 0x9cff8a : state.tool === 'walkOff' ? 0xff6ae0 : state.tool === 'secret' ? 0x6ee6ff : 0xffffff);
 }
@@ -3714,7 +3802,7 @@ canvas.addEventListener('pointerdown', e => {
   canvas.setPointerCapture(e.pointerId); canvas.focus(); lastXY = [e.clientX, e.clientY];
   if (e.button === 2) drag = 'orbit';
   else if (e.button === 1) { drag = 'pan'; e.preventDefault(); }
-  else if (e.button === 0 && state.mode === 'edit') { hit = pick(e.clientX, e.clientY); beginStroke(e); }
+  else if (e.button === 0) { hit = pick(e.clientX, e.clientY); beginStroke(e); }   // the walk mode edits too
 });
 canvas.addEventListener('pointermove', e => {
   pointerIn = true;
@@ -3725,7 +3813,7 @@ canvas.addEventListener('pointermove', e => {
     const s = cam.dist * .0016, fx = -Math.sin(cam.yaw), fz = -Math.cos(cam.yaw);
     cam.target.x += (-dx * Math.cos(cam.yaw) + dy * fx) * s * 1; cam.target.z += (dx * Math.sin(cam.yaw) + dy * fz) * s;
   }
-  if (state.mode === 'edit') { hit = pick(e.clientX, e.clientY); if (stroke.active && hit && (state.tool === 'scatter' || state.tool === 'erase')) stampAt(hit); }
+  hit = pick(e.clientX, e.clientY); if (stroke.active && hit && (state.tool === 'scatter' || state.tool === 'erase')) stampAt(hit);
 });
 canvas.addEventListener('pointerup', () => {
   if (stroke.cliffChanged) { stroke.cliffChanged = false; rebuildProps(true); }
@@ -3753,7 +3841,9 @@ window.addEventListener('keydown', e => {
   if (e.code === 'Tab') { e.preventDefault(); setMode(state.mode === 'edit' ? 'play' : 'edit'); return; }
   if ((e.ctrlKey || e.metaKey) && e.code === 'KeyZ') { e.preventDefault(); e.shiftKey ? redo() : undo(); return; }
   if ((e.ctrlKey || e.metaKey) && e.code === 'KeyY') { e.preventDefault(); redo(); return; }
-  if (state.mode === 'edit') {
+  const dg = /^(?:Digit|Numpad)([1-9])$/.exec(e.code);
+  if (dg && !e.ctrlKey && !e.metaKey && !e.altKey) { e.preventDefault(); e.shiftKey ? saveSlot(+dg[1]) : useSlot(+dg[1]); return; }
+  {   // tool keys work while walking too (none of them is a walking key: W A S D Q E Shift)
     const t = TOOLS.find(t => t.key === e.key); if (t && toolVisible(t.id)) { setTool(t.id); return; }
     if (e.key === 'v' || e.key === 'V') { setWalkView(!state.showWalk); return; }
     if ((e.key === 'r' || e.key === 'R') && state.tool === 'place') { state.placeRot = (state.placeRot + 45) % 360; syncPlaceUI(); return; }
@@ -3768,6 +3858,13 @@ window.addEventListener('blur', () => keys.clear());
 // ============================================================
 // Loop
 // ============================================================
+// brush strokes and the brush outline, in the edit mode and while walking
+function editTick(dt) {
+  if (stroke.active && hit && !['scatter', 'erase', 'spawn', 'fall'].includes(state.tool)) {
+    applyBrush(hit.x, hit.z, Math.min(dt, .05)); updateTerrain(); rebuildProps();
+  }
+  updateRing();
+}
 const _tgt = new THREE.Vector3();
 let fpsAcc = 0, fpsN = 0, fps = 0;
 function update(dt) {
@@ -3794,13 +3891,11 @@ function update(dt) {
     }
     if (keys.has('KeyQ')) cam.yaw += dt * 1.2; if (keys.has('KeyE')) cam.yaw -= dt * 1.2;
     if (state.showWalk && walkDirty) computeWalk();
-    if (stroke.active && hit && !['scatter', 'erase', 'spawn', 'fall'].includes(state.tool)) {
-      applyBrush(hit.x, hit.z, Math.min(dt, .05)); updateTerrain(); rebuildProps();
-    }
+    editTick(dt);
     placeCamera(cam, cam.target);
     spawnMarker.position.set(state.spawn.x, heightAt(state.spawn.x, state.spawn.z) + 1.4 + Math.sin(timeU.value * 3) * .15, state.spawn.z);
-    updateRing();
   } else {
+    editTick(dt);
     if (keys.has('KeyQ')) playCam.yaw += dt * 1.6; if (keys.has('KeyE')) playCam.yaw -= dt * 1.6;
     let mx = 0, mz = 0;
     if (ix || iz) {

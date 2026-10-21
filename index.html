@@ -36,17 +36,40 @@
   .sw.striped{background:repeating-linear-gradient(45deg,#3be05c 0 3px,#d929b8 3px 6px)}
   #walkView kbd{color:var(--muted);font:11px ui-monospace,monospace}
   #hud{position:fixed;right:12px;bottom:12px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:7px 10px;font-size:12px;color:var(--muted);pointer-events:none;white-space:pre-line}
-  body.play #panel{display:none}
-  #toast{position:fixed;left:50%;top:14px;transform:translateX(-50%);background:#1d4f86;border-radius:6px;padding:6px 12px;opacity:0;transition:opacity .3s;pointer-events:none}
+  #topbar{position:fixed;left:290px;right:12px;top:10px;display:flex;align-items:center;gap:4px;flex-wrap:wrap;pointer-events:none}
+  #topbar>*{pointer-events:auto}
+  #topbar button{background:var(--panel);min-width:30px;padding:4px 7px}
+  #topbar button.on{background:#1d4f86}
+  #topbar .sep{width:6px}
+  #slots{display:flex;gap:4px;flex-wrap:wrap}
+  #slots button{display:flex;align-items:center;gap:5px;max-width:150px;font-size:11.5px;text-align:left}
+  #slots button b{font:600 12px ui-monospace,monospace;color:var(--accent)}
+  #slots button span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #slots button.own span{color:var(--text)} #slots button:not(.own) span{color:var(--muted)}
+  .pg{margin:2px 0}
+  .pg summary{cursor:pointer;padding:3px 2px;border-radius:5px;list-style-position:inside}
+  .pg summary:hover{background:#232a33}
+  .pg summary .cnt{float:right;color:var(--muted);font-size:11px;font-variant-numeric:tabular-nums}
+  .pgl{display:grid;grid-template-columns:1fr 1fr;gap:1px 6px;padding:2px 0 4px 18px}
+  .types .pgl label{margin:1px 0;font-size:12px}
+  #toast{position:fixed;left:50%;top:52px;transform:translateX(-50%);background:#1d4f86;border-radius:6px;padding:6px 12px;opacity:0;transition:opacity .3s;pointer-events:none}
   #toast.show{opacity:1}
   #err{position:fixed;inset:auto 12px 12px auto;color:#ff8a80}
 </style>
 </head>
 <body>
 <canvas id="view" tabindex="0"></canvas>
+<!-- always on the map side: undo / redo, brush shape, and the 1-9 slots (click: use, Shift+click or Shift+number: register, right click: reset) -->
+<div id="topbar">
+  <button id="undo" title="取り消し（Ctrl+Z）">↶</button><button id="redo" title="やり直し（Ctrl+Y）">↷</button>
+  <span class="sep"></span>
+  <button id="shapeCircle" class="on" title="ブラシの形：円">○</button><button id="shapeSquare" title="ブラシの形：四角">□</button>
+  <span class="sep"></span>
+  <div id="slots"></div>
+</div>
 <div id="panel">
   <h1>マップエディター <small style="color:var(--muted)">試作</small></h1>
-  <div class="row"><button id="modeEdit" class="on">編集</button><button id="modePlay">歩く <kbd>Tab</kbd></button><button id="undo">↶</button><button id="redo">↷</button></div>
+  <div class="row"><button id="modeEdit" class="on">編集</button><button id="modePlay">歩く <kbd>Tab</kbd></button></div>
   <label class="hint" style="display:block;margin:4px 0">主人公の見た目（歩くモード。大きさの確認用で、通行判定・書き出しには使いません）<br><select id="heroLook"><option id="heroLookRemy" value="remy">Remy（ゲームの体）</option><option value="box">簡易の人形</option></select></label>
 
   <h2>バイオーム</h2>
@@ -122,7 +145,7 @@
   <input id="file" type="file" accept=".json,application/json" hidden>
 
   <div class="hint" id="hint"></div>
-  <div class="hint">右ドラッグ: 回転 / 中ドラッグ: 移動 / ホイール: ズーム / WASD: 移動<br>[ ] : 半径 / Ctrl+Z, Ctrl+Y : 取り消し・やり直し</div>
+  <div class="hint">右ドラッグ: 回転 / 中ドラッグ: 移動 / ホイール: ズーム / WASD: 移動<br>[ ] : 半径 / Ctrl+Z, Ctrl+Y : 取り消し・やり直し<br>1〜9 : 登録したブラシを使う / Shift+1〜9 : いまの設定を登録<br>歩くモード（Tab）でも、左クリックで編集できます</div>
 </div>
 <div id="vignette"></div>
 <div id="hud"></div>
@@ -229,6 +252,6 @@
 <script src="terrain/shared.js?v=r15c"></script>
 <script src="terrain/cliff-relief.js?v=fall1"></script>
 <script src="terrain/paving-mask.js?v=contact1"></script>
-<script src="app.js?v=fall2"></script>
+<script src="app.js?v=ui1"></script>
 </body>
 </html>
