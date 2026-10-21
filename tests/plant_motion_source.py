@@ -2,11 +2,12 @@
 import base64
 import json
 import math
+import os
 import subprocess
 from pathlib import Path
 
 repo = Path(__file__).resolve().parents[1]
-out = repo.parent / 'plant-motion-evidence'
+out = Path(os.environ.get('EVIDENCE_OUT', repo.parent / 'plant-motion-evidence'))
 baseline = '6fb6c0708496e7ca26231edff393a7e5619d78ee'
 name = 'props/shared/assets.js'
 current_bytes = (repo / name).read_bytes()
@@ -25,11 +26,12 @@ rows = []
 for asset in data['assets']:
     previous = next(a for a in old['assets'] if a['id'] == asset['id'])
     for key, value in previous.items():
-        if asset['id'] in ids and key == 'deformation':
+        if asset['id'] in ids + ['fern', 'grass', 'reed', 'flowers'] and key in ['deformation', 'wind', 'motionWeights']:
             continue
         assert asset[key] == value, (asset['id'], key)
     if asset['id'] not in ids:
-        assert asset == previous
+        if asset['id'] not in ['fern', 'grass', 'reed', 'flowers']:
+            assert asset == previous
         continue
     n = len(asset['positions']) // 3
     weights = asset['motionWeights']
@@ -45,7 +47,7 @@ for asset in data['assets']:
                      windMetres=asset['wind']['maxDisplacementMetres'],
                      contactMetres=asset['contact']['maxDisplacementMetres']))
 report = dict(status='Passed', baseline=baseline, geometryAndMaterialExact=True,
-              protectedNineAssetsExact=True, fiveTexturesExact=True, rows=rows,
+              protectedFiveAssetsExact=True, fiveTexturesExact=True, rows=rows,
               allTriangles=sum(len(a['triangles']) // 3 for a in data['assets']),
               weightsBytes=sum(r['weightBytes'] for r in rows),
               addedTouchAttributeBytesPerCopy=10 * 8000 * 3 * 4,

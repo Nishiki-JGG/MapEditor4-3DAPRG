@@ -20,7 +20,8 @@ public static class MapSharedPropsBuilder {
  [Serializable] public class TypeDto { public string assetKey; public float yawOffsetDeg; public ModelDto sharedModel; }
  [Serializable] public class TypesDto { public TypeDto rock, fern, pine, log, stump, rootfan, grass, reed, flowers, birch, willow, scotspine, hazel, bramble, ivy, sedge, foxglove, horsetail, dock; }
  [Serializable] public class CatalogDto { public TypesDto types; }
- [Serializable] public class PineWindDto { public int version;public string id;public float minY,maxY,maxDisplacementMetres;public float[] waves,phase; }
+ [Serializable] public class WindResponseDto {public int version;public float linear,quadratic,mean,gust;}
+ [Serializable] public class PineWindDto { public WindResponseDto response;public int version;public string id;public float minY,maxY,maxDisplacementMetres;public float[] waves,phase; }
  [Serializable] class WindMeta {public TerrainMeta terrain;public WeatherMeta weather;}
  [Serializable] class TerrainMeta {public float[] size;}
  [Serializable] class WeatherMeta {public float wind,amount;public float[] windDir;}
@@ -46,7 +47,7 @@ public static class MapSharedPropsBuilder {
   }
   foreach (var a in d.assets) {
    Require(a != null && ids.Add(a.id) && (a.id == "rock" || a.id == "fern" || a.id == "pine" || a.id == "log" || a.id == "stump" || a.id == "rootfan" || a.id == "grass" || a.id == "reed" || a.id == "flowers" || a.id == "birch" || a.id == "willow" || a.id == "scotspine" || a.id == "hazel" || a.id == "bramble" || a.id == "ivy" || a.id == "sedge" || a.id == "foxglove" || a.id == "horsetail" || a.id == "dock") && a.assetKey == "tdj/" + a.id && a.version == (a.id == "rock" ? 4 : a.id == "fern" ? 3 : 1), "asset ID/version");
-   if(a.wind!=null&&a.wind.maxDisplacementMetres>0)Require(a.wind.minY>=0&&a.wind.maxY>a.wind.minY&&a.wind.maxDisplacementMetres<=.12f&&a.wind.uvMin==-1,"plant wind contract");
+   if(a.wind!=null&&a.wind.maxDisplacementMetres>0)Require(a.wind.minY>=0&&a.wind.maxY>a.wind.minY&&a.wind.maxDisplacementMetres<=.3f&&a.wind.uvMin==-1,"plant wind contract");
    Require(a.positions != null && a.positions.Length > 0 && a.positions.Length % 9 == 0 && a.positions.Length <= 180000, "mesh size");
    int n = a.positions.Length / 3;
    Require(a.contact==null||a.contact.version==0||a.motionWeights!=null,"contact requires weights");if(d.libraryVersion=="shared-plants/3"&&a.id!="rock"&&a.id!="fern"&&a.id!="pine"&&a.id!="log"&&a.id!="stump"&&a.id!="rootfan"&&a.id!="grass"&&a.id!="reed"&&a.id!="flowers")Require(a.motionWeights!=null,"plant motion missing");if(a.motionWeights!=null){Require(d.libraryVersion=="shared-plants/3","weighted library version");Floats(a.motionWeights,n*2,"motion mask");foreach(float w in a.motionWeights)Require(w>=0&&w<=1,"motion mask range");Require(a.wind!=null&&Finite(a.wind.phaseOffset)&&a.contact!=null&&a.contact.version==1&&Finite(a.contact.radius)&&a.contact.radius>0&&a.contact.minY>=0&&a.contact.maxY>a.contact.minY&&a.contact.maxDisplacementMetres>0&&a.contact.maxDisplacementMetres<=.3f,"motion/contact contract");}
@@ -82,7 +83,8 @@ public static class MapSharedPropsBuilder {
   var cat = JsonUtility.FromJson<CatalogDto>(File.ReadAllText(Path.Combine(exportDirectory, "asset_catalog.json")));
   Require(cat != null && cat.types != null, "missing asset catalog types");
   string windFile=Path.Combine(exportDirectory,"pine_wind.json");PineWindDto wind=null;
-  if(File.Exists(windFile)){wind=JsonUtility.FromJson<PineWindDto>(File.ReadAllText(windFile));Require(wind!=null&&wind.version==1&&wind.id=="pine"&&wind.minY==2.15f&&wind.maxY==6.408f&&wind.maxDisplacementMetres==.12f&&wind.waves!=null&&wind.waves.Length==4&&wind.phase!=null&&wind.phase.Length==2,"pine wind contract");}
+  if(File.Exists(windFile)){wind=JsonUtility.FromJson<PineWindDto>(File.ReadAllText(windFile));Require(wind!=null&&(wind.version==1||wind.version==2)&&wind.id=="pine"&&wind.minY==2.15f&&wind.maxY==6.408f&&wind.maxDisplacementMetres==(wind.version==1?.12f:.16f)&&wind.waves!=null&&wind.waves.Length==4&&wind.phase!=null&&wind.phase.Length==2,"pine wind contract");}
+  if(wind!=null&&wind.version==2)Require(wind.response!=null&&wind.response.version==1&&wind.response.linear==.25f&&wind.response.quadratic==.75f&&wind.response.mean==.65f&&wind.response.gust==.35f,"wind response contract");
   int skipped; var rows = ReadPlacements(Path.Combine(exportDirectory, "props.csv"), cat, lib, out skipped);
   var shader = Shader.Find("MapSharedProps/Lit"); Require(shader != null && shader.isSupported, "MapSharedProps/Lit shader unavailable");
   var r = new Result { skipped = skipped };
@@ -108,11 +110,12 @@ public static class MapSharedPropsBuilder {
      colors[i] = new Color(a.colors[k], a.colors[k+1], a.colors[k+2], 1); uv[i] = new Vector2(a.uv[i*2], a.uv[i*2+1]);
     }
     var mesh = new Mesh { name = a.assetKey + "/v" + a.version, indexFormat = IndexFormat.UInt16, vertices = vertices, normals = normals, colors = colors, uv = uv, triangles = a.triangles };
-    if(a.motionWeights!=null){var mask=new Vector2[n];for(int i=0;i<n;i++)mask[i]=new Vector2(a.motionWeights[i*2],a.motionWeights[i*2+1]);mesh.uv2=mask;}mesh.RecalculateBounds();if(a.motionWeights!=null){var bounds=mesh.bounds;float pad=a.wind.maxDisplacementMetres+a.contact.maxDisplacementMetres;bounds.Expand(new Vector3(pad*2,0,pad*2));mesh.bounds=bounds;} AssetDatabase.CreateAsset(mesh, r.assetDirectory + "/" + a.id + ".asset");
+    if(a.motionWeights!=null){var mask=new Vector2[n];for(int i=0;i<n;i++)mask[i]=new Vector2(a.motionWeights[i*2],a.motionWeights[i*2+1]);mesh.uv2=mask;}mesh.RecalculateBounds();if((a.wind!=null&&a.wind.maxDisplacementMetres>0)||(a.id=="pine"&&wind!=null)){var bounds=mesh.bounds;float pad=(a.wind!=null&&a.wind.maxDisplacementMetres>0?a.wind.maxDisplacementMetres:wind.maxDisplacementMetres)+(a.contact!=null?a.contact.maxDisplacementMetres:0);bounds.Expand(new Vector3(pad*2,0,pad*2));mesh.bounds=bounds;} AssetDatabase.CreateAsset(mesh, r.assetDirectory + "/" + a.id + ".asset");
     var d = a.material; var mat = new Material(shader) { name = a.id + "/v" + a.version };
     mat.SetTexture("_BaseMap", textures[d.texture]); mat.SetColor("_BaseColor", new Color(d.baseColor[0],d.baseColor[1],d.baseColor[2],d.baseColor[3]));
     if(a.id=="pine"&&wind!=null){mat.SetVector("_PineBand",new Vector4(wind.minY,wind.maxY,wind.maxDisplacementMetres,1));mat.SetVector("_PineWaves",new Vector4(wind.waves[0],wind.waves[1],wind.waves[2],wind.waves[3]));mat.SetVector("_PinePhase",new Vector4(wind.phase[0],wind.phase[1],0,0));}
     if(a.wind!=null&&a.wind.maxDisplacementMetres>0){mat.SetVector("_PineBand",new Vector4(a.wind.minY,a.wind.maxY,a.wind.maxDisplacementMetres,a.motionWeights!=null?3:2));if(a.motionWeights!=null)mat.SetVector("_PinePhase",new Vector4(.17f,.13f,a.wind.phaseOffset,0));}
+    if(wind!=null&&wind.version==2)mat.SetVector("_PineResponse",new Vector4(wind.response.linear,wind.response.quadratic,wind.response.mean,wind.response.gust));
     mat.SetFloat("_Cutoff", d.alphaCutoff); mat.SetFloat("_Cull", d.doubleSided ? 0 : 2);
     mat.renderQueue = d.alphaCutoff > 0 ? 2450 : 2000;
     AssetDatabase.CreateAsset(mat, r.assetDirectory + "/" + a.id + ".mat");

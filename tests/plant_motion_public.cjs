@@ -1,5 +1,5 @@
 const fs=require('fs'),path=require('path'),assert=require('assert'),{withPage}=require('./cdp');
-const out=path.resolve(__dirname,'../../plant-motion-evidence');
+const out=path.resolve(process.env.EVIDENCE_OUT||path.join(__dirname,'../../plant-motion-evidence'));
 const url=process.argv[2]||'file:///'+path.join(__dirname,'plant_set_view.html').replaceAll('\\','/');
 (async()=>{
  const report=await withPage(url,async p=>{

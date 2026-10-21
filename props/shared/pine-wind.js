@@ -1,6 +1,6 @@
-// Pine-only GPU crown motion. Canonical wind XZ uses Unity axes; editor Z is reflected.
+// Shared GPU plant wind. Canonical wind XZ uses Unity axes; editor Z is reflected.
 (() => {
-const spec={version:1,id:'pine',minY:2.15,maxY:6.408,maxDisplacementMetres:.12,waves:[1.7,.65,2.9,.35],phase:[.17,.13],mask:'canonical uv.y > .5 (needle region only)',verticalDisplacement:0};
+const spec={version:2,id:'pine',minY:2.15,maxY:6.408,maxDisplacementMetres:.16,waves:[1.7,.65,2.9,.35],phase:[.17,.13],response:{version:1,linear:.25,quadratic:.75,mean:.65,gust:.35},mask:'canonical uv.y > .5 (needle region only)',verticalDisplacement:0};
 const uniforms={uPineWind:{value:new THREE.Vector4()},uPineBand:{value:new THREE.Vector4(spec.minY,spec.maxY,spec.maxDisplacementMetres,1)},uPineWaves:{value:new THREE.Vector4(...spec.waves)},uPinePhase:{value:new THREE.Vector2(...spec.phase)}};
 const GLSL=`uniform vec4 uPineWind,uPineBand,uPineWaves; uniform vec2 uPinePhase;
 #ifdef PLANT_WEIGHTS
@@ -14,7 +14,8 @@ vec2 pineOffset(float y,float uvY,vec2 origin){
  if(plantWeight.x<=0.)return vec2(0.);w=plantWeight.x; ph+=uPlantPhase;
 #endif
  float gust=uPineWaves.y*sin(uPineWind.w*uPineWaves.x+ph)+uPineWaves.w*sin(uPineWind.w*uPineWaves.z+ph);
- return uPineWind.xy*(clamp(uPineWind.z,0.,1.)*uPineBand.z*w*gust);
+ float s=clamp(uPineWind.z,0.,1.);
+ return uPineWind.xy*(s*(.25+.75*s)*uPineBand.z*w*(.65+.35*gust));
 }`;
 const projection=`#include <project_vertex>
 vec4 pineOrigin=modelMatrix*vec4(0.,0.,0.,1.);

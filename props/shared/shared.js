@@ -20,7 +20,7 @@ function geometry(id) {
   for (let k = 0; k < indices.length; k += 3) [indices[k + 1], indices[k + 2]] = [indices[k + 2], indices[k + 1]];
   g.setIndex(indices);
   if(a.motionWeights)g.setAttribute('plantWeight',new THREE.Float32BufferAttribute(a.motionWeights,2));
-  g.computeBoundingBox(); g.computeBoundingSphere();if(a.motionWeights){const pad=a.wind.maxDisplacementMetres+a.contact.maxDisplacementMetres;g.boundingBox.min.x-=pad;g.boundingBox.min.z-=pad;g.boundingBox.max.x+=pad;g.boundingBox.max.z+=pad;g.boundingSphere.radius+=pad;}
+  g.computeBoundingBox(); g.computeBoundingSphere();if(a.wind||id==='pine'){const pad=(a.wind||TDPineWind.spec).maxDisplacementMetres+(a.contact?.maxDisplacementMetres||0);g.boundingBox.min.x-=pad;g.boundingBox.min.z-=pad;g.boundingBox.max.x+=pad;g.boundingBox.max.z+=pad;g.boundingSphere.radius+=pad;}
   return g;
 }
 function material(id, ghost = false) {

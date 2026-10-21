@@ -1,5 +1,5 @@
 const fs=require('fs'),path=require('path'),assert=require('assert'),{withPage}=require('./cdp');
-const out=path.resolve(__dirname,'../../plant-motion-evidence');fs.mkdirSync(out,{recursive:true});const url=process.argv[2]||'file:///'+path.join(__dirname,'../index.html').replaceAll('\\','/')+'#size=64';
+const out=path.resolve(process.env.EVIDENCE_OUT||path.join(__dirname,'../../plant-motion-evidence'));fs.mkdirSync(out,{recursive:true});const url=process.argv[2]||'file:///'+path.join(__dirname,'../index.html').replaceAll('\\','/')+'#size=64';
 (async()=>{const report=await withPage(url,async p=>{
  await p.eval('window.requestAnimationFrame=()=>0;1');await new Promise(r=>setTimeout(r,200));
  const weather=await p.eval(`(()=>{const input=document.getElementById('weatherKind'),A=__app;input.value='breeze';input.dispatchEvent(new Event('change'));A.update(.016);const breeze=TDPineWind.uniforms.uPineWind.value.z;input.value='none';input.dispatchEvent(new Event('change'));A.update(.016);return{breeze,none:TDPineWind.uniforms.uPineWind.value.z};})()`);assert(weather.breeze>0&&weather.none===0,JSON.stringify(weather));
