@@ -110,6 +110,24 @@ vec3 vor(vec2 p){ vec2 i=floor(p), f=fract(p); float d1=8., d2=8., id=0.;
   return vec3(d1,d2,id); }
 `;
 
+// Distance to the actual cell border. F2-F1 creates false diagonal bevels inside stones.
+const PAVING_GLSL = `
+vec3 pavingCell(vec2 p){
+  vec2 i=floor(p),f=fract(p),nearest=vec2(0.),cell=vec2(0.);float best=100.;
+  for(int y=-1;y<=1;y++)for(int x=-1;x<=1;x++){
+    vec2 g=vec2(float(x),float(y)),c=i+g,r=g+vec2(h21(c),h21(c+37.7))-f;
+    float d=dot(r,r);if(d<best){best=d;nearest=r;cell=c;}
+  }
+  float border=100.;
+  for(int y=-2;y<=2;y++)for(int x=-2;x<=2;x++){
+    vec2 g=vec2(float(x),float(y)),c=cell+g;
+    vec2 r=c+vec2(h21(c),h21(c+37.7))-p,delta=r-nearest;
+    if(dot(delta,delta)>.00001)border=min(border,dot(.5*(nearest+r),normalize(delta)));
+  }
+  return vec3(border,0.,h21(cell+11.3));
+}
+`;
+
 // ---------- terrain ----------
 const waterU = { value: state.water };
 const dimU = { value: 0 };   // fades the scene while the walkability view is on
@@ -229,6 +247,7 @@ function applyCliffStyle() {
   BU.uCliffTint.value.setRGB(...st.tint); BU.uCliffMoss.value.setRGB(...(st.moss || [.30, .42, .15])); BU.uCliffMossOn.value = st.moss ? 1 : 0;
   BU.uCliffMossK.value = st.mossK ?? 1; BU.uCliffWet.value = st.wet || 0; BU.uCliffSnow.value = st.snow || 0;
   fillCliffAttrs(); if (typeof rebuildProps === 'function' && typeof propMeshes !== 'undefined') rebuildProps(true);
+  if(typeof cliffRelief!=='undefined')scheduleCliffRelief();
 }
 // Shared grass (4 m) and soil (2 m); mipmapped raw sRGB enters the existing single terrain decode.
 const groundTexture = TDGround.texture;
@@ -239,21 +258,22 @@ terrainMat.onBeforeCompile = (sh) => {
   Object.assign(sh.uniforms, TDGround.uniforms); sh.uniforms.uGroundTrial = groundTrial;
   sh.uniforms.uWater = waterU; sh.uniforms.uDim = dimU; sh.uniforms.uTime = timeU; Object.assign(sh.uniforms, BU);
   sh.vertexShader = sh.vertexShader
-    .replace('#include <common>', '#include <common>\nattribute vec4 splatA; attribute vec4 splatB; attribute float splatC; attribute vec3 cliffT; attribute vec4 cliffM; attribute vec2 cliffW; varying vec3 vCT; varying vec4 vCM; varying vec2 vCW; varying vec4 vSA; varying vec4 vSB; varying float vSC; varying vec3 vWPos; varying vec3 vWNor;')
-    .replace('#include <begin_vertex>', '#include <begin_vertex>\nvSA=splatA; vSB=splatB; vSC=splatC; vCT=cliffT; vCM=cliffM; vCW=cliffW; vWPos=(modelMatrix*vec4(position,1.)).xyz; vWNor=normalize(mat3(modelMatrix)*normal);');
+    .replace('#include <common>', '#include <common>\nattribute float reliefSlope; varying float vReliefSlope; attribute vec4 splatA; attribute vec4 splatB; attribute float splatC; attribute vec3 cliffT; attribute vec4 cliffM; attribute vec2 cliffW; varying vec3 vCT; varying vec4 vCM; varying vec2 vCW; varying vec4 vSA; varying vec4 vSB; varying float vSC; varying vec3 vWPos; varying vec3 vWNor;')
+    .replace('#include <begin_vertex>', '#include <begin_vertex>\nvReliefSlope=reliefSlope; vSA=splatA; vSB=splatB; vSC=splatC; vCT=cliffT; vCM=cliffM; vCW=cliffW; vWPos=(modelMatrix*vec4(position,1.)).xyz; vWNor=normalize(mat3(modelMatrix)*normal);');
   sh.fragmentShader = sh.fragmentShader
     .replace('#include <common>', `#include <common>
-varying vec4 vSA; varying vec4 vSB; varying float vSC; varying vec3 vWPos; varying vec3 vWNor; uniform float uWater; uniform float uDim; uniform float uTime;
+varying float vReliefSlope; varying vec4 vSA; varying vec4 vSB; varying float vSC; varying vec3 vWPos; varying vec3 vWNor; uniform float uWater; uniform float uDim; uniform float uTime;
 uniform vec3 uG0; uniform vec3 uG1; uniform vec3 uGH; uniform vec3 uRockTint; uniform float uFlowers; uniform float uSnow; uniform float uSnowLine; uniform float uWet;
 varying vec3 vCT; varying vec4 vCM; varying vec2 vCW; uniform int uPitN; uniform vec4 uPitA[8]; uniform vec4 uPitB[8];
 ${TDGround.GLSL}
 uniform float uGroundTrial;
-float gGloss=0.; vec3 gGlow=vec3(0.);
+float gGloss=0.; float gSurfaceHeight=0.; vec3 gGlow=vec3(0.);
 ${GLSL_NOISE}
+${PAVING_GLSL}
 ${DIM_GLSL}
 vec3 terrainColor(){
   vec3 wp=vWPos; vec3 n=normalize(vWNor); vec2 p=wp.xz;
-  float slope=1.-n.y;
+  float slope=max(1.-n.y,vReliefSlope);
   float a=fbm(p*.22), b=fbm(p*1.6+5.), c=vn(p*11.);
   // grass
   vec3 grass=mix(uG0, uG1, clamp(a*1.2+b*.7-.5,0.,1.));
@@ -267,11 +287,20 @@ vec3 terrainColor(){
   // dirt
   vec3 dirt=mix(vec3(.36,.25,.14), vec3(.66,.52,.33), clamp(b*1.25+c*.35-.2,0.,1.));
   if(uGroundTrial>0.) dirt=sharedDirt(p);
-  // cobble
-  vec3 cv=vor(p*1.5); float ce=smoothstep(.02,.1,cv.y-cv.x);
-  vec3 cob=mix(vec3(.20,.17,.14), mix(vec3(.42,.38,.33),vec3(.70,.65,.57),cv.z)*(.9+.2*c), ce);
+  // Worn flagstones: narrow earth-filled joints, small bevels and a broken grass/soil edge.
+  vec3 cv=vec3(.2,0.,.5);
+  if(vSA.y>.025)cv=pavingCell(p*2.2+vec2(fbm(p*.6),fbm(p*.6+11.))*.16);
+  float gap=cv.x*2., aa=max(.002,fwidth(gap));
+  float ce=smoothstep(.025-aa,.025+aa,gap);
+  vec3 stone=mix(vec3(.48,.46,.40),vec3(.67,.64,.56),cv.z)*(.96+.08*c);
+  float bevel=smoothstep(.02,.13,gap);
+  stone*=.88+.12*bevel;
+  vec3 joint=mix(dirt*.83,grass*.78,smoothstep(.48,.72,a)*.55);
+  vec3 cob=mix(joint,stone,ce);
   vec3 col=mix(grass,dirt,smoothstep(.2,.55,vSA.x+(b-.5)*.35));
-  col=mix(col,cob,smoothstep(.3,.55,vSA.y+(c-.5)*.15));
+  float cobbleEdge=smoothstep(.13,.82,vSA.y+(b-.5)*.16+(cv.z-.5)*.22);
+  col=mix(col,cob,cobbleEdge);
+  gSurfaceHeight=bevel*(.012+cv.z*.010)*cobbleEdge;
   col=mix(col,fcol,uFlowers*fl*(1.-uGroundTrial)*step(slope,.12)*(1.-smoothstep(.2,.4,vSA.x+vSA.y+vSA.z+vSA.w+vSB.x+vSB.y)));
   // sand: wind ripples
   float sdw=smoothstep(.25,.6,vSA.z+(b-.5)*.3);
@@ -344,13 +373,15 @@ vec3 terrainColor(){
   col=mix(col, mix(vec3(.60,.52,.36),vec3(.76,.68,.50),b), sandW);
   // rock (cliffs)
   vec2 rq=vec2((wp.x*.75+wp.z*.65)*1.1, wp.y*1.5);
-  vec3 rv=vor(rq); float cr=smoothstep(.0,.13,rv.y-rv.x);
-  vec3 rock=mix(vec3(.34,.31,.28), vec3(.70,.65,.58), clamp(fbm(rq*1.3)*1.2+rv.z*.35-.2,0.,1.));
-  rock*=mix(.42,1.,cr)*uRockTint*vCT;
+  // Geological grain and irregular strata, not the floor's polygonal paving pattern.
+  float mineral=fbm(rq*2.7+vec2(3.,7.));
+  float strata=abs(sin(wp.y*3.8+fbm(rq*.75)*3.1));
+  vec3 rock=mix(vec3(.43,.41,.36),vec3(.65,.62,.55),mineral);
+  rock*=(.88+.12*smoothstep(.08,.32,strata))*(.96+.08*vn(rq*18.))*uRockTint*vCT;
   rock=mix(rock, vCM.rgb, clamp(smoothstep(.55,.85,fbm(rq*.7+3.))*smoothstep(.75,.45,slope)*.7*vCM.a,0.,1.));
   rock*=1.-.35*vCW.x;
   rock=mix(rock, vec3(.93,.95,1.), vCW.y*smoothstep(.3,.7,n.y+(fbm(rq*1.7)-.5)*.5));
-  float rockW=smoothstep(.24,.42,slope+(a-.5)*.14);
+  float rockW=smoothstep(.18,.48,slope+(a-.5)*.30);
   col=mix(col,rock,rockW);
   gGloss=max(gGloss,vCW.x*.8*rockW);
   // underwater bed
@@ -367,15 +398,22 @@ vec3 terrainColor(){
   col*=mix(1.,.72,smoothstep(.18,.0,hw)*step(0.,hw));
   col*=1.-.3*uWet*(1.-snW);
   gGloss=max(gGloss,uWet*.6*(1.-snW));
+  float otherPaint=max(vSA.z,max(vSA.w,max(vSB.x,max(vSB.y,max(vSB.z,max(vSB.w,vSC))))));
+  gSurfaceHeight*=(1.-rockW)*(1.-snW)*(1.-smoothstep(.1,.5,otherPaint));
   return pow(col,vec3(2.2));
 }`)
     .replace('#include <clipping_planes_fragment>', `#include <clipping_planes_fragment>
 for(int i=0;i<8;i++){ if(i>=uPitN) break; vec2 d=vWPos.xz-uPitA[i].xy; float lx=d.x*uPitA[i].z-d.y*uPitA[i].w, lz=d.x*uPitA[i].w+d.y*uPitA[i].z-uPitB[i].z; if(abs(lx)<uPitB[i].x && abs(lz)<uPitB[i].y) discard; }`)
     .replace('#include <color_fragment>', '#include <color_fragment>\ndiffuseColor.rgb=dimc(terrainColor());')
+    .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
+// Shallow stone bevels affect lighting only; the walking floor is unchanged.
+vec3 q0=dFdx(-vViewPosition),q1=dFdy(-vViewPosition);
+vec3 r0=cross(q1,normal),r1=cross(normal,q0);float det=dot(q0,r0);
+if(abs(det)>1e-9){vec3 grad=sign(det)*(dFdx(gSurfaceHeight)*r0+dFdy(gSurfaceHeight)*r1);normal=normalize(abs(det)*normal-grad);}`)
     .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor=mix(roughnessFactor,.55,gGloss);')
     .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance+=pow(gGlow,vec3(2.2))*(1.-.6*uDim);');
 };
-terrainMat.customProgramCacheKey = () => 'terrain-grass-soil-shared-v3';
+terrainMat.customProgramCacheKey = () => 'terrain-rock-relief-paving-v4';
 
 function gridIndex() {
   const ix = new Uint32Array((N - 1) * (N - 1) * 6); let o = 0;
@@ -391,6 +429,7 @@ const tGeo = new THREE.BufferGeometry();
   for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) { const k = idx(i, j) * 3; pos[k] = vx(i); pos[k + 2] = vx(j); }
   tGeo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
   tGeo.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(N * N * 3), 3));
+  tGeo.setAttribute('reliefSlope', new THREE.BufferAttribute(new Float32Array(N * N), 1));
   tGeo.setAttribute('splatA', new THREE.BufferAttribute(new Float32Array(N * N * 4), 4));
   tGeo.setAttribute('splatB', new THREE.BufferAttribute(new Float32Array(N * N * 4), 4));
   tGeo.setAttribute('splatC', new THREE.BufferAttribute(new Float32Array(N * N), 1));
@@ -402,6 +441,21 @@ const tGeo = new THREE.BufferGeometry();
 const terrain = new THREE.Mesh(tGeo, terrainMat);
 terrain.castShadow = terrain.receiveShadow = true;
 scene.add(terrain);
+
+// Rebuild the derived rock skin after a brush stroke, never the editable H grid.
+const reliefMat=terrainMat.clone();reliefMat.onBeforeCompile=terrainMat.onBeforeCompile;
+reliefMat.customProgramCacheKey=()=>terrainMat.customProgramCacheKey()+'-skin';
+reliefMat.polygonOffset=true;reliefMat.polygonOffsetFactor=-1;reliefMat.polygonOffsetUnits=-1;
+const cliffRelief=new THREE.Mesh(new THREE.BufferGeometry(),reliefMat);
+cliffRelief.name='Derived cliff relief';cliffRelief.castShadow=cliffRelief.receiveShadow=true;scene.add(cliffRelief);
+let cliffReliefTimer=0;
+function rebuildCliffRelief(){
+  clearTimeout(cliffReliefTimer);cliffReliefTimer=0;
+  const geometry=TDCliffRelief.build(tGeo,heightAt,HALF);cliffRelief.geometry.dispose();cliffRelief.geometry=geometry;
+  cliffRelief.visible=geometry.index.count>0;
+}
+function scheduleCliffRelief(){clearTimeout(cliffReliefTimer);cliffRelief.visible=false;cliffReliefTimer=setTimeout(rebuildCliffRelief,100);}
+
 
 // outer wall (skirt) so the map reads as a floating block
 const sGeo = new THREE.BufferGeometry();
@@ -579,6 +633,7 @@ function updateTerrain() {
   tGeo.attributes.position.needsUpdate = tGeo.attributes.splatA.needsUpdate = tGeo.attributes.splatB.needsUpdate = tGeo.attributes.splatC.needsUpdate = wGeo.attributes.depth.needsUpdate = true;
   tGeo.computeVertexNormals();
   tGeo.computeBoundingSphere(); tGeo.computeBoundingBox();
+  scheduleCliffRelief();
   const spos = sGeo.attributes.position.array;
   SIDES.forEach(([f], s) => { for (let t = 0; t < N; t++) { const [i, j] = f(t); spos[(s * N + t) * 2 * 3 + 1] = H[idx(i, j)]; } });
   sGeo.attributes.position.needsUpdate = true; sGeo.computeBoundingSphere();
@@ -2254,7 +2309,7 @@ function ensureIds() {
 }
 
 // ---------- asset catalog: typeId -> assetKey and the proxy collider the editor uses for walkability
-const EXPORTER_VERSION = 'tdj-map-editor/2026.10.19-r9';
+const EXPORTER_VERSION = 'tdj-map-editor/2026.10.21-r16';
 for (const t of PROP) { t.geo.computeBoundingBox(); t.meshTop = +t.geo.boundingBox.max.y.toFixed(2); t.height = t.height ?? t.meshTop; t.base = { r: t.r, offs: t.offs, height: t.height }; t.offs = t.offs ? t.offs.map(o => [o, 0]) : null; if (t.shape && t.r > 0) t.footprint = shapeFootprint(t); }   // internal offsets are [x, z] (see applyCatalog)
 const isNum = (v, ok) => typeof v === 'number' && Number.isFinite(v) && (!ok || ok(v));
 // version 1 catalogs were a flat {typeId: entry} map; version 2 has {types, floorLinks}
@@ -2983,6 +3038,7 @@ const WEIGHT_LAYERS = ['grass', 'dirt', 'cobble', 'sand', 'rubble', 'swamp', 'po
 async function buildExport() {
   ensureIds(); applyCatalog(); if (walkDirty) computeWalk();
   const validation = runValidation();
+  rebuildCliffRelief();
   // ---- export grid: Unity Terrain heightmap resolution (2^n + 1), independent of the editor's 0.5 m grid.
   // Heights and walk floor are sampled at the export vertices (bilinear on the editor grid; the walk floor is the editor's floorAt);
   // walkability is evaluated again at every export vertex with the same walkable() (never interpolated).
@@ -3180,6 +3236,7 @@ revision・書き出し日時・ファイルごとの SHA-256・contentHash は 
 - holes.png        : 隠し通路がある場合だけ。地形の穴（0 = 穴、(解像度-1)² セル）。
 - secret_passages_mesh.json : 隠し通路の床・壁・天井・ふた（穴と同じ形から作成。Unity 座標）。meta.secretPassages に輪郭・出入口・検査結果。route と width は目安。
 - water_flow.png / water_mask.png : 水の流れ（RG=流れ、B=流れ関数、A=岸からの距離）と、滝から流れの筋にそった泡の帯（R）。水の無い部屋・溶岩・海では出ません。読み方は meta.waterSim.encoding。水深は heightmap_r16.raw と水位から Unity 側で作ります。
+- cliff_relief_mesh.json : 急斜面がある場合だけ。岩面の実形状（Unity座標・頂点法線・三角形・岩色/苔/濡れ/雪の属性）。meta.terrain.cliffRelief が参照します。表示用の追加メッシュで、歩行用高さ/通行判定は変更しません。Unity側では別途読み込みと材質の割当が必要です。
 - cliff_style.png  : 岩壁の種類（場所ごと。R = meta.cliffStyles の番号）。岩・崖石・小石は props.csv の cliffStyle 列。
 - walkable.png     : 通行判定（離散値。補間しないでください）。meta.json の agentProfile の体格で計算。
 - props.csv        : 小物の配置。instanceId は再書き出しでも変わりません。assetKey は asset_catalog.json の対応表。
@@ -3198,7 +3255,10 @@ revision・書き出し日時・ファイルごとの SHA-256・contentHash は 
 - Prefab のローカル +Z = プレイヤーが入っていく向き、-Z = 近づいてくる側。回転は yawDeg + yawOffsetDeg。
 - 当たり判定（radius / offsets / solid）も同じローカル座標。エディター内部のローカル座標とは z の符号だけが違います。
 `;
+  const reliefFile=cliffRelief.geometry.index.count?'cliff_relief_mesh.json':null;
+  if(reliefFile)meta.terrain.cliffRelief={file:reliefFile,role:'visual rock skin; walking heightfield unchanged',maxOffsetMetres:+cliffRelief.geometry.userData.maxOffset.toFixed(5)};
   const files = [
+    ...(reliefFile?[{name:reliefFile,data:JSON.stringify(TDCliffRelief.exportMesh(cliffRelief.geometry,HALF,mn))}]:[]),
     { name: 'heightmap_r16.raw', data: heightRaw }, { name: 'walk_floor_r16.raw', data: floorRaw },
     ...weightPngs.map((d, i) => ({ name: `weights_${i}.png`, data: d })), ...maskPngs.map((d, i) => ({ name: `mask_${i}.png`, data: d })),
     ...(holesPng ? [{ name: 'holes.png', data: holesPng }] : []),
@@ -3702,7 +3762,7 @@ requestAnimationFrame(frame);
 
 // hooks for automated checks
 window.__app = {
-  groundTrial, groundTexture, terrain, renderer, camera, SIZE, state, H, S, O, F, C, propMeshes, ghostMeshes, cliffIndexAt, BIOMES, CLIFF_STYLES, applyCliffStyle, deckAt, linkDeckAt, runValidation, genSample, genSample2, secretRegions, secretLineX, passageGeometry, terrainRes, TERRAIN_RES, snapshot, sha256, LINK_KINDS, normalizeCatalog, catalogExport, valueIssues, areaIssue, deckAt, getColliders, PROP, get colliderMaxR() { return colliderMaxR; }, rebuildMarkers, linkTrigger, linkArrival, LINK_SPEC, get markers() { return markers; }, placeMarker, ensureIds, applyCatalog, ATMOS, WEATHER, applyAtmo, makeCoast, glowLights, applyBiome, applyPalette, propVisible, toolVisible, updateTerrain, rebuildProps, genFlat, floorAt, bridgeAt, stairsAt, placeSlope, placeStairs, placeBridge, pickTarget, regenGroundProps, rebuildBridges, get stairs() { return stairs; }, get bridges() { return bridges; }, get falls() { return falls; }, overrideAt, heroMat, hero, heroBody, get heroLook() { return heroLook; }, setHeroLook, heroStyle, heroGlow, get ghosts() { return ghosts; }, get props() { return props; }, cam, playCam, player, keys, setMode, setTool, update, heightAt, walkable, slope: slopeAt,
+  cliffRelief, rebuildCliffRelief, groundTrial, groundTexture, terrain, renderer, camera, SIZE, state, H, S, O, F, C, propMeshes, ghostMeshes, cliffIndexAt, BIOMES, CLIFF_STYLES, applyCliffStyle, deckAt, linkDeckAt, runValidation, genSample, genSample2, secretRegions, secretLineX, passageGeometry, terrainRes, TERRAIN_RES, snapshot, sha256, LINK_KINDS, normalizeCatalog, catalogExport, valueIssues, areaIssue, deckAt, getColliders, PROP, get colliderMaxR() { return colliderMaxR; }, rebuildMarkers, linkTrigger, linkArrival, LINK_SPEC, get markers() { return markers; }, placeMarker, ensureIds, applyCatalog, ATMOS, WEATHER, applyAtmo, makeCoast, glowLights, applyBiome, applyPalette, propVisible, toolVisible, updateTerrain, rebuildProps, genFlat, floorAt, bridgeAt, stairsAt, placeSlope, placeStairs, placeBridge, pickTarget, regenGroundProps, rebuildBridges, get stairs() { return stairs; }, get bridges() { return bridges; }, get falls() { return falls; }, overrideAt, heroMat, hero, heroBody, get heroLook() { return heroLook; }, setHeroLook, heroStyle, heroGlow, get ghosts() { return ghosts; }, get props() { return props; }, cam, playCam, player, keys, setMode, setTool, update, heightAt, walkable, slope: slopeAt,
   stroke(x, z, frames = 20, opts = {}) {
     hit = new THREE.Vector3(x, heightAt(x, z), z); beginStroke({ shiftKey: !!opts.shift });
     for (let f = 0; f < frames; f++) { if (stroke.active && !['scatter', 'erase'].includes(state.tool)) { applyBrush(x, z, 1 / 60); } }
