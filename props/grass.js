@@ -2,6 +2,6 @@
 TDProps.add({
   id: 'grass', name: '草むら',
   r: 0, min: .5, sc: [.7, 1.4], slope: 1, vis: .55,
-  sway: 0, tags: ['grassland', 'forest', 'jungle', 'ruins', 'graveyard', 'beach', 'canyon', 'castle'], height: .608, touch: true, material: 'shared', sharedAsset: 'grass',
+  sway: 0, tags: ['grassland', 'forest', 'jungle', 'ruins', 'graveyard', 'beach', 'canyon', 'castle'], height: .605, touch: true, material: 'shared', sharedAsset: 'grass',
   build() { return TDSharedProps.geometry('grass'); },
 });
