@@ -1,0 +1,4 @@
+const fs=require('fs'),vm=require('vm'),assert=require('assert/strict');const THREE=require('../three.min.js');const c={window:{},performance};vm.createContext(c);vm.runInContext(fs.readFileSync(__dirname+'/../terrain/cliff-contact.js','utf8'),c);
+const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute([-2,-2,-2,2,2,2,2,2,-2,-2,-2,-2,-2,-2,2,2,2,2],3));
+const s=new c.window.TDCliffContact.Surface([g]);assert(Math.abs(s.boundary([-1,0,0],[1,0],[0,0],2)-1)<1e-6);assert(Math.abs(s.boundary([.1,0,0],[1,0],[0,0],2)+.1)<1e-6);assert(Math.abs(s.height(1,0)-1)<1e-6);assert(Math.abs(s.boundary([2.1,0,0],[1,0],[0,0],2)+2.1)<1e-6);assert.equal(s.boundary([-1,5,0],[1,0],[0,0],2),null);
+console.log(JSON.stringify({pass:true,outsideDistance:true,insideSignedDistance:true,actualSurfaceHeight:true,noHitRemainsUnknown:true}));

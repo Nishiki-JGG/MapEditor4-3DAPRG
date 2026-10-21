@@ -924,7 +924,17 @@ function updateTouch(dt) {
   }
   touchStats.active=touchState.size;touchStats.lastMs=performance.now()-started;
 }
+const cliffFits=new TDCliffFits.Store(PROP,sha256);
+function cliffInputSignature(heights=H,waterfalls=falls,water=state.water){return sha256(new Uint8Array(heights.buffer))+'/'+sha256(new TextEncoder().encode(JSON.stringify([waterfalls,water,SIZE])));}
+function effectiveGeometry(p){return cliffFits.effectiveGeometry(p);}
+function refreshCliffFits(visualOnly=false){if(!visualOnly){const stale=cliffFits.synchronize(cliffInputSignature(),props);if(stale)toast('地形または岩を変更したため、密着加工を解除しました。岩を自動配置で更新できます。');}for(const c of cliffFits.cache.values())if(c.mesh)c.mesh.visible=false;}
+function cliffTintAt(x,z){const v=.86+.28*hash2(x*97|0,z*89|0);return[v*(.95+.1*hash2(x*13|0,7)),v,v*(.95+.1*hash2(3,z*17|0))];}
+function savedCliffTint(p){return cliffFits.valid(p)?cliffFits.records.get(p[8]).instanceTint:null;}
+function drawCliffFit(p,matrix,color,ghost){const c=cliffFits.get(p);if(!c)return false;const record=cliffFits.records.get(p[8]);if(record.affine){if(!c.affine)c.affine=new THREE.Matrix4().fromArray(record.affine);matrix.multiply(c.affine);return false;}if(!c.mesh){const g=c.geometry;g.setAttribute('cliffI',new THREE.InstancedBufferAttribute(new Float32Array([cliffIndexNear(p[1],p[2])]),1));const m=new THREE.InstancedMesh(g,propMeshes[p[0]].material,1);m.instanceColor=new THREE.InstancedBufferAttribute(new Float32Array(3),3);m.castShadow=m.receiveShadow=true;m.frustumCulled=false;c.mesh=m;scene.add(m);}const m=c.mesh;m.material=ghost?ghostMat:propMeshes[p[0]].material;m.renderOrder=ghost?8:0;m.visible=true;m.setMatrixAt(0,matrix);m.setColorAt(0,color);m.instanceMatrix.needsUpdate=m.instanceColor.needsUpdate=true;c.geometry.attributes.cliffI.array[0]=cliffIndexNear(p[1],p[2]);c.geometry.attributes.cliffI.needsUpdate=true;return true;}
+function fittedFootprint(p){const c=cliffFits.get(p);if(!c)return null;if(c.footprint)return c.footprint;const g=c.geometry.clone(),P=g.attributes.position;for(let i=0;i<P.count;i++){const w=TDCliffContact.world(p,[P.getX(i),P.getY(i),P.getZ(i)]);P.setXYZ(i,w[0]-p[1],w[1],w[2]-p[2]);}g.computeBoundingBox();const f=shapeFootprint({geo:g,sharedAsset:true});for(let j=0;j<f.nz;j++)for(let i=0;i<f.nx;i++){const k=j*f.nx+i;if(f.top[k]>-1e8)f.top[k]-=heightAt(p[1]+f.x0+i*SHAPE_CELL,p[2]+f.z0+j*SHAPE_CELL);}const box=g.boundingBox;f.R=Math.hypot(Math.max(Math.abs(box.min.x),Math.abs(box.max.x)),Math.max(Math.abs(box.min.z),Math.abs(box.max.z)));c.y0=box.min.y;c.y1=box.max.y;g.dispose();return c.footprint=f;}
+
 function rebuildProps(visualOnly = false) {
+  refreshCliffFits(visualOnly);
   glowTick = 0;
   const cnt = PROP.map(() => 0), gcnt = PROP.map(() => 0);
   touchIdx.clear(); touchProps = [];touchGrid.clear();
@@ -936,9 +946,12 @@ function rebuildProps(visualOnly = false) {
     const shared = PROP[t].sharedAsset;
     _p.set(x, by ?? (heightAt(x, z) - (shared ? PROP[t].groundSink || 0 : t === 2 ? .12 * s : .05)), z);
     _q.setFromAxisAngle(_up, r - (shared ? PROP[t].yawOffset * Math.PI / 180 : 0)); _s.set(s, s * sy, s);
-    mesh.setMatrixAt(c[t], _m.compose(_p, _q, _s));
+    _m.compose(_p, _q, _s);
+    const fitColor=(()=>{const v=.86+.28*hash2(x*97|0,z*89|0);return savedCliffTint(p)?_c.fromArray(savedCliffTint(p)):_c.setRGB(v*(.95+.1*hash2(x*13|0,7)),v,v*(.95+.1*hash2(3,z*17|0)));})();
+    if(drawCliffFit(p,_m,fitColor,ghost))continue;
+    mesh.setMatrixAt(c[t], _m);
     const v = .86 + .28 * hash2(x * 97 | 0, z * 89 | 0);
-    mesh.setColorAt(c[t], shared ? _c.setRGB(1, 1, 1) : _c.setRGB(v * (.95 + .1 * hash2(x * 13 | 0, 7)), v, v * (.95 + .1 * hash2(3, z * 17 | 0))));
+    mesh.setColorAt(c[t], shared ? _c.setRGB(1, 1, 1) : savedCliffTint(p)?_c.fromArray(savedCliffTint(p)):_c.setRGB(v * (.95 + .1 * hash2(x * 13 | 0, 7)), v, v * (.95 + .1 * hash2(3, z * 17 | 0))));
     if (!ghost && mesh.userData.cliffI) mesh.userData.cliffI.array[c[t]] = cliffIndexNear(x, z);
     if (!ghost && mesh.userData.touch) { touchIdx.set(p, c[t]); touchProps.push(p);indexTouch(p); }
     c[t]++;
@@ -1817,6 +1830,7 @@ function getColliders() {
   let cur = null;   // the prop each collider belongs to (null for floor-link solids)
   for (const p of props) {
     const t = PROP[p[0]], r = t.r * p[4]; if (r <= 0) continue; cur = p;
+    const fitted=fittedFootprint(p);if(fitted){const c=cliffFits.get(p);add(p[1],p[2],fitted.R,c.y0,c.y1,fitted,1,0,1);continue;}
     const y0 = p[7] ?? heightAt(p[1], p[2]), y1 = y0 + t.height * p[4] * (p[6] ?? 1);
     if (t.footprint) { const a = p[3] - (t.sharedAsset ? t.yawOffset * Math.PI / 180 : 0); add(p[1], p[2], t.footprint.R * p[4], y0, y1, t.footprint, Math.cos(a), Math.sin(a), p[4]); }
     else if (t.offs) for (const [ox, oz] of t.offs) { const c = Math.cos(p[3]), sn = Math.sin(p[3]); add(p[1] + (ox * c + oz * sn) * p[4], p[2] + (-ox * sn + oz * c) * p[4], r, y0, y1); }
@@ -2049,8 +2063,8 @@ const TOOLS = [
   { id: 'walkAuto', name: '自動に戻す', key: 'j', hint: '塗った所の上書きを消し、自動判定に戻します。' },
 ];
 const undoStack = [], redoStack = [];
-const snapshot = () => ({ H: H.slice(), S: S.slice(), O: O.slice(), C: C.slice(), P: props.map(p => p.slice()), F: falls.map(f => ({ ...f })), B: bridges.map(b => ({ ...b })), T: stairs.map(st => ({ ...st })), W: state.water, sp: { ...state.spawn }, bi: state.biome, at: { ...state.atmo }, sea: state.sea, we: { ...state.weather }, sun: state.sunOn, dk: state.darkness, M: markers.map(m => ({ ...m })), nid: state.nextId, rid: state.roomId, cat: JSON.stringify(state.catalog), ag: { ...state.agent }, cs: state.cliffStyle });
-function restore(s) { H.set(s.H); S.set(s.S); O.set(s.O); if (s.C) C.set(s.C); else C.fill(0); walkDirty = true; props = s.P.map(p => p.slice()); falls = s.F.map(f => ({ ...f })); bridges = s.B.map(b => ({ ...b })); stairs = (s.T || []).map(st => ({ ...st })); state.water = s.W; state.spawn = { ...s.sp }; if (s.at) state.atmo = { ...s.at }; if (s.we) state.weather = { ...s.we }; state.sunOn = s.sun !== false; state.darkness = s.dk || 'dark'; markers = (s.M || []).map(m => ({ ...m })); state.nextId = s.nid || state.nextId; state.roomId = s.rid || state.roomId; if (s.cat) { state.catalog = JSON.parse(s.cat); applyCatalog(); } if (s.ag) { state.agent = { ...s.ag }; syncAgentUI(); colliders = null; } state.cliffStyle = s.cs || 'standard'; applyCliffStyle(); if ($('cliffStyle')) $('cliffStyle').value = state.cliffStyle; rebuildMarkers(); state.sea = !!s.sea; applyBiome(s.bi || state.biome); syncUI(); updateTerrain(); rebuildProps(); rebuildFalls(); rebuildBridges(); rebuildStairs(); }
+const snapshot = () => ({ H: H.slice(), S: S.slice(), O: O.slice(), C: C.slice(), CF: cliffFits.save(), P: props.map(p => p.slice()), F: falls.map(f => ({ ...f })), B: bridges.map(b => ({ ...b })), T: stairs.map(st => ({ ...st })), W: state.water, sp: { ...state.spawn }, bi: state.biome, at: { ...state.atmo }, sea: state.sea, we: { ...state.weather }, sun: state.sunOn, dk: state.darkness, M: markers.map(m => ({ ...m })), nid: state.nextId, rid: state.roomId, cat: JSON.stringify(state.catalog), ag: { ...state.agent }, cs: state.cliffStyle });
+function restore(s) { cliffFits.clear();H.set(s.H); S.set(s.S); O.set(s.O); if (s.C) C.set(s.C); else C.fill(0); walkDirty = true; props = s.P.map(p => p.slice()); falls = s.F.map(f => ({ ...f })); bridges = s.B.map(b => ({ ...b })); stairs = (s.T || []).map(st => ({ ...st })); state.water = s.W; state.spawn = { ...s.sp }; if (s.at) state.atmo = { ...s.at }; if (s.we) state.weather = { ...s.we }; state.sunOn = s.sun !== false; state.darkness = s.dk || 'dark'; markers = (s.M || []).map(m => ({ ...m })); state.nextId = s.nid || state.nextId; state.roomId = s.rid || state.roomId; if (s.cat) { state.catalog = JSON.parse(s.cat); applyCatalog(); } if (s.ag) { state.agent = { ...s.ag }; syncAgentUI(); colliders = null; } state.cliffStyle = s.cs || 'standard'; applyCliffStyle(); if ($('cliffStyle')) $('cliffStyle').value = state.cliffStyle; rebuildMarkers(); state.sea = !!s.sea; applyBiome(s.bi || state.biome); syncUI(); updateTerrain(); rebuildProps(); rebuildFalls(); rebuildBridges(); rebuildStairs();cliffFits.load(s.CF,props,cliffInputSignature());rebuildProps(); }
 function pushUndo() { undoStack.push(snapshot()); if (undoStack.length > 40) undoStack.shift(); redoStack.length = 0; }
 function undo() { if (!undoStack.length) return; redoStack.push(snapshot()); restore(undoStack.pop()); toast('取り消し'); }
 function redo() { if (!redoStack.length) return; undoStack.push(snapshot()); restore(redoStack.pop()); toast('やり直し'); }
@@ -2171,29 +2185,26 @@ function eraseAt(x, z) {
   if (props.length !== n0) rebuildProps();
 }
 // keeps generated rocks off waterfalls (their sheet and stream) and bridge decks
-function nearFeature(x, z) {
-  for (const f of falls) {
-    const [ux, uz] = fallDir(f), cx = f.x + ux, cz = f.z + uz, ax = x - cx, az = z - cz;
-    if (Math.abs(ax * uz - az * ux) < f.w * .5 + .35 && Math.abs(ax * ux + az * uz) < 2) return true;
-    if (f.sx !== undefined && distToPolyline(x, z, [[cx, cz], [f.sx, f.sz]]) < f.w * .5 + .8) return true;
-  }
-  for (const b of bridges) if (distToPolyline(x, z, [[b.x1, b.z1], [b.x2, b.z2]]) < b.w / 2 + .8) return true;
-  for (const st of stairs) if (distToPolyline(x, z, [[st.x1, st.z1], [st.x2, st.z2]]) < st.w / 2 + .9) return true;
-  return false;
+function nearFeatureReason(x,z){
+ for(const f of falls){const[ux,uz]=fallDir(f),cx=f.x+ux,cz=f.z+uz,ax=x-cx,az=z-cz;if(Math.abs(ax*uz-az*ux)<f.w*.5+.35&&Math.abs(ax*ux+az*uz)<2)return{kind:'waterfall',id:f.id};if(f.sx!==undefined&&distToPolyline(x,z,[[cx,cz],[f.sx,f.sz]])<f.w*.5+.8)return{kind:'upstream',id:f.id};}
+ for(const b of bridges)if(distToPolyline(x,z,[[b.x1,b.z1],[b.x2,b.z2]])<b.w/2+.8)return{kind:'bridge-clearance',id:b.id};
+ for(const st of stairs)if(distToPolyline(x,z,[[st.x1,st.z1],[st.x2,st.z2]])<st.w/2+.9)return{kind:'stairs-clearance',id:st.id};return null;
 }
+function nearFeature(x,z){return!!nearFeatureReason(x,z);}
+
 const nearEdge = (x, z) => Math.max(Math.abs(x), Math.abs(z)) > HALF - 2.5;   // the map's outer rim is left alone
 // 岩の中心ではなく、回転・拡縮後の占有輪郭を使って橋/階段/出入口を保護する。
-const cliffHulls = new Map();
-function cliffHull(t) {
-  if(cliffHulls.has(t))return cliffHulls.get(t);
-  const a=PROP[t].geo.attributes.position,points=[];
+const cliffHulls = new WeakMap();
+function cliffHull(t,geometry=PROP[t].geo) {
+  if(cliffHulls.has(geometry))return cliffHulls.get(geometry);
+  const a=geometry.attributes.position,points=[];
   for(let i=0;i<a.count;i++)points.push([a.getX(i),a.getZ(i)]);
   points.sort((a,b)=>a[0]-b[0]||a[1]-b[1]);
   const cross=(a,b,c)=>(b[0]-a[0])*(c[1]-a[1])-(b[1]-a[1])*(c[0]-a[0]);
   const half=pts=>{const h=[];for(const p of pts){while(h.length>1&&cross(h.at(-2),h.at(-1),p)<=0)h.pop();h.push(p);}h.pop();return h;};
-  const hull=half(points).concat(half([...points].reverse()));cliffHulls.set(t,hull);return hull;
+  const hull=half(points).concat(half([...points].reverse()));cliffHulls.set(geometry,hull);return hull;
 }
-function cliffWorldHull(p){const c=Math.cos(p[3]),s=Math.sin(p[3]);return cliffHull(p[0]).map(([x,z])=>[p[1]+(x*c+z*s)*p[4],p[2]+(-x*s+z*c)*p[4]]);}
+function cliffWorldHull(p,geometry=effectiveGeometry(p)){const c=Math.cos(p[3]),s=Math.sin(p[3]);return cliffHull(p[0],geometry).map(([x,z])=>[p[1]+(x*c+z*s)*p[4],p[2]+(-x*s+z*c)*p[4]]);}
 function cliffSegmentDistance(a,b,c,d){
   const orient=(p,q,r)=>(q[0]-p[0])*(r[1]-p[1])-(q[1]-p[1])*(r[0]-p[0]);
   const point=(p,a,b)=>{const x=b[0]-a[0],z=b[1]-a[1],t=clamp(((p[0]-a[0])*x+(p[1]-a[1])*z)/(x*x+z*z||1),0,1);return Math.hypot(p[0]-a[0]-x*t,p[1]-a[1]-z*t);};
@@ -2204,15 +2215,55 @@ function cliffOverlapsLink(hull,a,b,r){
   const inside=p=>{let hit=false;for(let i=0,j=hull.length-1;i<hull.length;j=i++){const q=hull[i],s=hull[j];if((q[1]>p[1])!==(s[1]>p[1])&&p[0]<(s[0]-q[0])*(p[1]-q[1])/(s[1]-q[1])+q[0])hit=!hit;}return hit;};
   return inside(a)||inside(b)||hull.some((p,i)=>cliffSegmentDistance(p,hull[(i+1)%hull.length],a,b)<r);
 }
-function cliffProtected(p){
-  const hull=cliffWorldHull(p),margin=state.agent.radius+.15;
-  for(const b of bridges)if(cliffOverlapsLink(hull,[b.x1,b.z1],[b.x2,b.z2],b.w/2+margin))return true;
-  for(const st of stairs)if(cliffOverlapsLink(hull,[st.x1,st.z1],[st.x2,st.z2],st.w/2+margin))return true;
-  for(const m of markers)if(m.kind==='port'&&cliffOverlapsLink(hull,[m.x,m.z],[m.x,m.z],Math.max(m.r||0,(m.w||2)/2)+margin))return true;
-  if(cliffOverlapsLink(hull,[state.spawn.x,state.spawn.z],[state.spawn.x,state.spawn.z],1+margin))return true;
-  // 滝の落下域と上流溝。輪郭の頂点だけでなく辺も一定間隔で確認する。
-  for(let i=0;i<hull.length;i++){const a=hull[i],b=hull[(i+1)%hull.length],n=Math.max(1,Math.ceil(Math.hypot(b[0]-a[0],b[1]-a[1])/.2));for(let k=0;k<=n;k++)if(nearFeature(lerp(a[0],b[0],k/n),lerp(a[1],b[1],k/n)))return true;}
-  return false;
+function cliffProtectionReason(p,geometry){
+ const hull=cliffWorldHull(p,geometry),margin=state.agent.radius+.15;
+ for(const b of bridges)if(cliffOverlapsLink(hull,[b.x1,b.z1],[b.x2,b.z2],b.w/2+margin))return{kind:'bridge',id:b.id};
+ for(const st of stairs)if(cliffOverlapsLink(hull,[st.x1,st.z1],[st.x2,st.z2],st.w/2+margin))return{kind:'stairs',id:st.id};
+ for(const m of markers){if(m.kind==='port'){const L=portLanding(m);if(cliffOverlapsLink(hull,[m.x,m.z],[m.x,m.z],Math.max(m.r||0,(m.w||2)/2)+margin))return{kind:'port',id:m.id};if(cliffOverlapsLink(hull,[L.x,L.z],[L.x,L.z],m.r+margin)||cliffOverlapsLink(hull,[m.x,m.z],[L.x,L.z],Math.max(m.w/2,margin)))return{kind:'port-landing/approach',id:m.id};}else if(isLink(m.kind)){const A=linkArrival(m),T=linkTrigger(m);if(cliffOverlapsLink(hull,[A.x,A.z],[A.x,A.z],state.agent.arrivalClearance+margin)||cliffOverlapsLink(hull,[T.x,T.z],[T.x,T.z],LINK_SPEC[m.kind].tr+margin)||cliffOverlapsLink(hull,[A.x,A.z],[T.x,T.z],margin))return{kind:'floor-link',id:m.id};}}
+ if(cliffOverlapsLink(hull,[state.spawn.x,state.spawn.z],[state.spawn.x,state.spawn.z],1+margin))return{kind:'spawn'};
+ for(let i=0;i<hull.length;i++){const a=hull[i],b=hull[(i+1)%hull.length],n=Math.max(1,Math.ceil(Math.hypot(b[0]-a[0],b[1]-a[1])/.2));for(let k=0;k<=n;k++){const x=lerp(a[0],b[0],k/n),z=lerp(a[1],b[1],k/n);const feature=nearFeatureReason(x,z);if(feature)return{...feature,x,z};}}
+ return null;
+}
+function cliffProtected(p,geometry){return!!cliffProtectionReason(p,geometry);}
+
+let cliffContactProgress=0,cliffContactStats=null,cliffContactToken=0,cliffContactTimer=0,cliffContactDisabled=null;
+function queueCliffContact(){cliffContactToken++;clearTimeout(cliffContactTimer);cliffContactTimer=setTimeout(()=>{cliffContactTimer=0;fitCliffContact();},0);}
+async function fitCliffContact(){
+  clearTimeout(cliffContactTimer);cliffContactTimer=0;const token=++cliffContactToken;
+  cliffContactProgress=0;rebuildCliffRelief();
+  const generation=()=>[tGeo.uuid,tGeo.attributes.position.version,cliffRelief.geometry.uuid,cliffRelief.geometry.attributes.position.version].join('/');
+  ensureIds();const version=generation(),source=props,input=cliffInputSignature(),signature=()=>JSON.stringify([source,markers,bridges,stairs,state.spawn,state.agent]),before=signature();
+  const buttons=['autoRocks','save','saveAs','export','load'].map(id=>document.getElementById(id)).filter(Boolean);if(!cliffContactDisabled)cliffContactDisabled=buttons.map(b=>b.disabled);buttons.forEach(b=>b.disabled=true);
+  try{
+    const r=await TDCliffContact.fitAsync({geometries:[tGeo,cliffRelief.geometry],types:PROP,height:heightAt,water:state.water,progress:n=>{cliffContactProgress=n;},protected:(p,g)=>cliffProtected(p,g||PROP[p[0]].geo),valid:()=>token===cliffContactToken&&generation()===version&&props===source&&signature()===before&&cliffInputSignature()===input},source);
+    if(generation()!==version||props!==source||signature()!==before||token!==cliffContactToken){for(const f of r.fits)f.geometry.dispose();return{cancelled:true};}
+    const adopted=adoptCliffContact(r,source,input);if(adopted.cancelled)return adopted;cliffContactStats={...r.stats,generation:version};toast('岩を'+r.stats.changed+'個調整しました（'+r.stats.keptOriginal+'個は元の位置を維持）');return cliffContactStats;
+  }catch(e){if(e.message==='cliff-contact-cancelled')return{cancelled:true};console.error(e);return{error:e.message};}
+  finally{if(token===cliffContactToken){buttons.forEach((b,i)=>b.disabled=cliffContactDisabled[i]);cliffContactDisabled=null;}}
+}
+
+
+// 採用前の追加ガード。元の草地を新たに塞がず、元の岩の担当幅を残す。
+function cliffCandidateFootprint(p,g){
+ if(!g){const t=PROP[p[0]],a=p[3]-(t.sharedAsset?t.yawOffset*Math.PI/180:0);return[p[1],p[2],t.footprint.R*p[4],p[7],p[7]+t.height*p[4]*(p[6]??1),t.footprint,Math.cos(a),Math.sin(a),p[4]];}
+ const geo=g.clone(),P=geo.attributes.position;for(let i=0;i<P.count;i++){const w=TDCliffContact.world(p,[P.getX(i),P.getY(i),P.getZ(i)]);P.setXYZ(i,w[0]-p[1],w[1],w[2]-p[2]);}geo.computeBoundingBox();const f=shapeFootprint({geo,sharedAsset:true}),b=geo.boundingBox;for(let j=0;j<f.nz;j++)for(let i=0;i<f.nx;i++){const k=j*f.nx+i;if(f.top[k]>-1e8)f.top[k]-=heightAt(p[1]+f.x0+i*SHAPE_CELL,p[2]+f.z0+j*SHAPE_CELL);}f.R=Math.hypot(Math.max(Math.abs(b.min.x),Math.abs(b.max.x)),Math.max(Math.abs(b.min.z),Math.abs(b.max.z)));geo.dispose();return[p[1],p[2],f.R,b.min.y,b.max.y,f,1,0,1];
+}
+function cliffAdoptionReason(original,parts,geometries){
+ const u=TDCliffContact.direction({height:heightAt,types:PROP},original),t=[-u[1],u[0]],span=(p,g)=>{let lo=Infinity,hi=-Infinity;const P=g.attributes.position;for(let i=0;i<P.count;i++){const w=TDCliffContact.world(p,[P.getX(i),P.getY(i),P.getZ(i)]),d=w[0]*t[0]+w[2]*t[1];lo=Math.min(lo,d);hi=Math.max(hi,d);}return[lo,hi];};
+ if(TDCliffContact.unionCoverage(span(original,effectiveGeometry(original)),parts.map(p=>span(p,geometries.get(p)||PROP[p[0]].geo))).coverage<.99)return'original-band-coverage';
+ for(const p of parts){const c=cliffCandidateFootprint(p,geometries.get(p)),r=c[2]+state.agent.radius;
+  for(let z=Math.ceil((p[2]-r)*2)/2;z<=p[2]+r;z+=.5)for(let x=Math.ceil((p[1]-r)*2)/2;x<=p[1]+r;x+=.5){if(!inBounds(x,z)||Math.hypot(x-c[0],z-c[1])-c[2]>=state.agent.radius||shapeDist(c,x,z)>=state.agent.radius)continue;const d=deckAt(x,z,0);if(d&&!(c[4]>d.y+.05&&c[3]<d.y+state.agent.height))continue;if(walkable(x,z))return'new-walk-obstruction';}
+ }
+ return null;
+}
+
+function adoptCliffContact(r,source=props,input=cliffInputSignature()){
+ const dispose=()=>{for(const f of r.fits)f.geometry.dispose();};if(source!==props||input!==cliffInputSignature()){dispose();return{cancelled:true,reason:'input-changed'};}
+ const sourceById=new Map(source.map(p=>[p[8],p])),resultById=new Map(r.props.filter(p=>p[8]).map(p=>[p[8],p])),geometryByProp=new Map(r.fits.map(f=>[f.p,f.geometry])),updates=new Map();
+ for(const record of r.stats.records){const original=sourceById.get(record.id);if(!original){dispose();throw Error('元の岩IDがありません');}if(!record.ok){const retained=resultById.get(record.id);if(JSON.stringify(retained)!==JSON.stringify(original)){dispose();throw Error('維持する岩が変わっています');}updates.set(record.id,[original]);continue;}const parts=record.nextParts||[resultById.get(record.id)];if(parts.some(p=>!p)){dispose();throw Error('採用する岩がありません');}if(record.method!=='already-contact'&&parts.some(p=>cliffProtected(p,geometryByProp.get(p)||PROP[p[0]].geo))){dispose();return{cancelled:true,reason:'protection-changed'};}const reason=record.method==='already-contact'?null:cliffAdoptionReason(original,parts,geometryByProp);if(reason){record.ok=false;record.method='kept-original';record.reason=reason;delete record.next;delete record.nextParts;updates.set(record.id,[original]);}else updates.set(record.id,parts);}
+ r.fits=r.fits.filter(f=>{const keep=[...updates.values()].some(parts=>parts.includes(f.p));if(!keep)f.geometry.dispose();return keep;});r.stats.changed=r.stats.records.filter(q=>q.ok&&q.method!=='already-contact').length;r.stats.keptOriginal=r.stats.unresolved=r.stats.records.filter(q=>!q.ok).length;
+ for(const record of r.stats.records)if(record.ok&&record.method!=='already-contact')cliffFits.remove(record.id);
+ props=source.flatMap(p=>updates.get(p[8])||[p]);ensureIds();cliffFits.input=input;for(const f of r.fits)cliffFits.set(f.p,f.geometry,input,{affine:f.affine,instanceTint:cliffTintAt(f.original[1],f.original[2])});rebuildProps();return{applied:true,changed:r.stats.changed,keptOriginal:r.stats.keptOriginal};
 }
 function autoRocks(seed=Date.now()){
   const R=rng(seed|0),shapeR=rng((seed|0)^0x7b0d37e);
@@ -2256,7 +2307,7 @@ function autoRocks(seed=Date.now()){
     p[7]=Math.min(...heights)-.025;
     props.push(p);hash.add(p,px,pz);
   }
-  rebuildProps();
+  rebuildProps();queueCliffContact();
 }
 
 
@@ -3054,6 +3105,8 @@ function showValidation(v) {
 }
 
 function serialize() {
+  if(cliffContactDisabled)throw Error('崖の岩を調整中です。完了後に保存してください');
+  cliffFits.synchronize(cliffInputSignature(),props);
   return {
     format: 'map-editor-proto', version: 2, size: SIZE, resolution: RES, vertices: N,
     roomId: (ensureIds(), state.roomId), nextId: state.nextId, revision: state.revision, lastExportHash: state.lastExportHash, agent: { ...state.agent }, catalog: state.catalog,
@@ -3061,6 +3114,7 @@ function serialize() {
     waterLevel: state.water, spawn: state.spawn, biome: state.biome, cliffStyle: state.cliffStyle, sea: state.sea, atmosphere: { ...state.atmo }, weather: { ...state.weather }, sunlight: state.sunOn, darkness: state.darkness, name: state.mapName,
     heightsF32: b64(new Uint8Array(H.slice().buffer)), splat: b64(S), walkOverride: b64(O), cliffMap: b64(C),   // exact heights: save → load → export reproduces the RAW
     propTypes: PROP.map(p => p.id),
+    cliffFits: cliffFits.records.size?cliffFits.save():undefined,
     // full precision (JSON keeps doubles exactly), so a reloaded map exports byte-identical files
     props: props.map(p => p.map(v => v ?? null)),
     falls: falls.map(f => ({ ...f })), bridges: bridges.map(b => ({ ...b })), stairs: stairs.map(st => ({ ...st })),
@@ -3108,15 +3162,16 @@ function deserialize(d) {
   else if (cm && cm.some(v => v > CLIFF_STYLES.length)) issues.push(`cliffMap: 0〜${CLIFF_STYLES.length} 以外の値があります`);
   if (!Array.isArray(d.props)) issues.push('props: 配列ではありません');
   for (const k of ['falls', 'bridges', 'stairs', 'markers']) if (d[k] !== undefined && !Array.isArray(d[k])) issues.push(`${k}: 配列ではありません`);
+  if(!issues.length)cliffFits.validate(d.cliffFits,d.props,cliffInputSignature(newH,d.falls||[],d.waterLevel));
   if (issues.length) throw new Error(`不正な値が ${issues.length} 件あります: ` + issues.slice(0, 3).join(' / ') + (issues.length > 3 ? ' …' : ''));
-  H.set(newH);
+  cliffFits.clear();H.set(newH);
   if (spLayers === NS) S.set(sp); else { S.fill(0); for (let k = 0; k < N * N; k++) for (let c = 0; c < spLayers; c++) S[k * NS + c] = sp[k * spLayers + c]; }
   O.set(wo); C.set(cm); walkDirty = true; props = d.props.map(p => p.slice()); falls = (d.falls || []).map(f => ({ ...f })); bridges = (d.bridges || []).map(b => ({ ...b })); stairs = (d.stairs || []).map(st => ({ ...st })); rebuildFalls(); rebuildBridges(); rebuildStairs(); state.water = d.waterLevel; state.spawn = d.spawn; state.sea = !!d.sea; state.weather = d.weather ? { ...d.weather } : { kind: 'none', amount: .7 }; state.sunOn = d.sunlight !== false; state.darkness = DARK_LEVELS[d.darkness] ? d.darkness : 'dark'; setMapName(typeof d.name === 'string' ? d.name : ''); state.cliffStyle = CLIFF_STYLES.some(c => c[0] === d.cliffStyle) ? d.cliffStyle : 'standard'; applyCliffStyle(); if ($('cliffStyle')) $('cliffStyle').value = state.cliffStyle; state.atmo = d.atmosphere ? { ...d.atmosphere } : { kind: 'none', amount: .6, height: 3 };
   state.roomId = d.roomId || newRoomId(); state.nextId = d.nextId || 1; state.revision = d.revision || 0;
   state.agent = { ...state.agent, ...(d.agent || {}) }; state.catalog = normalizeCatalog(d.catalog); state.lastExportHash = d.lastExportHash || ''; applyCatalog(); syncAgentUI();
   markers = (d.markers || []).map(m => ({ ...m })); ensureIds();
   applyBiome(d.biome || 'forest');
-  syncUI(); updateTerrain(); rebuildProps(); rebuildMarkers();
+  syncUI(); updateTerrain();cliffFits.load(d.cliffFits,props,cliffInputSignature()); rebuildProps(); rebuildMarkers();
 }
 function download(name, blob) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); }
 const CRC = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
@@ -3164,6 +3219,7 @@ function sha256(bytes) {
 const GROUND_EFFECT = { sand: 'slow_light', rubble: 'slow_light', swamp: 'slow', poison: 'poison', lava: 'lava', snowfield: 'slow_light', ice: 'ice' };
 const WEIGHT_LAYERS = ['grass', 'dirt', 'cobble', 'sand', 'rubble', 'swamp', 'poison', 'lava', 'snowfield', 'ice', 'cliff'];
 async function buildExport() {
+  if(cliffContactDisabled)throw Error('崖の岩を調整中です。完了後に書き出してください');
   ensureIds(); applyCatalog(); if (walkDirty) computeWalk();
   const validation = runValidation();
   rebuildCliffRelief();
@@ -3384,9 +3440,11 @@ revision・書き出し日時・ファイルごとの SHA-256・contentHash は 
 - Prefab のローカル +Z = プレイヤーが入っていく向き、-Z = 近づいてくる側。回転は yawDeg + yawOffsetDeg。
 - 当たり判定（radius / offsets / solid）も同じローカル座標。エディター内部のローカル座標とは z の符号だけが違います。
 `;
+  const fittedExport=cliffFits.export(props,HALF,mn);for(const f of fittedExport.instances){const p=props.find(p=>p[8]===f.instanceId),v=.86+.28*hash2(p[1]*97|0,p[2]*89|0);f.instanceTint=f.instanceTint||[v*(.95+.1*hash2(p[1]*13|0,7)),v,v*(.95+.1*hash2(3,p[2]*17|0))];f.cliffStyleIndex=cliffIndexNear(p[1],p[2]);}if(fittedExport.instances.length){meta.requiredFeatures=[...(meta.requiredFeatures||[]),'cliffFitsMeshV1'];meta.cliffFits={file:'cliff_fits_mesh.json',instanceIds:fittedExport.instances.map(x=>x.instanceId),replacement:'Replace original renderer and collider per ID; unsupported readers must reject'};}
   const reliefFile=cliffRelief.geometry.index.count?'cliff_relief_mesh.json':null;
   if(reliefFile)meta.terrain.cliffRelief={file:reliefFile,role:'visual rock skin; walking heightfield unchanged',maxOffsetMetres:+cliffRelief.geometry.userData.maxOffset.toFixed(5)};
   const files = [
+    ...(fittedExport.instances.length?[{name:'cliff_fits_mesh.json',data:JSON.stringify(fittedExport)}]:[]),
     ...(reliefFile?[{name:reliefFile,data:JSON.stringify(TDCliffRelief.exportMesh(cliffRelief.geometry,HALF,mn))}]:[]),
     { name: 'heightmap_r16.raw', data: heightRaw }, { name: 'walk_floor_r16.raw', data: floorRaw },
     ...weightPngs.map((d, i) => ({ name: `weights_${i}.png`, data: d })), ...maskPngs.map((d, i) => ({ name: `mask_${i}.png`, data: d })),
@@ -4045,7 +4103,8 @@ requestAnimationFrame(frame);
 
 // hooks for automated checks
 window.__app = {
-  updateTouch,touchStats, pavingMask, cliffRelief, rebuildCliffRelief, groundTrial, groundTexture, terrain, renderer, camera, SIZE, state, H, S, O, F, C, propMeshes, ghostMeshes, cliffIndexAt, BIOMES, CLIFF_STYLES, applyCliffStyle, deckAt, linkDeckAt, runValidation, genSample, genSample2, secretRegions, secretLineX, passageGeometry, terrainRes, TERRAIN_RES, snapshot, sha256, LINK_KINDS, normalizeCatalog, catalogExport, valueIssues, areaIssue, deckAt, getColliders, PROP, get colliderMaxR() { return colliderMaxR; }, rebuildMarkers, linkTrigger, linkArrival, LINK_SPEC, get markers() { return markers; }, placeMarker, ensureIds, applyCatalog, ATMOS, WEATHER, applyAtmo, makeCoast, glowLights, applyBiome, applyPalette, propVisible, toolVisible, updateTerrain, rebuildProps, genFlat, floorAt, bridgeAt, stairsAt, placeSlope, placeStairs, placeBridge, pickTarget, regenGroundProps, rebuildBridges, get stairs() { return stairs; }, get bridges() { return bridges; }, get falls() { return falls; }, overrideAt, heroMat, hero, heroBody, get heroLook() { return heroLook; }, setHeroLook, heroStyle, heroGlow, get ghosts() { return ghosts; }, get props() { return props; }, cam, playCam, player, keys, setMode, setTool, update, heightAt, walkable, slope: slopeAt,
+  get cliffContactProgress(){return cliffContactProgress;},cliffFits,effectiveGeometry,fitCliffContact,adoptCliffContact, cliffProtected,cliffProtectionReason,nearFeatureReason, get cliffContactStats(){return cliffContactStats;},
+  updateTouch,touchStats, pavingMask, cliffRelief, rebuildCliffRelief, groundTrial, groundTexture, terrain, renderer, camera, SIZE, state, H, S, O, F, C, propMeshes, ghostMeshes, cliffIndexAt, BIOMES, CLIFF_STYLES, applyCliffStyle, deckAt, linkDeckAt, runValidation, genSample, genSample2, secretRegions, secretLineX, passageGeometry, terrainRes, TERRAIN_RES, snapshot, sha256, LINK_KINDS, normalizeCatalog, catalogExport, valueIssues, areaIssue, deckAt, getColliders, PROP, get colliderMaxR() { return colliderMaxR; }, rebuildMarkers, portLanding, linkTrigger, linkArrival, LINK_SPEC, get markers() { return markers; }, placeMarker, ensureIds, applyCatalog, ATMOS, WEATHER, applyAtmo, makeCoast, glowLights, applyBiome, applyPalette, propVisible, toolVisible, updateTerrain, rebuildProps, genFlat, floorAt, bridgeAt, stairsAt, placeSlope, placeStairs, placeBridge, pickTarget, regenGroundProps, rebuildBridges, get stairs() { return stairs; }, get bridges() { return bridges; }, get falls() { return falls; }, overrideAt, heroMat, hero, heroBody, get heroLook() { return heroLook; }, setHeroLook, heroStyle, heroGlow, get ghosts() { return ghosts; }, get props() { return props; }, cam, playCam, player, keys, setMode, setTool, update, heightAt, walkable, slope: slopeAt,
   stroke(x, z, frames = 20, opts = {}) {
     hit = new THREE.Vector3(x, heightAt(x, z), z); beginStroke({ shiftKey: !!opts.shift });
     for (let f = 0; f < frames; f++) { if (stroke.active && !['scatter', 'erase'].includes(state.tool)) { applyBrush(x, z, 1 / 60); } }

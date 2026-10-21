@@ -118,3 +118,5 @@ PW=<playwright のパス> node tests/rev5_terrain_grid.js
 ## 確認の範囲
 
 エディター側の動作と書き出しデータは、上記のテストで確認しています。Unity 上での取り込み・描画・当たり判定・移動は、まだ確認していません。ただし水だけは、試験用の Unity プロジェクトで描画を確かめました（`docs/REVISION_8_NOTES.md`）。
+
+崖の自動配置岩の密着・保存・出力については[仕様と確認範囲](docs/CLIFF_CONTACT.md)を参照してください。
