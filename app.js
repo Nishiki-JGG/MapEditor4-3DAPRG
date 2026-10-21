@@ -2342,7 +2342,7 @@ function ensureIds() {
 }
 
 // ---------- asset catalog: typeId -> assetKey and the proxy collider the editor uses for walkability
-const EXPORTER_VERSION = 'tdj-map-editor/2026.10.21-r17';
+const EXPORTER_VERSION = 'tdj-map-editor/2026.10.21-r18';
 for (const t of PROP) { t.geo.computeBoundingBox(); t.meshTop = +t.geo.boundingBox.max.y.toFixed(2); t.height = t.height ?? t.meshTop; t.base = { r: t.r, offs: t.offs, height: t.height }; t.offs = t.offs ? t.offs.map(o => [o, 0]) : null; if (t.shape && t.r > 0) t.footprint = shapeFootprint(t); }   // internal offsets are [x, z] (see applyCatalog)
 const isNum = (v, ok) => typeof v === 'number' && Number.isFinite(v) && (!ok || ok(v));
 // version 1 catalogs were a flat {typeId: entry} map; version 2 has {types, floorLinks}
