@@ -1,7 +1,7 @@
 // 溶岩岩（lavarock）
 TDProps.add({
   id: 'lavarock', name: '溶岩岩',
-  r: .7, min: 1.8, sc: [.6, 1.6], slope: 2, vis: 1, anyGround: true, light: [0xff6a20, 8, .9],
+  r: .7, min: 1.8, sc: [.6, 1.6], slope: 2, vis: 1, anyGround: true, shape: true, light: [0xff6a20, 8, .9],
   tags: ['volcano', 'demon'], height: 0.82, material: 'stone',
   build() {
     const { clamp, rng, col, mixc, mat4, displace, makeGeo, chisel } = TDGeo;
