@@ -1805,16 +1805,29 @@ function getColliders() {
   if (colliders) return colliders;
   colliders = new SpatialHash(4); colliderMaxR = 0;
   // each collider: [x, z, radius, bottom y, top y], plus [footprint, cos, sin, scale] for a shape collider (radius = its reach)
-  const add = (x, z, r, y0, y1, ...shape) => { colliders.add([x, z, r, y0, y1, ...shape], x, z); colliderMaxR = Math.max(colliderMaxR, r); };
+  const add = (x, z, r, y0, y1, ...shape) => { const c = [x, z, r, y0, y1, ...shape]; c.prop = cur; colliders.add(c, x, z); colliderMaxR = Math.max(colliderMaxR, r); };
+  let cur = null;   // the prop each collider belongs to (null for floor-link solids)
   for (const p of props) {
-    const t = PROP[p[0]], r = t.r * p[4]; if (r <= 0) continue;
+    const t = PROP[p[0]], r = t.r * p[4]; if (r <= 0) continue; cur = p;
     const y0 = p[7] ?? heightAt(p[1], p[2]), y1 = y0 + t.height * p[4] * (p[6] ?? 1);
     if (t.footprint) { const a = p[3] - (t.sharedAsset ? t.yawOffset * Math.PI / 180 : 0); add(p[1], p[2], t.footprint.R * p[4], y0, y1, t.footprint, Math.cos(a), Math.sin(a), p[4]); }
     else if (t.offs) for (const [ox, oz] of t.offs) { const c = Math.cos(p[3]), sn = Math.sin(p[3]); add(p[1] + (ox * c + oz * sn) * p[4], p[2] + (-ox * sn + oz * c) * p[4], r, y0, y1); }
     else add(p[1], p[2], r, y0, y1);
   }
+  cur = null;
   for (const m of markers) if (isLink(m.kind)) { const sp = LINK_SPEC[m.kind], y0 = heightAt(m.x, m.z); for (const [lx, lz, r] of sp.solid) { const q = linkLocal(m, lx, lz); add(q.x, q.z, r, y0, y0 + sp.height); } }
   return colliders;
+}
+// the generators keep a map edge entrance's landing free: every solid prop whose stone or collider reaches the circle the
+// hero arrives in (the same circle the validation checks) is taken away
+function clearPortLandings() {
+  const out = new Set(), ag = state.agent;
+  for (const m of markers) {
+    if (m.kind !== 'port') continue;
+    const L = portLanding(m), r = (m.r || 1.5) + ag.radius;
+    getColliders().query(L.x, L.z, r + colliderMaxR, c => { if (c.prop && (c[5] ? shapeDist(c, L.x, L.z) : Math.hypot(c[0] - L.x, c[1] - L.z) - c[2]) < r) out.add(c.prop); });
+  }
+  if (out.size) { props = props.filter(p => !out.has(p)); colliders = null; walkDirty = true; }
 }
 const inBounds = (x, z) => Math.abs(x) <= HALF - .8 && Math.abs(z) <= HALF - .8;
 function overrideAt(x, z) { return O[idx(clamp(Math.round((x + HALF) * RES), 0, N - 1), clamp(Math.round((z + HALF) * RES), 0, N - 1))]; }
@@ -2296,7 +2309,7 @@ function genSample2(seed = 11) {
     if (kind === 'port' || isLink(kind)) placeMarker(kind, { x, z }, cx === undefined ? null : { x: cx, z: cz }); else { placeMarker(kind, { x, z }); if (kind === 'nobattle') markers[markers.length - 1].r = 4; }
   }
   for (const m of markers) m.tag = m.kind === 'port' ? 'field' : m.kind === 'down' ? 'B2_hidden' : m.kind === 'warp' ? 'hub' : '';
-  props = props.filter(p => !markers.some(m => isLink(m.kind) && Math.hypot(p[1] - m.x, p[2] - m.z) < 3.4 + PROP[p[0]].r * p[4]));
+  props = props.filter(p => !markers.some(m => isLink(m.kind) && Math.hypot(p[1] - m.x, p[2] - m.z) < 3.4 + PROP[p[0]].r * p[4])); rebuildProps(); clearPortLandings();
   rebuildProps(); ensureIds(); rebuildMarkers();
 }
 function genFlat() { C.fill(0); state.roomId = newRoomId(); state.nextId = 1; state.revision = 0; state.lastExportHash = ''; markers = []; state.sea = false; H.fill(3); S.fill(0); O.fill(0); props = []; falls = []; bridges = []; stairs = []; state.water = .8; state.spawn = { x: 0, z: 0 }; }
@@ -2390,7 +2403,7 @@ function genSample(seed = 7) {
   }
   for (const m of markers) m.tag = m.kind === 'port' ? 'field' : m.kind === 'down' ? 'B2' : m.kind === 'up' ? 'B0' : m.kind === 'warp' ? 'hub' : '';
   state.spawn = { x: 1, z: 20 };
-  props = props.filter(p => !markers.some(m => isLink(m.kind) && Math.hypot(p[1] - m.x, p[2] - m.z) < 3.4 + PROP[p[0]].r * p[4])); rebuildProps();
+  props = props.filter(p => !markers.some(m => isLink(m.kind) && Math.hypot(p[1] - m.x, p[2] - m.z) < 3.4 + PROP[p[0]].r * p[4])); rebuildProps(); clearPortLandings(); rebuildProps();
   ensureIds(); rebuildMarkers();
 }
 
