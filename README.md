@@ -5,6 +5,8 @@
 
 ![サンプル2（遺跡・隠し通路）](docs/images/sample2_overview.png)
 
+真上向けの植物10種を追加しました（計69種）。[一覧プレビュー](tests/plant_set_view.html) と [寸法・予算・検証](docs/PLANT_SET.md) を確認できます。
+
 ## 使い方
 
 1. `index.html` をブラウザ（Chrome 推奨）で開きます。インストールもサーバーも要りません。

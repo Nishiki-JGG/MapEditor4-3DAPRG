@@ -60,3 +60,5 @@ TDProps.add({
 - その他の小物の形は、エディターの画面用です。Unity には位置・向き・大きさと `asset_catalog.json`（当たり判定など）を出し、見た目は Prefab で作ります。
 
 - `grass`・`reed`・`flowers` も共有資産を使用します。真上向けの曲げ葉と根元、予算・検証は [草の修正](../docs/PLANT_GROUND_FIX.md) を参照してください。
+
+- 新規植物10種も同じ共通資産経路です。ID・日本語名・役割・寸法・予算は [植物セット](../docs/PLANT_SET.md)、見た目は [真上一覧](../tests/plant_set_view.html) を参照してください。

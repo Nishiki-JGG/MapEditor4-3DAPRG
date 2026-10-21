@@ -17,7 +17,7 @@ public static class MapSharedPropsBuilder {
  [Serializable] public class LibraryDto { public int schemaVersion; public string libraryVersion, units, axes, winding, uvOrigin; public TextureDto[] textures; public AssetDto[] assets; }
  [Serializable] public class ModelDto { public string file, id; public int version; }
  [Serializable] public class TypeDto { public string assetKey; public float yawOffsetDeg; public ModelDto sharedModel; }
- [Serializable] public class TypesDto { public TypeDto rock, fern, pine, log, stump, rootfan, grass, reed, flowers; }
+ [Serializable] public class TypesDto { public TypeDto rock, fern, pine, log, stump, rootfan, grass, reed, flowers, birch, willow, scotspine, hazel, bramble, ivy, sedge, foxglove, horsetail, dock; }
  [Serializable] public class CatalogDto { public TypesDto types; }
  [Serializable] public class PineWindDto { public int version;public string id;public float minY,maxY,maxDisplacementMetres;public float[] waves,phase; }
  [Serializable] class WindMeta {public TerrainMeta terrain;public WeatherMeta weather;}
@@ -34,17 +34,17 @@ public static class MapSharedPropsBuilder {
  }
  public static LibraryDto ReadLibrary(string file) {
   var d = JsonUtility.FromJson<LibraryDto>(File.ReadAllText(file));
-  Require(d != null && d.schemaVersion == 1 && (d.libraryVersion == "shared-rock-fern/4" || d.libraryVersion == "shared-nature/1" || d.libraryVersion == "shared-plants/1") && d.units == "metres", "unsupported library/version/units");
-  Require(d.assets != null && d.assets.Length == (d.libraryVersion == "shared-plants/1" ? 9 : d.libraryVersion == "shared-nature/1" ? 6 : 2) && d.textures != null && d.textures.Length == (d.libraryVersion == "shared-plants/1" ? 4 : d.libraryVersion == "shared-nature/1" ? 3 : 2), "unexpected asset/texture count");
+  Require(d != null && d.schemaVersion == 1 && (d.libraryVersion == "shared-rock-fern/4" || d.libraryVersion == "shared-nature/1" || d.libraryVersion == "shared-plants/1" || d.libraryVersion == "shared-plants/2") && d.units == "metres", "unsupported library/version/units");
+  Require(d.assets != null && d.assets.Length == (d.libraryVersion == "shared-plants/2" ? 19 : d.libraryVersion == "shared-plants/1" ? 9 : d.libraryVersion == "shared-nature/1" ? 6 : 2) && d.textures != null && d.textures.Length == (d.libraryVersion == "shared-plants/2" ? 5 : d.libraryVersion == "shared-plants/1" ? 4 : d.libraryVersion == "shared-nature/1" ? 3 : 2), "unexpected asset/texture count");
   var ids = new HashSet<string>(); var texIds = new HashSet<string>();
   foreach (var t in d.textures) {
-   Require(t != null && texIds.Add(t.id) && (t.id == "rock-basecolor-v1" || t.id == "fern-basecolor-v1" || t.id == "forest-atlas-v1" || t.id == "ground-plants-atlas-v1"), "texture ID");
-   Require(t.width > 0 && t.width <= 1024 && t.height > 0 && t.height <= 1024 && t.colorSpace == "sRGB" && (((t.id == "forest-atlas-v1" || t.id == "ground-plants-atlas-v1") && t.filter == "trilinear" && t.mipmaps && t.anisotropy == 2) || (t.id != "forest-atlas-v1" && t.id != "ground-plants-atlas-v1" && t.filter == "bilinear" && !t.mipmaps)), "texture parameters");
+   Require(t != null && texIds.Add(t.id) && (t.id == "rock-basecolor-v1" || t.id == "fern-basecolor-v1" || t.id == "forest-atlas-v1" || t.id == "ground-plants-atlas-v1" || t.id == "woodland-plants-atlas-v1"), "texture ID");
+   Require(t.width > 0 && t.width <= 1024 && t.height > 0 && t.height <= 1024 && t.colorSpace == "sRGB" && (((t.id == "forest-atlas-v1" || t.id == "ground-plants-atlas-v1" || t.id == "woodland-plants-atlas-v1") && t.filter == "trilinear" && t.mipmaps && t.anisotropy == 2) || (t.id != "forest-atlas-v1" && t.id != "ground-plants-atlas-v1" && t.id != "woodland-plants-atlas-v1" && t.filter == "bilinear" && !t.mipmaps)), "texture parameters");
    Require(t.wrap == "repeat" || t.wrap == "clamp", "texture wrap");
    var bytes = Convert.FromBase64String(t.png); Require(bytes.Length >= 24 && bytes[0] == 137 && bytes[1] == 80 && bytes[2] == 78 && bytes[3] == 71, "PNG signature");
   }
   foreach (var a in d.assets) {
-   Require(a != null && ids.Add(a.id) && (a.id == "rock" || a.id == "fern" || a.id == "pine" || a.id == "log" || a.id == "stump" || a.id == "rootfan" || a.id == "grass" || a.id == "reed" || a.id == "flowers") && a.assetKey == "tdj/" + a.id && a.version == (a.id == "rock" ? 4 : a.id == "fern" ? 3 : 1), "asset ID/version");
+   Require(a != null && ids.Add(a.id) && (a.id == "rock" || a.id == "fern" || a.id == "pine" || a.id == "log" || a.id == "stump" || a.id == "rootfan" || a.id == "grass" || a.id == "reed" || a.id == "flowers" || a.id == "birch" || a.id == "willow" || a.id == "scotspine" || a.id == "hazel" || a.id == "bramble" || a.id == "ivy" || a.id == "sedge" || a.id == "foxglove" || a.id == "horsetail" || a.id == "dock") && a.assetKey == "tdj/" + a.id && a.version == (a.id == "rock" ? 4 : a.id == "fern" ? 3 : 1), "asset ID/version");
    if(a.wind!=null&&a.wind.maxDisplacementMetres>0)Require(a.wind.minY>=0&&a.wind.maxY>a.wind.minY&&a.wind.maxDisplacementMetres<=.12f&&a.wind.uvMin==-1,"plant wind contract");
    Require(a.positions != null && a.positions.Length > 0 && a.positions.Length % 9 == 0 && a.positions.Length <= 180000, "mesh size");
    int n = a.positions.Length / 3;
@@ -53,12 +53,12 @@ public static class MapSharedPropsBuilder {
    Require(a.triangles != null && a.triangles.Length > 0 && a.triangles.Length % 3 == 0, "triangle count");
    foreach (int ix in a.triangles) Require(ix >= 0 && ix < n, "triangle index");
    var m = a.material; Require(m != null && texIds.Contains(m.texture), "material texture"); Floats(m.baseColor, 4, "baseColor");
-   Require(m.lighting == "lambert" && m.alphaCutoff == ((a.id == "fern" || a.id == "pine" || a.id == "flowers") ? .42f : 0) && m.doubleSided == (a.id == "fern" || a.id == "pine" || a.id == "grass" || a.id == "reed" || a.id == "flowers"), "material parameters");
+   Require(m.lighting == "lambert" && m.alphaCutoff == ((a.id == "fern" || a.id == "pine" || a.id == "flowers" || a.id == "birch" || a.id == "willow" || a.id == "scotspine" || a.id == "hazel") ? .42f : 0) && m.doubleSided == (a.id == "fern" || a.id == "pine" || a.id == "grass" || a.id == "reed" || a.id == "flowers" || a.id == "birch" || a.id == "willow" || a.id == "scotspine" || a.id == "hazel" || a.id == "bramble" || a.id == "ivy" || a.id == "sedge" || a.id == "foxglove" || a.id == "horsetail" || a.id == "dock"), "material parameters");
   }
   return d;
  }
  static float Number(string x) { var v = float.Parse(x, CultureInfo.InvariantCulture); Require(Finite(v), "non-finite placement"); return v; }
- static TypeDto Type(CatalogDto c, string id) { return id == "rock" ? c.types.rock : id == "fern" ? c.types.fern : id == "pine" ? c.types.pine : id == "log" ? c.types.log : id == "stump" ? c.types.stump : id == "rootfan" ? c.types.rootfan : id == "grass" ? c.types.grass : id == "reed" ? c.types.reed : id == "flowers" ? c.types.flowers : null; }
+ static TypeDto Type(CatalogDto c,string id){switch(id){case "rock":return c.types.rock;case "fern":return c.types.fern;case "pine":return c.types.pine;case "log":return c.types.log;case "stump":return c.types.stump;case "rootfan":return c.types.rootfan;case "grass":return c.types.grass;case "reed":return c.types.reed;case "flowers":return c.types.flowers;case "birch":return c.types.birch;case "willow":return c.types.willow;case "scotspine":return c.types.scotspine;case "hazel":return c.types.hazel;case "bramble":return c.types.bramble;case "ivy":return c.types.ivy;case "sedge":return c.types.sedge;case "foxglove":return c.types.foxglove;case "horsetail":return c.types.horsetail;case "dock":return c.types.dock;default:return null;}}
  static List<Placement> ReadPlacements(string file, CatalogDto cat, LibraryDto lib, out int skipped) {
   var lines = File.ReadAllLines(file); Require(lines.Length > 0 && lines[0].TrimEnd('\r') == "instanceId,type,assetKey,x,y,z,rotY_deg,scale,scaleY,auto,cliffStyle", "CSV header");
   var rows = new List<Placement>(); skipped = 0;
