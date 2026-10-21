@@ -1623,16 +1623,69 @@ function heroGlow(r, g, b) { for (const m of heroMats) m.emissive.setRGB(r, g, b
 const spawnMarker = new THREE.Mesh(new THREE.ConeGeometry(.5, 1.4, 6), new THREE.MeshBasicMaterial({ color: 0xffcc33 }));
 spawnMarker.rotation.x = Math.PI; scene.add(spawnMarker);
 const player = { x: 0, z: 0, y: 0, face: 0, moving: 0, t: 0 };
+// Footprint colliders for irregular solids (props with shape: true — rocks, cliff stones…): the outline of the mesh
+// itself instead of circles, so the hero stops at the stone and passes where there is none. On a 5 cm grid in the
+// prop's local frame (scale 1), top holds the mesh's highest point over each cell. Stone that rises more than
+// SHAPE_MIN_H (m, world) above the ground is solid; per scale, dist holds each cell's distance to the nearest solid
+// cell, so a body of radius r is blocked where dist * scale < r.
+const SHAPE_CELL = .05, SHAPE_PAD = 1, SHAPE_MIN_H = .1;
+function shapeFootprint(t) {
+  const g = t.geo, pos = g.attributes.position, ix = g.index, n = ix ? ix.count : pos.count, bb = g.boundingBox;
+  const x0 = bb.min.x - SHAPE_PAD, z0 = bb.min.z - SHAPE_PAD, nx = Math.ceil((bb.max.x + SHAPE_PAD - x0) / SHAPE_CELL) + 1, nz = Math.ceil((bb.max.z + SHAPE_PAD - z0) / SHAPE_CELL) + 1;
+  const top = new Float32Array(nx * nz).fill(-1e9), P = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
+  for (let f = 0; f < n; f += 3) {
+    for (let q = 0; q < 3; q++) { const v = ix ? ix.getX(f + q) : f + q; P[q][0] = pos.getX(v); P[q][1] = pos.getY(v); P[q][2] = pos.getZ(v); }
+    const [a, b, c] = P, den = (b[2] - c[2]) * (a[0] - c[0]) + (c[0] - b[0]) * (a[2] - c[2]);
+    const i0 = Math.max(0, Math.floor((Math.min(a[0], b[0], c[0]) - x0) / SHAPE_CELL)), i1 = Math.min(nx - 1, Math.ceil((Math.max(a[0], b[0], c[0]) - x0) / SHAPE_CELL));
+    const j0 = Math.max(0, Math.floor((Math.min(a[2], b[2], c[2]) - z0) / SHAPE_CELL)), j1 = Math.min(nz - 1, Math.ceil((Math.max(a[2], b[2], c[2]) - z0) / SHAPE_CELL));
+    for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
+      const x = x0 + i * SHAPE_CELL, z = z0 + j * SHAPE_CELL, k = j * nx + i;
+      if (Math.abs(den) < 1e-12) { if (Math.hypot(x - a[0], z - a[2]) < SHAPE_CELL) top[k] = Math.max(top[k], a[1], b[1], c[1]); continue; }   // seen edge-on
+      const w0 = ((b[2] - c[2]) * (x - c[0]) + (c[0] - b[0]) * (z - c[2])) / den, w1 = ((c[2] - a[2]) * (x - c[0]) + (a[0] - c[0]) * (z - c[2])) / den, w2 = 1 - w0 - w1;
+      if (w0 >= -1e-6 && w1 >= -1e-6 && w2 >= -1e-6) top[k] = Math.max(top[k], w0 * a[1] + w1 * b[1] + w2 * c[1]);
+    }
+  }
+  let R = 0;
+  for (let j = 0; j < nz; j++) for (let i = 0; i < nx; i++) if (top[j * nx + i] > 0) R = Math.max(R, Math.hypot(x0 + i * SHAPE_CELL, z0 + j * SHAPE_CELL));
+  // non-shared props sit .05 m into the ground (see rebuildProps)
+  return { x0, z0, nx, nz, top, R, sink: t.sharedAsset ? 0 : .05, fields: new Map() };
+}
+// distance field of a footprint for one scale (cached per 5 % step)
+function shapeField(f, s) {
+  const key = Math.round(s * 20); let d = f.fields.get(key); if (d) return d;
+  const { x0, z0, nx, nz, top } = f, min = (SHAPE_MIN_H + f.sink) / (key / 20), solid = k => top[k] > min, edge = [];
+  for (let j = 0; j < nz; j++) for (let i = 0; i < nx; i++) {
+    const k = j * nx + i; if (!solid(k)) continue;
+    if (i === 0 || j === 0 || i === nx - 1 || j === nz - 1 || !solid(k - 1) || !solid(k + 1) || !solid(k - nx) || !solid(k + nx)) edge.push(x0 + i * SHAPE_CELL, z0 + j * SHAPE_CELL);
+  }
+  const dist = new Float32Array(nx * nz);
+  for (let j = 0; j < nz; j++) for (let i = 0; i < nx; i++) {
+    const k = j * nx + i; if (solid(k)) continue;
+    const x = x0 + i * SHAPE_CELL, z = z0 + j * SHAPE_CELL; let m = 1e9;
+    for (let e = 0; e < edge.length; e += 2) m = Math.min(m, Math.hypot(edge[e] - x, edge[e + 1] - z));
+    dist[k] = m;
+  }
+  f.fields.set(key, d = { dist, edge }); return d;
+}
+// distance (m, world) from a point to the stone of a placed shape collider c = [x, z, R, y0, y1, footprint, cos, sin, scale]
+function shapeDist(c, x, z) {
+  const f = c[5], s = c[8], F = shapeField(f, s), dx = x - c[0], dz = z - c[1], lx = (dx * c[6] - dz * c[7]) / s, lz = (dx * c[7] + dz * c[6]) / s;
+  const i = Math.round((lx - f.x0) / SHAPE_CELL), j = Math.round((lz - f.z0) / SHAPE_CELL);
+  if (i >= 0 && j >= 0 && i < f.nx && j < f.nz) return F.dist[j * f.nx + i] * s;
+  let d = 1e9; for (let e = 0; e < F.edge.length; e += 2) d = Math.min(d, Math.hypot(F.edge[e] - lx, F.edge[e + 1] - lz));
+  return d * s;
+}
 let colliders = null, colliderMaxR = 0;
 function getColliders() {
   if (colliders) return colliders;
   colliders = new SpatialHash(4); colliderMaxR = 0;
-  // each collider: [x, z, radius, bottom y, top y]
-  const add = (x, z, r, y0, y1) => { colliders.add([x, z, r, y0, y1], x, z); colliderMaxR = Math.max(colliderMaxR, r); };
+  // each collider: [x, z, radius, bottom y, top y], plus [footprint, cos, sin, scale] for a shape collider (radius = its reach)
+  const add = (x, z, r, y0, y1, ...shape) => { colliders.add([x, z, r, y0, y1, ...shape], x, z); colliderMaxR = Math.max(colliderMaxR, r); };
   for (const p of props) {
     const t = PROP[p[0]], r = t.r * p[4]; if (r <= 0) continue;
     const y0 = p[7] ?? heightAt(p[1], p[2]), y1 = y0 + t.height * p[4] * (p[6] ?? 1);
-    if (t.offs) for (const [ox, oz] of t.offs) { const c = Math.cos(p[3]), sn = Math.sin(p[3]); add(p[1] + (ox * c + oz * sn) * p[4], p[2] + (-ox * sn + oz * c) * p[4], r, y0, y1); }
+    if (t.footprint) { const a = p[3] - (t.sharedAsset ? t.yawOffset * Math.PI / 180 : 0); add(p[1], p[2], t.footprint.R * p[4], y0, y1, t.footprint, Math.cos(a), Math.sin(a), p[4]); }
+    else if (t.offs) for (const [ox, oz] of t.offs) { const c = Math.cos(p[3]), sn = Math.sin(p[3]); add(p[1] + (ox * c + oz * sn) * p[4], p[2] + (-ox * sn + oz * c) * p[4], r, y0, y1); }
     else add(p[1], p[2], r, y0, y1);
   }
   for (const m of markers) if (isLink(m.kind)) { const sp = LINK_SPEC[m.kind], y0 = heightAt(m.x, m.z); for (const [lx, lz, r] of sp.solid) { const q = linkLocal(m, lx, lz); add(q.x, q.z, r, y0, y0 + sp.height); } }
@@ -1662,7 +1715,7 @@ function deckAt(x, z, margin) {
 function bodyClear(x, z, y) {
   const ag = state.agent; let ok = true;
   getColliders().query(x, z, ag.radius + colliderMaxR, c => {
-    if (ok && Math.hypot(c[0] - x, c[1] - z) < c[2] + ag.radius && (y === undefined || (c[4] > y + .05 && c[3] < y + ag.height))) ok = false;
+    if (ok && Math.hypot(c[0] - x, c[1] - z) - c[2] < ag.radius && (!c[5] || shapeDist(c, x, z) < ag.radius) && (y === undefined || (c[4] > y + .05 && c[3] < y + ag.height))) ok = false;
   });
   return ok;
 }
@@ -2202,7 +2255,7 @@ function ensureIds() {
 
 // ---------- asset catalog: typeId -> assetKey and the proxy collider the editor uses for walkability
 const EXPORTER_VERSION = 'tdj-map-editor/2026.10.19-r9';
-for (const t of PROP) { t.geo.computeBoundingBox(); t.meshTop = +t.geo.boundingBox.max.y.toFixed(2); t.height = t.height ?? t.meshTop; t.base = { r: t.r, offs: t.offs, height: t.height }; t.offs = t.offs ? t.offs.map(o => [o, 0]) : null; }   // internal offsets are [x, z] (see applyCatalog)
+for (const t of PROP) { t.geo.computeBoundingBox(); t.meshTop = +t.geo.boundingBox.max.y.toFixed(2); t.height = t.height ?? t.meshTop; t.base = { r: t.r, offs: t.offs, height: t.height }; t.offs = t.offs ? t.offs.map(o => [o, 0]) : null; if (t.shape && t.r > 0) t.footprint = shapeFootprint(t); }   // internal offsets are [x, z] (see applyCatalog)
 const isNum = (v, ok) => typeof v === 'number' && Number.isFinite(v) && (!ok || ok(v));
 // version 1 catalogs were a flat {typeId: entry} map; version 2 has {types, floorLinks}
 function normalizeCatalog(d) {

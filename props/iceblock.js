@@ -1,7 +1,7 @@
 // 氷塊（iceblock）
 TDProps.add({
   id: 'iceblock', name: '氷塊',
-  r: .75, min: 2, sc: [.7, 1.5], slope: 1.2, vis: 1, anyGround: true,
+  r: .75, min: 2, sc: [.7, 1.5], slope: 1.2, vis: 1, anyGround: true, shape: true,
   tags: ['snow', 'mountain'], height: 1.09, material: 'ice',
   build() {
     const { rng, mat4, displace, makeGeo, chisel, ICE_C } = TDGeo;

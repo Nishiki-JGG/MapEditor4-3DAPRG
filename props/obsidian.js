@@ -1,7 +1,7 @@
 // 黒曜石（obsidian）
 TDProps.add({
   id: 'obsidian', name: '黒曜石',
-  r: .4, min: 1.4, sc: [.7, 1.4], slope: 1.2, vis: .6, anyGround: true,
+  r: .4, min: 1.4, sc: [.7, 1.4], slope: 1.2, vis: .6, anyGround: true, shape: true,
   tags: ['volcano', 'demon', 'cave'], height: 1.58, material: 'gloss',
   build() {
     const { rng, col, mixc, mat4, makeGeo } = TDGeo;

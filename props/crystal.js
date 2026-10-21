@@ -1,7 +1,7 @@
 // 水晶（crystal）
 TDProps.add({
   id: 'crystal', name: '水晶',
-  r: .35, min: 1.2, sc: [.7, 1.5], slope: 1.2, vis: .6, anyGround: true, light: [0x7fd8ff, 14, .8],
+  r: .35, min: 1.2, sc: [.7, 1.5], slope: 1.2, vis: .6, anyGround: true, shape: true, light: [0x7fd8ff, 14, .8],
   tags: ['cave', 'demon'], height: 1.63,
   build() {
     const { rng, col, mixc, mat4, displace, makeGeo } = TDGeo;

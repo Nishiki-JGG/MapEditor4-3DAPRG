@@ -1,7 +1,7 @@
 // 崖石（cliff）
 TDProps.add({
   id: 'cliff', name: '崖石',
-  r: .5, offs: [-.72, 0, .72], min: 1.0, sc: [.9, 1.2], slope: 9, vis: 1.25, anyGround: true,
+  r: .5, offs: [-.72, 0, .72], min: 1.0, sc: [.9, 1.2], slope: 9, vis: 1.25, anyGround: true, shape: true,
   tags: ['common'], height: 2.36, material: 'rock',
   build() {
     const { clamp, hash2, rng, col, mixc, mat4, displace, makeGeo, chisel, strata, dropBottom } = TDGeo;
