@@ -1,4 +1,4 @@
-// 編集画面の操作（Revision 16）：マップ側の取り消し・やり直し、四角いブラシ、1〜9 のスロット、歩くモードでの編集、小物のツリー。
+// 編集画面の操作（Revision 16）：マップ側の取り消し・やり直し、四角いブラシ、1〜9 のスロット、歩くモードでの編集とブラシの範囲、小物のツリー。
 //   PW=<playwright のパス> node tests/editor_ui.js
 const { chromium } = require(process.env.PW || 'playwright');
 const path = require('path');
@@ -7,7 +7,7 @@ const path = require('path');
   const ctx = await b.newContext({ viewport: { width: 1300, height: 800 } }), p = await ctx.newPage();
   const errs = []; p.on('pageerror', e => errs.push(e.message)); p.on('console', m => { if (m.type() === 'error') errs.push(m.text()); });
   const url = 'file://' + path.resolve(__dirname, '..', 'index.html') + '#size=48';
-  await p.goto(url); await p.waitForTimeout(6000);
+  await p.goto(url, { timeout: 180000 }); await p.waitForTimeout(6000);
   const o = {};
   // 1) undo / redo on the map side (not inside the scrolling menu), and they work
   o.undoOnMap = await p.evaluate(() => { const u = document.getElementById('undo'), r = document.getElementById('redo'); return !!u && !!r && !u.closest('#panel') && !r.closest('#panel'); });
@@ -34,7 +34,7 @@ const path = require('path');
   const slotState = () => p.evaluate(() => { const A = window.__app; return { tool: A.state.tool, radius: A.state.radius, density: A.state.density, shape: A.state.brushShape, types: [...A.state.types].map(i => A.PROP[i].id).sort().join(',') }; });
   o.slotRecall = await slotState();
   await p.keyboard.press('Digit2'); o.slotDefault = (await slotState()).tool;
-  await p.reload(); await p.waitForTimeout(6000); await p.locator('#view').focus(); await p.keyboard.press('Digit3');
+  await p.reload({ timeout: 180000 }); await p.waitForTimeout(6000); await p.locator('#view').focus(); await p.keyboard.press('Digit3');
   o.slotAfterReload = await slotState();
   o.slotButton = await p.evaluate(() => document.querySelector('#slots button:nth-child(3)').textContent);
   // 4) walk mode: menu stays, a left drag with a brush edits the ground under the cursor
@@ -44,6 +44,15 @@ const path = require('path');
   const s0 = await sumH();
   await p.mouse.move(800, 420); await p.mouse.down(); await p.waitForTimeout(1500); await p.mouse.up(); await p.waitForTimeout(300);
   o.playEdit = { panelShown: await p.evaluate(() => getComputedStyle(document.getElementById('panel')).display !== 'none'), raised: +((await sumH()) - s0).toFixed(2), stillPlay: await p.evaluate(() => window.__app.state.mode === 'play') };
+  // 4b) the brush outline shows while walking and stays under a resting cursor as the camera follows the hero
+  const ringAt = () => p.evaluate(() => { let root = window.__app.terrain; while (root.parent) root = root.parent; let r = null; root.traverse(x => { if (x.isLineLoop) r = x; });
+    const a = r.geometry.attributes.position.array; let x = 0, z = 0; for (let k = 0; k < a.length; k += 3) { x += a[k]; z += a[k + 2]; } return { visible: r.visible, x: x / (a.length / 3), z: z / (a.length / 3) }; });
+  await p.evaluate(() => { const A = window.__app; A.genFlat(); A.updateTerrain(); A.rebuildProps(); A.setMode('edit'); A.setMode('play'); });
+  await p.mouse.move(700, 300); await p.mouse.move(705, 302); await p.waitForTimeout(300);
+  const z0 = await p.evaluate(() => window.__app.player.z), r0 = await ringAt();
+  await p.evaluate(() => { const A = window.__app; A.keys.clear(); A.keys.add('KeyW'); for (let i = 0; i < 60; i++) A.update(1 / 60); A.keys.clear(); });   // 1 s of walking, frame by frame
+  const r1 = await ringAt();
+  o.playRing = { visible: r0.visible && r1.visible, moved: +Math.hypot(r1.x - r0.x, r1.z - r0.z).toFixed(2), walked: +Math.abs((await p.evaluate(() => window.__app.player.z)) - z0).toFixed(2) };
   await p.evaluate(() => window.__app.setMode('edit'));
   // 5) prop tree: groups that fold, a group box checks the whole group, counts follow
   o.tree = await p.evaluate(() => {
@@ -65,6 +74,7 @@ const path = require('path');
     ['再読み込みしても登録が残る', JSON.stringify(o.slotAfterReload) === JSON.stringify(o.slotRecall)],
     ['スロットのボタンに内容が出る', /3.*小物を撒く/.test(o.slotButton)],
     ['歩くモードでもメニューが出て、ドラッグで地面を編集できる', o.playEdit.panelShown && o.playEdit.raised > 1 && o.playEdit.stillPlay],
+    ['歩くモードでもブラシの範囲が出て、歩くとカーソルに付いてくる', o.playRing.visible && o.playRing.moved > 1],
     ['小物はグループのツリーで、全種類が入っている', o.tree.names.length >= 5 && o.tree.listed === o.tree.total],
     ['グループの箱で全部入れる・外す（数も出る）', o.tree.allOn && o.tree.allOff && /^\d+\/\d+$/.test(o.tree.cnt) && o.tree.rockGroupHasRock],
     ['ページのエラー 0', errs.length === 0],

@@ -3860,6 +3860,11 @@ window.addEventListener('blur', () => keys.clear());
 // ============================================================
 // brush strokes and the brush outline, in the edit mode and while walking
 function editTick(dt) {
+  // while walking the camera follows the hero, so the ground under a resting cursor changes: look again every frame
+  if (state.mode === 'play' && pointerIn) {
+    hit = pick(lastXY[0], lastXY[1]);
+    if (stroke.active && hit && (state.tool === 'scatter' || state.tool === 'erase')) stampAt(hit);
+  }
   if (stroke.active && hit && !['scatter', 'erase', 'spawn', 'fall'].includes(state.tool)) {
     applyBrush(hit.x, hit.z, Math.min(dt, .05)); updateTerrain(); rebuildProps();
   }
