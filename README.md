@@ -1,6 +1,8 @@
 # MapEditor4-3DAPRG
 
 
+倒木・切り株・露出根・流木・木の柵を磨き込み、寸法を保ったまま三角形を削減した。[確認一覧](tests/prop_refine_view.html) / [変更と検証](docs/PROP_REFINE.md)。
+
 花畑を白・黄・桃・赤・青紫の5色で配置できる。色を並べたり混ぜたりして配色を作れる。[一覧と配置例](tests/flower_meadow_view.html) / [使い方と検証](docs/FLOWER_MEADOW.md)。
 [林縁と地被の自然物5種](docs/UNDERSTORY_SET.md)を追加し、既存キノコとスゲ・ロゼットも改善しました。最新mainの崖5種を含む既存74種を維持して計79種です。[新しい一覧プレビュー](tests/understory_view.html)で真上の形・大きさと風・接触を確認できます。
 
