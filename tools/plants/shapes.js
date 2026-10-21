@@ -5,12 +5,12 @@ function grass(count=11,height=.72,radius=.48){
  const P=[],C=[],U=[],uvMap=new Map(),R=TDGeo.rng(5721);
  const tri=(a,b,c,color)=>{P.push(...a,...b,...c);for(const v of [a,b,c]){C.push(...color);U.push(...(uvMap.get(v)||[.5,.5]));}};
  for(let k=0;k<count;k++){
-  const angle=k*2.399963+R()*.55,dx=Math.cos(angle),dz=Math.sin(angle),sx=-dz,sz=dx;
-  const bx=(R()-.5)*.12,bz=(R()-.5)*.12,h=height*(.52+R()*.48),reach=radius*(.65+R()*.35),width=.022+R()*.022;
+  const angle=[.35,1.2,3.1,4.8][k%4]+(R()-.5)*1.25,dx=Math.cos(angle),dz=Math.sin(angle),sx=-dz,sz=dx;
+  const bx=(R()-.5)*.23,bz=(R()-.5)*.23,h=height*(.52+R()*.48),reach=radius*(.40+R()*.60),width=.033+R()*.025,bend=(R()-.5)*radius*.5;
   const rows=[];
   for(const t of [0,.34,.72,1]){
-   const reachT=reach*t*t,y=t===0?0:h*Math.sin(t*Math.PI*.68),w=t===1?0:width*Math.sin(.18+t*Math.PI*.82),ridge=w*.27;
-   rows.push([[-w,0],[0,ridge],[w,0]].map(([s,up])=>[bx+dx*reachT+sx*s,y+up,bz+dz*reachT+sz*s]));
+   const reachT=reach*t*t,y=t===0?0:h*Math.sin(t*Math.PI*.68),w=t===1?0:width*Math.sin(.10+t*Math.PI*.90),ridge=w*.27,curve=bend*Math.sin(t*Math.PI*.8);
+   rows.push([[-w,0],[0,ridge],[w,0]].map(([s,up])=>[bx+dx*reachT+sx*(s+curve),y+up,bz+dz*reachT+sz*(s+curve)]));
   }
   for(let j=0;j<rows.length;j++)for(let n=0;n<3;n++)uvMap.set(rows[j][n],[n/2,[0,.34,.72,1][j]]);
   const c=new T.Color().setHSL(.22+R()*.025,.32+R()*.10,.22+R()*.10);
