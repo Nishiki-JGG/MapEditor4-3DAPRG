@@ -19,6 +19,15 @@ for id in ids:
  assert not a.get('motionWeights') and not a.get('wind') and not a.get('contact') and a['material']['alphaCutoff']==0 and not a['material']['doubleSided']
  after_config=next(x for x in after_review['meta'] if x['id']==id)['config']
  for key in ['name','r','offs','min','sc','slope','vis','anyGround','tags','height','touch','tree','canopy','sway']:assert before['config'].get(key)==after_config.get(key),(id,key)
+ # A shared ring must not restart its longitudinal texture coordinate.
+ surface={}
+ pairs=np.array(a['uv']).reshape(-1,2)
+ for point,coord in zip(p,pairs):
+  bark=coord[0]<(.86 if id in ['driftwood','woodfence'] else .5)
+  if not bark:continue
+  key=tuple(np.round(point,5))+(round(float(coord[0]),5),)
+  surface.setdefault(key,[]).append(float(coord[1]))
+ for values in surface.values():assert max(values)-min(values)<1e-5,(id,'longitudinal UV seam')
  rows.append(dict(id=id,before=before['triangles'],after=len(t),delta=len(t)-before['triangles'],boundsErrorMetres=float(max(np.max(abs(p.min(axis=0)-before['lo'])),np.max(abs(p.max(axis=0)-before['hi']))))))
 tex=d['textures'][-1];assert tex['width']==tex['height']==256 and tex['mipmaps'] and tex['filter']=='trilinear'
 r=dict(status='Passed',unchangedAssets=27,oldTexturesUnchanged=5,rows=rows,triangleDelta=sum(x['delta'] for x in rows),newPNGBytes=len(base64.b64decode(tex['png'])),newTextureDimensions=[256,256]);(out/'refine-source-validation.json').write_text(json.dumps(r,indent=2),encoding='utf-8');print(json.dumps(r,indent=2))
