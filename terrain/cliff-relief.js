@@ -13,13 +13,13 @@ function build(source,heightAt,half,mask) {
     const f=[I[i],I[i+1],I[i+2]];a.fromBufferAttribute(P,f[0]);b.fromBufferAttribute(P,f[1]);c.fromBufferAttribute(P,f[2]);
     ab.subVectors(b,a);ac.subVectors(c,a);const up=ab.cross(ac).normalize().y;
     if(up>=.72)continue;
-    faces.push(f);for(const [u,v]of [[f[0],f[1]],[f[1],f[2]],[f[2],f[0]]]){const k=edge(u,v);edges.set(k,(edges.get(k)||0)+1);}
+    f.sourceFace=i/3;faces.push(f);for(const [u,v]of [[f[0],f[1]],[f[1],f[2]],[f[2],f[0]]]){const k=edge(u,v);edges.set(k,(edges.get(k)||0)+1);}
   }
   const rimVertices=new Set();
   for(const [key,count]of edges)if(count===1)for(const id of key.split(':'))rimVertices.add(+id);
   const steps=Math.max(1,Math.min(4,Math.floor(Math.sqrt(64000/Math.max(1,faces.length)))));
   const sizes={position:3,splatA:4,splatB:4,splatC:1,cliffT:3,cliffM:4,cliffW:2,reliefSlope:1};
-  const arrays=Object.fromEntries(Object.keys(sizes).map(k=>[k,[]])),triangles=[],cache=new Map();let maxOffset=0;
+  const arrays=Object.fromEntries(Object.keys(sizes).map(k=>[k,[]])),triangles=[],sourceFaceIds=[],cache=new Map();let maxOffset=0;
   for(const f of faces){
     const ids=[],bound=[edges.get(edge(f[1],f[2]))===1,edges.get(edge(f[2],f[0]))===1,edges.get(edge(f[0],f[1]))===1];
     for(let u=0;u<=steps;u++){
@@ -45,13 +45,14 @@ function build(source,heightAt,half,mask) {
       }
     }
     for(let u=0;u<steps;u++)for(let v=0;v<steps-u;v++){
-      triangles.push(ids[u][v],ids[u+1][v],ids[u][v+1]);
-      if(v<steps-u-1)triangles.push(ids[u+1][v],ids[u+1][v+1],ids[u][v+1]);
+      triangles.push(ids[u][v],ids[u+1][v],ids[u][v+1]);sourceFaceIds.push(f.sourceFace);
+      if(v<steps-u-1){triangles.push(ids[u+1][v],ids[u+1][v+1],ids[u][v+1]);sourceFaceIds.push(f.sourceFace);}
     }
   }
   const g=new THREE.BufferGeometry();for(const name of Object.keys(sizes))g.setAttribute(name,new THREE.Float32BufferAttribute(arrays[name],sizes[name]));
   g.setIndex(triangles);g.computeVertexNormals();g.computeBoundingBox();g.computeBoundingSphere();
   g.userData={sourceFaces:faces.length,subdivision:steps,triangles:triangles.length/3,maxOffset,walkingHeightfieldChanged:false};
+  Object.defineProperty(g.userData,'sourceFaceIds',{value:sourceFaceIds,enumerable:false});
   return g;
 }
 function exportMesh(g,half,yZero){
