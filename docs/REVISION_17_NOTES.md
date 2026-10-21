@@ -74,4 +74,4 @@
   - ページのエラー 0
 - ファイル名は、ページが付ける名前（`a.download`）で確かめています。Chromium は `file://` で開いたページの付けた名前を使わないため、試験の中では受け取ったファイルの名前ではなく、こちらを見ています。GitHub Pages（https）では、付けた名前で保存されます。
 
-- 全体の回帰テスト：実行中（結果はこの後に追記します）。
+- 全体の回帰テスト：22 本すべて合格（smoke・edtest・walktest・secret・bridgetest・v5test・uitest・linkui・reviewtest・sizetest・s2test・cptest・fix6test、rev3_acceptance・rev4_acceptance・rev5_terrain_grid・sample2_secret、editor_ui・map_name_light・secret_climb・touch_sway・water_export）。
