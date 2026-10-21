@@ -74,4 +74,4 @@
 
 - `tests/secret_climb.js`：合格（通路 88 か所・104 回、1 コマの床の変化は最大 0.167m、崖の上に上がった回数 0）。
 - `tests/touch_sway.js`：9 項目すべて合格。
-- 全体の回帰テスト：実行中（結果はこの後に追記します）。
+- 全体の回帰テスト：17 本すべて合格（smoke・edtest・walktest・secret・bridgetest・v5test・uitest・linkui・reviewtest・sizetest・s2test・cptest・fix6test、rev3_acceptance・rev4_acceptance・rev5_terrain_grid・sample2_secret）。ページのエラー 0。
