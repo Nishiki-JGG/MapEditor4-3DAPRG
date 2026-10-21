@@ -2110,58 +2110,39 @@ function eraseAt(x, z) {
   if (props.length !== n0) rebuildProps();
 }
 // keeps generated rocks off waterfalls (their sheet and stream) and bridge decks
-function nearFeature(x, z) {
+function nearFeature(x, z, margin = 0) {
   for (const f of falls) {
     const [ux, uz] = fallDir(f), cx = f.x + ux, cz = f.z + uz, ax = x - cx, az = z - cz;
-    if (Math.abs(ax * uz - az * ux) < f.w * .5 + .35 && Math.abs(ax * ux + az * uz) < 2) return true;
-    if (f.sx !== undefined && distToPolyline(x, z, [[cx, cz], [f.sx, f.sz]]) < f.w * .5 + .8) return true;
+    if (Math.abs(ax * uz - az * ux) < f.w * .5 + .35 + margin && Math.abs(ax * ux + az * uz) < 2 + margin) return true;
+    if (f.sx !== undefined && distToPolyline(x, z, [[cx, cz], [f.sx, f.sz]]) < f.w * .5 + .8 + margin) return true;
   }
-  for (const b of bridges) if (distToPolyline(x, z, [[b.x1, b.z1], [b.x2, b.z2]]) < b.w / 2 + .8) return true;
-  for (const st of stairs) if (distToPolyline(x, z, [[st.x1, st.z1], [st.x2, st.z2]]) < st.w / 2 + .9) return true;
+  for (const b of bridges) if (distToPolyline(x, z, [[b.x1, b.z1], [b.x2, b.z2]]) < b.w / 2 + .8 + margin) return true;
+  for (const st of stairs) if (distToPolyline(x, z, [[st.x1, st.z1], [st.x2, st.z2]]) < st.w / 2 + .9 + margin) return true;
   return false;
 }
 const nearEdge = (x, z) => Math.max(Math.abs(x), Math.abs(z)) > HALF - 2.5;   // the map's outer rim is left alone
 function autoRocks(seed = Date.now()) {
-  const R = rng(seed | 0);
+  // Replace generated dressing only; authored objects and ground vegetation stay intact.
   props = props.filter(p => p[5] !== 1);
-  const hash = buildPropHash();
-  // stacked stone columns that dress every cliff face
-  const ch = new SpatialHash(3), e = .4;
-  const pts = [];
-  for (let j = 1; j < N - 1; j++) for (let i = 1; i < N - 1; i++) pts.push([vx(i) + (R() - .5) * .4, vx(j) + (R() - .5) * .4]);
-  for (let k = pts.length - 1; k > 0; k--) { const m = (R() * (k + 1)) | 0; [pts[k], pts[m]] = [pts[m], pts[k]]; }
-  for (const [x, z] of pts) {
-    if (nearEdge(x, z) || slopeAt(x, z) < 1.3 || nearFeature(x, z)) continue;
-    const gx = (heightAt(x + e, z) - heightAt(x - e, z)) / (2 * e), gz = (heightAt(x, z + e) - heightAt(x, z - e)) / (2 * e), gl = Math.hypot(gx, gz);
-    const ux = gx / gl, uz = gz / gl;
-    let hT = heightAt(x, z), hB = hT;
-    for (let d = .25; d <= 2.5; d += .25) { hT = Math.max(hT, heightAt(x + ux * d, z + uz * d)); hB = Math.min(hB, heightAt(x - ux * d, z - uz * d)); }
-    const drop = hT - hB; if (drop < .9) continue;
-    const px = x - ux * .35, pz = z - uz * .35;
-    if (nearEdge(px, pz)) continue;
-    let ok = true; ch.query(px, pz, 2, p => { if (ok && Math.hypot(p[1] - px, p[2] - pz) < 1.45) ok = false; });
-    if (!ok) continue;
-    const below = Math.max(hB, state.water - .6), span = hT - below - .05;
-    const layers = Math.max(1, Math.round(span / 2.3)), rot = Math.atan2(-ux, -uz);
-    for (let L = 0; L < layers; L++) {
-      // upper layers step back into the cliff a little, like weathered strata
-      const back = (L - (layers - 1) / 2) * .18, w = .95 + R() * .25;
-      const p = [4, px + ux * back, pz + uz * back, rot + (R() - .5) * .35, w, 1, span / layers / 2.25, below - .1 + span * L / layers];
-      props.push(p); if (L === 0) ch.add(p, px, pz);
+  const hash=buildPropHash(),cliffType=TYPE('cliff'),rockType=TYPE('rock');
+  const maxR=Math.max(...PROP.map(t=>t.footprint?.R||t.r||0));
+  const blockedAt=(x,z,r)=>{let blocked=false;hash.query(x,z,r+maxR*2,p=>{const t=PROP[p[0]];if(t.r>0&&Math.hypot(p[1]-x,p[2]-z)<r+(t.footprint?.R||t.r)*p[4])blocked=true;});return blocked;};
+  const protectedAt=(x,z,r)=>{
+    if(nearFeature(x,z,r+state.agent.radius))return true;
+    for(let k=0;k<9;k++){
+      const a=k/8*Math.PI*2,px=x+(k<8?Math.cos(a)*r:0),pz=z+(k<8?Math.sin(a)*r:0);
+      if(nearFeature(px,pz)||[1,3].includes(overrideAt(px,pz)))return true;
     }
-  }
-  for (let j = 2; j < N - 2; j++) for (let i = 2; i < N - 2; i++) {
-    const x = vx(i) + (R() - .5) * .5, z = vx(j) + (R() - .5) * .5, s = slopeAt(x, z);
-    if (nearEdge(x, z) || s < 1.1 || R() > .07 || nearFeature(x, z)) continue;
-    // drop to the foot or the lip of the cliff, whichever is lower-risk to overlap
-    const e = .4, gx = (heightAt(x + e, z) - heightAt(x - e, z)) / (2 * e), gz = (heightAt(x, z + e) - heightAt(x, z - e)) / (2 * e), gl = Math.hypot(gx, gz) || 1;
-    const foot = R() < .7, off = foot ? -1.1 : .9;
-    const px = x + gx / gl * off, pz = z + gz / gl * off;
-    if (nearEdge(px, pz)) continue;
-    let ok = true; hash.query(px, pz, 3, p => { if (ok && Math.hypot(p[1] - px, p[2] - pz) < 1.2) ok = false; });
-    if (!ok) continue;
-    const p = [2, px, pz, R() * Math.PI * 2, (foot ? 1.1 : .7) + R() * 1.1, 1]; props.push(p); hash.add(p, px, pz);
-  }
+    if(Math.hypot(x-state.spawn.x,z-state.spawn.z)<r+state.agent.arrivalClearance+.6)return true;
+    for(const m of markers){
+      const radius=Math.max(1.5,m.safeRadius||m.reserveRadius||m.r||0);
+      if(Math.hypot(x-m.x,z-m.z)<r+radius+.5)return true;
+      if(isLink(m.kind)){const a=linkArrival(m);if(Math.hypot(x-a.x,z-a.z)<r+state.agent.arrivalClearance+.6)return true;}
+    }
+    return false;
+  };
+  const box=PROP[cliffType].geo.boundingBox;
+  props.push(...TDCliffPlacement.generate({size:SIZE,heightAt,water:state.water,seed,cliffType,rockType,cliffHeight:box.max.y,cliffDepth:box.max.z-box.min.z,cliffWidth:box.max.x-box.min.x,rockHeight:PROP[rockType].height,protectedAt,blockedAt}));
   rebuildProps();
 }
 
@@ -2300,7 +2281,6 @@ function genSample(seed = 7) {
     put(6, sstep(4.2, 2.6, Math.hypot(x + 20, z + 19) + n) + sstep(1.6, .8, distToPolyline(x, z, [[-20, -19], [-12, -24], [-6, -27]]) + n * .4));
     put(2, sstep(2.4, 1.2, distToPolyline(x, z, river) - (3.1 + 1.1 * Math.sin(z * .18)) - 1.8 + n * .5) * (x > 12 && z > 6 ? 1 : 0));
   }
-  autoRocks(seed * 13);
   falls = []; autoFalls(R);
   bridgeAlong(path3, 2.6);
   bridgeAlong([[8, -21], [27, -21]], 1.6, 'vine');
@@ -2320,6 +2300,7 @@ function genSample(seed = 7) {
   for (const m of markers) m.tag = m.kind === 'port' ? 'field' : m.kind === 'down' ? 'B2' : m.kind === 'up' ? 'B0' : m.kind === 'warp' ? 'hub' : '';
   state.spawn = { x: 1, z: 20 };
   props = props.filter(p => !markers.some(m => isLink(m.kind) && Math.hypot(p[1] - m.x, p[2] - m.z) < 3.4 + PROP[p[0]].r * p[4])); rebuildProps();
+  autoRocks(seed * 13);
   ensureIds(); rebuildMarkers();
 }
 
@@ -2342,7 +2323,7 @@ function ensureIds() {
 }
 
 // ---------- asset catalog: typeId -> assetKey and the proxy collider the editor uses for walkability
-const EXPORTER_VERSION = 'tdj-map-editor/2026.10.21-r18';
+const EXPORTER_VERSION = 'tdj-map-editor/2026.10.21-r19';
 for (const t of PROP) { t.geo.computeBoundingBox(); t.meshTop = +t.geo.boundingBox.max.y.toFixed(2); t.height = t.height ?? t.meshTop; t.base = { r: t.r, offs: t.offs, height: t.height }; t.offs = t.offs ? t.offs.map(o => [o, 0]) : null; if (t.shape && t.r > 0) t.footprint = shapeFootprint(t); }   // internal offsets are [x, z] (see applyCatalog)
 const isNum = (v, ok) => typeof v === 'number' && Number.isFinite(v) && (!ok || ok(v));
 // version 1 catalogs were a flat {typeId: entry} map; version 2 has {types, floorLinks}
@@ -3795,7 +3776,7 @@ requestAnimationFrame(frame);
 
 // hooks for automated checks
 window.__app = {
-  pavingMask, cliffRelief, rebuildCliffRelief, groundTrial, groundTexture, terrain, renderer, camera, SIZE, state, H, S, O, F, C, propMeshes, ghostMeshes, cliffIndexAt, BIOMES, CLIFF_STYLES, applyCliffStyle, deckAt, linkDeckAt, runValidation, genSample, genSample2, secretRegions, secretLineX, passageGeometry, terrainRes, TERRAIN_RES, snapshot, sha256, LINK_KINDS, normalizeCatalog, catalogExport, valueIssues, areaIssue, deckAt, getColliders, PROP, get colliderMaxR() { return colliderMaxR; }, rebuildMarkers, linkTrigger, linkArrival, LINK_SPEC, get markers() { return markers; }, placeMarker, ensureIds, applyCatalog, ATMOS, WEATHER, applyAtmo, makeCoast, glowLights, applyBiome, applyPalette, propVisible, toolVisible, updateTerrain, rebuildProps, genFlat, floorAt, bridgeAt, stairsAt, placeSlope, placeStairs, placeBridge, pickTarget, regenGroundProps, rebuildBridges, get stairs() { return stairs; }, get bridges() { return bridges; }, get falls() { return falls; }, overrideAt, heroMat, hero, heroBody, get heroLook() { return heroLook; }, setHeroLook, heroStyle, heroGlow, get ghosts() { return ghosts; }, get props() { return props; }, cam, playCam, player, keys, setMode, setTool, update, heightAt, walkable, slope: slopeAt,
+  autoRocks, pavingMask, cliffRelief, rebuildCliffRelief, groundTrial, groundTexture, terrain, renderer, camera, SIZE, state, H, S, O, F, C, propMeshes, ghostMeshes, cliffIndexAt, BIOMES, CLIFF_STYLES, applyCliffStyle, deckAt, linkDeckAt, runValidation, genSample, genSample2, secretRegions, secretLineX, passageGeometry, terrainRes, TERRAIN_RES, snapshot, sha256, LINK_KINDS, normalizeCatalog, catalogExport, valueIssues, areaIssue, deckAt, getColliders, PROP, get colliderMaxR() { return colliderMaxR; }, rebuildMarkers, linkTrigger, linkArrival, LINK_SPEC, get markers() { return markers; }, placeMarker, ensureIds, applyCatalog, ATMOS, WEATHER, applyAtmo, makeCoast, glowLights, applyBiome, applyPalette, propVisible, toolVisible, updateTerrain, rebuildProps, genFlat, floorAt, bridgeAt, stairsAt, placeSlope, placeStairs, placeBridge, pickTarget, regenGroundProps, rebuildBridges, get stairs() { return stairs; }, get bridges() { return bridges; }, get falls() { return falls; }, overrideAt, heroMat, hero, heroBody, get heroLook() { return heroLook; }, setHeroLook, heroStyle, heroGlow, get ghosts() { return ghosts; }, get props() { return props; }, cam, playCam, player, keys, setMode, setTool, update, heightAt, walkable, slope: slopeAt,
   stroke(x, z, frames = 20, opts = {}) {
     hit = new THREE.Vector3(x, heightAt(x, z), z); beginStroke({ shiftKey: !!opts.shift });
     for (let f = 0; f < frames; f++) { if (stroke.active && !['scatter', 'erase'].includes(state.tool)) { applyBrush(x, z, 1 / 60); } }
