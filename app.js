@@ -25,7 +25,7 @@ let markers = [];                         // game markers: {id, kind, x, z, rot,
 const state = {
   roomId: '', nextId: 1, revision: 0, lastExportHash: '', catalog: { types: {}, floorLinks: {} },
   agent: { radius: .3, height: 1.8, maxSlopeDeg: 51.3, maxWaterDepth: .9, maxStep: .5, arrivalClearance: .5 },   // who the walkability is computed for
-  biome: 'forest', palette: 'all', cliffStyle: 'standard', sunOn: true, sea: false, weather: { kind: 'none', amount: .7 }, atmo: { kind: 'none', amount: .6, height: 3 },
+  biome: 'forest', palette: 'all', cliffStyle: 'standard', sunOn: true, darkness: 'dark', mapName: '', sea: false, weather: { kind: 'none', amount: .7 }, atmo: { kind: 'none', amount: .6, height: 3 },
   variant: { bridge: 'wood', stairs: 'stone', place: 0, marker: 'port', link: 'warp', cliffpaint: 1 }, placeScale: 1, placeRot: 0, placeRandom: true,
   mode: 'edit', tool: 'plateau', radius: 4, strength: .6, density: .6, brushShape: 'circle',
   types: new Set([0, 1]), water: .8, spawn: { x: 0, z: 22 },
@@ -96,6 +96,11 @@ Object.assign(sun.shadow.camera, { left: -(SIZE / 2 + 16), right: SIZE / 2 + 16,
 const FOG_K = Math.max(1, SIZE / 64);   // keep distance fog off the far side of big maps
 sun.shadow.bias = -.0004; sun.shadow.normalBias = .04;
 scene.add(sun, sun.target);
+// without sunlight (caves): how much light the room still gets. dark = only the room's own lights (torches, crystals…)
+// and a faint sky; normal / bright add sky light and a soft shadowless light from above so the room reads clearly
+const DARK_LEVELS = { dark: { name: '暗い（明かりだけ）', hemi: 1, fill: 0 }, normal: { name: 'ふつう', hemi: 2.2, fill: 1.6 }, bright: { name: '明るい', hemi: 3.5, fill: 3.2 } };
+const fill = new THREE.DirectionalLight(0xffffff, 0);
+fill.position.set(-12, 60, 18); fill.visible = false; scene.add(fill, fill.target);
 
 // ---------- shared GLSL ----------
 const GLSL_NOISE = `
@@ -1146,7 +1151,10 @@ let weatherHemi = 1, flash = 0;
 function applyWeather() {
   const W = WEATHER[state.weather.kind] || WEATHER.none, k = state.weather.amount, B = BIOME(), on = state.weather.kind !== 'none';
   const light = on ? lerp(1, W.light ?? 1, k) : 1;
-  sun.intensity = state.sunOn ? B.sunI * light : 0; sun.visible = state.sunOn;   // off: no sun and no sun shadows (caves) weatherHemi = hemi.intensity = B.hemi * (.55 + .45 * light);
+  sun.intensity = state.sunOn ? B.sunI * light : 0; sun.visible = state.sunOn;   // off: no sun and no sun shadows (caves)
+  const D = state.sunOn ? null : DARK_LEVELS[state.darkness] || DARK_LEVELS.dark;
+  weatherHemi = hemi.intensity = B.hemi * (.55 + .45 * light) * (D ? D.hemi : 1);
+  fill.visible = !!D && D.fill > 0; fill.intensity = D ? D.fill * light : 0; fill.color.setHex(B.sun);   // fill: absolute intensity in the biome's light colour
   BU.uWind.value.set(WIND_DIR.x, WIND_DIR.y, on ? (W.wind || 0) * k : 0);
   BU.uWet.value = on ? (W.wet || 0) * k : 0;
   BU.uSnow.value = B.snow || 0; BU.uSnowLine.value = B.snowLine ?? -100;
@@ -1164,7 +1172,7 @@ function applyWeather() {
   veil.visible = !!(on && W.veil);
   if (veil.visible) { veilMat.uniforms.uVCol.value.setRGB(...W.veil.color); veilMat.uniforms.uVAlpha.value = W.veil.alpha * k; veilMat.uniforms.uStreak.value = W.veil.streak; }
   if (on && W.fogColor) scene.fog.color.lerp(new THREE.Color().setRGB(...W.fogColor), k * .8);
-  if ($('sunOn')) $('sunOn').checked = state.sunOn;
+  if ($('sunOn')) { $('sunOn').checked = state.sunOn; $('darkRow').hidden = state.sunOn; $('darkness').value = state.darkness; }
   if ($('weatherKind')) { $('weatherKind').value = state.weather.kind; $('weatherAmount').value = k; $('weatherAmountV').textContent = k.toFixed(2); }
 }
 
@@ -2041,8 +2049,8 @@ const TOOLS = [
   { id: 'walkAuto', name: '自動に戻す', key: 'j', hint: '塗った所の上書きを消し、自動判定に戻します。' },
 ];
 const undoStack = [], redoStack = [];
-const snapshot = () => ({ H: H.slice(), S: S.slice(), O: O.slice(), C: C.slice(), P: props.map(p => p.slice()), F: falls.map(f => ({ ...f })), B: bridges.map(b => ({ ...b })), T: stairs.map(st => ({ ...st })), W: state.water, sp: { ...state.spawn }, bi: state.biome, at: { ...state.atmo }, sea: state.sea, we: { ...state.weather }, sun: state.sunOn, M: markers.map(m => ({ ...m })), nid: state.nextId, rid: state.roomId, cat: JSON.stringify(state.catalog), ag: { ...state.agent }, cs: state.cliffStyle });
-function restore(s) { H.set(s.H); S.set(s.S); O.set(s.O); if (s.C) C.set(s.C); else C.fill(0); walkDirty = true; props = s.P.map(p => p.slice()); falls = s.F.map(f => ({ ...f })); bridges = s.B.map(b => ({ ...b })); stairs = (s.T || []).map(st => ({ ...st })); state.water = s.W; state.spawn = { ...s.sp }; if (s.at) state.atmo = { ...s.at }; if (s.we) state.weather = { ...s.we }; state.sunOn = s.sun !== false; markers = (s.M || []).map(m => ({ ...m })); state.nextId = s.nid || state.nextId; state.roomId = s.rid || state.roomId; if (s.cat) { state.catalog = JSON.parse(s.cat); applyCatalog(); } if (s.ag) { state.agent = { ...s.ag }; syncAgentUI(); colliders = null; } state.cliffStyle = s.cs || 'standard'; applyCliffStyle(); if ($('cliffStyle')) $('cliffStyle').value = state.cliffStyle; rebuildMarkers(); state.sea = !!s.sea; applyBiome(s.bi || state.biome); syncUI(); updateTerrain(); rebuildProps(); rebuildFalls(); rebuildBridges(); rebuildStairs(); }
+const snapshot = () => ({ H: H.slice(), S: S.slice(), O: O.slice(), C: C.slice(), P: props.map(p => p.slice()), F: falls.map(f => ({ ...f })), B: bridges.map(b => ({ ...b })), T: stairs.map(st => ({ ...st })), W: state.water, sp: { ...state.spawn }, bi: state.biome, at: { ...state.atmo }, sea: state.sea, we: { ...state.weather }, sun: state.sunOn, dk: state.darkness, M: markers.map(m => ({ ...m })), nid: state.nextId, rid: state.roomId, cat: JSON.stringify(state.catalog), ag: { ...state.agent }, cs: state.cliffStyle });
+function restore(s) { H.set(s.H); S.set(s.S); O.set(s.O); if (s.C) C.set(s.C); else C.fill(0); walkDirty = true; props = s.P.map(p => p.slice()); falls = s.F.map(f => ({ ...f })); bridges = s.B.map(b => ({ ...b })); stairs = (s.T || []).map(st => ({ ...st })); state.water = s.W; state.spawn = { ...s.sp }; if (s.at) state.atmo = { ...s.at }; if (s.we) state.weather = { ...s.we }; state.sunOn = s.sun !== false; state.darkness = s.dk || 'dark'; markers = (s.M || []).map(m => ({ ...m })); state.nextId = s.nid || state.nextId; state.roomId = s.rid || state.roomId; if (s.cat) { state.catalog = JSON.parse(s.cat); applyCatalog(); } if (s.ag) { state.agent = { ...s.ag }; syncAgentUI(); colliders = null; } state.cliffStyle = s.cs || 'standard'; applyCliffStyle(); if ($('cliffStyle')) $('cliffStyle').value = state.cliffStyle; rebuildMarkers(); state.sea = !!s.sea; applyBiome(s.bi || state.biome); syncUI(); updateTerrain(); rebuildProps(); rebuildFalls(); rebuildBridges(); rebuildStairs(); }
 function pushUndo() { undoStack.push(snapshot()); if (undoStack.length > 40) undoStack.shift(); redoStack.length = 0; }
 function undo() { if (!undoStack.length) return; redoStack.push(snapshot()); restore(undoStack.pop()); toast('取り消し'); }
 function redo() { if (!redoStack.length) return; undoStack.push(snapshot()); restore(redoStack.pop()); toast('やり直し'); }
@@ -3050,7 +3058,7 @@ function serialize() {
     format: 'map-editor-proto', version: 2, size: SIZE, resolution: RES, vertices: N,
     roomId: (ensureIds(), state.roomId), nextId: state.nextId, revision: state.revision, lastExportHash: state.lastExportHash, agent: { ...state.agent }, catalog: state.catalog,
     markers: markers.map(m => ({ ...m })),
-    waterLevel: state.water, spawn: state.spawn, biome: state.biome, cliffStyle: state.cliffStyle, sea: state.sea, atmosphere: { ...state.atmo }, weather: { ...state.weather }, sunlight: state.sunOn,
+    waterLevel: state.water, spawn: state.spawn, biome: state.biome, cliffStyle: state.cliffStyle, sea: state.sea, atmosphere: { ...state.atmo }, weather: { ...state.weather }, sunlight: state.sunOn, darkness: state.darkness, name: state.mapName,
     heightsF32: b64(new Uint8Array(H.slice().buffer)), splat: b64(S), walkOverride: b64(O), cliffMap: b64(C),   // exact heights: save → load → export reproduces the RAW
     propTypes: PROP.map(p => p.id),
     // full precision (JSON keeps doubles exactly), so a reloaded map exports byte-identical files
@@ -3103,7 +3111,7 @@ function deserialize(d) {
   if (issues.length) throw new Error(`不正な値が ${issues.length} 件あります: ` + issues.slice(0, 3).join(' / ') + (issues.length > 3 ? ' …' : ''));
   H.set(newH);
   if (spLayers === NS) S.set(sp); else { S.fill(0); for (let k = 0; k < N * N; k++) for (let c = 0; c < spLayers; c++) S[k * NS + c] = sp[k * spLayers + c]; }
-  O.set(wo); C.set(cm); walkDirty = true; props = d.props.map(p => p.slice()); falls = (d.falls || []).map(f => ({ ...f })); bridges = (d.bridges || []).map(b => ({ ...b })); stairs = (d.stairs || []).map(st => ({ ...st })); rebuildFalls(); rebuildBridges(); rebuildStairs(); state.water = d.waterLevel; state.spawn = d.spawn; state.sea = !!d.sea; state.weather = d.weather ? { ...d.weather } : { kind: 'none', amount: .7 }; state.sunOn = d.sunlight !== false; state.cliffStyle = CLIFF_STYLES.some(c => c[0] === d.cliffStyle) ? d.cliffStyle : 'standard'; applyCliffStyle(); if ($('cliffStyle')) $('cliffStyle').value = state.cliffStyle; state.atmo = d.atmosphere ? { ...d.atmosphere } : { kind: 'none', amount: .6, height: 3 };
+  O.set(wo); C.set(cm); walkDirty = true; props = d.props.map(p => p.slice()); falls = (d.falls || []).map(f => ({ ...f })); bridges = (d.bridges || []).map(b => ({ ...b })); stairs = (d.stairs || []).map(st => ({ ...st })); rebuildFalls(); rebuildBridges(); rebuildStairs(); state.water = d.waterLevel; state.spawn = d.spawn; state.sea = !!d.sea; state.weather = d.weather ? { ...d.weather } : { kind: 'none', amount: .7 }; state.sunOn = d.sunlight !== false; state.darkness = DARK_LEVELS[d.darkness] ? d.darkness : 'dark'; setMapName(typeof d.name === 'string' ? d.name : ''); state.cliffStyle = CLIFF_STYLES.some(c => c[0] === d.cliffStyle) ? d.cliffStyle : 'standard'; applyCliffStyle(); if ($('cliffStyle')) $('cliffStyle').value = state.cliffStyle; state.atmo = d.atmosphere ? { ...d.atmosphere } : { kind: 'none', amount: .6, height: 3 };
   state.roomId = d.roomId || newRoomId(); state.nextId = d.nextId || 1; state.revision = d.revision || 0;
   state.agent = { ...state.agent, ...(d.agent || {}) }; state.catalog = normalizeCatalog(d.catalog); state.lastExportHash = d.lastExportHash || ''; applyCatalog(); syncAgentUI();
   markers = (d.markers || []).map(m => ({ ...m })); ensureIds();
@@ -3304,7 +3312,8 @@ async function buildExport() {
     groundTypes: Object.fromEntries(GROUND.map((g, i) => [g, { maskFile: `mask_${[0, 0, 1, 1, 1, 2, 2, 2, 3][i]}.png`, maskChannel: [0, 1, 0, 1, 2, 0, 1, 2, 0][i], effectId: GROUND_EFFECT[g] || null, speedHint: GROUND_SPEED[i], ...(g === 'lava' ? { blocksWalk: true } : {}) }])),
     agentProfile: { ...state.agent, note: 'walkable.png と validation はこの体格用。大型の敵などは agentProfile を変えて計算し直してください。height は橋・階段の上の障害物の判定にだけ使用（頭上空間は未検査）。' },
     definitions: VALIDATION_DEFS,
-    biome: state.biome, sunlight: state.sunOn,
+    mapName: state.mapName, biome: state.biome, sunlight: state.sunOn,
+    darkness: state.sunOn ? null : { level: state.darkness, skyLightScale: DARK_LEVELS[state.darkness].hemi, overheadFill: DARK_LEVELS[state.darkness].fill, note: 'without sunlight: sky (hemisphere) light × skyLightScale, plus a shadowless overhead directional light of intensity overheadFill in the sun colour' },
     cliffStyle: { default: state.cliffStyle, map: 'cliff_style.png', note: 'Rock-wall style per location: cliff_style.png R = index into cliffStyles (nearest editor vertex, never interpolated). Applies to the terrain cliff faces (cliff layer in weights) and to rock / cliff / pebble props (props.csv cliffStyle column).' },
     cliffStyles: CLIFF_STYLES.map((c, i) => ({ index: i, id: c[0], name: c[1], ...cliffParams(c[2]) })),
     weather: { ...state.weather, wind: WEATHER[state.weather.kind].wind || 0, windDir: [+WIND_DIR.x.toFixed(4), +(-WIND_DIR.y).toFixed(4)] },
@@ -3427,6 +3436,8 @@ biomeSel.onchange = e => {
   applyBiome(e.target.value); toast(`マップのバイオーム: ${BIOME().name}` + (a ? `（${ATMOS[a[0]].name}）` : ''));
 };
 $('sunOn').onchange = e => { pushUndo(); state.sunOn = e.target.checked; applyAtmo(); };
+for (const [v, d] of Object.entries(DARK_LEVELS)) $('darkness').add(new Option(d.name, v));
+$('darkness').onchange = e => { pushUndo(); state.darkness = e.target.value; applyAtmo(); };
 const weatherSel = $('weatherKind');
 for (const [k, v] of Object.entries(WEATHER)) weatherSel.add(new Option(v.name, k));
 weatherSel.onchange = e => { pushUndo(); state.weather.kind = e.target.value; applyAtmo(); };
@@ -3443,6 +3454,7 @@ $('cliffStyle').innerHTML = CLIFF_STYLES.map(([v, name]) => `<option value="${v}
 $('cliffStyle').value = state.cliffStyle;
 $('cliffStyle').onchange = e => { pushUndo(); state.cliffStyle = e.target.value; applyCliffStyle(); };
 // prop types as a folding tree: one group per kind, a group's box checks all its (shown) types
+const placeOpen = new Set();   // groups of the 置く list the user opened
 const PROP_GROUPS = [
   ['木・倒木', ['pine', 'oak', 'scotspine', 'birch', 'willow', 'hazel', 'rowan', 'juniper', 'deadtree', 'twisttree', 'palm', 'banana', 'log', 'stump', 'rootfan', 'driftwood']],
   ['草花・低木', ['grass', 'meadowwhite', 'meadowyellow', 'meadowpink', 'meadowred', 'meadowviolet', 'bush', 'fern', 'bramble', 'ivy', 'sedge', 'foxglove', 'horsetail', 'dock', 'clover', 'reed', 'flowers', 'mushroom', 'glowmush', 'shelfshroom', 'cactus', 'barrelcactus']],
@@ -3450,12 +3462,16 @@ const PROP_GROUPS = [
   ['遺跡・墓', ['column', 'brokencol', 'ruinwall', 'archgate', 'statue', 'stele', 'obelisk', 'pyramid', 'gravestone', 'crossgrave', 'mausoleum', 'bones', 'bonepile', 'magiccircle', 'demonspire']],
   ['建物・道具', ['torch', 'lantern', 'banner', 'woodfence', 'ironfence', 'castlewall', 'tower', 'gatehouse', 'lighthouse', 'rowboat', 'haystack', 'shells', 'snowman', 'kamakura']],
 ];
+// [group name, type indices]; types not in PROP_GROUPS (added later) land in "その他"
+function propGroups() {
+  const groups = PROP_GROUPS.map(([name, ids]) => [name, ids.map(TYPE).filter(i => i >= 0)]);
+  const known = new Set(groups.flatMap(g => g[1])), rest = PROP.map((_, i) => i).filter(i => !known.has(i));
+  if (rest.length) groups.push(['その他', rest]);
+  return groups;
+}
 const typesEl = $('types');
 {
-  const groups = PROP_GROUPS.map(([name, ids]) => [name, ids.map(TYPE).filter(i => i >= 0)]);
-  const known = new Set(groups.flatMap(g => g[1])), rest = PROP.map((_, i) => i).filter(i => !known.has(i));   // types added later land in "その他"
-  if (rest.length) groups.push(['その他', rest]);
-  for (const [name, list] of groups) {
+  for (const [name, list] of propGroups()) {
     const d = document.createElement('details'); d.className = 'pg'; d.open = list.some(i => state.types.has(i));
     d.innerHTML = `<summary><input type="checkbox" class="gall"> ${name}<span class="cnt"></span></summary><div class="pgl"></div>`;
     for (const i of list) { const l = document.createElement('label'); l.dataset.type = i; l.innerHTML = `<input type="checkbox" data-type="${i}"> ${PROP[i].name}`; d.lastChild.appendChild(l); }
@@ -3543,10 +3559,21 @@ function showVariants() {
   if (!opts) return;
   $('variantTitle').textContent = tool === 'marker' ? 'マーカーの種類' : tool === 'link' ? '階層移動の種類' : tool === 'cliffpaint' ? '岩壁の種類' : tool === 'bridge' ? '橋の種類' : tool === 'stairs' ? '階段の種類' : '置く物';
   list.innerHTML = '';
-  for (const [v, name] of opts) {
+  const button = (v, name, box) => {
     const b = document.createElement('button'); b.textContent = name; b.classList.toggle('on', state.variant[tool] === v);
     b.onclick = () => { state.variant[tool] = v; showVariants(); if (tool === 'place') preview.geometry = PROP[v].geo; };
-    list.appendChild(b);
+    box.appendChild(b);
+  };
+  if (tool !== 'place') { for (const [v, name] of opts) button(v, name, list); return; }
+  // things to place: the same folding groups as the prop list; a group stays open or closed while you pick
+  for (const [gname, ids] of propGroups()) {
+    const shown = opts.filter(([v]) => ids.includes(v)); if (!shown.length) continue;
+    const d = document.createElement('details'); d.className = 'pg';
+    d.open = placeOpen.has(gname) || shown.some(([v]) => v === state.variant.place);
+    d.innerHTML = `<summary>${gname}<span class="cnt">${shown.length}</span></summary><div class="row variants"></div>`;
+    d.ontoggle = () => { d.open ? placeOpen.add(gname) : placeOpen.delete(gname); };
+    for (const [v, name] of shown) button(v, name, d.lastChild);
+    list.appendChild(d);
   }
 }
 function applyBiome(id) {
@@ -3605,28 +3632,66 @@ if (heroBody) $('heroLookRemy').textContent = `Remy（ゲームの体・身長 $
 $('heroLook').onchange = e => setHeroLook(e.target.value);
 setHeroLook(heroBody ? 'remy' : 'box');
 $('autoRocks').onclick = () => { pushUndo(); autoRocks(); toast('崖のまわりに岩を配置しました'); };
-$('newSample').onclick = () => { if (SIZE !== 64) { reloadAtSize(64, 'sample'); return; } pushUndo(); genSample((Math.random() * 1e6) | 0); syncUI(); updateTerrain(); rebuildProps(); rebuildFalls(); rebuildBridges(); rebuildStairs(); };
+$('newSample').onclick = () => { if (SIZE !== 64) { reloadAtSize(64, 'sample'); return; } pushUndo(); genSample((Math.random() * 1e6) | 0); forgetSaveTarget('サンプル'); syncUI(); updateTerrain(); rebuildProps(); rebuildFalls(); rebuildBridges(); rebuildStairs(); };
 $('newSample2').onclick = () => {
   if (SIZE !== SAMPLE2_SIZE) { if (!reloadAtSize(SAMPLE2_SIZE, 'sample2')) toast('このブラウザではサイズを変えられません'); return; }
-  pushUndo(); genSample2(); applyBiome(state.biome); syncUI(); updateTerrain(); rebuildProps(); rebuildFalls(); rebuildBridges(); rebuildStairs(); rebuildMarkers();
+  pushUndo(); genSample2(); forgetSaveTarget('サンプル2（隠し通路）'); applyBiome(state.biome); syncUI(); updateTerrain(); rebuildProps(); rebuildFalls(); rebuildBridges(); rebuildStairs(); rebuildMarkers();
 };
 $('newFlat').onclick = () => {
   const size = +$('mapSize').value;
   if (size !== SIZE) { if (!reloadAtSize(size, 'flat')) toast('このブラウザではサイズを変えられません'); return; }
-  pushUndo(); genFlat(); syncUI(); updateTerrain(); rebuildProps(); rebuildFalls(); rebuildBridges(); rebuildStairs(); rebuildMarkers();
+  pushUndo(); genFlat(); forgetSaveTarget(''); syncUI(); updateTerrain(); rebuildProps(); rebuildFalls(); rebuildBridges(); rebuildStairs(); rebuildMarkers();
 };
 $('mapSize').innerHTML = MAP_SIZES.map(v => `<option value="${v}" ${v === SIZE ? 'selected' : ''}>${v} × ${v} m${v === 64 ? '（標準）' : v < 64 ? '（狭い部屋）' : '（広い部屋）'}</option>`).join('');
 $('mapSizeNow').textContent = `いまのマップ: ${SIZE} × ${SIZE} m`;
-$('save').onclick = () => download('map.json', new Blob([JSON.stringify(serialize())], { type: 'application/json' }));
+// map name: shown in the tab title, kept in the save data and the export, and used as the file name
+const fileSafe = v => v.replace(/[\\/:*?"<>|\u0000-\u001f]/g, '_').replace(/\s+/g, ' ').trim().slice(0, 80);
+function setMapName(v) {
+  state.mapName = String(v || '').slice(0, 80);
+  if ($('mapName').value !== state.mapName) $('mapName').value = state.mapName;
+  document.title = (state.mapName ? state.mapName + ' - ' : '') + 'マップエディター 試作';
+}
+$('mapName').oninput = e => setMapName(e.target.value);
+const baseName = () => fileSafe(state.mapName) || 'map';
+const mapBlob = () => new Blob([JSON.stringify(serialize())], { type: 'application/json' });
+// 名前を付けて保存 picks a file (Chrome / Edge: File System Access API) that 保存 then overwrites; elsewhere both download
+let saveHandle = null;
+const showSaveTarget = () => { $('saveTarget').textContent = saveHandle ? `保存先: ${saveHandle.name}（「保存」で上書きします）` : ''; };
+async function writeHandle(h) { const w = await h.createWritable(); await w.write(mapBlob()); await w.close(); }
+async function saveMap() {
+  if (saveHandle) {
+    try { await writeHandle(saveHandle); toast(`${saveHandle.name} に上書き保存しました`); return; }
+    catch (err) { saveHandle = null; showSaveTarget(); toast('上書きできなかったので、ダウンロードで保存します'); }
+  }
+  download(baseName() + '.json', mapBlob()); toast(`${baseName()}.json を保存しました`);
+}
+async function saveMapAs() {
+  if (window.showSaveFilePicker) {
+    try {
+      const h = await window.showSaveFilePicker({ suggestedName: baseName() + '.json', types: [{ description: 'マップ (JSON)', accept: { 'application/json': ['.json'] } }] });
+      if (!state.mapName) setMapName(h.name.replace(/\.json$/i, ''));
+      await writeHandle(h); saveHandle = h; showSaveTarget(); toast(`${h.name} に保存しました`);
+    } catch (err) { if (err.name !== 'AbortError') toast('保存できませんでした: ' + err.message); }
+    return;
+  }
+  const v = prompt('マップの名前（ファイル名になります）', state.mapName); if (v === null) return;
+  setMapName(v); download(baseName() + '.json', mapBlob()); toast(`${baseName()}.json を保存しました`);
+}
+const forgetSaveTarget = name => { saveHandle = null; showSaveTarget(); setMapName(name); };   // a new or loaded map is not the file chosen before
+$('save').onclick = saveMap;
+$('saveAs').onclick = saveMapAs;
 $('load').onclick = () => $('file').click();
 $('file').onchange = async e => {
   const f = e.target.files[0]; if (!f) return;
-  try { const d = JSON.parse(await f.text()), before = snapshot(); deserialize(d); undoStack.push(before); redoStack.length = 0; toast('読み込みました'); } catch (err) { toast('読み込み失敗: ' + err.message); }
+  try {
+    const d = JSON.parse(await f.text()), before = snapshot(); deserialize(d); undoStack.push(before); redoStack.length = 0;
+    forgetSaveTarget(state.mapName || f.name.replace(/\.json$/i, '')); toast(`${state.mapName} を読み込みました`);
+  } catch (err) { toast('読み込み失敗: ' + err.message); }
   e.target.value = '';
 };
 $('export').onclick = async () => {
   const { files, validation } = await buildExport(); showValidation(validation);
-  download('map_export_unity.zip', makeZip(files));
+  download(baseName() + '_export_unity.zip', makeZip(files));
   toast(validation.errors.length ? `書き出しました（エラー ${validation.errors.length} 件。検証結果を確認してください）` : '書き出しました');
 };
 $('validate').onclick = () => showValidation(runValidation());
@@ -3837,6 +3902,7 @@ canvas.addEventListener('wheel', e => {
   else playCam.dist = clamp(playCam.dist * Math.exp(e.deltaY * .0012), 7, 40);
 }, { passive: false });
 window.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.code === 'KeyS') { e.preventDefault(); e.shiftKey ? saveMapAs() : saveMap(); return; }
   if (e.target.tagName === 'INPUT' && e.target.type !== 'range' && e.target.type !== 'checkbox') return;
   if (e.code === 'Tab') { e.preventDefault(); setMode(state.mode === 'edit' ? 'play' : 'edit'); return; }
   if ((e.ctrlKey || e.metaKey) && e.code === 'KeyZ') { e.preventDefault(); e.shiftKey ? redo() : undo(); return; }

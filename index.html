@@ -50,6 +50,8 @@
   .pg summary{cursor:pointer;padding:3px 2px;border-radius:5px;list-style-position:inside}
   .pg summary:hover{background:#232a33}
   .pg summary .cnt{float:right;color:var(--muted);font-size:11px;font-variant-numeric:tabular-nums}
+  .variants details.pg{flex:1 1 100%}
+  .variants details.pg .row{padding:2px 0 4px}
   .pgl{display:grid;grid-template-columns:1fr 1fr;gap:1px 6px;padding:2px 0 4px 18px}
   .types .pgl label{margin:1px 0;font-size:12px}
   #toast{position:fixed;left:50%;top:52px;transform:translateX(-50%);background:#1d4f86;border-radius:6px;padding:6px 12px;opacity:0;transition:opacity .3s;pointer-events:none}
@@ -77,6 +79,7 @@
   <label class="sel"><span>パレット</span><select id="palette"></select></label>
   <label class="sel"><span>岩壁</span><select id="cliffStyle"></select></label>
   <label class="hint" style="display:block;margin:4px 0"><input type="checkbox" id="sunOn" checked> 太陽光（オフ: 洞窟など。松明・水晶などの明かりと環境光だけになります）</label>
+  <label class="sel" id="darkRow" hidden><span>明るさ</span><select id="darkness"></select></label>
   <div class="hint" id="paletteInfo"></div>
 
   <h2>霧・瘴気</h2>
@@ -134,11 +137,13 @@
   <div class="row"><button id="autoRocks">崖に岩を自動配置</button></div>
 
   <h2>マップ</h2>
+  <label class="sel"><span>名前</span><input id="mapName" type="text" maxlength="80" placeholder="例: 森の入口（保存のファイル名になります）" style="background:#232a33;color:var(--text);border:1px solid #3a4452;border-radius:6px;padding:5px 6px;font:inherit;min-width:0"></label>
   <div class="hint" id="mapSizeNow"></div>
   <label class="sel"><span>大きさ</span><select id="mapSize"></select></label>
   <div class="row"><button id="newSample">サンプル</button><button id="newSample2">サンプル2（隠し通路）</button><button id="newFlat">平らな新規</button></div>
   <div class="hint">大きさを選んで「平らな新規」で作ります。サイズが変わるとページを読み直すため、取り消し履歴は消えます。サンプルは 64m、サンプル2（遺跡・隠し通路）は 48m です。</div>
-  <div class="row" style="margin-top:6px"><button id="save">保存 (JSON)</button><button id="load">読み込み</button><button id="export">Unity用書き出し (zip)</button></div>
+  <div class="row" style="margin-top:6px"><button id="save" title="Ctrl+S。名前を付けて保存したファイルがあれば、そこへ上書き">保存 (JSON)</button><button id="saveAs" title="保存先とファイル名を選んで保存">名前を付けて保存</button><button id="load">読み込み</button><button id="export">Unity用書き出し (zip)</button></div>
+  <div class="hint" id="saveTarget"></div>
   <div class="row" style="margin-top:6px"><button id="validate">検証</button><button id="loadCatalog">資産対応表を読み込み</button></div>
   <input id="catalogFile" type="file" accept=".json,application/json" hidden>
   <div id="valReport" hidden></div>
@@ -252,6 +257,6 @@
 <script src="terrain/shared.js?v=r15c"></script>
 <script src="terrain/cliff-relief.js?v=fall1"></script>
 <script src="terrain/paving-mask.js?v=contact1"></script>
-<script src="app.js?v=ui3"></script>
+<script src="app.js?v=r17"></script>
 </body>
 </html>
