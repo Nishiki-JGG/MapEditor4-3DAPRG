@@ -1,7 +1,7 @@
 // 石筍（stalagmite）
 TDProps.add({
   id: 'stalagmite', name: '石筍',
-  r: .65, min: 1.6, sc: [.7, 1.4], slope: 1.2, vis: 1, anyGround: true,
+  r: .9, min: 1.6, sc: [.7, 1.4], slope: 1.2, vis: 1, anyGround: true,
   tags: ['cave', 'volcano', 'mountain'], height: 2.29, material: 'stone',
   build() {
     const { clamp, col, mixc, mat4, displace, makeGeo, chisel } = TDGeo;
