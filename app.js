@@ -112,7 +112,7 @@ vec3 vor(vec2 p){ vec2 i=floor(p), f=fract(p); float d1=8., d2=8., id=0.;
 
 // Distance to the actual cell border. F2-F1 creates false diagonal bevels inside stones.
 const PAVING_GLSL = `
-vec3 pavingCell(vec2 p){
+vec4 pavingCell(vec2 p){
   vec2 i=floor(p),f=fract(p),nearest=vec2(0.),cell=vec2(0.);float best=100.;
   for(int y=-1;y<=1;y++)for(int x=-1;x<=1;x++){
     vec2 g=vec2(float(x),float(y)),c=i+g,r=g+vec2(h21(c),h21(c+37.7))-f;
@@ -124,7 +124,7 @@ vec3 pavingCell(vec2 p){
     vec2 r=c+vec2(h21(c),h21(c+37.7))-p,delta=r-nearest;
     if(dot(delta,delta)>.00001)border=min(border,dot(.5*(nearest+r),normalize(delta)));
   }
-  return vec3(border,0.,h21(cell+11.3));
+  return vec4(border,h21(cell+11.3),cell+vec2(h21(cell),h21(cell+37.7)));
 }
 `;
 
@@ -133,6 +133,28 @@ const waterU = { value: state.water };
 const dimU = { value: 0 };   // fades the scene while the walkability view is on
 const DIM_GLSL = 'vec3 dimc(vec3 c){ float l=dot(c,vec3(.3,.59,.11)); return mix(c,vec3(l),.6*uDim)*(1.-.3*uDim); }';
 const timeU = { value: 0 };
+const rockGrainU={value:null};
+const pavingMask=TDPavingMask.createMask(N);
+const pavingMaskU={value:pavingMask},pavingMapU={value:new THREE.Vector2(HALF,N)};
+// The same grain texture and surface-gradient lighting serve terrain, rocks and masonry.
+const STONE_SURFACE_GLSL=`
+uniform sampler2D uStoneGrain;
+vec2 stoneGrain(vec3 wp,vec3 wn){
+  vec3 w=pow(abs(wn),vec3(4.));w/=max(.00001,w.x+w.y+w.z);
+  vec3 a=wp*.42,b=wp*1.7+.37;
+  float broad=dot(vec3(texture2D(uStoneGrain,a.yz).r,texture2D(uStoneGrain,a.xz).r,texture2D(uStoneGrain,a.xy).r),w);
+  float fine=dot(vec3(texture2D(uStoneGrain,b.yz).r,texture2D(uStoneGrain,b.xz).r,texture2D(uStoneGrain,b.xy).r),w);
+  return vec2(broad,fine);
+}
+vec3 surfaceNormal(vec3 viewPosition,vec3 n,float h){
+  vec3 a=dFdx(viewPosition),b=dFdy(viewPosition),r0=cross(b,n),r1=cross(n,a);float det=dot(a,r0);
+  if(abs(det)<1e-9)return n;
+  vec3 grad=(dFdx(h)*r0+dFdy(h)*r1)/det;
+  // Limit grazing-angle and silhouette derivatives; small pits must not flip the normal.
+  grad*=min(1.,.30/max(.00001,length(grad)));
+  return normalize(n-grad);
+}
+`;
 // ---------- biomes: the map's base biome sets the atmosphere; parts carry biome tags for the palette filter
 // g = ground colours [low, high, highlight], water = [shallow, deep], flora = what the sample generator plants
 const BIOMES = [
@@ -256,7 +278,7 @@ const groundTrial = { value: 0 };
 const terrainMat = new THREE.MeshStandardMaterial({ roughness: .92, metalness: 0 });
 terrainMat.onBeforeCompile = (sh) => {
   Object.assign(sh.uniforms, TDGround.uniforms); sh.uniforms.uGroundTrial = groundTrial;
-  sh.uniforms.uWater = waterU; sh.uniforms.uDim = dimU; sh.uniforms.uTime = timeU; Object.assign(sh.uniforms, BU);
+  sh.uniforms.uWater = waterU; sh.uniforms.uDim = dimU; sh.uniforms.uTime = timeU; sh.uniforms.uStoneGrain=rockGrainU; sh.uniforms.uPavingMask=pavingMaskU; sh.uniforms.uPavingMap=pavingMapU; Object.assign(sh.uniforms, BU);
   sh.vertexShader = sh.vertexShader
     .replace('#include <common>', '#include <common>\nattribute float reliefSlope; varying float vReliefSlope; attribute vec4 splatA; attribute vec4 splatB; attribute float splatC; attribute vec3 cliffT; attribute vec4 cliffM; attribute vec2 cliffW; varying vec3 vCT; varying vec4 vCM; varying vec2 vCW; varying vec4 vSA; varying vec4 vSB; varying float vSC; varying vec3 vWPos; varying vec3 vWNor;')
     .replace('#include <begin_vertex>', '#include <begin_vertex>\nvReliefSlope=reliefSlope; vSA=splatA; vSB=splatB; vSC=splatC; vCT=cliffT; vCM=cliffM; vCW=cliffW; vWPos=(modelMatrix*vec4(position,1.)).xyz; vWNor=normalize(mat3(modelMatrix)*normal);');
@@ -270,6 +292,12 @@ uniform float uGroundTrial;
 float gGloss=0.; float gSurfaceHeight=0.; vec3 gGlow=vec3(0.);
 ${GLSL_NOISE}
 ${PAVING_GLSL}
+${STONE_SURFACE_GLSL}
+uniform sampler2D uPavingMask;uniform vec2 uPavingMap;
+vec2 pavingPaint(vec2 world){
+  vec2 uv=clamp((world+uPavingMap.x)/(2.*uPavingMap.x),0.,1.);
+  return texture2D(uPavingMask,uv*(1.-1./uPavingMap.y)+.5/uPavingMap.y).rg;
+}
 ${DIM_GLSL}
 vec3 terrainColor(){
   vec3 wp=vWPos; vec3 n=normalize(vWNor); vec2 p=wp.xz;
@@ -287,20 +315,22 @@ vec3 terrainColor(){
   // dirt
   vec3 dirt=mix(vec3(.36,.25,.14), vec3(.66,.52,.33), clamp(b*1.25+c*.35-.2,0.,1.));
   if(uGroundTrial>0.) dirt=sharedDirt(p);
-  // Worn flagstones: narrow earth-filled joints, small bevels and a broken grass/soil edge.
-  vec3 cv=vec3(.2,0.,.5);
-  if(vSA.y>.025)cv=pavingCell(p*2.2+vec2(fbm(p*.6),fbm(p*.6+11.))*.16);
-  float gap=cv.x*2., aa=max(.002,fwidth(gap));
-  float ce=smoothstep(.025-aa,.025+aa,gap);
-  vec3 stone=mix(vec3(.48,.46,.40),vec3(.67,.64,.56),cv.z)*(.96+.08*c);
-  float bevel=smoothstep(.02,.13,gap);
-  stone*=.88+.12*bevel;
-  vec3 joint=mix(dirt*.83,grass*.78,smoothstep(.48,.72,a)*.55);
+  // Resolve coverage at each stone centre, not each fragment: whole stones disappear into the grass.
+  vec2 warp=vec2(fbm(p*.6),fbm(p*.6+11.))*.16,paint=pavingPaint(p);
+  vec4 cv=vec4(.2,.5,p*2.2+warp);float centrePaint=0.;
+  if(paint.g>.005){cv=pavingCell(p*2.2+warp);centrePaint=pavingPaint((cv.zw-warp)/2.2).r;}
+  float gap=cv.x*2.,aa=max(.002,fwidth(gap));
+  float ce=smoothstep(.026-aa,.026+aa,gap),bevel=smoothstep(.02,.14,gap);
+  float cobbleEdge=smoothstep(.27,.33,centrePaint+(cv.y-.5)*.26);
+  vec3 stone=mix(vec3(.48,.46,.40),vec3(.67,.64,.56),cv.y)*(.96+.08*c)*(.88+.12*bevel);
+  float buried=smoothstep(.55,.84,fbm(p*3.1)+a*.18)*(1.-smoothstep(.48,.88,centrePaint));
+  stone=mix(stone,grass*.88,buried*.40);
+  vec3 joint=mix(dirt*.90,grass*.84,smoothstep(.45,.73,fbm(p*2.7)+a*.16)*(1.-centrePaint*.65));
   vec3 cob=mix(joint,stone,ce);
   vec3 col=mix(grass,dirt,smoothstep(.2,.55,vSA.x+(b-.5)*.35));
-  float cobbleEdge=smoothstep(.13,.82,vSA.y+(b-.5)*.16+(cv.z-.5)*.22);
+  col=mix(col,dirt,max(paint.r,centrePaint)*.16*(1.-cobbleEdge));
   col=mix(col,cob,cobbleEdge);
-  gSurfaceHeight=bevel*(.012+cv.z*.010)*cobbleEdge;
+  gSurfaceHeight=bevel*(.010+cv.y*.012)*cobbleEdge;
   col=mix(col,fcol,uFlowers*fl*(1.-uGroundTrial)*step(slope,.12)*(1.-smoothstep(.2,.4,vSA.x+vSA.y+vSA.z+vSA.w+vSB.x+vSB.y)));
   // sand: wind ripples
   float sdw=smoothstep(.25,.6,vSA.z+(b-.5)*.3);
@@ -375,9 +405,11 @@ vec3 terrainColor(){
   vec2 rq=vec2((wp.x*.75+wp.z*.65)*1.1, wp.y*1.5);
   // Geological grain and irregular strata, not the floor's polygonal paving pattern.
   float mineral=fbm(rq*2.7+vec2(3.,7.));
-  float strata=abs(sin(wp.y*3.8+fbm(rq*.75)*3.1));
+  float strata=fbm(vec2(wp.y*2.2+fbm(rq*.35)*1.6,dot(rq,vec2(.4,.3))));
   vec3 rock=mix(vec3(.43,.41,.36),vec3(.65,.62,.55),mineral);
-  rock*=(.88+.12*smoothstep(.08,.32,strata))*(.96+.08*vn(rq*18.))*uRockTint*vCT;
+  vec2 rockGrain=vec2(.5);
+  if(slope>.03)rockGrain=stoneGrain(wp,n);
+  rock*=(.83+.20*strata)*(.80+.30*rockGrain.x+.10*rockGrain.y)*uRockTint*vCT;
   rock=mix(rock, vCM.rgb, clamp(smoothstep(.55,.85,fbm(rq*.7+3.))*smoothstep(.75,.45,slope)*.7*vCM.a,0.,1.));
   rock*=1.-.35*vCW.x;
   rock=mix(rock, vec3(.93,.95,1.), vCW.y*smoothstep(.3,.7,n.y+(fbm(rq*1.7)-.5)*.5));
@@ -399,7 +431,7 @@ vec3 terrainColor(){
   col*=1.-.3*uWet*(1.-snW);
   gGloss=max(gGloss,uWet*.6*(1.-snW));
   float otherPaint=max(vSA.z,max(vSA.w,max(vSB.x,max(vSB.y,max(vSB.z,max(vSB.w,vSC))))));
-  gSurfaceHeight*=(1.-rockW)*(1.-snW)*(1.-smoothstep(.1,.5,otherPaint));
+  gSurfaceHeight=(gSurfaceHeight*(1.-rockW)+(rockGrain.x-.5)*.012*rockW+(rockGrain.y-.5)*.006*rockW)*(1.-snW)*(1.-smoothstep(.1,.5,otherPaint));
   return pow(col,vec3(2.2));
 }`)
     .replace('#include <clipping_planes_fragment>', `#include <clipping_planes_fragment>
@@ -407,13 +439,11 @@ for(int i=0;i<8;i++){ if(i>=uPitN) break; vec2 d=vWPos.xz-uPitA[i].xy; float lx=
     .replace('#include <color_fragment>', '#include <color_fragment>\ndiffuseColor.rgb=dimc(terrainColor());')
     .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
 // Shallow stone bevels affect lighting only; the walking floor is unchanged.
-vec3 q0=dFdx(-vViewPosition),q1=dFdy(-vViewPosition);
-vec3 r0=cross(q1,normal),r1=cross(normal,q0);float det=dot(q0,r0);
-if(abs(det)>1e-9){vec3 grad=sign(det)*(dFdx(gSurfaceHeight)*r0+dFdy(gSurfaceHeight)*r1);normal=normalize(abs(det)*normal-grad);}`)
+normal=surfaceNormal(-vViewPosition,normal,gSurfaceHeight);`)
     .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor=mix(roughnessFactor,.55,gGloss);')
     .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance+=pow(gGlow,vec3(2.2))*(1.-.6*uDim);');
 };
-terrainMat.customProgramCacheKey = () => 'terrain-rock-relief-paving-v4';
+terrainMat.customProgramCacheKey = () => 'terrain-rock-contact-paving-v5';
 
 function gridIndex() {
   const ix = new Uint32Array((N - 1) * (N - 1) * 6); let o = 0;
@@ -630,6 +660,7 @@ function updateTerrain() {
     sc[k] = S[k * NS + 8] / 255;
   }
   fillCliffAttrs();
+  TDPavingMask.updateMask(pavingMask,S,NS);
   tGeo.attributes.position.needsUpdate = tGeo.attributes.splatA.needsUpdate = tGeo.attributes.splatB.needsUpdate = tGeo.attributes.splatC.needsUpdate = wGeo.attributes.depth.needsUpdate = true;
   tGeo.computeVertexNormals();
   tGeo.computeBoundingSphere(); tGeo.computeBoundingBox();
@@ -651,10 +682,11 @@ const heroMat = propMat.clone();
 heroMat.transparent = true;   // lets it be drawn last, on top of rock, while inside a tunnel
 // stone detail (props/detail.js), projected in world space from three sides onto rocks, cliffs and masonry
 const detailTex = new THREE.DataTexture(TDGeo.DETAIL.paint(), TDGeo.DETAIL.size, TDGeo.DETAIL.size);
-detailTex.wrapS = detailTex.wrapT = THREE.RepeatWrapping; detailTex.generateMipmaps = true; detailTex.minFilter = THREE.LinearMipmapLinearFilter; detailTex.needsUpdate = true;
+detailTex.wrapS = detailTex.wrapT = THREE.RepeatWrapping; detailTex.generateMipmaps = true; detailTex.minFilter = THREE.LinearMipmapLinearFilter; detailTex.magFilter = THREE.LinearFilter; detailTex.needsUpdate = true;
 const detailU = { value: detailTex };
+rockGrainU.value=detailTex;
 const propShader = (sh) => {
-  sh.uniforms.uDim = dimU; sh.uniforms.uTime = timeU; sh.uniforms.uDetail = detailU; Object.assign(sh.uniforms, BU);
+  sh.uniforms.uDim = dimU; sh.uniforms.uTime = timeU; sh.uniforms.uDetail = detailU; sh.uniforms.uStoneGrain=rockGrainU; Object.assign(sh.uniforms, BU);
   sh.vertexShader = sh.vertexShader
     .replace('#include <common>', '#include <common>\n#ifdef TOUCH\nattribute vec3 touch;\n#endif\n#ifdef DETAIL\nvarying vec3 vWP;\n#endif\nvarying float vPY; attribute float glow; varying float vGlow; attribute float sway; uniform vec3 uWind; uniform float uTime;\n#ifdef MOSS\nattribute float cliffI; varying float vCI;\n#endif')
     .replace('#include <begin_vertex>', `#include <begin_vertex>
@@ -685,7 +717,7 @@ vPY=(modelMatrix*pw4).y;
 vWP=(modelMatrix*pw4).xyz;
 #endif`);
   sh.fragmentShader = sh.fragmentShader
-    .replace('#include <common>', '#include <common>\n#ifdef DETAIL\nvarying vec3 vWP; uniform sampler2D uDetail;\n#ifndef DETAIL_K\n#define DETAIL_K 1.\n#endif\n#endif\nuniform float uDim; uniform float uTime; varying float vGlow; uniform vec3 uPropTint; uniform vec3 uMoss; uniform float uMossAmt; uniform float uSnow; uniform float uSnowLine; varying float vPY;\nuniform vec3 uCSTint[7]; uniform vec4 uCSMoss[7]; uniform vec2 uCSWet[7];\n#ifdef MOSS\nvarying float vCI;\n#endif\n' + DIM_GLSL)
+    .replace('#include <common>', '#include <common>\n#ifdef DETAIL\nvarying vec3 vWP; uniform sampler2D uDetail;\n#ifndef DETAIL_K\n#define DETAIL_K 1.\n#endif\n#endif\nuniform float uDim; uniform float uTime; varying float vGlow; uniform vec3 uPropTint; uniform vec3 uMoss; uniform float uMossAmt; uniform float uSnow; uniform float uSnowLine; varying float vPY;\nuniform vec3 uCSTint[7]; uniform vec4 uCSMoss[7]; uniform vec2 uCSWet[7];\n#ifdef MOSS\nvarying float vCI;\n#endif\n' + DIM_GLSL + STONE_SURFACE_GLSL)
     .replace('#include <color_fragment>', `#include <color_fragment>
 #ifdef MOSS
 float mg=diffuseColor.g-max(diffuseColor.r,diffuseColor.b);
@@ -707,6 +739,7 @@ vec3 q1=vWP*.42, q2=vWP*1.7+.37;
 float dt1=texture2D(uDetail,q1.yz).r*tw.x+texture2D(uDetail,q1.xz).r*tw.y+texture2D(uDetail,q1.xy).r*tw.z;
 float dt2=texture2D(uDetail,q2.yz).r*tw.x+texture2D(uDetail,q2.xz).r*tw.y+texture2D(uDetail,q2.xy).r*tw.z;
 diffuseColor.rgb*=mix(1.,.5+(dt1*.62+dt2*.38),DETAIL_K);
+normal=surfaceNormal(-vViewPosition,normal,((dt1-.5)*.010+(dt2-.5)*.005)*DETAIL_K);
 #ifdef MOSS
 // moss / grass / sand (cliff style and biome colour) settles on faces turned up, in patches that follow the grain
 vec3 mc=mix(cm.rgb,uMoss,uMossAmt*(1.-cm.a));   // the cliff style's moss, else the biome's, else green
@@ -722,34 +755,34 @@ diffuseColor.rgb=mix(diffuseColor.rgb, dimc(vec3(.93,.95,1.)), uCSWet[int(vCI+.5
     .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\n#ifdef MOSS\nroughnessFactor*=1.-.6*uCSWet[int(vCI+.5)].x;\n#endif\n#ifdef ICE\ndiffuseColor.rgb*=vec3(.62,.8,.95);   // blue-green depth of clear ice\n#endif')
     .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance+=diffuseColor.rgb*vGlow*(.85+.15*sin(uTime*9.+vPY*13.))*(1.-.5*uDim);\n#ifdef ICE\ntotalEmissiveRadiance+=vec3(.08,.2,.3)*pow(1.-abs(dot(normal,normalize(vViewPosition))),2.5)*(1.-.5*uDim);   // light through thin edges\n#endif\n#ifdef FOLIAGE\ntotalEmissiveRadiance+=diffuseColor.rgb*.06*(1.-uDim);\n#endif');
 };
-propMat.onBeforeCompile = propShader; propMat.customProgramCacheKey = () => 'prop-dim-v6';
+propMat.onBeforeCompile = propShader; propMat.customProgramCacheKey = () => 'prop-rock-contact-v7';
 // rocks and cliff stones get their moss recoloured per biome (sand, ash, snow...)
 const rockMat = propMat.clone(); rockMat.defines = { MOSS: '', DETAIL: '' }; rockMat.flatShading = false;   // smoothed normals (makeGeo opt.smooth)
-rockMat.onBeforeCompile = propShader; rockMat.customProgramCacheKey = () => 'prop-dim-v6-moss';
+rockMat.onBeforeCompile = propShader; rockMat.customProgramCacheKey = () => 'prop-rock-contact-v7-moss';
 // walls, columns and other masonry: the same stone detail, no per-biome moss
 const masonMat = propMat.clone(); masonMat.defines = { DETAIL: '' };
-masonMat.onBeforeCompile = propShader; masonMat.customProgramCacheKey = () => 'prop-dim-v6-stone';
+masonMat.onBeforeCompile = propShader; masonMat.customProgramCacheKey = () => 'prop-rock-contact-v7-stone';
 // plants: smooth shading from the bent normals (makeGeo part.sn), so canopies and leaves read soft instead of faceted
 const foliageMat = propMat.clone(); foliageMat.flatShading = false; foliageMat.roughness = .82; foliageMat.defines = { FOLIAGE: '' };
-foliageMat.onBeforeCompile = propShader; foliageMat.customProgramCacheKey = () => 'prop-dim-v6-foliage';
+foliageMat.onBeforeCompile = propShader; foliageMat.customProgramCacheKey = () => 'prop-rock-contact-v7-foliage';
 // semi-real plants: leaves on alpha-tested cards sampling the foliage atlas painted by props/foliage.js (both faces lit from outside)
 const atlasTex = new THREE.DataTexture(TDGeo.ATLAS.paint(), TDGeo.ATLAS.size, TDGeo.ATLAS.size);
 atlasTex.colorSpace = THREE.SRGBColorSpace; atlasTex.generateMipmaps = true; atlasTex.minFilter = THREE.LinearMipmapLinearFilter; atlasTex.magFilter = THREE.LinearFilter;
 atlasTex.anisotropy = Math.min(2, renderer.capabilities.getMaxAnisotropy()); atlasTex.needsUpdate = true;
 // Lambert (diffuse only): leaves need no specular, and alpha-tested cards shade every covered pixel, so the cheap model matters
 const cardMat = new THREE.MeshLambertMaterial({ vertexColors: true, map: atlasTex, alphaTest: .42, side: THREE.DoubleSide }); cardMat.defines = { FOLIAGE: '', CARDS: '' };
-cardMat.onBeforeCompile = propShader; cardMat.customProgramCacheKey = () => 'prop-dim-v6-cards';
+cardMat.onBeforeCompile = propShader; cardMat.customProgramCacheKey = () => 'prop-rock-contact-v7-cards';
 // second atlas (props/foliage2.js): meadow grass, straw, wood, wild flowers
 const atlasTex2 = new THREE.DataTexture(TDGeo.ATLAS2.paint(), TDGeo.ATLAS2.width, TDGeo.ATLAS2.height);
 atlasTex2.colorSpace = THREE.SRGBColorSpace; atlasTex2.generateMipmaps = true; atlasTex2.minFilter = THREE.LinearMipmapLinearFilter; atlasTex2.magFilter = THREE.LinearFilter;
 atlasTex2.anisotropy = Math.min(2, renderer.capabilities.getMaxAnisotropy()); atlasTex2.needsUpdate = true;
-const cardMat2 = cardMat.clone(); cardMat2.map = atlasTex2; cardMat2.onBeforeCompile = propShader; cardMat2.customProgramCacheKey = () => 'prop-dim-v6-cards2';
+const cardMat2 = cardMat.clone(); cardMat2.map = atlasTex2; cardMat2.onBeforeCompile = propShader; cardMat2.customProgramCacheKey = () => 'prop-rock-contact-v7-cards2';
 // ice (rim light and frosty cracks), snow (faint grain) and glassy stone (obsidian): the stone detail at different strengths
-const iceMat = propMat.clone(); iceMat.roughness = .18; iceMat.defines = { DETAIL: '', DETAIL_K: '.5', ICE: '' }; iceMat.onBeforeCompile = propShader; iceMat.customProgramCacheKey = () => 'prop-dim-v6-ice';
-const snowMat = propMat.clone(); snowMat.roughness = .8; snowMat.flatShading = false; snowMat.defines = { DETAIL: '', DETAIL_K: '.3' }; snowMat.onBeforeCompile = propShader; snowMat.customProgramCacheKey = () => 'prop-dim-v6-snow';
-const glossMat = propMat.clone(); glossMat.roughness = .1; glossMat.metalness = .1; glossMat.defines = { DETAIL: '', DETAIL_K: '.3' }; glossMat.onBeforeCompile = propShader; glossMat.customProgramCacheKey = () => 'prop-dim-v6-gloss';
+const iceMat = propMat.clone(); iceMat.roughness = .18; iceMat.defines = { DETAIL: '', DETAIL_K: '.5', ICE: '' }; iceMat.onBeforeCompile = propShader; iceMat.customProgramCacheKey = () => 'prop-rock-contact-v7-ice';
+const snowMat = propMat.clone(); snowMat.roughness = .8; snowMat.flatShading = false; snowMat.defines = { DETAIL: '', DETAIL_K: '.3' }; snowMat.onBeforeCompile = propShader; snowMat.customProgramCacheKey = () => 'prop-rock-contact-v7-snow';
+const glossMat = propMat.clone(); glossMat.roughness = .1; glossMat.metalness = .1; glossMat.defines = { DETAIL: '', DETAIL_K: '.3' }; glossMat.onBeforeCompile = propShader; glossMat.customProgramCacheKey = () => 'prop-rock-contact-v7-gloss';
 // bridges and stairs: the stone detail a little weaker (it also reads as weathered grain on the wooden ones)
-const structMat = propMat.clone(); structMat.defines = { DETAIL: '', DETAIL_K: '.75' }; structMat.onBeforeCompile = propShader; structMat.customProgramCacheKey = () => 'prop-dim-v6-struct';
+const structMat = propMat.clone(); structMat.defines = { DETAIL: '', DETAIL_K: '.75' }; structMat.onBeforeCompile = propShader; structMat.customProgramCacheKey = () => 'prop-rock-contact-v7-struct';
 
 // Reuse the existing opaque wood atlas. Normalise its luminance so the original
 // baked wood colours remain authoritative; no extra image or transparent pass.
@@ -777,7 +810,7 @@ float value = clamp(dot(grain.rgb, vec3(.2126,.7152,.0722)) / uBridgeWoodMean, .
 diffuseColor.rgb *= mix(1., value, woodPixel);
 #endif`);
 };
-structWoodMat.customProgramCacheKey = () => 'prop-dim-v6-struct-wood-grain';
+structWoodMat.customProgramCacheKey = () => 'prop-rock-contact-v7-struct-wood-grain';
 
 const PROP_MATS = { rock: rockMat, stone: masonMat, cards: cardMat, cards2: cardMat2, foliage: foliageMat, ice: iceMat, snow: snowMat, gloss: glossMat };
 const CAP = 8000;
@@ -2309,7 +2342,7 @@ function ensureIds() {
 }
 
 // ---------- asset catalog: typeId -> assetKey and the proxy collider the editor uses for walkability
-const EXPORTER_VERSION = 'tdj-map-editor/2026.10.21-r16';
+const EXPORTER_VERSION = 'tdj-map-editor/2026.10.21-r17';
 for (const t of PROP) { t.geo.computeBoundingBox(); t.meshTop = +t.geo.boundingBox.max.y.toFixed(2); t.height = t.height ?? t.meshTop; t.base = { r: t.r, offs: t.offs, height: t.height }; t.offs = t.offs ? t.offs.map(o => [o, 0]) : null; if (t.shape && t.r > 0) t.footprint = shapeFootprint(t); }   // internal offsets are [x, z] (see applyCatalog)
 const isNum = (v, ok) => typeof v === 'number' && Number.isFinite(v) && (!ok || ok(v));
 // version 1 catalogs were a flat {typeId: entry} map; version 2 has {types, floorLinks}
@@ -3762,7 +3795,7 @@ requestAnimationFrame(frame);
 
 // hooks for automated checks
 window.__app = {
-  cliffRelief, rebuildCliffRelief, groundTrial, groundTexture, terrain, renderer, camera, SIZE, state, H, S, O, F, C, propMeshes, ghostMeshes, cliffIndexAt, BIOMES, CLIFF_STYLES, applyCliffStyle, deckAt, linkDeckAt, runValidation, genSample, genSample2, secretRegions, secretLineX, passageGeometry, terrainRes, TERRAIN_RES, snapshot, sha256, LINK_KINDS, normalizeCatalog, catalogExport, valueIssues, areaIssue, deckAt, getColliders, PROP, get colliderMaxR() { return colliderMaxR; }, rebuildMarkers, linkTrigger, linkArrival, LINK_SPEC, get markers() { return markers; }, placeMarker, ensureIds, applyCatalog, ATMOS, WEATHER, applyAtmo, makeCoast, glowLights, applyBiome, applyPalette, propVisible, toolVisible, updateTerrain, rebuildProps, genFlat, floorAt, bridgeAt, stairsAt, placeSlope, placeStairs, placeBridge, pickTarget, regenGroundProps, rebuildBridges, get stairs() { return stairs; }, get bridges() { return bridges; }, get falls() { return falls; }, overrideAt, heroMat, hero, heroBody, get heroLook() { return heroLook; }, setHeroLook, heroStyle, heroGlow, get ghosts() { return ghosts; }, get props() { return props; }, cam, playCam, player, keys, setMode, setTool, update, heightAt, walkable, slope: slopeAt,
+  pavingMask, cliffRelief, rebuildCliffRelief, groundTrial, groundTexture, terrain, renderer, camera, SIZE, state, H, S, O, F, C, propMeshes, ghostMeshes, cliffIndexAt, BIOMES, CLIFF_STYLES, applyCliffStyle, deckAt, linkDeckAt, runValidation, genSample, genSample2, secretRegions, secretLineX, passageGeometry, terrainRes, TERRAIN_RES, snapshot, sha256, LINK_KINDS, normalizeCatalog, catalogExport, valueIssues, areaIssue, deckAt, getColliders, PROP, get colliderMaxR() { return colliderMaxR; }, rebuildMarkers, linkTrigger, linkArrival, LINK_SPEC, get markers() { return markers; }, placeMarker, ensureIds, applyCatalog, ATMOS, WEATHER, applyAtmo, makeCoast, glowLights, applyBiome, applyPalette, propVisible, toolVisible, updateTerrain, rebuildProps, genFlat, floorAt, bridgeAt, stairsAt, placeSlope, placeStairs, placeBridge, pickTarget, regenGroundProps, rebuildBridges, get stairs() { return stairs; }, get bridges() { return bridges; }, get falls() { return falls; }, overrideAt, heroMat, hero, heroBody, get heroLook() { return heroLook; }, setHeroLook, heroStyle, heroGlow, get ghosts() { return ghosts; }, get props() { return props; }, cam, playCam, player, keys, setMode, setTool, update, heightAt, walkable, slope: slopeAt,
   stroke(x, z, frames = 20, opts = {}) {
     hit = new THREE.Vector3(x, heightAt(x, z), z); beginStroke({ shiftKey: !!opts.shift });
     for (let f = 0; f < frames; f++) { if (stroke.active && !['scatter', 'erase'].includes(state.tool)) { applyBrush(x, z, 1 / 60); } }
