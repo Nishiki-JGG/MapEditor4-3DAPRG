@@ -1,7 +1,7 @@
 // 霊廟（mausoleum）
 TDProps.add({
   id: 'mausoleum', name: '霊廟',
-  r: 1.5, min: 4.5, sc: [.9, 1.1], slope: .3, vis: 1.9, anyGround: true,
+  r: 1.5, offs: [-.7, .7], min: 4.5, sc: [.9, 1.1], slope: .3, vis: 1.9, anyGround: true,
   tags: ['graveyard'], height: 3.6, material: 'stone',
   build() {
     const { clamp, col, mixc, mat4, makeGeo, halfDisc } = TDGeo;

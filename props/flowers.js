@@ -2,25 +2,19 @@
 TDProps.add({
   id: 'flowers', name: '花',
   r: 0, min: .6, sc: [.8, 1.4], slope: .8, vis: .45,
-  sway: .8, tags: ['grassland', 'forest', 'ruins'], height: 0.43, touch: true, material: 'foliage',
+  sway: .8, tags: ['grassland', 'forest', 'ruins'], height: 0.43, touch: true, material: 'cards2',
   build() {
-    const { rng, col, mixc, mat4, makeGeo, leafGeo, petalGeo, basisAt, limb } = TDGeo;
-    // a rosette of leaves and stems with five-petal heads
-    const R = rng(46), parts = [], cols = [0xf2d23c, 0xf6f2e6, 0xe887b8, 0xa58ae0, 0xf08a4b].map(col);
-    const leafC = (y, ny, Rr) => mixc(col(0x356b24), col(0x62983a), Rr());
-    for (let k = 0; k < 6; k++) { const a = k * 1.05 + R() * .4; parts.push({ g: leafGeo(.26, .11, .3, .03), m: basisAt([0, .02, 0], [Math.cos(a), .35, Math.sin(a)], [0, 1, 0], .8 + R() * .4), cfn: leafC, sn: [0, -.2, 0], snw: .5 }); }
-    const c0 = cols[(R() * cols.length) | 0], c1 = cols[(R() * cols.length) | 0];
-    for (let k = 0; k < 7; k++) {
-      const a = R() * 6.283, d = .08 + R() * .26, x = Math.cos(a) * d, z = Math.sin(a) * d, h = .2 + R() * .24, hc = R() < .6 ? c0 : c1;
-      limb(parts, [x * .3, 0, z * .3], [x, h, z], .012, .009, 3, () => col(0x4f7a2a));
-      const tilt = [x * .8, 1, z * .8], s = .085 + R() * .03;
-      for (let q = 0; q < 5; q++) {
-        const pa = q * 1.2566 + a, dir = [Math.cos(pa), 0, Math.sin(pa)];
-        // petals spread out from the head, tilted up a little toward the head's facing
-        parts.push({ g: petalGeo(s, s * .62, .55), m: basisAt([x, h, z], [dir[0] + tilt[0] * .3, .35, dir[2] + tilt[2] * .3], tilt), c: hc, j: .06, sn: [x, h - .3, z], snw: .5 });
-      }
-      parts.push({ g: new THREE.OctahedronGeometry(.026, 0), m: mat4(x, h + .012, z, 1, .6, 1), c: hc === cols[0] ? col(0xb06a20) : col(0xf2c440), j: .05 });
+    const { rng, col, mixc, makeGeo, quadGeo, crossGeo, faceOut, limb, ATLAS2 } = TDGeo;
+    // a clump of wild flowers (atlas 2: daisy, buttercup, cosmos, bellflower) over a rosette of lance leaves
+    const R = rng(46), parts = [], kinds = ['flower0', 'flower1', 'flower2', 'flower3'];
+    const leaf = (y, ny, Rr, pr) => mixc(col(0xa8c088), col(0xdce8bc), pr);
+    for (let k = 0; k < 3; k++) parts.push({ g: crossGeo(1, 1, .5), m: faceOut([0, -.01, 0], [Math.cos(k * 1.05), 0, Math.sin(k * 1.05)], [0, 1, 0], .42 - k * .06), cfn: leaf, uvr: ATLAS2.uvr('rosette'), j: .05, sn: [0, -.3, 0], snw: .5 });
+    const main = kinds[(R() * 4) | 0], other = kinds[(R() * 4) | 0];
+    for (let k = 0; k < 8; k++) {
+      const a = R() * 6.283, d = .05 + R() * .24, x = Math.cos(a) * d, z = Math.sin(a) * d, h = .18 + R() * .25;
+      limb(parts, [x * .3, 0, z * .3], [x, h, z], .01, .007, 3, () => col(0x557a30));
+      parts.push({ g: quadGeo(1, 1), m: faceOut([x, h + .005, z], [x * 1.2, 1, z * 1.2], [Math.cos(a), 0, Math.sin(a)], .14 + R() * .06, R() * 6.28), c: col(0xffffff), uvr: ATLAS2.uvr(R() < .7 ? main : other), j: .04, sn: [x, h - .4, z], snw: .4 });
     }
-    return makeGeo(parts, 46);
+    return makeGeo(parts, 46, { uv: ATLAS2.white });
   },
 });

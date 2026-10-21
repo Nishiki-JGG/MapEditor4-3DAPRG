@@ -1,8 +1,8 @@
 // 噴気孔（fumarole）
 TDProps.add({
   id: 'fumarole', name: '噴気孔',
-  r: .6, min: 2.5, sc: [.8, 1.3], slope: .8, vis: 1, anyGround: true, light: [0xff7a2a, 14, 1.2],
-  tags: ['volcano'], height: 0.88,
+  r: .9, min: 2.5, sc: [.8, 1.3], slope: .8, vis: 1, anyGround: true, light: [0xff7a2a, 14, 1.2],
+  tags: ['volcano'], height: 0.88, material: 'stone',
   build() {
     const { col, mixc, mat4, displace, makeGeo } = TDGeo;
     return makeGeo([

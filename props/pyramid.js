@@ -1,7 +1,7 @@
 // ピラミッド（pyramid）
 TDProps.add({
   id: 'pyramid', name: 'ピラミッド',
-  r: 4, min: 10, sc: [.8, 1.2], slope: .4, vis: 4.5, anyGround: true,
+  r: 4, offs: [-2, 0, 2], min: 10, sc: [.8, 1.2], slope: .4, vis: 4.5, anyGround: true,
   tags: ['desert'], height: 6, material: 'stone',
   build() {
     const { col, mat4, displace, makeGeo, SANDSTONE } = TDGeo;

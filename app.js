@@ -630,7 +630,7 @@ vPY=(modelMatrix*pw4).y;
 vWP=(modelMatrix*pw4).xyz;
 #endif`);
   sh.fragmentShader = sh.fragmentShader
-    .replace('#include <common>', '#include <common>\n#ifdef DETAIL\nvarying vec3 vWP; uniform sampler2D uDetail;\n#endif\nuniform float uDim; uniform float uTime; varying float vGlow; uniform vec3 uPropTint; uniform vec3 uMoss; uniform float uMossAmt; uniform float uSnow; uniform float uSnowLine; varying float vPY;\nuniform vec3 uCSTint[7]; uniform vec4 uCSMoss[7]; uniform vec2 uCSWet[7];\n#ifdef MOSS\nvarying float vCI;\n#endif\n' + DIM_GLSL)
+    .replace('#include <common>', '#include <common>\n#ifdef DETAIL\nvarying vec3 vWP; uniform sampler2D uDetail;\n#ifndef DETAIL_K\n#define DETAIL_K 1.\n#endif\n#endif\nuniform float uDim; uniform float uTime; varying float vGlow; uniform vec3 uPropTint; uniform vec3 uMoss; uniform float uMossAmt; uniform float uSnow; uniform float uSnowLine; varying float vPY;\nuniform vec3 uCSTint[7]; uniform vec4 uCSMoss[7]; uniform vec2 uCSWet[7];\n#ifdef MOSS\nvarying float vCI;\n#endif\n' + DIM_GLSL)
     .replace('#include <color_fragment>', `#include <color_fragment>
 #ifdef MOSS
 float mg=diffuseColor.g-max(diffuseColor.r,diffuseColor.b);
@@ -651,7 +651,7 @@ vec3 wn=inverseTransformDirection(normal,viewMatrix), tw=pow(abs(wn),vec3(4.)); 
 vec3 q1=vWP*.42, q2=vWP*1.7+.37;
 float dt1=texture2D(uDetail,q1.yz).r*tw.x+texture2D(uDetail,q1.xz).r*tw.y+texture2D(uDetail,q1.xy).r*tw.z;
 float dt2=texture2D(uDetail,q2.yz).r*tw.x+texture2D(uDetail,q2.xz).r*tw.y+texture2D(uDetail,q2.xy).r*tw.z;
-diffuseColor.rgb*=.5+(dt1*.62+dt2*.38);
+diffuseColor.rgb*=mix(1.,.5+(dt1*.62+dt2*.38),DETAIL_K);
 #ifdef MOSS
 // moss / grass / sand (cliff style and biome colour) settles on faces turned up, in patches that follow the grain
 vec3 mc=mix(cm.rgb,uMoss,uMossAmt*(1.-cm.a));   // the cliff style's moss, else the biome's, else green
@@ -664,8 +664,8 @@ diffuseColor.rgb=mix(diffuseColor.rgb, dimc(vec3(.92,.95,1.)), uSnow*smoothstep(
 #ifdef MOSS
 diffuseColor.rgb=mix(diffuseColor.rgb, dimc(vec3(.93,.95,1.)), uCSWet[int(vCI+.5)].y*smoothstep(.5,.85,upw));
 #endif`)
-    .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\n#ifdef MOSS\nroughnessFactor*=1.-.6*uCSWet[int(vCI+.5)].x;\n#endif')
-    .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance+=diffuseColor.rgb*vGlow*(.85+.15*sin(uTime*9.+vPY*13.))*(1.-.5*uDim);\n#ifdef FOLIAGE\ntotalEmissiveRadiance+=diffuseColor.rgb*.06*(1.-uDim);\n#endif');
+    .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\n#ifdef MOSS\nroughnessFactor*=1.-.6*uCSWet[int(vCI+.5)].x;\n#endif\n#ifdef ICE\ndiffuseColor.rgb*=vec3(.62,.8,.95);   // blue-green depth of clear ice\n#endif')
+    .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance+=diffuseColor.rgb*vGlow*(.85+.15*sin(uTime*9.+vPY*13.))*(1.-.5*uDim);\n#ifdef ICE\ntotalEmissiveRadiance+=vec3(.08,.2,.3)*pow(1.-abs(dot(normal,normalize(vViewPosition))),2.5)*(1.-.5*uDim);   // light through thin edges\n#endif\n#ifdef FOLIAGE\ntotalEmissiveRadiance+=diffuseColor.rgb*.06*(1.-uDim);\n#endif');
 };
 propMat.onBeforeCompile = propShader; propMat.customProgramCacheKey = () => 'prop-dim-v6';
 // rocks and cliff stones get their moss recoloured per biome (sand, ash, snow...)
@@ -684,6 +684,18 @@ atlasTex.anisotropy = Math.min(2, renderer.capabilities.getMaxAnisotropy()); atl
 // Lambert (diffuse only): leaves need no specular, and alpha-tested cards shade every covered pixel, so the cheap model matters
 const cardMat = new THREE.MeshLambertMaterial({ vertexColors: true, map: atlasTex, alphaTest: .42, side: THREE.DoubleSide }); cardMat.defines = { FOLIAGE: '', CARDS: '' };
 cardMat.onBeforeCompile = propShader; cardMat.customProgramCacheKey = () => 'prop-dim-v6-cards';
+// second atlas (props/foliage2.js): meadow grass, straw, wood, wild flowers
+const atlasTex2 = new THREE.DataTexture(TDGeo.ATLAS2.paint(), TDGeo.ATLAS2.width, TDGeo.ATLAS2.height);
+atlasTex2.colorSpace = THREE.SRGBColorSpace; atlasTex2.generateMipmaps = true; atlasTex2.minFilter = THREE.LinearMipmapLinearFilter; atlasTex2.magFilter = THREE.LinearFilter;
+atlasTex2.anisotropy = Math.min(2, renderer.capabilities.getMaxAnisotropy()); atlasTex2.needsUpdate = true;
+const cardMat2 = cardMat.clone(); cardMat2.map = atlasTex2; cardMat2.onBeforeCompile = propShader; cardMat2.customProgramCacheKey = () => 'prop-dim-v6-cards2';
+// ice (rim light and frosty cracks), snow (faint grain) and glassy stone (obsidian): the stone detail at different strengths
+const iceMat = propMat.clone(); iceMat.roughness = .18; iceMat.defines = { DETAIL: '', DETAIL_K: '.5', ICE: '' }; iceMat.onBeforeCompile = propShader; iceMat.customProgramCacheKey = () => 'prop-dim-v6-ice';
+const snowMat = propMat.clone(); snowMat.roughness = .8; snowMat.flatShading = false; snowMat.defines = { DETAIL: '', DETAIL_K: '.3' }; snowMat.onBeforeCompile = propShader; snowMat.customProgramCacheKey = () => 'prop-dim-v6-snow';
+const glossMat = propMat.clone(); glossMat.roughness = .1; glossMat.metalness = .1; glossMat.defines = { DETAIL: '', DETAIL_K: '.3' }; glossMat.onBeforeCompile = propShader; glossMat.customProgramCacheKey = () => 'prop-dim-v6-gloss';
+// bridges and stairs: the stone detail a little weaker (it also reads as weathered grain on the wooden ones)
+const structMat = propMat.clone(); structMat.defines = { DETAIL: '', DETAIL_K: '.75' }; structMat.onBeforeCompile = propShader; structMat.customProgramCacheKey = () => 'prop-dim-v6-struct';
+const PROP_MATS = { rock: rockMat, stone: masonMat, cards: cardMat, cards2: cardMat2, foliage: foliageMat, ice: iceMat, snow: snowMat, gloss: glossMat };
 const CAP = 8000;
 // plants with touch: true bend away from the hero in walk mode (per-instance attribute 'touch', see updateTouch)
 const TOUCH_GLSL = `// bent away from the hero (touch.xy = world-space bend of the top in m, touch.z = 1 / mesh height); base stays put
@@ -702,7 +714,7 @@ function touchMat(base) {
   return touchMats.get(base);
 }
 const propMeshes = PROP.map(t => {
-  const base = t.sharedAsset ? TDSharedProps.material(t.sharedAsset) : t.material === 'rock' ? rockMat : t.material === 'stone' ? masonMat : t.material === 'cards' ? cardMat : t.material === 'foliage' ? foliageMat : propMat;
+  const base = t.sharedAsset ? TDSharedProps.material(t.sharedAsset) : PROP_MATS[t.material] || propMat;
   const m = new THREE.InstancedMesh(t.geo, t.touch ? touchMat(base) : base, CAP);
   if (t.touch) { m.userData.touch = new THREE.InstancedBufferAttribute(new Float32Array(CAP * 3), 3).setUsage(THREE.DynamicDrawUsage); t.geo.setAttribute('touch', m.userData.touch); }
   m.castShadow = m.receiveShadow = true; m.frustumCulled = false; m.count = 0;
@@ -713,9 +725,11 @@ const propMeshes = PROP.map(t => {
   scene.add(m); return m;
 });
 const ghostMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .88, metalness: 0, flatShading: true, transparent: true, opacity: .28, depthWrite: false });
-const ghostCardMat = ghostMat.clone(); ghostCardMat.map = atlasTex; ghostCardMat.alphaTest = .42; ghostCardMat.side = THREE.DoubleSide;
+// faded cards: the cut-out test runs after the fade (opacity .28), so it must sit below .42 × .28 or every leaf would vanish
+const ghostCardMat = ghostMat.clone(); ghostCardMat.map = atlasTex; ghostCardMat.alphaTest = .1; ghostCardMat.side = THREE.DoubleSide;
+const ghostCardMat2 = ghostCardMat.clone(); ghostCardMat2.map = atlasTex2;
 const ghostMeshes = PROP.map(t => {
-  const m = new THREE.InstancedMesh(t.geo, t.sharedAsset ? TDSharedProps.material(t.sharedAsset, true) : t.material === 'cards' ? ghostCardMat : ghostMat, 256);
+  const m = new THREE.InstancedMesh(t.geo, t.sharedAsset ? TDSharedProps.material(t.sharedAsset, true) : t.material === 'cards' ? ghostCardMat : t.material === 'cards2' ? ghostCardMat2 : ghostMat, 256);
   m.frustumCulled = false; m.count = 0; m.renderOrder = 8;
   m.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(256 * 3), 3);
   scene.add(m); return m;
@@ -1380,7 +1394,7 @@ function geoBridge(b) {
 }
 function rebuildBridges() {
   for (const c of [...bridgeGroup.children]) { c.geometry.dispose(); bridgeGroup.remove(c); }
-  for (const b of bridges) { const m = new THREE.Mesh(geoBridge(b), propMat); m.castShadow = m.receiveShadow = true; bridgeGroup.add(m); }
+  for (const b of bridges) { const m = new THREE.Mesh(geoBridge(b), structMat); m.castShadow = m.receiveShadow = true; bridgeGroup.add(m); }
   walkDirty = true;
 }
 function placeBridge(a, c, w, type = 'wood') {
@@ -1474,7 +1488,7 @@ function geoStairs(st) {
     } else if (st.type === 'stone') {
       const h = rise + .45;
       parts.push({ g: displace(new THREE.BoxGeometry(w * (.94 + R() * .1), h, run * 1.1, 2, 1, 1), .05, k * 1.7), m: mat4(x + (R() - .5) * .05, top - h / 2, z, 1, 1, 1, ry + (R() - .5) * .06), cfn: C_STONE, j: .1 });
-      if (k % 2 === 0) for (const sd of [-1, 1]) { const [sx, , sz] = at(tc, sd * (w / 2 + .28), 0); parts.push({ g: displace(new THREE.IcosahedronGeometry(1, 0), .35, k + sd), m: mat4(sx, top - .15, sz, .38 + R() * .15, .3 + R() * .15, .4, R() * 3), cfn: C_STONE, j: .1 }); }
+      if (k % 2 === 0) for (const sd of [-1, 1]) { const [sx, , sz] = at(tc, sd * (w / 2 + .28), 0); parts.push({ g: chisel(displace(new THREE.IcosahedronGeometry(1, 1), .2, k + sd), 5, 900 + k * 2 + sd, .65, .3), m: mat4(sx, top - .15, sz, .38 + R() * .15, .3 + R() * .15, .4, R() * 3), cfn: C_STONE, j: .1 }); }
     } else if (st.type === 'wood') {
       parts.push({ g: new THREE.BoxGeometry(w, .07, run * .9), m: mat4(x, top - .035, z, 1, 1, 1, ry), cfn: C_WOOD, j: .06 });
     } else {
@@ -1504,7 +1518,7 @@ function geoStairs(st) {
 }
 function rebuildStairs() {
   for (const c of [...stairGroup.children]) { c.geometry.dispose(); stairGroup.remove(c); }
-  for (const st of stairs) { const m = new THREE.Mesh(geoStairs(st), propMat); m.castShadow = m.receiveShadow = true; stairGroup.add(m); }
+  for (const st of stairs) { const m = new THREE.Mesh(geoStairs(st), structMat); m.castShadow = m.receiveShadow = true; stairGroup.add(m); }
   walkDirty = true;
 }
 // lays a bridge where a path crosses deep water (sample map)
@@ -1885,6 +1899,16 @@ function regenGroundProps() {
       if (h1 > .996 && free(x, z, 2.5)) add(TYPE('deadtree'), x, z, .7 + h2 * .3);
       else if (h1 < .02 && free(x, z, .5)) add(TYPE('pebble'), x, z, .5 + h2 * .5);
     }
+  }
+  // meadow grass tufts on plain grass (no other ground painted), in biomes the grass prop belongs to
+  const GR = TYPE('grass');
+  if (GR >= 0 && PROP[GR].tags.includes(state.biome)) for (let j = 1; j < N - 1; j++) for (let i = 1; i < N - 1; i++) {
+    const k = idx(i, j); let painted = 0; for (let c = 0; c < NS; c++) painted = Math.max(painted, S[k * NS + c]); if (painted > 60) continue;
+    const h1 = hash2(i * 5 + 11, j * 9 + 2); if (h1 > .045) continue;
+    const h2 = hash2(i * 3 + 7, j * 7 + 1), x = vx(i) + (h2 - .5) * .45, z = vx(j) + (hash2(i * 9, j) - .5) * .45;
+    if (heightAt(x, z) < state.water + .1 || slopeAt(x, z) > .9 || !free(x, z, .6)) continue;
+    if ((bridges.length && bridgeAt(x, z) !== null) || (stairs.length && stairsAt(x, z) !== null)) continue;   // not on decks and steps
+    add(GR, x, z, .75 + h2 * .6);
   }
   rebuildProps();
 }
@@ -3512,9 +3536,12 @@ function update(dt) {
     player.moving = 0;
     if (mx || mz) {
       const nx = player.x + mx * sp, nz = player.z + mz * sp;
-      if (walkable(nx, nz)) { player.x = nx; player.z = nz; player.moving = 1; }
-      else if (walkable(nx, player.z)) { player.x = nx; player.moving = 1; }
-      else if (walkable(player.x, nz)) { player.z = nz; player.moving = 1; }
+      // a move must also keep to the floor the hero stands on: no jumping more than one step (agent.maxStep) up or
+      // down, e.g. from a secret passage through its wall onto the cliff top above it
+      const f0 = floorAt(player.x, player.z), can = (x, z) => walkable(x, z) && Math.abs(floorAt(x, z) - f0) <= state.agent.maxStep + .05;
+      if (can(nx, nz)) { player.x = nx; player.z = nz; player.moving = 1; }
+      else if (can(nx, player.z)) { player.x = nx; player.moving = 1; }
+      else if (can(player.x, nz)) { player.z = nz; player.moving = 1; }
       const want = Math.atan2(mx, mz); let d = want - player.face; d = Math.atan2(Math.sin(d), Math.cos(d)); player.face += d * Math.min(1, dt * 12);
     }
     player.t += dt * (player.moving ? 1 : 0);
@@ -3523,7 +3550,8 @@ function update(dt) {
     // inside a secret passage: fade what we overlap and keep the hero visible through rock
     const inSecret = overrideAt(player.x, player.z) === 3;
     const g = new Set();
-    if (inSecret) for (const p of props) { const r = VIS_R[p[0]] * p[4] + .35; if (Math.abs(p[1] - player.x) < r && Math.abs(p[2] - player.z) < r && Math.hypot(p[1] - player.x, p[2] - player.z) < r) g.add(p); }
+    if (inSecret) for (const p of props) { if (PROP[p[0]].touch) continue;   // low plants bend out of the way instead of fading
+      const r = VIS_R[p[0]] * p[4] + .35; if (Math.abs(p[1] - player.x) < r && Math.abs(p[2] - player.z) < r && Math.hypot(p[1] - player.x, p[2] - player.z) < r) g.add(p); }
     if (g.size !== ghosts.size || [...g].some(p => !ghosts.has(p))) { ghosts = g; rebuildProps(true); }
     const buried = inSecret && heightAt(player.x, player.z) > player.y + 1.2;
     if (heroMat.depthTest === buried) {

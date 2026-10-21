@@ -2,7 +2,7 @@
 TDProps.add({
   id: 'kamakura', name: 'かまくら',
   r: 1.3, min: 4, sc: [.9, 1.1], slope: .3, vis: 1.5, anyGround: true, light: [0xffb060, 10, .4],
-  tags: ['snow'], height: 1.19,
+  tags: ['snow'], height: 1.19, material: 'snow',
   build() {
     const { col, mixc, mat4, makeGeo } = TDGeo;
     const sn = (y, ny, R) => mixc(col(0xdce6f0), col(0xffffff), R());

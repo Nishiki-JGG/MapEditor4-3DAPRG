@@ -2,7 +2,7 @@
 TDProps.add({
   id: 'icespike', name: '氷柱',
   r: .4, min: 1.5, sc: [.7, 1.5], slope: 1.2, vis: .6, anyGround: true,
-  tags: ['snow', 'cave'], height: 2.32,
+  tags: ['snow', 'cave'], height: 2.32, material: 'ice',
   build() {
     const { rng, mat4, makeGeo, ICE_C } = TDGeo;
     const R = rng(85), parts = [];

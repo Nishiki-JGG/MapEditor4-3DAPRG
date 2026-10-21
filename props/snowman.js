@@ -2,7 +2,7 @@
 TDProps.add({
   id: 'snowman', name: '雪だるま',
   r: .4, min: 2, sc: [.9, 1.2], slope: .5, vis: .6, anyGround: true,
-  tags: ['snow'], height: 2.1,
+  tags: ['snow'], height: 2.1, material: 'snow',
   build() {
     const { col, mixc, mat4, makeGeo, WOOD_C } = TDGeo;
     const sn = (y, ny, R) => mixc(col(0xe6eef7), col(0xffffff), R());

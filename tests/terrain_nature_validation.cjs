@@ -7,7 +7,7 @@ const hash=x=>crypto.createHash('sha256').update(JSON.stringify(x)).digest('hex'
  const result=await withPage(url(repo),async p=>{
   await p.eval('__app.deserialize('+JSON.stringify(old.map)+');__app.rebuildProps();1');
   const state=await p.eval(`(()=>{const A=__app;return{ids:A.PROP.map(t=>t.id),oldPlacements:A.props.map(p=>({id:A.PROP[p[0]].id,x:p[1],rot:p[3],scale:p[4]})),agent:A.state.agent,stats:TDSharedData.assets.map(a=>({id:a.id,triangles:a.triangles.length/3,minY:Math.min(...a.positions.filter((v,i)=>i%3===1)),height:Math.max(...a.positions.filter((v,i)=>i%3===1)),texture:a.material.texture})),sharedTexturesSame:['log','stump','rootfan'].every(id=>TDSharedProps.material(id).map===TDSharedProps.material('pine').map),rootPalette:!!document.querySelector('[data-type="'+A.PROP.findIndex(t=>t.id==='rootfan')+'"]')};})()`);
-  check('Existing numeric type order preserved; one noncolliding ID appended',old.ids.every((id,i)=>state.ids[i]===id)&&state.ids.length===old.ids.length+1&&new Set(state.ids).size===state.ids.length,state.ids.length);
+  check('Existing numeric type order preserved; new noncolliding IDs appended (rootfan, later grass)',old.ids.every((id,i)=>state.ids[i]===id)&&state.ids.length>old.ids.length&&state.ids.includes('rootfan')&&new Set(state.ids).size===state.ids.length,state.ids.length);
   check('Old map restores pine/log/stump transforms',state.oldPlacements.every((p,i)=>p.id===['pine','log','stump'][i]&&p.rot===.63&&p.scale===1),state.oldPlacements);
   check('Existing human profile is 1.8m tall and radius 0.3m',state.agent.height===1.8&&state.agent.radius===.3,state.agent);
   check('All shared ground pivots contact y=0',state.stats.every(t=>Math.abs(t.minY)<1e-6),state.stats);
