@@ -79,5 +79,5 @@ function paint(){const cv=document.createElement('canvas');cv.width=cv.height=51
  for(let k=0;k<4;k++){const x=k*128;c.fillStyle=['#c3c9b1','#bac7ae','#c0c7ae','#c5c0a4'][k];c.fillRect(x,384,128,128);for(let n=0;n<700;n++){c.fillStyle=R()>.5?'rgba(237,240,210,.15)':'rgba(35,56,24,.13)';c.fillRect(x+R()*128,384+R()*128,1+R()*2,1+R()*5);}c.strokeStyle='rgba(98,125,76,.35)';c.lineWidth=2;c.beginPath();c.moveTo(x+64,512);c.lineTo(x+64,384);c.stroke();for(let j=0;j<10;j++){const y=390+j*12;c.lineWidth=.7;c.beginPath();c.moveTo(x+64,y);c.lineTo(x+10,y-18);c.moveTo(x+64,y);c.lineTo(x+118,y-18);c.stroke();}}
  // RGB bleed in transparent pixels prevents dark filtering fringes; alpha stays unchanged.
  const img=c.getImageData(0,0,512,512);for(let i=0;i<img.data.length;i+=4)if(img.data[i+3]<8){img.data[i]=118;img.data[i+1]=139;img.data[i+2]=88;}c.putImageData(img,0,0);return cv.toDataURL('image/png').split(',')[1];}
-window.TDNewPlants={specs,build,paint};
+window.TDNewPlants={specs,build,paint,MeshRecipe};
 })();

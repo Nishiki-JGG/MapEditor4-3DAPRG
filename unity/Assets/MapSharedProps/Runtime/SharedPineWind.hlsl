@@ -15,5 +15,6 @@ float2 SharedPlantOffset(float localY,float uvY,float2 weights,float2 worldOrigi
  if(_PineBand.w<2.5)return SharedPineOffset(localY,uvY,worldOrigin);
  float2 delta=_PlantTouch.xy*weights.y;
  if(_TDPineWind.z>0&&weights.x>0){float phase=dot(worldOrigin-_TDPineOrigin.xy,_PinePhase.xy)+_PinePhase.z;float gust=_PineWaves.y*sin(_TDPineWind.w*_PineWaves.x+phase)+_PineWaves.w*sin(_TDPineWind.w*_PineWaves.z+phase);delta+=_TDPineWind.xy*(SharedWindResponse(_TDPineWind.z,gust)*_PineBand.z*weights.x*min(1,scaleXZ));}
+ float limit=_PlantCombinedLimit*scaleXZ*max(weights.x,weights.y),n=dot(delta,delta);if(_PlantCombinedLimit>0&&n>limit*limit)delta*=limit*rsqrt(n);
  return delta;
 }

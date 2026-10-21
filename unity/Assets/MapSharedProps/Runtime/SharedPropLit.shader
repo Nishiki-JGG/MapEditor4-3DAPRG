@@ -6,6 +6,7 @@ Shader "MapSharedProps/Lit" {
   _PineWaves("Pine rates/amplitudes", Vector)=(1.7,.65,2.9,.35)
   _PinePhase("Pine phase coefficients", Vector)=(.17,.13,0,0)
   _PineResponse("Wind strength linear/quadratic/mean/gust", Vector)=(0,0,0,0)
+  _PlantCombinedLimit("Optional combined wind/contact cap", Float)=0
   _PlantTouch("Per renderer contact displacement XZ", Vector)=(0,0,0,0)
   _Cutoff("Alpha cutoff", Range(0,1)) = 0
   [Enum(UnityEngine.Rendering.CullMode)] _Cull("Cull", Float) = 2
@@ -25,7 +26,7 @@ Shader "MapSharedProps/Lit" {
    #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
    TEXTURE2D(_BaseMap); SAMPLER(sampler_BaseMap);
    CBUFFER_START(UnityPerMaterial)
-    float4 _BaseMap_ST, _BaseColor, _PineBand, _PineWaves, _PinePhase, _PineResponse, _PlantTouch; float _Cutoff, _Cull;
+    float4 _BaseMap_ST, _BaseColor, _PineBand, _PineWaves, _PinePhase, _PineResponse, _PlantTouch; float _Cutoff, _Cull, _PlantCombinedLimit;
    CBUFFER_END
    #define SHARED_PLANT_TOUCH_DECLARED
    #include "SharedPineWind.hlsl"
@@ -54,7 +55,7 @@ Shader "MapSharedProps/Lit" {
    #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
    TEXTURE2D(_BaseMap); SAMPLER(sampler_BaseMap);
    CBUFFER_START(UnityPerMaterial)
-    float4 _BaseMap_ST, _BaseColor, _PineBand, _PineWaves, _PinePhase, _PineResponse, _PlantTouch; float _Cutoff, _Cull;
+    float4 _BaseMap_ST, _BaseColor, _PineBand, _PineWaves, _PinePhase, _PineResponse, _PlantTouch; float _Cutoff, _Cull, _PlantCombinedLimit;
    CBUFFER_END
    #define SHARED_PLANT_TOUCH_DECLARED
    #include "SharedPineWind.hlsl"
@@ -69,7 +70,7 @@ Shader "MapSharedProps/Lit" {
   CGPROGRAM
   #pragma surface Surf Lambert fullforwardshadows addshadow vertex:WindVert
   #pragma target 3.0
-  sampler2D _BaseMap; half4 _BaseColor; half _Cutoff;
+  sampler2D _BaseMap; half4 _BaseColor; half _Cutoff;float _PlantCombinedLimit;
   float4 _PineBand,_PineWaves,_PinePhase,_PineResponse;
   #include "SharedPineWind.hlsl"
   void WindVert(inout appdata_full v){float2 wind=SharedPlantOffset(v.vertex.y,v.texcoord.y,v.texcoord1.xy,mul(unity_ObjectToWorld,float4(0,0,0,1)).xz,length(unity_ObjectToWorld._m00_m10_m20));if(dot(wind,wind)>0){float4 wp=mul(unity_ObjectToWorld,v.vertex);wp.xz+=wind;v.vertex=mul(unity_WorldToObject,wp);}}
