@@ -481,7 +481,7 @@ cliffRelief.name='Derived cliff relief';cliffRelief.castShadow=cliffRelief.recei
 let cliffReliefTimer=0;
 function rebuildCliffRelief(){
   clearTimeout(cliffReliefTimer);cliffReliefTimer=0;
-  const geometry=TDCliffRelief.build(tGeo,heightAt,HALF);cliffRelief.geometry.dispose();cliffRelief.geometry=geometry;
+  const geometry=TDCliffRelief.build(tGeo,heightAt,HALF,fallReliefMask);cliffRelief.geometry.dispose();cliffRelief.geometry=geometry;
   cliffRelief.visible=geometry.index.count>0;
 }
 function scheduleCliffRelief(){clearTimeout(cliffReliefTimer);cliffRelief.visible=false;cliffReliefTimer=setTimeout(rebuildCliffRelief,100);}
@@ -1256,16 +1256,42 @@ function streamGeometry(f) {
   g.setAttribute('along', new THREE.Float32BufferAttribute(al, 1)); g.setAttribute('dist', new THREE.Float32BufferAttribute(di, 1));
   g.setIndex(ix); return g;
 }
-function fallGeometry(w, hgt, lean) {
-  const g = new THREE.PlaneGeometry(w, 1, 6, 12), p = g.attributes.position;
+function fallGeometry(w, hgt, lean, f) {
+  const SY = f ? 24 : 12, g = new THREE.PlaneGeometry(w, 1, 6, SY), p = g.attributes.position;
+  const half = v => w / 2 * (1 + .18 * (1 - v)), lzAt = v => -lean * Math.pow(v, 2.5);   // v: 0 bottom .. 1 top
+  // with a fall f, the sheet follows the gorge: at each height it narrows (each side on its own) where the rock at or just
+  // in front of it stands above the water, so the cliff sides never cut through the falling water
+  let fit = null;
+  if (f) {
+    const c = Math.cos(f.rot), sn = Math.sin(f.rot), ground = (lx, lz) => heightAt(f.x + lx * c + lz * sn, f.z - lx * sn + lz * c);
+    // the drawn triangles of a steep face can stand above the interpolated height, so look a little around the point
+    const buried = (lx, lz, y) => Math.max(ground(lx, lz), ground(lx, lz + .3), ground(lx - .2, lz + .15), ground(lx + .2, lz + .15)) > f.bottom + y - .02;
+    // the edge between two rows is straight, so a row also keeps clear of the rock halfway down to the next one
+    const side = (v, sd) => { const h0 = half(v), y = v * hgt, lz = lzAt(v); let h = h0; while (h > h0 * .3 && (buried(sd * h, lz, y) || buried(sd * h, lz, y - hgt / SY / 2))) h -= .05; return h / h0; };
+    const raw = [0, 1].map(q => Array.from({ length: SY + 1 }, (_, r) => side(1 - r / SY, q ? 1 : -1)));   // row 0 = top
+    // a sudden step in width bends the soft edge into a notch that reads as a rock spike: smooth the outline, never wider than the gap
+    // (erode by 2 rows, then average over 2 rows: every averaged value is at most the raw width of this row)
+    const win = (a, r, n, fn) => fn(a.slice(Math.max(0, r - n), r + n + 1));
+    fit = raw.map(a => { const e = a.map((_, r) => win(a, r, 2, x => Math.min(...x))); return e.map((_, r) => win(e, r, 2, x => x.reduce((s, v) => s + v, 0) / x.length)); });
+  }
   for (let i = 0; i < p.count; i++) {
-    const v = p.getY(i) + .5;                  // 0 bottom .. 1 top
-    p.setXYZ(i, p.getX(i) * (1 + .18 * (1 - v)), v * hgt, -lean * Math.pow(v, 2.5));
+    const v = p.getY(i) + .5, r = Math.round((1 - v) * SY), k = fit ? fit[p.getX(i) < 0 ? 0 : 1][r] : 1;
+    p.setXYZ(i, p.getX(i) * (1 + .18 * (1 - v)) * k, v * hgt, lzAt(v));
   }
   g.computeVertexNormals(); return g;
 }
+// water wears its rock smooth: no derived relief (terrain/cliff-relief.js) behind a falling sheet, beside it or under
+// its lip, so the rock skin cannot poke through the water. 1 = full relief, fading to 0 within the fall's band.
+function fallReliefMask(x, z) {
+  let k = 1;
+  for (const f of falls) {
+    const [ux, uz] = fallDir(f), ax = x - f.x, az = z - f.z, along = ax * ux + az * uz, lat = Math.abs(ax * uz - az * ux), w = f.w * .6;
+    k = Math.min(k, Math.max(sstep(w + .5, w + 1.5, lat), sstep(3, 4, along), sstep(-1.5, -2.5, along)));
+  }
+  return k;
+}
 function rebuildFalls() {
-  scheduleWater();
+  scheduleWater(); if (typeof cliffRelief !== 'undefined') scheduleCliffRelief();
   for (const c of [...fallGroup.children]) { if (c.geometry) c.geometry.dispose(); fallGroup.remove(c); }
   for (const f of falls) {
     if (f.sx !== undefined) { const st = new THREE.Mesh(streamGeometry(f), streamMat); st.renderOrder = 3; fallGroup.add(st); }
@@ -1273,7 +1299,7 @@ function rebuildFalls() {
     mist.position.set(f.x + Math.sin(f.rot) * .5, f.bottom + f.w * .45, f.z + Math.cos(f.rot) * .5);
     mist.userData = { mist: true, base: f.w * 2.4, ph: f.x * 3.1 }; mist.scale.setScalar(f.w * 2.4); mist.renderOrder = 5; fallGroup.add(mist);
     const hgt = f.top - f.bottom; if (hgt < .3) continue;
-    const m = new THREE.Mesh(fallGeometry(f.w, hgt + .15, .8), fallMat);
+    const m = new THREE.Mesh(fallGeometry(f.w, hgt + .15, .8, f), fallMat);
     m.position.set(f.x, f.bottom, f.z); m.rotation.y = f.rot; m.renderOrder = 3; fallGroup.add(m);
     const foam = new THREE.Mesh(new THREE.PlaneGeometry(f.w * 2.2, f.w * 1.6), foamMat);
     foam.rotation.set(-Math.PI / 2, 0, f.rot); foam.position.set(f.x + Math.sin(f.rot) * .4, f.bottom + .04, f.z + Math.cos(f.rot) * .4);
@@ -1289,6 +1315,7 @@ function cliffAt(x, z) {
   for (let d = 0; d <= 3; d += .25) { hT = Math.max(hT, heightAt(x + ux * d, z + uz * d)); const hb = heightAt(x - ux * d, z - uz * d); if (hb < hB) { hB = hb; dB = d; } }
   return { ux, uz, hT, hB, dB };
 }
+const FALL_CLEARS = new Set(['rock', 'cliff', 'cliff_split', 'cliff_shoulder', 'cliff_joint', 'cliff_slab', 'cliff_talus']);
 function placeFall(x, z, w) {
   const c = cliffAt(x, z); if (!c) return false;
   const bottom = Math.max(c.hB, state.water), top = c.hT;
@@ -1304,9 +1331,9 @@ function placeFall(x, z, w) {
     len += .25;
   }
   const f = { x: fx, z: fz, rot, w, top: top - .05, bottom };
-  // clear the stone columns and boulders that would hide the sheet of water
+  // clear the boulders and every cliff-stone part whose outline reaches the sheet of water
   const behindFall = (px, pz) => { const ax = px - x, az = pz - z, along = ax * c.ux + az * c.uz, lat = Math.abs(ax * c.uz - az * c.ux); return lat < w * .5 + .25 && along > -2 && along < 1.6; };
-  props = props.filter(p => !((p[0] === 4 || p[0] === 2) && behindFall(p[1], p[2])));
+  props = props.filter(p => !(FALL_CLEARS.has(PROP[p[0]].id) && (behindFall(p[1], p[2]) || cliffWorldHull(p).some(([hx, hz]) => behindFall(hx, hz)))));
   if (len >= 1.5) {
     const sx = lx + c.ux * len, sz = lz + c.uz * len, half = w * .5 + .5;
     const ax = lx - c.ux * .4, az = lz - c.uz * .4;

@@ -5,7 +5,8 @@
 const ease=(a,b,x)=>{const t=Math.max(0,Math.min(1,(x-a)/(b-a)));return t*t*(3-2*t);};
 const noise=(x,z)=>{const i=Math.floor(x),j=Math.floor(z),u=ease(0,1,x-i),v=ease(0,1,z-j),h=TDGeo.hash2;return (h(i,j)*(1-u)+h(i+1,j)*u)*(1-v)+(h(i,j+1)*(1-u)+h(i+1,j+1)*u)*v;};
 const edge=(a,b)=>a<b?a+':'+b:b+':'+a;
-function build(source,heightAt,half) {
+// mask(x, z) (optional, 0..1) scales the relief down, e.g. to 0 behind a waterfall's sheet
+function build(source,heightAt,half,mask) {
   const P=source.attributes.position,N=source.attributes.normal,I=source.index.array,faces=[],edges=new Map();
   const a=new THREE.Vector3(),b=new THREE.Vector3(),c=new THREE.Vector3(),ab=new THREE.Vector3(),ac=new THREE.Vector3();
   for(let i=0;i<I.length;i+=3){
@@ -33,7 +34,7 @@ function build(source,heightAt,half) {
         const foot=ease(.30,.85,y-Math.min(...heights)),crest=ease(.12,.65,Math.max(...heights)-y);
         const slope=ease(.20,.48,1-ny),frame=ease(0,.6,half-Math.max(Math.abs(x),Math.abs(z)));
         const grain=.60*noise(x*.75+y*.35,z*.75-y*.23)+.25*noise(x*1.9+y*.75,z*1.9-y*.5)+.15*noise(x*4.2-y*1.1,z*4.2+y*.7);
-        const offset=(.045+.55*grain)*rim*foot*crest*slope*frame,ln=Math.hypot(nx,ny,nz)||1;
+        const offset=(.045+.55*grain)*rim*foot*crest*slope*frame*(mask?mask(x,z):1),ln=Math.hypot(nx,ny,nz)||1;
         maxOffset=Math.max(maxOffset,offset);
         const id=arrays.position.length/3;cache.set(key,id);ids[u][v]=id;
         arrays.position.push(x+nx/ln*offset,y+ny/ln*offset,z+nz/ln*offset);
