@@ -695,6 +695,35 @@ const snowMat = propMat.clone(); snowMat.roughness = .8; snowMat.flatShading = f
 const glossMat = propMat.clone(); glossMat.roughness = .1; glossMat.metalness = .1; glossMat.defines = { DETAIL: '', DETAIL_K: '.3' }; glossMat.onBeforeCompile = propShader; glossMat.customProgramCacheKey = () => 'prop-dim-v6-gloss';
 // bridges and stairs: the stone detail a little weaker (it also reads as weathered grain on the wooden ones)
 const structMat = propMat.clone(); structMat.defines = { DETAIL: '', DETAIL_K: '.75' }; structMat.onBeforeCompile = propShader; structMat.customProgramCacheKey = () => 'prop-dim-v6-struct';
+
+// Reuse the existing opaque wood atlas. Normalise its luminance so the original
+// baked wood colours remain authoritative; no extra image or transparent pass.
+const bridgeWoodRect = TDGeo.ATLAS2.rect.wood;
+let bridgeWoodMean = 0, bridgeWoodSamples = 0;
+const bridgeLinear = x => x <= .04045 ? x / 12.92 : Math.pow((x + .055) / 1.055, 2.4);
+for (let y = bridgeWoodRect[1] + 4; y < bridgeWoodRect[1] + bridgeWoodRect[3] - 4; y += 8) {
+  for (let x = bridgeWoodRect[0] + 4; x < bridgeWoodRect[0] + bridgeWoodRect[2] - 4; x += 8) {
+    const i = (y * TDGeo.ATLAS2.width + x) * 4, d = atlasTex2.image.data;
+    bridgeWoodMean += .2126 * bridgeLinear(d[i] / 255) + .7152 * bridgeLinear(d[i + 1] / 255) + .0722 * bridgeLinear(d[i + 2] / 255);
+    bridgeWoodSamples++;
+  }
+}
+bridgeWoodMean /= bridgeWoodSamples;
+const structWoodMat = structMat.clone(); structWoodMat.map = atlasTex2; structWoodMat.defines = {};
+structWoodMat.onBeforeCompile = sh => {
+  propShader(sh); sh.uniforms.uBridgeWoodMean = { value: bridgeWoodMean };
+  sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform float uBridgeWoodMean;')
+    .replace('#include <map_fragment>', `
+#ifdef USE_MAP
+vec4 grain = texture2D(map, vMapUv);
+// White atlas texel is reserved for the stone footings, outside the wood region.
+float woodPixel = step(.74, vMapUv.x) * (1. - step(.5, vMapUv.y));
+float value = clamp(dot(grain.rgb, vec3(.2126,.7152,.0722)) / uBridgeWoodMean, .55, 1.5);
+diffuseColor.rgb *= mix(1., value, woodPixel);
+#endif`);
+};
+structWoodMat.customProgramCacheKey = () => 'prop-dim-v6-struct-wood-grain';
+
 const PROP_MATS = { rock: rockMat, stone: masonMat, cards: cardMat, cards2: cardMat2, foliage: foliageMat, ice: iceMat, snow: snowMat, gloss: glossMat };
 const CAP = 8000;
 // plants with touch: true bend away from the hero in walk mode (per-instance attribute 'touch', see updateTouch)
@@ -1257,6 +1286,26 @@ function bridgeAt(x, z, margin = 0) {   // margin: distance kept from the deck e
   }
   return null;
 }
+
+// UVs only: point the existing wood grain along each component's longest axis.
+// The positions, normals, colours, random sequence and walk profile stay intact.
+function bridgeWoodUV(parts, wood, dark) {
+  parts.forEach((p, index) => {
+    if (p.cfn !== wood && p.cfn !== dark) return;
+    const b = p.g.parameters, dims = [b.width, b.height, b.depth];
+    if (!dims.every(v => Number.isFinite(v) && v > 0)) return;
+    const axis = dims.indexOf(Math.max(...dims)), other = [0,1,2].filter(k => k !== axis);
+    const pos = p.g.attributes.position, normal = p.g.attributes.normal, uv = p.g.attributes.uv;
+    const scale = .48 + hash2(index, 71) * .38, offset = hash2(index, 83) * (1. - scale);
+    for (let i = 0; i < uv.count; i++) {
+      const xyz = [pos.getX(i), pos.getY(i), pos.getZ(i)], n = [normal.getX(i), normal.getY(i), normal.getZ(i)];
+      const cross = Math.abs(n[other[0]]) < Math.abs(n[other[1]]) ? other[0] : other[1];
+      uv.setXY(i, .12 + (xyz[cross] / dims[cross] + .5) * .76, offset + (xyz[axis] / dims[axis] + .5) * scale);
+    }
+    p.uvr = TDGeo.ATLAS2.uvr('wood');
+  });
+}
+
 function geoBridgeWood(b) {
   const pr = bridgeProfile(b), L = pr.L, dx = (b.x2 - b.x1) / L, dz = (b.z2 - b.z1) / L, ry = Math.atan2(dx, dz), px = dz, pz = -dx;
   const R = rng(((b.x1 * 97 + b.z1 * 31) * 100) | 0), parts = [];
@@ -1290,7 +1339,8 @@ function geoBridgeWood(b) {
   }
   // stone footings at both ends
   for (const t of [0, 1]) { const [x, y, z] = at(t, 0, -.32); parts.push({ g: displace(new THREE.BoxGeometry(b.w + .5, .5, .8, 2, 1, 1), .08, x + z), m: mat4(x, y, z, 1, 1, 1, ry), cfn: stone, j: .08 }); }
-  return makeGeo(parts, 31);
+  bridgeWoodUV(parts, wood, dark);
+  return makeGeo(parts, 31, { uv: TDGeo.ATLAS2.white });
 }
 // --- shared helpers for structures that follow a deck curve
 function bridgeKit(b) {
@@ -1394,7 +1444,7 @@ function geoBridge(b) {
 }
 function rebuildBridges() {
   for (const c of [...bridgeGroup.children]) { c.geometry.dispose(); bridgeGroup.remove(c); }
-  for (const b of bridges) { const m = new THREE.Mesh(geoBridge(b), structMat); m.castShadow = m.receiveShadow = true; bridgeGroup.add(m); }
+  for (const b of bridges) { const m = new THREE.Mesh(geoBridge(b), (b.type || 'wood') === 'wood' ? structWoodMat : structMat); m.castShadow = m.receiveShadow = true; bridgeGroup.add(m); }
   walkDirty = true;
 }
 function placeBridge(a, c, w, type = 'wood') {
