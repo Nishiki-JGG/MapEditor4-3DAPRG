@@ -63,4 +63,4 @@
   - ツリーの全種類・グループの一括チェック
   - ページのエラー 0
 
-- 全体の回帰テスト：実行中（結果はこの後に追記します）。
+- 全体の回帰テスト：22 本すべて合格（smoke・edtest・walktest・secret・bridgetest・v5test・uitest・linkui・reviewtest・sizetest・s2test・cptest・fix6test、rev3_acceptance・rev4_acceptance・rev5_terrain_grid・sample2_secret、editor_ui・map_name_light・secret_climb・touch_sway・water_export）。
