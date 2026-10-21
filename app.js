@@ -735,7 +735,8 @@ function touchMat(base) {
     const m = base.clone(); m.defines = { ...(base.defines || {}), TOUCH: '' };
     if (base.onBeforeCompile === propShader) { m.onBeforeCompile = propShader; m.customProgramCacheKey = () => base.customProgramCacheKey() + '-touch'; }
     else {   // shared assets (props/shared): the same material, plus the bend
-      m.onBeforeCompile = sh => { sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute vec3 touch;').replace('#include <begin_vertex>', '#include <begin_vertex>\n#ifdef USE_INSTANCING\n' + TOUCH_GLSL + '\n#endif'); };
+      m.userData.touchVertex = sh => { sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute vec3 touch;').replace('#include <begin_vertex>', '#include <begin_vertex>\n#ifdef USE_INSTANCING\n' + TOUCH_GLSL + '\n#endif'); };
+      m.onBeforeCompile = sh => { base.onBeforeCompile(sh); m.userData.touchVertex(sh); };
       m.customProgramCacheKey = () => 'shared-touch/' + base.name;
     }
     touchMats.set(base, m);
@@ -747,7 +748,7 @@ const propMeshes = PROP.map(t => {
   const m = new THREE.InstancedMesh(t.geo, t.touch ? touchMat(base) : base, CAP);
   if (t.touch) { m.userData.touch = new THREE.InstancedBufferAttribute(new Float32Array(CAP * 3), 3).setUsage(THREE.DynamicDrawUsage); t.geo.setAttribute('touch', m.userData.touch); }
   m.castShadow = m.receiveShadow = true; m.frustumCulled = false; m.count = 0;
-  if(t.sharedAsset==='pine'){m.customDepthMaterial=TDPineWind.shadowMaterial(m.material);m.customDistanceMaterial=TDPineWind.shadowMaterial(m.material,true);}
+  if(t.sharedAsset&&(t.sharedAsset==='pine'||TDSharedProps.asset(t.sharedAsset).wind)){m.customDepthMaterial=TDPineWind.shadowMaterial(m.material);m.customDistanceMaterial=TDPineWind.shadowMaterial(m.material,true);}
   if (t.canopy) m.receiveShadow = false;   // lumpy canopies shadow themselves in patches; their soft normals already shade them (and it is cheaper)
   m.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(CAP * 3), 3);
   if (m.material === rockMat) { m.userData.cliffI = new THREE.InstancedBufferAttribute(new Float32Array(CAP), 1); t.geo.setAttribute('cliffI', m.userData.cliffI); }
