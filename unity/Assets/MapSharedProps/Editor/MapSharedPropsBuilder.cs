@@ -12,8 +12,9 @@ public static class MapSharedPropsBuilder {
  [Serializable] public class TextureDto { public string id, png, colorSpace, wrap, filter; public int width, height, anisotropy; public bool mipmaps; }
  [Serializable] public class MaterialDto { public string texture, lighting; public float[] baseColor; public float alphaCutoff; public bool doubleSided; }
  [Serializable] public class GroundOffsetDto { public int firstVertex, count; public float deltaY; }
- [Serializable] public class WindDto {public float minY,maxY,maxDisplacementMetres,uvMin;}
- [Serializable] public class AssetDto { public WindDto wind; public GroundOffsetDto[] groundOffsets; public string id, assetKey; public int version; public float[] positions, normals, colors, uv, pivot; public int[] triangles; public MaterialDto material; }
+ [Serializable] public class WindDto {public float minY,maxY,maxDisplacementMetres,uvMin,phaseOffset;}
+ [Serializable] public class ContactDto {public int version;public float radius,minY,maxY,maxDisplacementMetres;}
+ [Serializable] public class AssetDto { public ContactDto contact;public float[] motionWeights;public WindDto wind; public GroundOffsetDto[] groundOffsets; public string id, assetKey; public int version; public float[] positions, normals, colors, uv, pivot; public int[] triangles; public MaterialDto material; }
  [Serializable] public class LibraryDto { public int schemaVersion; public string libraryVersion, units, axes, winding, uvOrigin; public TextureDto[] textures; public AssetDto[] assets; }
  [Serializable] public class ModelDto { public string file, id; public int version; }
  [Serializable] public class TypeDto { public string assetKey; public float yawOffsetDeg; public ModelDto sharedModel; }
@@ -34,8 +35,8 @@ public static class MapSharedPropsBuilder {
  }
  public static LibraryDto ReadLibrary(string file) {
   var d = JsonUtility.FromJson<LibraryDto>(File.ReadAllText(file));
-  Require(d != null && d.schemaVersion == 1 && (d.libraryVersion == "shared-rock-fern/4" || d.libraryVersion == "shared-nature/1" || d.libraryVersion == "shared-plants/1" || d.libraryVersion == "shared-plants/2") && d.units == "metres", "unsupported library/version/units");
-  Require(d.assets != null && d.assets.Length == (d.libraryVersion == "shared-plants/2" ? 19 : d.libraryVersion == "shared-plants/1" ? 9 : d.libraryVersion == "shared-nature/1" ? 6 : 2) && d.textures != null && d.textures.Length == (d.libraryVersion == "shared-plants/2" ? 5 : d.libraryVersion == "shared-plants/1" ? 4 : d.libraryVersion == "shared-nature/1" ? 3 : 2), "unexpected asset/texture count");
+  Require(d != null && d.schemaVersion == 1 && (d.libraryVersion == "shared-rock-fern/4" || d.libraryVersion == "shared-nature/1" || d.libraryVersion == "shared-plants/1" || d.libraryVersion == "shared-plants/2" || d.libraryVersion == "shared-plants/3") && d.units == "metres", "unsupported library/version/units");
+  Require(d.assets != null && d.assets.Length == ((d.libraryVersion == "shared-plants/2" || d.libraryVersion == "shared-plants/3") ? 19 : d.libraryVersion == "shared-plants/1" ? 9 : d.libraryVersion == "shared-nature/1" ? 6 : 2) && d.textures != null && d.textures.Length == ((d.libraryVersion == "shared-plants/2" || d.libraryVersion == "shared-plants/3") ? 5 : d.libraryVersion == "shared-plants/1" ? 4 : d.libraryVersion == "shared-nature/1" ? 3 : 2), "unexpected asset/texture count");
   var ids = new HashSet<string>(); var texIds = new HashSet<string>();
   foreach (var t in d.textures) {
    Require(t != null && texIds.Add(t.id) && (t.id == "rock-basecolor-v1" || t.id == "fern-basecolor-v1" || t.id == "forest-atlas-v1" || t.id == "ground-plants-atlas-v1" || t.id == "woodland-plants-atlas-v1"), "texture ID");
@@ -48,6 +49,7 @@ public static class MapSharedPropsBuilder {
    if(a.wind!=null&&a.wind.maxDisplacementMetres>0)Require(a.wind.minY>=0&&a.wind.maxY>a.wind.minY&&a.wind.maxDisplacementMetres<=.12f&&a.wind.uvMin==-1,"plant wind contract");
    Require(a.positions != null && a.positions.Length > 0 && a.positions.Length % 9 == 0 && a.positions.Length <= 180000, "mesh size");
    int n = a.positions.Length / 3;
+   Require(a.contact==null||a.contact.version==0||a.motionWeights!=null,"contact requires weights");if(d.libraryVersion=="shared-plants/3"&&a.id!="rock"&&a.id!="fern"&&a.id!="pine"&&a.id!="log"&&a.id!="stump"&&a.id!="rootfan"&&a.id!="grass"&&a.id!="reed"&&a.id!="flowers")Require(a.motionWeights!=null,"plant motion missing");if(a.motionWeights!=null){Require(d.libraryVersion=="shared-plants/3","weighted library version");Floats(a.motionWeights,n*2,"motion mask");foreach(float w in a.motionWeights)Require(w>=0&&w<=1,"motion mask range");Require(a.wind!=null&&Finite(a.wind.phaseOffset)&&a.contact!=null&&a.contact.version==1&&Finite(a.contact.radius)&&a.contact.radius>0&&a.contact.minY>=0&&a.contact.maxY>a.contact.minY&&a.contact.maxDisplacementMetres>0&&a.contact.maxDisplacementMetres<=.3f,"motion/contact contract");}
    Floats(a.positions, n * 3, "positions"); Floats(a.normals, n * 3, "normals"); Floats(a.colors, n * 3, "colors"); Floats(a.uv, n * 2, "uv"); Floats(a.pivot, 3, "pivot");
    Require(a.pivot[0] == 0 && a.pivot[1] == 0 && a.pivot[2] == 0, "pivot must be ground origin");
    Require(a.triangles != null && a.triangles.Length > 0 && a.triangles.Length % 3 == 0, "triangle count");
@@ -106,22 +108,23 @@ public static class MapSharedPropsBuilder {
      colors[i] = new Color(a.colors[k], a.colors[k+1], a.colors[k+2], 1); uv[i] = new Vector2(a.uv[i*2], a.uv[i*2+1]);
     }
     var mesh = new Mesh { name = a.assetKey + "/v" + a.version, indexFormat = IndexFormat.UInt16, vertices = vertices, normals = normals, colors = colors, uv = uv, triangles = a.triangles };
-    mesh.RecalculateBounds(); AssetDatabase.CreateAsset(mesh, r.assetDirectory + "/" + a.id + ".asset");
+    if(a.motionWeights!=null){var mask=new Vector2[n];for(int i=0;i<n;i++)mask[i]=new Vector2(a.motionWeights[i*2],a.motionWeights[i*2+1]);mesh.uv2=mask;}mesh.RecalculateBounds();if(a.motionWeights!=null){var bounds=mesh.bounds;float pad=a.wind.maxDisplacementMetres+a.contact.maxDisplacementMetres;bounds.Expand(new Vector3(pad*2,0,pad*2));mesh.bounds=bounds;} AssetDatabase.CreateAsset(mesh, r.assetDirectory + "/" + a.id + ".asset");
     var d = a.material; var mat = new Material(shader) { name = a.id + "/v" + a.version };
     mat.SetTexture("_BaseMap", textures[d.texture]); mat.SetColor("_BaseColor", new Color(d.baseColor[0],d.baseColor[1],d.baseColor[2],d.baseColor[3]));
     if(a.id=="pine"&&wind!=null){mat.SetVector("_PineBand",new Vector4(wind.minY,wind.maxY,wind.maxDisplacementMetres,1));mat.SetVector("_PineWaves",new Vector4(wind.waves[0],wind.waves[1],wind.waves[2],wind.waves[3]));mat.SetVector("_PinePhase",new Vector4(wind.phase[0],wind.phase[1],0,0));}
-    if(a.wind!=null&&a.wind.maxDisplacementMetres>0){mat.SetVector("_PineBand",new Vector4(a.wind.minY,a.wind.maxY,a.wind.maxDisplacementMetres,2));}
+    if(a.wind!=null&&a.wind.maxDisplacementMetres>0){mat.SetVector("_PineBand",new Vector4(a.wind.minY,a.wind.maxY,a.wind.maxDisplacementMetres,a.motionWeights!=null?3:2));if(a.motionWeights!=null)mat.SetVector("_PinePhase",new Vector4(.17f,.13f,a.wind.phaseOffset,0));}
     mat.SetFloat("_Cutoff", d.alphaCutoff); mat.SetFloat("_Cull", d.doubleSided ? 0 : 2);
     mat.renderQueue = d.alphaCutoff > 0 ? 2450 : 2000;
     AssetDatabase.CreateAsset(mat, r.assetDirectory + "/" + a.id + ".mat");
     var go = new GameObject(a.id); go.AddComponent<MeshFilter>().sharedMesh = mesh; go.AddComponent<MeshRenderer>().sharedMaterial = mat;
     r.prefabs.Add(a.id, PrefabUtility.SaveAsPrefabAsset(go, r.assetDirectory + "/" + a.id + ".prefab")); UnityEngine.Object.DestroyImmediate(go);
    }
-   r.root = new GameObject("Shared prop pilot"); if (parent != null) r.root.transform.SetParent(parent, false);
+   r.root = new GameObject("Shared prop pilot");var contactDriver=lib.libraryVersion=="shared-plants/3"?r.root.AddComponent<MapSharedProps.SharedPlantContact>():null; if (parent != null) r.root.transform.SetParent(parent, false);
    foreach (var p in rows) {
     var go = (GameObject)PrefabUtility.InstantiatePrefab(r.prefabs[p.type], r.root.transform); go.name = p.instanceId;
-    go.transform.localPosition = p.position; go.transform.localRotation = Quaternion.Euler(0, p.yaw, 0); go.transform.localScale = p.scale; r.placed++;
+    go.transform.localPosition = p.position; go.transform.localRotation = Quaternion.Euler(0, p.yaw, 0); go.transform.localScale = p.scale; r.placed++;var model=Array.Find(lib.assets,a=>a.id==p.type);if(model.contact!=null&&model.contact.version==1)contactDriver.Register(go.GetComponent<Renderer>(),model.contact.radius,model.contact.minY,model.contact.maxY,model.contact.maxDisplacementMetres);
    }
+   if(contactDriver)contactDriver.Refresh();
    if(wind!=null){var driver=r.root.AddComponent<MapSharedProps.SharedPineWind>();ConfigureWind(driver,Path.Combine(exportDirectory,"meta.json"));driver.Apply(0);}
    AssetDatabase.SaveAssets(); return r;
   } catch {

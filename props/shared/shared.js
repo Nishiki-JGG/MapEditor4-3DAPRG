@@ -19,12 +19,13 @@ function geometry(id) {
   const indices = a.triangles.slice();
   for (let k = 0; k < indices.length; k += 3) [indices[k + 1], indices[k + 2]] = [indices[k + 2], indices[k + 1]];
   g.setIndex(indices);
-  g.computeBoundingBox(); g.computeBoundingSphere();
+  if(a.motionWeights)g.setAttribute('plantWeight',new THREE.Float32BufferAttribute(a.motionWeights,2));
+  g.computeBoundingBox(); g.computeBoundingSphere();if(a.motionWeights){const pad=a.wind.maxDisplacementMetres+a.contact.maxDisplacementMetres;g.boundingBox.min.x-=pad;g.boundingBox.min.z-=pad;g.boundingBox.max.x+=pad;g.boundingBox.max.z+=pad;g.boundingSphere.radius+=pad;}
   return g;
 }
 function material(id, ghost = false) {
   if (ghost) {
-    if (!ghosts.has(id)) { const m = material(id).clone(); m.transparent = true; m.opacity = .28; m.depthWrite = false; if (m.alphaTest) m.alphaTest *= .25; if(id==='pine'||asset(id).wind) TDPineWind.attach(m,asset(id).wind||null); ghosts.set(id, m); }
+    if (!ghosts.has(id)) { const m = material(id).clone(); m.transparent = true; m.opacity = .28; m.depthWrite = false; if (m.alphaTest) m.alphaTest *= .25; if(id==='pine'||asset(id).wind) TDPineWind.attach(m,asset(id).wind||null,!!asset(id).motionWeights); ghosts.set(id, m); }
     return ghosts.get(id);
   }
   if (materials.has(id)) return materials.get(id);
@@ -39,7 +40,7 @@ function material(id, ghost = false) {
   }
   const m = new THREE.MeshLambertMaterial({map, vertexColors: true, color: new THREE.Color().fromArray(d.baseColor),
     alphaTest: d.alphaCutoff, side: d.doubleSided ? THREE.DoubleSide : THREE.FrontSide});
-  if(id==='pine'||asset(id).wind) TDPineWind.attach(m,asset(id).wind||null);
+  if(id==='pine'||asset(id).wind) TDPineWind.attach(m,asset(id).wind||null,!!asset(id).motionWeights);
   m.name = data.libraryVersion + '/' + id; materials.set(id, m); return m;
 }
 window.TDSharedProps = {asset, geometry, material, data, exportJson: () => JSON.stringify(data)};

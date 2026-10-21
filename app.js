@@ -820,6 +820,7 @@ const TOUCH_GLSL = `// bent away from the hero (touch.xy = world-space bend of t
 const touchMats = new Map();
 function touchMat(base) {
   if (!touchMats.has(base)) {
+    if(base.userData.sharedWeighted){touchMats.set(base,TDPineWind.touchMaterial(base));return touchMats.get(base);}
     const m = base.clone(); m.defines = { ...(base.defines || {}), TOUCH: '' };
     if (base.onBeforeCompile === propShader) { m.onBeforeCompile = propShader; m.customProgramCacheKey = () => base.customProgramCacheKey() + '-touch'; }
     else {   // shared assets (props/shared): the same material, plus the bend
@@ -878,30 +879,37 @@ function updateGlowLights(cx, cz) {
 // Visual only: walkability, saving and the export do not change.
 const touchIdx = new Map(), touchState = new Map();   // prop -> instance index / spring { bx, bz, vx, vz, push }
 let touchProps = [], touchPrev = null;
+const touchGrid=new Map(),TOUCH_CELL=4,touchStats={registered:0,candidates:0,active:0,lastMs:0};
+function touchCell(x,z){return Math.floor(x/TOUCH_CELL)+','+Math.floor(z/TOUCH_CELL);}
+function indexTouch(p){const t=PROP[p[0]],cfg=t.sharedAsset?TDSharedProps.asset(t.sharedAsset).contact:null,radius=(cfg?cfg.radius:t.vis*.6)*p[4];for(let x=Math.floor((p[1]-radius)/TOUCH_CELL);x<=Math.floor((p[1]+radius)/TOUCH_CELL);x++)for(let z=Math.floor((p[2]-radius)/TOUCH_CELL);z<=Math.floor((p[2]+radius)/TOUCH_CELL);z++){const key=x+','+z;if(!touchGrid.has(key))touchGrid.set(key,[]);touchGrid.get(key).push(p);}}
 const TOUCH_K = 70, TOUCH_DAMP = 4.2;   // stiffness (1/s²) and damping (1/s): about 1.3 swings a second, fading in ~1.5 s
 function writeTouch(p, st) {
   const a = propMeshes[p[0]].userData.touch, i = touchIdx.get(p) * 3;
   a.array[i] = st.bx; a.array[i + 1] = st.bz; a.array[i + 2] = 1 / Math.max(PROP[p[0]].meshTop, .05); a.needsUpdate = true;
 }
 function updateTouch(dt) {
+  const started=performance.now();touchStats.candidates=0;
   const play = state.mode === 'play' && hero.visible;
-  if (!play) { if (touchState.size) { for (const [p, st] of touchState) { st.bx = st.bz = 0; writeTouch(p, st); } touchState.clear(); } touchPrev = null; return; }
+  if (!play) { if (touchState.size) { for (const [p, st] of touchState) { st.bx = st.bz = 0; writeTouch(p, st); } touchState.clear(); } touchPrev = null;touchStats.active=0;touchStats.lastMs=performance.now()-started; return; }
   const h = Math.min(dt, 1 / 30), r0 = state.agent.radius;
   let mvx = 0, mvz = 0;
   if (touchPrev && dt > 0) { mvx = (player.x - touchPrev.x) / dt; mvz = (player.z - touchPrev.z) / dt; }
   touchPrev = { x: player.x, z: player.z };
-  const mv = Math.hypot(mvx, mvz), mdx = mv > .1 ? mvx / mv : 0, mdz = mv > .1 ? mvz / mv : 0;
-  for (const p of touchProps) {
-    const t = PROP[p[0]], R = t.vis * p[4] * .6 + r0, dx = p[1] - player.x, dz = p[2] - player.z;
+  const speed=Math.hypot(mvx,mvz),mv=speed>20?0:speed, mdx = mv > .1 ? mvx / mv : 0, mdz = mv > .1 ? mvz / mv : 0;
+  const candidates=new Set();for(let x=Math.floor((player.x-r0)/TOUCH_CELL);x<=Math.floor((player.x+r0)/TOUCH_CELL);x++)for(let z=Math.floor((player.z-r0)/TOUCH_CELL);z<=Math.floor((player.z+r0)/TOUCH_CELL);z++)for(const p of touchGrid.get(x+','+z)||[])candidates.add(p);touchStats.candidates=candidates.size;
+  for (const p of candidates) {
+    const t = PROP[p[0]], contact=t.sharedAsset?TDSharedProps.asset(t.sharedAsset).contact:null, R = (contact?contact.radius:t.vis*.6)*p[4]+r0, dx = p[1] - player.x, dz = p[2] - player.z;
     if (Math.abs(dx) > R || Math.abs(dz) > R) continue;
     const d = Math.hypot(dx, dz); if (d >= R) continue;
+    const baseY=p[7]??heightAt(p[1],p[2]),scaleY=p[4]*(p[6]??1);if(contact&&(baseY+contact.minY*scaleY>=player.y+state.agent.height||baseY+contact.maxY*scaleY<=player.y))continue;
     let st = touchState.get(p); if (!st) touchState.set(p, st = { bx: 0, bz: 0, vx: 0, vz: 0, push: null });
-    const o = 1 - d / R, nx = d > .05 ? dx / d : mdx, nz = d > .05 ? dz / d : mdz, max = Math.min(.45, .38 * t.meshTop * p[4] * (p[6] ?? 1));
+    const o = 1 - d / R, nx = d > .05 ? dx / d : mdx, nz = d > .05 ? dz / d : mdz, max = contact?Math.min(.3,contact.maxDisplacementMetres*p[4]):Math.min(.45, .38 * t.meshTop * p[4] * (p[6] ?? 1));st.motion=!!contact;st.max=max;
     // push out of the way, plus drag along the walk while the hero moves
-    st.push = [(nx * .8 + mdx * .45 * Math.min(1, mv / 3)) * o * max * 1.6, (nz * .8 + mdz * .45 * Math.min(1, mv / 3)) * o * max * 1.6, max];
+    st.push = contact?[...TDPineWind.target(dx,dz,R,mvx,mvz,max),max]:[(nx * .8 + mdx * .45 * Math.min(1, mv / 3)) * o * max * 1.6, (nz * .8 + mdz * .45 * Math.min(1, mv / 3)) * o * max * 1.6, max];
   }
   for (const [p, st] of touchState) {
     const tx = st.push ? st.push[0] : 0, tz = st.push ? st.push[1] : 0;
+    if(st.motion){const rest=TDPineWind.advance(st,tx,tz,st.max,dt);st.push=null;writeTouch(p,st);if(rest)touchState.delete(p);continue;}
     st.vx += (TOUCH_K * (tx - st.bx) - TOUCH_DAMP * st.vx) * h; st.vz += (TOUCH_K * (tz - st.bz) - TOUCH_DAMP * st.vz) * h;
     st.bx += st.vx * h; st.bz += st.vz * h;
     const b = Math.hypot(st.bx, st.bz), max = st.push ? st.push[2] : .45; if (b > max) { st.bx *= max / b; st.bz *= max / b; }
@@ -909,11 +917,12 @@ function updateTouch(dt) {
     st.push = null;
     if (rest) { st.bx = st.bz = 0; writeTouch(p, st); touchState.delete(p); } else writeTouch(p, st);
   }
+  touchStats.active=touchState.size;touchStats.lastMs=performance.now()-started;
 }
 function rebuildProps(visualOnly = false) {
   glowTick = 0;
   const cnt = PROP.map(() => 0), gcnt = PROP.map(() => 0);
-  touchIdx.clear(); touchProps = [];
+  touchIdx.clear(); touchProps = [];touchGrid.clear();
   for (const p of props) {
     const [t, x, z, r, s] = p, sy = p[6] ?? 1, by = p[7] ?? null, ghost = ghosts.has(p) && gcnt[t] < 256;
     const mesh = ghost ? ghostMeshes[t] : propMeshes[t], c = ghost ? gcnt : cnt;
@@ -926,13 +935,14 @@ function rebuildProps(visualOnly = false) {
     const v = .86 + .28 * hash2(x * 97 | 0, z * 89 | 0);
     mesh.setColorAt(c[t], shared ? _c.setRGB(1, 1, 1) : _c.setRGB(v * (.95 + .1 * hash2(x * 13 | 0, 7)), v, v * (.95 + .1 * hash2(3, z * 17 | 0))));
     if (!ghost && mesh.userData.cliffI) mesh.userData.cliffI.array[c[t]] = cliffIndexNear(x, z);
-    if (!ghost && mesh.userData.touch) { touchIdx.set(p, c[t]); touchProps.push(p); }
+    if (!ghost && mesh.userData.touch) { touchIdx.set(p, c[t]); touchProps.push(p);indexTouch(p); }
     c[t]++;
   }
   for (const m of propMeshes) if (m.userData.touch) { m.userData.touch.array.fill(0); m.userData.touch.needsUpdate = true; }
   for (const [p, st] of touchState) if (touchIdx.has(p)) writeTouch(p, st); else touchState.delete(p);
   propMeshes.forEach((m, t) => { m.count = cnt[t]; m.instanceMatrix.needsUpdate = true; m.instanceColor.needsUpdate = true; if (m.userData.cliffI) m.userData.cliffI.needsUpdate = true; });
   ghostMeshes.forEach((m, t) => { m.count = gcnt[t]; m.instanceMatrix.needsUpdate = true; m.instanceColor.needsUpdate = true; });
+  touchStats.registered=touchProps.length;
   if (!visualOnly) { colliders = null; walkDirty = true; }
 }
 
@@ -3688,7 +3698,6 @@ const _tgt = new THREE.Vector3();
 let fpsAcc = 0, fpsN = 0, fps = 0;
 function update(dt) {
   timeU.value += dt;
-  updateTouch(dt);
   TDPineWind.set(timeU.value,BU.uWind.value.x,-BU.uWind.value.y,BU.uWind.value.z);
   for (const [o, sp] of linkSpin) { if (o.geometry.type === 'PlaneGeometry') o.rotation.z += dt * sp; else { o.rotation.y += dt * sp; o.material.opacity = .42 + Math.sin(timeU.value * 2.2) * .1; } }
   { const c = state.mode === 'edit' ? cam.target : player; WU.uCenter.value.set(c.x, (state.mode === 'edit' ? heightAt(c.x, c.z) : player.y) + 2, c.z); }
@@ -3747,7 +3756,7 @@ function update(dt) {
     // inside a secret passage: fade what we overlap and keep the hero visible through rock
     const inSecret = overrideAt(player.x, player.z) === 3;
     const g = new Set();
-    if (inSecret) for (const p of props) { if (PROP[p[0]].touch) continue;   // low plants bend out of the way instead of fading
+    if (inSecret) for (const p of props) { if (PROP[p[0]].touch&&!PROP[p[0]].tree) continue;   // low plants bend out of the way instead of fading
       const r = VIS_R[p[0]] * p[4] + .35; if (Math.abs(p[1] - player.x) < r && Math.abs(p[2] - player.z) < r && Math.hypot(p[1] - player.x, p[2] - player.z) < r) g.add(p); }
     if (g.size !== ghosts.size || [...g].some(p => !ghosts.has(p))) { ghosts = g; rebuildProps(true); }
     const buried = inSecret && heightAt(player.x, player.z) > player.y + 1.2;
@@ -3764,6 +3773,7 @@ function update(dt) {
     _tgt.set(player.x, player.y + 1, player.z);
     placeCamera(playCam, _tgt);
   }
+  updateTouch(dt);
   sun.target.position.set(0, 0, 0);
 }
 function hud() {
@@ -3795,7 +3805,7 @@ requestAnimationFrame(frame);
 
 // hooks for automated checks
 window.__app = {
-  pavingMask, cliffRelief, rebuildCliffRelief, groundTrial, groundTexture, terrain, renderer, camera, SIZE, state, H, S, O, F, C, propMeshes, ghostMeshes, cliffIndexAt, BIOMES, CLIFF_STYLES, applyCliffStyle, deckAt, linkDeckAt, runValidation, genSample, genSample2, secretRegions, secretLineX, passageGeometry, terrainRes, TERRAIN_RES, snapshot, sha256, LINK_KINDS, normalizeCatalog, catalogExport, valueIssues, areaIssue, deckAt, getColliders, PROP, get colliderMaxR() { return colliderMaxR; }, rebuildMarkers, linkTrigger, linkArrival, LINK_SPEC, get markers() { return markers; }, placeMarker, ensureIds, applyCatalog, ATMOS, WEATHER, applyAtmo, makeCoast, glowLights, applyBiome, applyPalette, propVisible, toolVisible, updateTerrain, rebuildProps, genFlat, floorAt, bridgeAt, stairsAt, placeSlope, placeStairs, placeBridge, pickTarget, regenGroundProps, rebuildBridges, get stairs() { return stairs; }, get bridges() { return bridges; }, get falls() { return falls; }, overrideAt, heroMat, hero, heroBody, get heroLook() { return heroLook; }, setHeroLook, heroStyle, heroGlow, get ghosts() { return ghosts; }, get props() { return props; }, cam, playCam, player, keys, setMode, setTool, update, heightAt, walkable, slope: slopeAt,
+  updateTouch,touchStats, pavingMask, cliffRelief, rebuildCliffRelief, groundTrial, groundTexture, terrain, renderer, camera, SIZE, state, H, S, O, F, C, propMeshes, ghostMeshes, cliffIndexAt, BIOMES, CLIFF_STYLES, applyCliffStyle, deckAt, linkDeckAt, runValidation, genSample, genSample2, secretRegions, secretLineX, passageGeometry, terrainRes, TERRAIN_RES, snapshot, sha256, LINK_KINDS, normalizeCatalog, catalogExport, valueIssues, areaIssue, deckAt, getColliders, PROP, get colliderMaxR() { return colliderMaxR; }, rebuildMarkers, linkTrigger, linkArrival, LINK_SPEC, get markers() { return markers; }, placeMarker, ensureIds, applyCatalog, ATMOS, WEATHER, applyAtmo, makeCoast, glowLights, applyBiome, applyPalette, propVisible, toolVisible, updateTerrain, rebuildProps, genFlat, floorAt, bridgeAt, stairsAt, placeSlope, placeStairs, placeBridge, pickTarget, regenGroundProps, rebuildBridges, get stairs() { return stairs; }, get bridges() { return bridges; }, get falls() { return falls; }, overrideAt, heroMat, hero, heroBody, get heroLook() { return heroLook; }, setHeroLook, heroStyle, heroGlow, get ghosts() { return ghosts; }, get props() { return props; }, cam, playCam, player, keys, setMode, setTool, update, heightAt, walkable, slope: slopeAt,
   stroke(x, z, frames = 20, opts = {}) {
     hit = new THREE.Vector3(x, heightAt(x, z), z); beginStroke({ shiftKey: !!opts.shift });
     for (let f = 0; f < frames; f++) { if (stroke.active && !['scatter', 'erase'].includes(state.tool)) { applyBrush(x, z, 1 / 60); } }

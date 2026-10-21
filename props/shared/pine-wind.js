@@ -3,10 +3,16 @@
 const spec={version:1,id:'pine',minY:2.15,maxY:6.408,maxDisplacementMetres:.12,waves:[1.7,.65,2.9,.35],phase:[.17,.13],mask:'canonical uv.y > .5 (needle region only)',verticalDisplacement:0};
 const uniforms={uPineWind:{value:new THREE.Vector4()},uPineBand:{value:new THREE.Vector4(spec.minY,spec.maxY,spec.maxDisplacementMetres,1)},uPineWaves:{value:new THREE.Vector4(...spec.waves)},uPinePhase:{value:new THREE.Vector2(...spec.phase)}};
 const GLSL=`uniform vec4 uPineWind,uPineBand,uPineWaves; uniform vec2 uPinePhase;
+#ifdef PLANT_WEIGHTS
+attribute vec2 plantWeight; uniform float uPlantPhase;
+#endif
 vec2 pineOffset(float y,float uvY,vec2 origin){
  if(uPineWind.z<=0.||uvY<=(uPineBand.w>1.5?-1.:.5)) return vec2(0.);
  float w=smoothstep(uPineBand.x,uPineBand.y,y);
  float ph=dot(origin,uPinePhase);
+#ifdef PLANT_WEIGHTS
+ if(plantWeight.x<=0.)return vec2(0.);w=plantWeight.x; ph+=uPlantPhase;
+#endif
  float gust=uPineWaves.y*sin(uPineWind.w*uPineWaves.x+ph)+uPineWaves.w*sin(uPineWind.w*uPineWaves.z+ph);
  return uPineWind.xy*(clamp(uPineWind.z,0.,1.)*uPineBand.z*w*gust);
 }`;
@@ -16,6 +22,13 @@ vec4 pineOrigin=modelMatrix*vec4(0.,0.,0.,1.);
 pineOrigin=modelMatrix*instanceMatrix*vec4(0.,0.,0.,1.);
 #endif
 vec2 pineDelta=pineOffset(position.y,uv.y,vec2(pineOrigin.x,-pineOrigin.z));
+#ifdef PLANT_WEIGHTS
+mat4 plantMatrix=modelMatrix;
+#ifdef USE_INSTANCING
+plantMatrix=modelMatrix*instanceMatrix;
+#endif
+pineDelta*=min(1.,length(plantMatrix[0].xyz));
+#endif
 if(dot(pineDelta,pineDelta)>0.){
  vec4 pineWorld=vec4(transformed,1.);
  #ifdef USE_INSTANCING
@@ -24,9 +37,17 @@ if(dot(pineDelta,pineDelta)>0.){
  pineWorld=modelMatrix*pineWorld;pineWorld.xz+=vec2(pineDelta.x,-pineDelta.y);
  mvPosition=viewMatrix*pineWorld;gl_Position=projectionMatrix*mvPosition;
 }`;
-function attach(m,motion=null){m.userData.sharedWind=motion;const local=motion?{...uniforms,uPineBand:{value:new THREE.Vector4(motion.minY,motion.maxY,motion.maxDisplacementMetres,2)}}:uniforms;m.onBeforeCompile=sh=>{Object.assign(sh.uniforms,local);sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\n'+GLSL).replace('#include <project_vertex>',projection).replace('#include <worldpos_vertex>',THREE.ShaderChunk.worldpos_vertex.replace('worldPosition = modelMatrix * worldPosition;','worldPosition = modelMatrix * worldPosition; worldPosition.xz+=vec2(pineDelta.x,-pineDelta.y);'));};m.customProgramCacheKey=()=> 'shared-plant-wind/2';return m;}
+function attach(m,motion=null,weighted=false){m.userData.sharedWind=motion;m.userData.sharedWeighted=weighted;if(weighted)m.defines={...(m.defines||{}),PLANT_WEIGHTS:''};const local=motion?{...uniforms,uPineBand:{value:new THREE.Vector4(motion.minY,motion.maxY,motion.maxDisplacementMetres,weighted?3:2)},uPlantPhase:{value:motion.phaseOffset||0}}:uniforms;m.onBeforeCompile=sh=>{Object.assign(sh.uniforms,local);sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\n'+GLSL).replace('#include <project_vertex>',projection).replace('#include <worldpos_vertex>',THREE.ShaderChunk.worldpos_vertex.replace('worldPosition = modelMatrix * worldPosition;','worldPosition = modelMatrix * worldPosition; worldPosition.xz+=vec2(pineDelta.x,-pineDelta.y);'));};m.customProgramCacheKey=()=> weighted?'shared-plant-motion/3':'shared-plant-wind/2';return m;}
+const touchGLSL=`
+#ifdef USE_INSTANCING
+if(dot(touch.xy,touch.xy)>0.&&plantWeight.y>0.){mat3 tm=mat3(modelMatrix*instanceMatrix);transformed+=transpose(tm)*vec3(touch.x,0.,touch.y)*(plantWeight.y/dot(tm[0],tm[0]));}
+#endif`;
+function touchVertex(sh){sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nattribute vec3 touch;').replace('#include <begin_vertex>','#include <begin_vertex>\n'+touchGLSL);}
+function touchMaterial(base){const m=base.clone();m.defines={...(base.defines||{})};m.userData.touchVertex=touchVertex;m.onBeforeCompile=sh=>{base.onBeforeCompile(sh);touchVertex(sh);};m.customProgramCacheKey=()=>base.customProgramCacheKey()+'/touch';return m;}
+function advance(st,tx,tz,max,dt){const total=Math.min(.1,Math.max(0,dt)),n=Math.max(1,Math.ceil(total*120-.0001)),h=total/n;for(let i=0;i<n;i++){st.vx+=(70*(tx-st.bx)-8*st.vx)*h;st.vz+=(70*(tz-st.bz)-8*st.vz)*h;st.bx+=st.vx*h;st.bz+=st.vz*h;const b=Math.hypot(st.bx,st.bz);if(b>max){st.bx*=max/b;st.bz*=max/b;const outward=(st.vx*st.bx+st.vz*st.bz)/(max*max);if(outward>0){st.vx-=outward*st.bx;st.vz-=outward*st.bz;}}}if(tx===0&&tz===0&&Math.hypot(st.bx,st.bz)<.0005&&Math.hypot(st.vx,st.vz)<.003){st.bx=st.bz=st.vx=st.vz=0;return true;}return false;}
+function target(dx,dz,r,mvx,mvz,max){const d=Math.hypot(dx,dz);if(d>=r)return[0,0];const speed=Math.hypot(mvx,mvz),mv=speed>20?0:speed,mx=mv>.1?mvx/mv:0,mz=mv>.1?mvz/mv:0,nx=d>.05?dx/d:mx,nz=d>.05?dz/d:mz,k=(1-d/r)*max*1.6;return[(nx*.8+mx*.45*Math.min(1,mv/3))*k,(nz*.8+mz*.45*Math.min(1,mv/3))*k];}
 const shadows=new WeakMap();
-function shadowMaterial(base,distance=false){const key=distance?'distance':'depth';let pair=shadows.get(base);if(!pair){pair=new Map();shadows.set(base,pair);}if(!pair.has(key)){const m=distance?new THREE.MeshDistanceMaterial():new THREE.MeshDepthMaterial({depthPacking:THREE.RGBADepthPacking});m.map=base.map;m.alphaTest=base.alphaTest;m.side=base.side;attach(m,base.userData.sharedWind||null);if(base.userData.touchVertex){const compile=m.onBeforeCompile;m.onBeforeCompile=sh=>{compile(sh);base.userData.touchVertex(sh);};}pair.set(key,m);}return pair.get(key);}
+function shadowMaterial(base,distance=false){const key=distance?'distance':'depth';let pair=shadows.get(base);if(!pair){pair=new Map();shadows.set(base,pair);}if(!pair.has(key)){const m=distance?new THREE.MeshDistanceMaterial():new THREE.MeshDepthMaterial({depthPacking:THREE.RGBADepthPacking});m.map=base.map;m.alphaTest=base.alphaTest;m.side=base.side;attach(m,base.userData.sharedWind||null,!!base.userData.sharedWeighted);if(base.userData.touchVertex){const compile=m.onBeforeCompile;m.onBeforeCompile=sh=>{compile(sh);base.userData.touchVertex(sh);};}pair.set(key,m);}return pair.get(key);}
 function set(time,x,z,strength){const n=Math.hypot(x,z)||1;uniforms.uPineWind.value.set(x/n,z/n,Math.max(0,Math.min(1,strength)),time);}
-window.TDPineWind={spec,uniforms,GLSL,attach,shadowMaterial,set,exportJson:()=>JSON.stringify(spec)};
+window.TDPineWind={spec,uniforms,GLSL,touchGLSL,attach,touchMaterial,advance,target,shadowMaterial,set,exportJson:()=>JSON.stringify(spec)};
 })();
