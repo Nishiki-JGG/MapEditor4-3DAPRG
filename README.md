@@ -1,5 +1,7 @@
 # MapEditor4-3DAPRG
 
+龍血樹を実物の参照写真と照合し、反復分岐と浅い連続天蓋へ修正しました。[真上](tests/tree_view.html?id=dragontree) / [低い視点](tests/tree_view.html?id=dragontree&view=low) / [変更と検証](docs/DRAGON_REFERENCE.md)。
+
 シダ・つる茂み・地這いツタを磨き込み、3種合計で48三角形を削減しました。シダの風・接触も共有GPU方式へ揃えています。[林床の確認](tests/forest_floor_view.html) / [改善と検証](docs/FOREST_FLOOR_POLISH.md)。
 
 ユーカリ・龍血樹の葉塊と、エルフの木・世界樹の根元を磨き込みました（96種を維持）。[4つの実用配置](tests/nature_scene_view.html) / [改善と負荷・検証](docs/NATURE_SCENE_POLISH.md)。

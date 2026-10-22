@@ -30,28 +30,31 @@ const specs=[
 const cells={broad:[0,0,256,256],fine:[256,0,256,256],needle:[512,0,256,128],dragon:[512,384,256,128],bark:[768,0,128,256],white:[896,0,128,256],palm:[0,256,512,128],banana:[512,256,512,128],leaf:[0,384,256,128],blossom:[256,384,256,128]};
 function build(id,legacy){const spec=specs.find(s=>s.id===id),index=specs.indexOf(spec),m=new M(47191+index*173),R=m.R,H=spec.legacy?legacy[id].bounds[1][1]:spec.h,r=spec.r,parts=[],branches=[],clumps=[];m.tree=true;const G=[];let glow=0;
  const original=m.tri.bind(m);m.tri=(...a)=>{const first=m.P.length/3;original(...a);for(let i=first;i<m.P.length/3;i++)G[i]=glow;};
- m.uv=(cell,u=.5,v=.5)=>{const box=cells[cell]||cells.broad;return[(box[0]+3+Math.min(1,Math.max(0,u))*(box[2]-6))/1024,(box[1]+3+Math.min(1,Math.max(0,v))*(box[3]-6))/512];};
+ m.uv=(cell,u=.5,v=.5)=>{const box=cells[cell]||cells.broad;if(spec.kind==='dragon'&&cell==='bark')u=.24+u*.38;return[(box[0]+3+Math.min(1,Math.max(0,u))*(box[2]-6))/1024,(box[1]+3+Math.min(1,Math.max(0,v))*(box[3]-6))/512];};
+ const dragonSurface=(x,z)=>H*(.99-.115*Math.min(1,Math.hypot(x,z)/(r+.1))**2);
  const white=()=>m.uv('white'),mark=(role,first)=>parts.push({role,first,count:m.P.length/3-first});
  function tube(points,radii,sides,hex,from=0,to=0,role='branch',cell='bark'){
   const first=m.P.length/3,dist=[0];for(let j=1;j<points.length;j++)dist.push(dist[j-1]+V(points[j]).distanceTo(V(points[j-1])));m.tube(points,radii,sides,hex,cell,role==='branch'&&!['dead','twist'].includes(spec.kind));const start=m.uv(cell,0,0)[1],span=m.uv(cell,0,1)[1]-start,total=dist[dist.length-1];
-  for(let i=first;i<m.P.length/3;i++){const local=i-first,segments=points.length-1;let t;if(local<segments*sides*6){const seg=Math.floor(local/(sides*6)),end=(m.U[i*2+1]-start)/span;t=(dist[seg]+end*(dist[seg+1]-dist[seg]))/total;m.U[i*2+1]=m.uv(cell,0,t)[1];}else t=local<segments*sides*6+sides*3?0:1;m.W[i]=from+(to-from)*Math.max(0,Math.min(1,t));}mark(role,first);if(role==='branch')branches.push({points,from,to});
+  for(let i=first;i<m.P.length/3;i++){const local=i-first,segments=points.length-1;let t;if(local<segments*sides*6){const seg=Math.floor(local/(sides*6)),end=(m.U[i*2+1]-start)/span;t=(dist[seg]+end*(dist[seg+1]-dist[seg]))/total;m.U[i*2+1]=m.uv(cell,0,t)[1];}else t=local<segments*sides*6+sides*3?0:1;m.W[i]=from+(to-from)*Math.max(0,Math.min(1,t));}if(spec.kind==='dragon'){const capStart=first+(points.length-1)*sides*6;for(let i=first;i<Math.min(capStart,m.P.length/3);i++){const p=V(m.P.slice(i*3,i*3+3));let best=null,d=Infinity;for(let j=1;j<points.length;j++){const a=V(points[j-1]),v=V(points[j]).sub(a),t=Math.max(0,Math.min(1,p.clone().sub(a).dot(v)/v.lengthSq())),q=a.addScaledVector(v,t),n=p.clone().sub(q),dist=n.lengthSq();if(dist<d){d=dist;best=n}}if(best&&best.lengthSq()>1e-10)m.N.splice(i*3,3,...best.normalize().toArray());}}
+  mark(role,first);if(role==='branch')branches.push({points,from,to});
  }
  function cluster(p,rx,rz,rise,w,cell=spec.cell||'broad',twist=0){const first=m.P.length/3,n=7,ring=Array.from({length:n},(_,j)=>{const a=j/n*Math.PI*2,rr=.86+R()*.20,x=Math.cos(a)*rx*rr,z=Math.sin(a)*rz*rr;return[p[0]+Math.cos(twist)*x-Math.sin(twist)*z,p[1]+(R()-.5)*rise*.13,p[2]+Math.sin(twist)*x+Math.cos(twist)*z];}),top=[p[0]+rx*.07,p[1]+rise,p[2]-rz*.04],uv=(j)=>m.uv(cell,.5+Math.cos(j/n*Math.PI*2)*.46,.5+Math.sin(j/n*Math.PI*2)*.46);
+  if(spec.kind==='dragon'){for(const p of ring)p[1]=dragonSurface(p[0],p[2]);top[1]=dragonSurface(top[0],top[2]);}
   for(let j=0;j<n;j++)m.tri(top,ring[j],ring[(j+1)%n],[m.uv(cell,.5,.48),uv(j),uv((j+1)%n)],0xffffff,[0,1,0]);
-  const low=rgb(spec.low),high=rgb(spec.high),periphery=Math.min(1,Math.hypot(p[0],p[2])/(r*.9)),ao=.78+.16*periphery,shade=.96+R()*.07;
-  for(let i=first;i<m.P.length/3;i++){const x=m.P[i*3],y=m.P[i*3+1],z=m.P[i*3+2],t=Math.min(1,Math.max(0,(y/(H||1)-.30)/.7)),colour=low.map((v,k)=>(v+(high[k]-v)*t)*ao*shade);m.C.splice(i*3,3,...colour);const normal=new T.Vector3((x-p[0])/Math.max(.05,rx)*.48,.85+(y-p[1])/Math.max(.05,rise)*.35,(z-p[2])/Math.max(.05,rz)*.48).normalize();m.N.splice(i*3,3,...normal.toArray());m.W[i]=w;}
+  const low=rgb(spec.low),high=rgb(spec.high),periphery=Math.min(1,Math.hypot(p[0],p[2])/(r*.9)),ao=spec.kind==='dragon'?.91+.04*periphery:.78+.16*periphery,shade=spec.kind==='dragon'?.985+R()*.025:.96+R()*.07;
+  for(let i=first;i<m.P.length/3;i++){const x=m.P[i*3],y=m.P[i*3+1],z=m.P[i*3+2],t=Math.min(1,Math.max(0,(y/(H||1)-.30)/.7)),colour=low.map((v,k)=>(v+(high[k]-v)*t)*ao*shade);m.C.splice(i*3,3,...colour);const normal=(spec.kind==='dragon'?new T.Vector3(x*.035,.98,z*.035):new T.Vector3((x-p[0])/Math.max(.05,rx)*.48,.85+(y-p[1])/Math.max(.05,rise)*.35,(z-p[2])/Math.max(.05,rz)*.48)).normalize();m.N.splice(i*3,3,...normal.toArray());m.W[i]=w;}
   mark('foliage',first);clumps.push({first,count:m.P.length/3-first,weight:w,center:p});
  }
  function frond(base,a,L,width,rise,drop,w,cell,steps=3){const first=m.P.length/3,rows=[];for(let j=0;j<=steps;j++){const t=j/steps,extent=j===steps?0:width*(.13+.87*Math.sin(Math.PI*t));rows.push([-1,0,1].map(side=>[base[0]+Math.cos(a)*L*t-Math.sin(a)*side*extent,base[1]+rise*Math.sin(t*Math.PI)-drop*t+(side===0?extent*.12:0),base[2]+Math.sin(a)*L*t+Math.cos(a)*side*extent]));}for(let j=0;j<steps;j++)for(let k=0;k<2;k++){const uv=(x,y)=>m.uv(cell,y/steps,x/2);m.tri(rows[j][k],rows[j+1][k],rows[j][k+1],[uv(k,j),uv(k,j+1),uv(k+1,j)],0xffffff,[0,1,0]);if(j<steps-1)m.tri(rows[j][k+1],rows[j+1][k],rows[j+1][k+1],[uv(k+1,j),uv(k,j+1),uv(k+1,j+1)],0xffffff,[0,1,0]);}
   const low=rgb(spec.low),high=rgb(spec.high);for(let i=first;i<m.P.length/3;i++){const q=V(m.P.slice(i*3,i*3+3)).sub(V(base)),t=Math.max(0,Math.min(1,(q.x*Math.cos(a)+q.z*Math.sin(a))/L)),colour=low.map((v,k)=>v+(high[k]-v)*(.3+.6*(1-t)));m.C.splice(i*3,3,...colour);m.W[i]=['palm','banana'].includes(spec.kind)?w*t*t*(3-2*t):w;const normal=new T.Vector3(-Math.sin(a)*q.z*.08,.94,Math.cos(a)*q.x*.08).normalize();m.N.splice(i*3,3,...normal.toArray());}mark('foliage',first);clumps.push({first,count:m.P.length/3-first,weight:w,frond:true});
  }
  function fruit(p,size,hex,w=1,emission=0){const first=m.P.length/3;glow=emission;m.berry(p,size,hex);glow=0;for(let i=first;i<m.P.length/3;i++)m.W[i]=w;mark('detail',first);}
- const isWorld=spec.kind==='world',isElf=spec.kind==='elf',small=spec.shrub,clear=small?.025:(isWorld?3.6:2.4),trunkRadius=isWorld?1.4:isElf?.35:spec.kind==='heavy'?.30:spec.kind==='olive'?.25:.18,bark=spec.kind==='birch'?0xd4d3c6:spec.kind==='eucalypt'?0xb2b6a6:spec.kind==='twist'?0x685d72:0x9f8c70;
+ const isWorld=spec.kind==='world',isElf=spec.kind==='elf',small=spec.shrub,clear=small?.025:(isWorld?3.6:2.4),trunkRadius=isWorld?1.4:isElf?.35:spec.kind==='dragon'?.28:spec.kind==='heavy'?.30:spec.kind==='olive'?.25:.18,bark=spec.kind==='dragon'?0xc8c3b7:spec.kind==='birch'?0xd4d3c6:spec.kind==='eucalypt'?0xb2b6a6:spec.kind==='twist'?0x685d72:0x9f8c70;
  if(spec.kind==='creeping'){
   for(let j=0;j<5;j++){const a=j*2.399+.2,L=r*(.7+R()*.3),tip=[Math.cos(a)*L,.14+R()*.08,Math.sin(a)*L];tube([[0,.015,0],[tip[0]*.48,.18,tip[2]*.48],tip],[.024,.018,.005],3,bark,0,.85);cluster([tip[0]*.7,.19,tip[2]*.7],.55,.40,.055,.75,'needle',a);cluster(tip,.48,.36,.05,.85,'needle',a+.5);}
  }else{
-  const lean=spec.kind==='eucalypt'?.60:spec.kind==='umbrella'?.65:spec.kind==='palm'?.75:spec.kind==='twist'?.45:spec.kind==='dead'?.20:isElf?.45:.10,stems=['birch','olive','multistem','shrub'].includes(spec.kind)?(spec.kind==='multistem'?3:2):1,trunkTop=small?H*.67:['dead','twist'].includes(spec.kind)?H*.83:['banana','palm'].includes(spec.kind)?H*.78:spec.kind==='spire'||spec.kind==='pine'||spec.kind==='sprays'?H*.96:H*.73;
-  for(let j=0;j<stems;j++){const x=(j-(stems-1)*.5)*(small?.15:.22),p=[[x,0,0],[x+lean*(spec.kind==='palm'?.02:.18),H*.24,.02],[x+lean*(spec.kind==='palm'?.20:spec.kind==='twist'?-.55:.55),H*.46,spec.kind==='twist'?.17:-.02],[x+lean,trunkTop,.05]];tube(p,[trunkRadius,trunkRadius*.82,trunkRadius*.55,.025],isWorld?10:6,bark,0,0,'trunk',spec.kind==='birch'?'white':'bark');if(spec.kind==='birch')for(let k=0;k<5;k++){const y=.4+k*.72,first=m.P.length/3;m.tri([x-.05,y,.095],[x+.05,y+.02,.095],[x,y+.05,.096],[white(),white(),white()],0x66695e,[0,0,1]);mark('trunk',first);}}
+  const lean=spec.kind==='eucalypt'?.60:spec.kind==='umbrella'?.65:spec.kind==='palm'?.75:spec.kind==='twist'?.45:spec.kind==='dead'?.20:isElf?.45:.10,stems=['birch','olive','multistem','shrub'].includes(spec.kind)?(spec.kind==='multistem'?3:2):1,trunkTop=spec.kind==='dragon'?H*.43:small?H*.67:['dead','twist'].includes(spec.kind)?H*.83:['banana','palm'].includes(spec.kind)?H*.78:spec.kind==='spire'||spec.kind==='pine'||spec.kind==='sprays'?H*.96:H*.73;
+  for(let j=0;j<stems;j++){const x=(j-(stems-1)*.5)*(small?.15:.22),p=[[x,0,0],[x+lean*(spec.kind==='palm'?.02:.18),H*.24,.02],[x+lean*(spec.kind==='palm'?.20:spec.kind==='twist'?-.55:.55),H*(spec.kind==='dragon'?.32:.46),spec.kind==='twist'?.17:-.02],[x+lean,trunkTop,.05]];tube(p,[trunkRadius,trunkRadius*.82,trunkRadius*.55,spec.kind==='dragon'?.16:.025],isWorld?10:6,bark,0,0,'trunk',spec.kind==='birch'?'white':'bark');if(spec.kind==='birch')for(let k=0;k<5;k++){const y=.4+k*.72,first=m.P.length/3;m.tri([x-.05,y,.095],[x+.05,y+.02,.095],[x,y+.05,.096],[white(),white(),white()],0x66695e,[0,0,1]);mark('trunk',first);}}
   const roots=small?0:isWorld?7:3;for(let j=0;j<roots;j++){
    const a=j*2.399+.4,L=isWorld?3.8+R()*1.4:trunkRadius*2.5;
    if(isWorld||isElf){
@@ -73,7 +76,24 @@ function build(id,legacy){const spec=specs.find(s=>s.id===id),index=specs.indexO
     if(spec.kind==='twist')fruit(tip,.085,0xb571e4,.8,2.2);
    }
   }else if(spec.kind==='dragon'){
-   for(let j=0;j<3;j++){const a=j*2.399+.25,base=[0,H*.58,0],fork=[Math.cos(a)*r*.36,H*.77,Math.sin(a)*r*.36];tube([base,[fork[0]*.55,H*.70,fork[2]*.55],fork],[.18,.12,.065],5,bark,0,.55);for(let side=0;side<2;side++){const b=a+(side?-.6:.55),tip=[fork[0]+Math.cos(b)*r*.27,H*(.84+side*.025)+R()*.15,fork[2]+Math.sin(b)*r*.27];tube([fork,tip],[.066,.027],4,bark,.55,.85);const leaves=10+(j+side)%3;for(let k=0;k<leaves;k++)frond(tip,k*2.399+b+(R()-.5)*.32,.78+R()*.54,.075+R()*.055,.12+R()*.20,.03+R()*.14,.85,'dragon',2);}}
+   // Repeated forks support paired inner/outer heads in one shallow umbrella.
+   const hub=[lean,H*.43,.05],tips=[];
+   for(let j=0;j<3;j++){
+    const a=j*Math.PI*2/3+.28,primary=[Math.cos(a)*r*.25,H*.64,Math.sin(a)*r*.25];
+    tube([hub,[primary[0]*.48,H*.535,primary[2]*.48],primary],[.17,.135,.10],5,bark,0,.23);
+    for(let side=0;side<2;side++){
+     const b=a+(side?-.43:.46),secondary=[Math.cos(b)*r*.45,H*.77,Math.sin(b)*r*.45];tube([primary,secondary],[.10,.063],4,bark,.23,.43);
+     for(let fork=0;fork<2;fork++){
+      const c=b+(fork?-.24:.25),parent=[Math.cos(c)*r*.56,H*.805,Math.sin(c)*r*.56];tube([secondary,parent],[.063,.038],3,bark,.43,.61);
+      for(let end=0;end<2;end++){
+       const d=c+(end?-.14:.17),radius=r*(end?.76:.62),tip=[Math.cos(d)*radius,dragonSurface(Math.cos(d)*radius,Math.sin(d)*radius),Math.sin(d)*radius],weight=end?.86:.79;
+       tube([parent,tip],[.038,.016],3,bark,.61,weight);tips.push({p:tip,w:weight,a:d});
+      }
+     }
+    }
+   }
+   for(let j=0;j<3;j++){const a=j*2.094+.9,p=[Math.cos(a)*.42,dragonSurface(Math.cos(a)*.42,Math.sin(a)*.42),Math.sin(a)*.42];tube([hub,[p[0]*.8,H*.84,p[2]*.8],p],[.085,.05,.016],3,bark,0,.78);tips.push({p,w:.78,a});}
+   for(const t of tips){const size=1.10+R()*.15;cluster(t.p,size,size*(.93+R()*.07),.13+R()*.05,t.w,'dragon',t.a+R());}
   }else{
    if(spec.kind==='fan')for(const a of [.15,2.45,4.35])tube([[.01,2.45,0],[Math.cos(a)*r*.29,H*.51,Math.sin(a)*r*.18],[Math.cos(a)*r*.56,H*.72,Math.sin(a)*r*.40]],[.12,.075,.022],5,bark,0,.68);
    for(let j=0;j<spec.n;j++){
@@ -102,6 +122,19 @@ async function paint(data){const cv=document.createElement('canvas');cv.width=10
 
  const blade=ctx.createLinearGradient(512,384,768,384);blade.addColorStop(0,'#8b8b8b');blade.addColorStop(.48,'#c5c5c5');blade.addColorStop(1,'#ababab');ctx.fillStyle=blade;ctx.fillRect(512,384,256,128);ctx.strokeStyle='#dddddd';ctx.lineWidth=1.4;ctx.beginPath();ctx.moveTo(512,448);ctx.lineTo(768,448);ctx.stroke();ctx.strokeStyle='rgba(90,90,90,.20)';ctx.lineWidth=.6;for(let j=0;j<28;j++){const x=516+j*9;ctx.beginPath();ctx.moveTo(x,448);ctx.lineTo(x+14,388);ctx.moveTo(x,448);ctx.lineTo(x+14,508);ctx.stroke();}
  const R=TDGeo.rng(76231);for(let i=0;i<220;i++){const a=R()*Math.PI*2,r=Math.sqrt(R()),x=384+Math.cos(a)*r*112,y=449+Math.sin(a)*r*54,size=2.8+R()*2.4;for(let j=0;j<5;j++){ctx.fillStyle=['#d4d4d4','#ececec','#bababa'][Math.floor(R()*3)];ctx.beginPath();ctx.ellipse(x+Math.cos(j*1.256)*size*.52,y+Math.sin(j*1.256)*size*.52,size*.61,size*.42,j*1.256,0,Math.PI*2);ctx.fill();}}
- const pixels=ctx.getImageData(0,0,1024,512);for(let i=0;i<pixels.data.length;i+=4){const a=pixels.data[i+3],l=.2126*pixels.data[i]+.7152*pixels.data[i+1]+.0722*pixels.data[i+2],y=i/4/1024|0,x=i/4%1024;const value=a<8?190:x>=896&&y<256?255:Math.min(232,Math.max(140,178+(l-120)*.52));pixels.data[i]=pixels.data[i+1]=pixels.data[i+2]=value;}ctx.putImageData(pixels,0,0);return cv.toDataURL('image/png').split(',')[1];}
-window.TDTreeCanopies={specs,build,paint,cells};
+ const pixels=ctx.getImageData(0,0,1024,512);for(let i=0;i<pixels.data.length;i+=4){const a=pixels.data[i+3],l=.2126*pixels.data[i]+.7152*pixels.data[i+1]+.0722*pixels.data[i+2],y=i/4/1024|0,x=i/4%1024;const value=a<8?190:x>=896&&y<256?255:Math.min(232,Math.max(140,178+(l-120)*.52));pixels.data[i]=pixels.data[i+1]=pixels.data[i+2]=value;}ctx.putImageData(pixels,0,0);ctx.clearRect(512,384,256,128);ctx.drawImage(dragonTile(),512,384);return cv.toDataURL('image/png').split(',')[1];}
+function dragonTile(){
+ const cv=document.createElement('canvas');cv.width=256;cv.height=128;const c=cv.getContext('2d'),R=TDGeo.rng(93217);
+ // Seven small terminal rosettes form one dense patch, avoiding giant wheel-shaped heads.
+ for(let head=0;head<7;head++){
+  const angle=head*2.399,ring=head===6?0:.48,cx=128+Math.cos(angle)*ring*119,cy=64+Math.sin(angle)*ring*57;
+  c.fillStyle=head%2?'#b6b6b6':'#bdbdbd';c.beginPath();c.ellipse(cx,cy,30,14.5,0,0,Math.PI*2);c.fill();
+  for(let k=0;k<46;k++){
+   const a=k*2.399+head*.8+(R()-.5)*.18,L=.25+R()*.23,w=1.5+R()*1.7,tx=cx+Math.cos(a)*L*119,ty=cy+Math.sin(a)*L*57,sx=-Math.sin(a)*w,sy=Math.cos(a)*w*.48;
+   c.beginPath();c.moveTo(cx,cy);c.quadraticCurveTo(cx+(tx-cx)*.55+sx,cy+(ty-cy)*.55+sy,tx,ty);c.quadraticCurveTo(cx+(tx-cx)*.45-sx,cy+(ty-cy)*.45-sy,cx,cy);c.fillStyle=['#c2c2c2','#b9b9b9','#cbcbcb','#b1b1b1'][k%4];c.fill();
+  }
+ }
+ return cv;
+}
+window.TDTreeCanopies={specs,build,paint,cells,dragonTile};
 })();
