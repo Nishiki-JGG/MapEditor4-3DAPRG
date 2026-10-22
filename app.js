@@ -3393,8 +3393,8 @@ async function buildExport() {
   for (let j = 0; j < TN; j++) for (let i = 0; i < TN; i++) {
     const k = j * TN + i, x = tx(i), z = tx(j), w = new Float32Array(WEIGHT_LAYERS.length); w[0] = 1;
     const add = (L, m) => { if (m <= 0) return; for (let q = 0; q < w.length; q++) w[q] *= 1 - m; w[L] += m; };
-    add(1, sstep(.2, .55, sBil(x, z, 0) / 255)); add(2, sstep(.3, .55, sBil(x, z, 1) / 255));
-    for (let c = 2; c < NS; c++) add(c + 1, sstep(.25, .6, sBil(x, z, c) / 255));
+    let paintTotal=0;for(let c=0;c<NS;c++){w[c+1]=sBil(x,z,c)/255;paintTotal+=w[c+1];}
+    w[0]=Math.max(0,1-paintTotal);if(paintTotal>1)for(let c=1;c<=NS;c++)w[c]/=paintTotal;
     const g = slopeAt(x, z); add(10, sstep(.24, .42, 1 - 1 / Math.sqrt(1 + g * g)));
     const q8 = Array.from(w, v => Math.floor(v * 255)); let rest = 255 - q8.reduce((a, v) => a + v, 0), top = 0;
     for (let q = 1; q < w.length; q++) if (w[q] > w[top]) top = q;
