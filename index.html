@@ -108,6 +108,17 @@
     </div>
   </div>
 
+  <div id="groundDetailOpts" hidden>
+    <h2>選んだ地表小物</h2><div id="groundDetailName" class="hint"></div>
+    <div class="agent">
+      <label>X m<input id="detailX" type="number" step="0.1"></label>
+      <label>Z m<input id="detailZ" type="number" step="0.1"></label>
+      <label>向き °<input id="detailYaw" type="number" step="5"></label>
+      <label>大きさ<input id="detailScale" type="number" min="0.1" max="3" step="0.05"></label>
+    </div>
+    <div class="row"><button id="detailApply">調整を適用</button><button id="detailPin">この配置を保持</button></div>
+    <div class="hint">Shift＋クリックで移動。調整・保持した小物は「草・小石を更新」でも残ります。Ctrl＋Z で取り消し。</div>
+  </div>
   <h2>ブラシ</h2>
   <label class="sl"><span>半径</span><input id="radius" type="range" min="1" max="14" step="0.5" value="4"><span id="radiusV"></span></label>
   <label class="sl"><span>強さ</span><input id="strength" type="range" min="0.1" max="1" step="0.05" value="0.6"><span id="strengthV"></span></label>
@@ -266,6 +277,7 @@
 <script src="props/elftree.js?v=trees1"></script>
 <script src="props/worldtree.js?v=trees1"></script>
 <script src="props/meadowgrass.js?v=meadow3"></script>
+<script src="props/ground-cover.js?v=ground4"></script>
 <script src="terrain/grass.js?v=ground2"></script>
 <script src="terrain/dirt.js?v=ground2"></script>
 <script src="terrain/shared.js?v=meadow2"></script>
@@ -275,6 +287,6 @@
 <script src="terrain/cliff-contact.js?v=cliff-fit10"></script>
 <script src="terrain/cliff-fits.js?v=layer12"></script>
 <script src="terrain/cliff-layering.js?v=layer12"></script>
-<script src="app.js?v=meadow3"></script>
+<script src="app.js?v=ground4"></script>
 </body>
 </html>

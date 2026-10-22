@@ -451,7 +451,7 @@ normal=surfaceNormal(-vViewPosition,normal,gSurfaceHeight);`)
     .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor=mix(roughnessFactor,.55,gGloss);')
     .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance+=pow(gGlow,vec3(2.2))*(1.-.6*uDim);');
 };
-terrainMat.customProgramCacheKey = () => 'terrain-meadow-v3';
+terrainMat.customProgramCacheKey = () => 'terrain-ground-v4';
 
 function gridIndex() {
   const ix = new Uint32Array((N - 1) * (N - 1) * 6); let o = 0;
@@ -993,6 +993,7 @@ function rebuildProps(visualOnly = false) {
   propMeshes.forEach((m, t) => { m.count = cnt[t]; m.instanceMatrix.needsUpdate = true; m.instanceColor.needsUpdate = true; if (m.userData.cliffI) m.userData.cliffI.needsUpdate = true; });
   ghostMeshes.forEach((m, t) => { m.count = gcnt[t]; m.instanceMatrix.needsUpdate = true; m.instanceColor.needsUpdate = true; });
   touchStats.registered=touchProps.length;
+  if(state.tool==='detail')syncGroundDetailUI();
   if (!visualOnly) { colliders = null; walkDirty = true; }
 }
 
@@ -2084,6 +2085,7 @@ const TOOLS = [
   { id: 'bridge', name: '橋', key: 'b', hint: '岸から岸へドラッグすると橋を架けます（幅＝半径の半分、1.6〜4m）。種類は下の「種類」から。Shift+クリックで近くの橋を消します。' },
   { id: 'fall', name: '滝', key: '=', hint: '崖をクリックすると、縁から水面へ落ちる滝を置きます（幅＝半径の半分）。Shift+クリックで近くの滝を消します。' },
   { id: 'place', name: '置く', key: 'p', hint: '「種類」で選んだ物を、クリックした場所に1つ置きます。R キーで向きを45°回転。' },
+  { id: 'detail', name: '地表小物を調整', key: ';', hint: '草・花・小石・落ち葉をクリックして選び、下の欄で位置・向き・大きさを調整。Shift＋クリックで選んだ小物を移動します。調整した物は自動更新でも残ります。' },
   { id: 'pick', name: '選んで消す', key: 'o', hint: 'カーソルを合わせると赤く囲まれた物（木・岩・橋・階段・滝など）を、クリックで1つ消します。' },
   { id: 'marker', name: 'マーカー', key: 't', hint: '出入口・敵の候補・宝箱の候補・戦闘/出現禁止範囲を置きます。出入口は、置く場所から部屋の内側へドラッグ（クリックだけなら中央向き）。幅＝半径の半分。禁止範囲の大きさ＝半径。Shift+クリックで近くのマーカーを消します。' },
   { id: 'cliffpaint', name: '岩壁を塗る', key: '.', hint: '崖の面と岩・崖石の種類を、場所ごとに塗り分けます。「マップの既定」で塗ると、バイオーム欄の「岩壁」の設定に戻ります。平らな地面を塗っても見た目は変わりません（崖と岩にだけ効きます）。' },
@@ -2203,29 +2205,35 @@ function regenGroundProps() {
   const GR = TYPE('grass'), meadow = ['forest', 'grassland'].includes(state.biome);
   if (meadow && GR >= 0) {
     const noise=(x,z)=>{const i=Math.floor(x),j=Math.floor(z),u=x-i,v=z-j,s=u*u*(3-2*u),t=v*v*(3-2*v);return lerp(lerp(hash2(i,j),hash2(i+1,j),s),lerp(hash2(i,j+1),hash2(i+1,j+1),s),t);};
-    const density=Math.min(1,6400/(SIZE*SIZE));
-    const kinds=['meadowgrass','clover','meadowwhite','meadowyellow'].map(TYPE);
+    const density=Math.min(1,4000/(SIZE*SIZE));
+    const kinds=['meadowgrass','clover','meadowwhite','meadowyellow','shortgrass','groundlitter'].map(TYPE);
+    const treeHash=new SpatialHash(4);for(const p of props)if(/tree|pine|birch|oak/.test(PROP[p[0]].id))treeHash.add(p,p[1],p[2]);
     for(let j=1;j<N-1;j++)for(let i=1;i<N-1;i++){
       const k=idx(i,j),dirt=S[k*NS]/255;let other=0;for(let c=1;c<NS;c++)other=Math.max(other,S[k*NS+c]/255);
       if(other>.18||dirt>.67)continue;
       const h=hash2(i*5+11,j*9+2),h2=hash2(i*3+7,j*7+1),x=vx(i)+(h2-.5)*CELL*.8,z=vx(j)+(hash2(i*9,j)-.5)*CELL*.8;
       const cluster=noise(x*.24+31,z*.24-17),edge=clamp(dirt/.4,0,1),coverage=clamp((.67-dirt)/.4,0,1);
-      if(h>(.24+.65*cluster*cluster+.25*edge)*coverage*density)continue;
+      if(h>(.48+.65*cluster*cluster+.20*edge)*coverage*density)continue;
       if(heightAt(x,z)<state.water+.12||slopeAt(x,z)>.55||!free(x,z,.24))continue;
       if(bridgeAt(x,z)!==null||stairsAt(x,z)!==null)continue;
       if(Math.hypot(x-state.spawn.x,z-state.spawn.z)<.8||markers.some(m=>(m.kind==='port'||isLink(m.kind))&&Math.hypot(x-m.x,z-m.z)<Math.max(m.r||0,(m.w||2)/2)+.35))continue;
       const species=hash2(i*19+7,j*23-2),flowers=cluster>.55&&dirt<.25;
-      const t=flowers&&species>.94?kinds[3]:flowers&&species>.88?kinds[2]:species>.90?kinds[1]:kinds[0];
+      const t=flowers&&species>.95?kinds[3]:flowers&&species>.90?kinds[2]:species>.92?kinds[1]:species<.62?kinds[4]:kinds[0];
       if(t<0)continue;
-      const scale=t===kinds[0]?(.70+.52*h2)*(1-.30*edge):t===kinds[1]?.50+h2*.35:.65+h2*.3;
+      const scale=t===kinds[4]?(.88+.40*h2)*(1-.18*edge):t===kinds[0]?(.70+.52*h2)*(1-.30*edge):t===kinds[1]?.50+h2*.35:.65+h2*.3;
       add(t,x,z,scale);
     }
     // 土の中心は開け、少量の埋まった小石を縁に寄せる。
     for(let j=1;j<N-1;j++)for(let i=1;i<N-1;i++){
       const k=idx(i,j),dirt=S[k*NS]/255;let other=0;for(let c=1;c<NS;c++)other=Math.max(other,S[k*NS+c]/255);
-      if(other>.18||dirt<.2||hash2(i*17+3,j*11+7)>(dirt<.8?.035:.007)*density)continue;
-      const x=vx(i),z=vx(j);if(heightAt(x,z)<state.water+.12||slopeAt(x,z)>.45||!free(x,z,.3)||bridgeAt(x,z)!==null||stairsAt(x,z)!==null)continue;
-      add(TYPE('pebble'),x,z,.18+hash2(i*3,j*7)*.23);
+      if(other>.18)continue;
+      const x=vx(i),z=vx(j);let treeDist=Infinity;
+      treeHash.query(x,z,2.8,p=>{treeDist=Math.min(treeDist,Math.hypot(x-p[1],z-p[2]));});
+      const chance=hash2(i*17+3,j*11+7),leaf=treeDist>.35&&treeDist<2.6&&dirt<.8&&chance<.12*density;
+      if(!leaf&&(dirt<.2||chance>(dirt<.8?.075:.012)*density))continue;
+      if(heightAt(x,z)<state.water+.12||slopeAt(x,z)>.45||!free(x,z,.20)||bridgeAt(x,z)!==null||stairsAt(x,z)!==null)continue;
+      if(Math.hypot(x-state.spawn.x,z-state.spawn.z)<.8||markers.some(m=>(m.kind==='port'||isLink(m.kind))&&Math.hypot(x-m.x,z-m.z)<Math.max(m.r||0,(m.w||2)/2)+.35))continue;
+      add(leaf?kinds[5]:TYPE('pebble'),x,z,leaf?.65+hash2(i*3,j*7)*.5:.20+hash2(i*3,j*7)*.30);
     }
   } else {
 
@@ -3602,7 +3610,7 @@ $('cliffStyle').onchange = e => { pushUndo(); state.cliffStyle = e.target.value;
 const placeOpen = new Set();   // groups of the 置く list the user opened
 const PROP_GROUPS = [
   ['木・倒木', ['pine', 'oak', 'scotspine', 'birch', 'willow', 'hazel', 'rowan', 'juniper', 'deadtree', 'twisttree', 'palm', 'banana', 'maple', 'cherry', 'zelkova', 'nara', 'sugi', 'hinoki', 'islandash', 'olive', 'eucalyptus', 'dragontree', 'elftree', 'worldtree', 'log', 'stump', 'rootfan', 'driftwood']],
-  ['草花・低木', ['grass', 'meadowwhite', 'meadowyellow', 'meadowpink', 'meadowred', 'meadowviolet', 'bush', 'fern', 'bramble', 'ivy', 'sedge', 'foxglove', 'horsetail', 'dock', 'clover', 'reed', 'flowers', 'mushroom', 'glowmush', 'shelfshroom', 'cactus', 'barrelcactus']],
+  ['草花・低木', ['shortgrass', 'meadowgrass', 'groundlitter', 'grass', 'meadowwhite', 'meadowyellow', 'meadowpink', 'meadowred', 'meadowviolet', 'bush', 'fern', 'bramble', 'ivy', 'sedge', 'foxglove', 'horsetail', 'dock', 'clover', 'reed', 'flowers', 'mushroom', 'glowmush', 'shelfshroom', 'cactus', 'barrelcactus']],
   ['岩・崖', ['rock', 'mossrock', 'pebble', 'cliff', 'cliff_split', 'cliff_shoulder', 'cliff_joint', 'cliff_slab', 'cliff_talus', 'rubblepile', 'stalagmite', 'crystal', 'lavarock', 'obsidian', 'fumarole', 'iceblock', 'icespike']],
   ['遺跡・墓', ['column', 'brokencol', 'ruinwall', 'archgate', 'statue', 'stele', 'obelisk', 'pyramid', 'gravestone', 'crossgrave', 'mausoleum', 'bones', 'bonepile', 'magiccircle', 'demonspire']],
   ['建物・道具', ['torch', 'lantern', 'banner', 'woodfence', 'ironfence', 'castlewall', 'tower', 'gatehouse', 'lighthouse', 'rowboat', 'haystack', 'shells', 'snowman', 'kamakura']],
@@ -3694,6 +3702,8 @@ const DRAG_TOOLS = ['bridge', 'slope', 'stairs', 'coast'];
 const dragWidth = tool => tool === 'link' ? 2.2 : tool === 'marker' ? clamp(state.radius * .5, 1.5, 6) : tool === 'coast' ? 1 : tool === 'slope' ? clamp(state.radius, 2, 12) : tool === 'stairs' ? clamp(state.radius * .5, 1.2, 4) : clamp(state.radius * .5, 1.6, 4);
 function showVariants() {
   const tool = state.tool, box = $('variantBox'), list = $('variants');
+  $('groundDetailOpts').hidden = tool !== 'detail';
+  if(tool==='detail')syncGroundDetailUI();
   $('markerOpts').hidden = tool !== 'marker' && tool !== 'link';
   $('markerTag').placeholder = tool === 'link' ? '行き先 例: B2, 上の階' : '例: field, boss, north';
   const opts = tool === 'marker' ? MARKER_KINDS : tool === 'link' ? LINK_KINDS : tool === 'cliffpaint' ? [[0, 'マップの既定'], ...CLIFF_STYLES.map((c, i) => [i + 1, c[1]])] : tool === 'bridge' ? BRIDGE_TYPES.filter(([v]) => inPalette(BRIDGE_TAGS[v]))
@@ -3769,6 +3779,29 @@ $('placeScale').oninput = e => { state.placeScale = +e.target.value; syncPlaceUI
 $('placeRot').oninput = e => { state.placeRot = +e.target.value; syncPlaceUI(); };
 $('placeRandom').onchange = e => { state.placeRandom = e.target.checked; };
 syncPlaceUI();
+// 自動下草を手直しした時だけ手置きへ切り替え、次回更新から保護する。
+let groundDetailId=null;
+const GROUND_DETAIL_IDS=new Set(['shortgrass','meadowgrass','groundlitter','grass','clover','meadowwhite','meadowyellow','meadowpink','meadowred','meadowviolet','pebble','fern','sedge','dock','flowers','mushroom']);
+function selectedGroundDetail(){return props.find(p=>p[8]===groundDetailId)||null;}
+function pickGroundDetail(x,z){
+ let best=null,distance=Infinity;
+ for(const p of props){if(!GROUND_DETAIL_IDS.has(PROP[p[0]].id)||!propVisible(p[0]))continue;const d=Math.hypot(p[1]-x,p[2]-z);if(d<Math.max(.22,Math.min(.8,VIS_R[p[0]]*p[4]))&&d<distance){best=p;distance=d;}}
+ return best;
+}
+function syncGroundDetailUI(){
+ const p=selectedGroundDetail();$('groundDetailName').textContent=p?PROP[p[0]].name+(p[5]===2?'（自動配置）':'（手置き・保持）'):'草・花・小石・落ち葉をクリックして選択';
+ for(const id of ['detailX','detailZ','detailYaw','detailScale','detailApply','detailPin'])$(id).disabled=!p;
+ if(!p)return;
+ $('detailX').value=p[1].toFixed(2);$('detailZ').value=p[2].toFixed(2);$('detailYaw').value=((p[3]*180/Math.PI%360+360)%360).toFixed(1);$('detailScale').value=p[4].toFixed(3);
+}
+function adjustGroundDetail(x,z,yaw,scale){
+ const p=selectedGroundDetail();if(!p)return false;
+ if(![x,z,yaw,scale].every(Number.isFinite)||Math.abs(x)>HALF-.1||Math.abs(z)>HALF-.1||scale<.1||scale>3){toast('位置はマップ内、大きさは0.1〜3で指定してください');return false;}
+ pushUndo();p[1]=x;p[2]=z;p[3]=yaw*Math.PI/180;p[4]=scale;p[5]=0;p[7]=null;rebuildProps();syncGroundDetailUI();return true;
+}
+$('detailApply').onclick=()=>{const ids=['detailX','detailZ','detailYaw','detailScale'];if(ids.some(id=>$(id).value.trim()==='')){toast('位置・向き・大きさを入力してください');return;}if(adjustGroundDetail(...ids.map(id=>+$(id).value)))toast('小物を調整しました。草・小石の更新後も残ります');};
+$('detailPin').onclick=()=>{const p=selectedGroundDetail();if(p&&adjustGroundDetail(p[1],p[2],p[3]*180/Math.PI,p[4]))toast('この小物を自動更新から保護しました');};
+
 $('modeEdit').onclick = () => setMode('edit');
 $('modePlay').onclick = () => setMode('play');
 $('undo').onclick = undo; $('redo').onclick = redo;
@@ -3886,6 +3919,12 @@ function updateRing() {
   };
   const rect = (x0, z0, x1, z1, hw) => { const L = Math.hypot(x1 - x0, z1 - z0) || 1, qx = -(z1 - z0) / L * hw, qz = (x1 - x0) / L * hw; return [[x0 + qx, z0 + qz], [x1 + qx, z1 + qz], [x1 - qx, z1 - qz], [x0 - qx, z0 - qz]]; };
   const circle = (x, z, r) => Array.from({ length: 24 }, (_, k) => [x + Math.cos(k / 24 * 6.283) * r, z + Math.sin(k / 24 * 6.283) * r]);
+  if(state.tool==='detail'){
+    const p=selectedGroundDetail()||pickGroundDetail(hit.x,hit.z);
+    if(p)outline(circle(p[1],p[2],Math.max(.23,VIS_R[p[0]]*p[4])),0xffd36a,.12);
+    else outline(circle(hit.x,hit.z,.25),0xffd36a,.12);
+    return;
+  }
   if (state.tool === 'pick') {
     const tg = pickTarget(hit.x, hit.z);
     if (!tg) { outline(circle(hit.x, hit.z, .4), 0xff9a8a, .15); return; }
@@ -3948,6 +3987,11 @@ function pick(cx, cy) {
 }
 function beginStroke(e) {
   if (!hit) return;
+  if(state.tool==='detail'){
+   if(e.shiftKey&&selectedGroundDetail()){const p=selectedGroundDetail();adjustGroundDetail(hit.x,hit.z,p[3]*180/Math.PI,p[4]);}
+   else {ensureIds();const p=pickGroundDetail(hit.x,hit.z);groundDetailId=p?p[8]:null;syncGroundDetailUI();}
+   return;
+  }
   pushUndo();
   stroke.active = true; stroke.base = heightAt(hit.x, hit.z); stroke.lower = e.shiftKey; stroke.lastStamp = null;
   if (state.tool === 'place') {
@@ -4192,7 +4236,7 @@ requestAnimationFrame(frame);
 // hooks for automated checks
 window.__app = {
   get cliffContactProgress(){return cliffContactProgress;},cliffFits,effectiveGeometry,fitCliffContact,adoptCliffContact, cliffProtected,cliffProtectionReason,nearFeatureReason, get cliffContactStats(){return cliffContactStats;},
-  updateTouch,touchStats, pavingMask, cliffRelief, rebuildCliffRelief, groundTrial, groundTexture, terrainSource:tGeo, terrain, renderer, camera, SIZE, state, H, S, O, F, C, propMeshes, ghostMeshes, cliffIndexAt, BIOMES, CLIFF_STYLES, applyCliffStyle, deckAt, linkDeckAt, runValidation, genSample, genSample2, secretRegions, secretLineX, passageGeometry, terrainRes, TERRAIN_RES, snapshot, sha256, LINK_KINDS, normalizeCatalog, catalogExport, valueIssues, areaIssue, deckAt, getColliders, PROP, get colliderMaxR() { return colliderMaxR; }, rebuildMarkers, portLanding, linkTrigger, linkArrival, LINK_SPEC, get markers() { return markers; }, placeMarker, ensureIds, applyCatalog, ATMOS, WEATHER, applyAtmo, makeCoast, glowLights, applyBiome, applyPalette, propVisible, toolVisible, updateTerrain, rebuildProps, genFlat, floorAt, bridgeAt, stairsAt, placeSlope, placeStairs, placeBridge, pickTarget, regenGroundProps, rebuildBridges, get stairs() { return stairs; }, get bridges() { return bridges; }, get falls() { return falls; }, overrideAt, heroMat, hero, heroBody, get heroLook() { return heroLook; }, setHeroLook, heroStyle, heroGlow, get ghosts() { return ghosts; }, get props() { return props; }, cam, playCam, player, keys, setMode, setTool, update, heightAt, walkable, slope: slopeAt,
+  pickGroundDetail,adjustGroundDetail,selectedGroundDetail,updateTouch,touchStats, pavingMask, cliffRelief, rebuildCliffRelief, groundTrial, groundTexture, terrainSource:tGeo, terrain, renderer, camera, SIZE, state, H, S, O, F, C, propMeshes, ghostMeshes, cliffIndexAt, BIOMES, CLIFF_STYLES, applyCliffStyle, deckAt, linkDeckAt, runValidation, genSample, genSample2, secretRegions, secretLineX, passageGeometry, terrainRes, TERRAIN_RES, snapshot, sha256, LINK_KINDS, normalizeCatalog, catalogExport, valueIssues, areaIssue, deckAt, getColliders, PROP, get colliderMaxR() { return colliderMaxR; }, rebuildMarkers, portLanding, linkTrigger, linkArrival, LINK_SPEC, get markers() { return markers; }, placeMarker, ensureIds, applyCatalog, ATMOS, WEATHER, applyAtmo, makeCoast, glowLights, applyBiome, applyPalette, propVisible, toolVisible, updateTerrain, rebuildProps, genFlat, floorAt, bridgeAt, stairsAt, placeSlope, placeStairs, placeBridge, pickTarget, regenGroundProps, rebuildBridges, get stairs() { return stairs; }, get bridges() { return bridges; }, get falls() { return falls; }, overrideAt, heroMat, hero, heroBody, get heroLook() { return heroLook; }, setHeroLook, heroStyle, heroGlow, get ghosts() { return ghosts; }, get props() { return props; }, cam, playCam, player, keys, setMode, setTool, update, heightAt, walkable, slope: slopeAt,
   stroke(x, z, frames = 20, opts = {}) {
     hit = new THREE.Vector3(x, heightAt(x, z), z); beginStroke({ shiftKey: !!opts.shift });
     for (let f = 0; f < frames; f++) { if (stroke.active && !['scatter', 'erase'].includes(state.tool)) { applyBrush(x, z, 1 / 60); } }
