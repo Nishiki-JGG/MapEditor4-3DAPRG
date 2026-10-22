@@ -3604,6 +3604,16 @@ const toastEl = $('toast'); let toastT = 0;
 function toast(msg) { toastEl.textContent = msg; toastEl.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => toastEl.classList.remove('show'), 1400); }
 const toolsEl = $('tools');
 TOOLS.forEach(t => { const b = document.createElement('button'); b.dataset.tool = t.id; b.innerHTML = `${t.name}<kbd>${t.key}</kbd>`; b.onclick = () => setTool(t.id); toolsEl.appendChild(b); });
+const fillGroundSel=$('fillGround');
+fillGroundSel.add(new Option('バイオームの標準床','grass'));
+for(const id of GROUND)fillGroundSel.add(new Option(TOOLS.find(t=>t.id===id).name,id));
+function fillGroundAll(id){
+ const channel=GROUND.indexOf(id);if(id!=='grass'&&channel<0)return false;
+ pushUndo();S.fill(0);if(channel>=0)for(let k=0;k<N*N;k++)S[k*NS+channel]=255;
+ updateTerrain();regenGroundProps();
+ toast('床全体を「'+(channel<0?'バイオームの標準床':TOOLS.find(t=>t.id===id).name)+'」に変更しました（Ctrl+Zで戻せます）');return true;
+}
+$('fillGroundAll').onclick=()=>fillGroundAll(fillGroundSel.value);
 const biomeSel = $('biome'), paletteSel = $('palette');
 paletteSel.add(new Option('全て', 'all'));
 for (const b of BIOMES) { biomeSel.add(new Option(b.name, b.id)); paletteSel.add(new Option(b.name, b.id)); }
@@ -3783,6 +3793,7 @@ function applyPalette() {
 }
 function setTool(id) {
   state.tool = id;
+  if(id==='grass'||GROUND.includes(id))$('fillGround').value=id;
   if ($('variantBox')) showVariants();
   if ((id.startsWith('walk') || id === 'secret') && !state.showWalk) setWalkView(true);
   for (const b of toolsEl.children) b.classList.toggle('on', b.dataset.tool === id);
@@ -4260,7 +4271,7 @@ else if (bootPending === 'sample2') toast('サンプル2（遺跡・隠し通路
 requestAnimationFrame(frame);
 
 // hooks for automated checks
-window.__app = {
+window.__app = { fillGroundAll,
   get cliffContactProgress(){return cliffContactProgress;},cliffFits,effectiveGeometry,fitCliffContact,adoptCliffContact, cliffProtected,cliffProtectionReason,nearFeatureReason, get cliffContactStats(){return cliffContactStats;},
   pickGroundDetail,adjustGroundDetail,selectedGroundDetail,updateTouch,touchStats, pavingMask, cliffRelief, rebuildCliffRelief, groundTrial, groundTexture, terrainSource:tGeo, terrain, renderer, camera, SIZE, state, H, S, O, F, C, propMeshes, ghostMeshes, cliffIndexAt, BIOMES, CLIFF_STYLES, applyCliffStyle, deckAt, linkDeckAt, runValidation, genSample, genSample2, secretRegions, secretLineX, passageGeometry, terrainRes, TERRAIN_RES, snapshot, sha256, LINK_KINDS, normalizeCatalog, catalogExport, valueIssues, areaIssue, deckAt, getColliders, PROP, get colliderMaxR() { return colliderMaxR; }, rebuildMarkers, portLanding, linkTrigger, linkArrival, LINK_SPEC, get markers() { return markers; }, placeMarker, ensureIds, applyCatalog, ATMOS, WEATHER, applyAtmo, makeCoast, glowLights, applyBiome, applyPalette, propVisible, toolVisible, updateTerrain, rebuildProps, genFlat, floorAt, bridgeAt, stairsAt, placeSlope, placeStairs, placeBridge, pickTarget, regenGroundProps, rebuildBridges, get stairs() { return stairs; }, get bridges() { return bridges; }, get falls() { return falls; }, overrideAt, heroMat, hero, heroBody, get heroLook() { return heroLook; }, setHeroLook, heroStyle, heroGlow, get ghosts() { return ghosts; }, get props() { return props; }, cam, playCam, player, keys, setMode, setTool, update, heightAt, walkable, slope: slopeAt,
   stroke(x, z, frames = 20, opts = {}) {
