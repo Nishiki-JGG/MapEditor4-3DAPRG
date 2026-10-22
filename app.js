@@ -363,22 +363,31 @@ vec3 terrainColor(){
     vec3 sd=mix(vec3(.76,.66,.46),vec3(.90,.81,.60),clamp(b*.9+c*.3,0.,1.))*(.9+.12*rip);
     col+=sd*sdw;
   }
-  // Rubble: mineral soil and tiny angular chips, without circular bead shading.
+  // Dryland: dusty clay plates, narrow warped shrinkage cracks and buried mineral grit.
   float rbw=vSA.w;
   if(rbw>0.){
-    vec2 rp=p+vec2(fbm(p*1.8),fbm(p*1.8+17.))*.24;
-    float earth=fbm(rp*3.8),grit=vn(rp*48.);
-    vec3 dry=mix(vec3(.27,.23,.18),vec3(.51,.44,.34),earth)*(.84+.28*grit);
+    vec2 rp=p+vec2(fbm(p*1.3),fbm(p*1.3+17.))*.30+vec2(vn(p*13.),vn(p*13.+29.))*.028;
+    vec4 plate=pavingCell(rp*2.65);
+    float edge=plate.x*2.,width=.022+.024*vn(p*3.7+8.);
+    float aa=max(.004,fwidth(edge));
+    float crack=1.-smoothstep(width-aa,width+aa,edge);
+    float rim=smoothstep(width,width+.025,edge)*(1.-smoothstep(width+.025,width+.10,edge));
+    vec3 hair=vor(rp*6.8+41.);
+    float fine=(1.-smoothstep(.010,.030+fwidth(hair.y-hair.x),hair.y-hair.x))*smoothstep(.55,.76,fbm(p*1.9+71.))*(1.-crack);
+    float dust=fbm(p*.43+3.),grain=vn(rp*54.);
+    vec3 dry=mix(vec3(.49,.415,.305),vec3(.69,.605,.465),dust*.65+plate.y*.35);
+    dry*=.96+.08*grain;dry+=rim*.035;
+    dry=mix(dry,vec3(.225,.174,.115),crack*.80);
+    dry=mix(dry,dry*.66,fine*.55);
     vec2 cell=floor(rp*9.),local=fract(rp*9.)-.5;
     float seed=h21(cell+2.7),angle=seed*6.283;
     local=mat2(cos(angle),-sin(angle),sin(angle),cos(angle))*local;
     float shape=max(abs(local.x)*.85+abs(local.y)*1.25,max(local.x*.8-local.y*.4,-local.x*.7+local.y*.65));
-    float size=.08+.19*h21(cell+31.),aa=max(fwidth(shape),.015);
-    float chip=(1.-smoothstep(size-aa,size+aa,shape))*step(.42,seed);
-    vec3 mineral=mix(vec3(.35,.32,.27),vec3(.62,.58,.49),h21(cell+9.));
-    mineral*=.86+.14*step(0.,local.x+local.y*.7);
-    col+=mix(dry,mineral,chip*.8)*rbw;
-    gSurfaceHeight+=rbw*(chip*.004+(grit-.5)*.002);
+    float size=.06+.12*h21(cell+31.),chipAA=max(fwidth(shape),.015);
+    float chip=(1.-smoothstep(size-chipAA,size+chipAA,shape))*step(.66,seed)*(1.-crack);
+    vec3 mineral=mix(vec3(.46,.40,.32),vec3(.65,.59,.48),h21(cell+9.));
+    col+=mix(dry,mineral,chip*.45)*rbw;
+    gSurfaceHeight+=rbw*(rim*.0008-crack*.0015+chip*.001+(grain-.5)*.0004);
   }
   // swamp: mud, moss and murky puddles with rising bubbles
   float swW=vSB.x;
@@ -462,7 +471,7 @@ vec3 terrainColor(){
   col*=mix(1.,.72,smoothstep(.18,.0,hw)*step(0.,hw));
   col*=1.-.3*uWet*(1.-snW);
   gGloss=max(gGloss,uWet*.6*(1.-snW));
-  float otherPaint=max(vSA.z,max(vSA.w,max(vSB.x,max(vSB.y,max(vSB.z,max(vSB.w,vSC))))));
+  float otherPaint=max(vSA.z,max(vSB.x,max(vSB.y,max(vSB.z,max(vSB.w,vSC)))));
   gSurfaceHeight=(gSurfaceHeight*(1.-rockW)+(rockGrain.x-.5)*.012*rockW+(rockGrain.y-.5)*.006*rockW)*(1.-snW)*(1.-smoothstep(.1,.5,otherPaint));
   return pow(col,vec3(2.2));
 }`)
@@ -475,7 +484,7 @@ normal=surfaceNormal(-vViewPosition,normal,gSurfaceHeight);`)
     .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor=mix(roughnessFactor,.55,gGloss);')
     .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance+=pow(gGlow,vec3(2.2))*(1.-.6*uDim);');
 };
-terrainMat.customProgramCacheKey = () => 'terrain-surfaces-v4';
+terrainMat.customProgramCacheKey = () => 'terrain-dryland-v1';
 
 function gridIndex() {
   const ix = new Uint32Array((N - 1) * (N - 1) * 6); let o = 0;
