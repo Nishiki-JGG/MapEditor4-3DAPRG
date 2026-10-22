@@ -435,8 +435,9 @@ vec3 terrainColor(){
   // underwater bed
   float dpt=uWater-wp.y;
   if(dpt>0.){
-    vec3 pv=vor(p*2.2);
-    vec3 bed=mix(vec3(.58,.54,.45),vec3(.72,.67,.56),pv.z)*(.9+.1*smoothstep(.0,.25,pv.y-pv.x));
+    float bedNoise=fbm(p*2.6+13.),sandGrain=vn(p*42.);
+    float ripple=sin(p.x*8.+p.y*3.+fbm(p*.7)*5.);
+    vec3 bed=mix(vec3(.49,.45,.35),vec3(.70,.64,.49),bedNoise)*(.91+.18*sandGrain+.025*ripple);
     bed=mix(bed,col,rockW*.6);
     col=mix(col,bed,smoothstep(0.,.06,dpt));
   }
@@ -459,7 +460,7 @@ normal=surfaceNormal(-vViewPosition,normal,gSurfaceHeight);`)
     .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor=mix(roughnessFactor,.55,gGloss);')
     .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance+=pow(gGlow,vec3(2.2))*(1.-.6*uDim);');
 };
-terrainMat.customProgramCacheKey = () => 'terrain-surfaces-v1';
+terrainMat.customProgramCacheKey = () => 'terrain-surfaces-v2';
 
 function gridIndex() {
   const ix = new Uint32Array((N - 1) * (N - 1) * 6); let o = 0;
@@ -597,8 +598,11 @@ const waterMat = new THREE.ShaderMaterial({
   fragmentShader: `uniform float uTime; uniform float uDim; uniform vec3 uSun; uniform vec3 uShallow; uniform vec3 uDeep; uniform float uLava; uniform float uSea; uniform sampler2D uFlow; uniform sampler2D uMask; uniform float uFlowMax; uniform float uBankRange; uniform float uTrailMax; uniform float uShow; uniform float uMapSize; uniform vec4 uFalls[8]; uniform float uFallCount; varying float vD; varying vec3 vWPos;
     ${DIM_GLSL}
     ${GLSL_NOISE}
-    float caus(vec2 p){ vec3 a=vor(p+vec2(uTime*.12,uTime*.08)); vec3 b=vor(p*1.6-vec2(uTime*.09,-uTime*.11));
-      return (1.-smoothstep(0.,.07,a.y-a.x))*(1.-smoothstep(0.,.07,b.y-b.x)); }
+    float caus(vec2 p){
+      vec2 q=p+vec2(fbm(p*.8+uTime*.025),fbm(p*.9-uTime*.021))*1.3;
+      float a=sin(q.x*8.+q.y*3.5+uTime*.22),b=sin(q.y*9.-q.x*2.3-uTime*.18);
+      return pow(max(0.,a*b),5.)*.7;
+    }
     void main(){
       if(vD<=0.) discard;
       vec2 p=vWPos.xz; float d=vD;
