@@ -11,7 +11,7 @@ function findBrowser() {
 
 async function withPage(url, fn, opts = {}) {
   let port;const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tdwater-cdp-'));
-  const args = ['--headless=new', '--remote-debugging-port=0', `--user-data-dir=${dir}`, '--no-first-run', '--no-default-browser-check', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--allow-file-access-from-files', `--window-size=${opts.w || 1000},${opts.h || 700}`, 'about:blank'];
+  const args = ['--headless=new', '--remote-debugging-port=0', `--user-data-dir=${dir}`, '--no-first-run', '--no-default-browser-check', ...(opts.hardware ? [] : ['--use-angle=swiftshader', '--enable-unsafe-swiftshader']), '--ignore-gpu-blocklist', '--allow-file-access-from-files', `--window-size=${opts.w || 1000},${opts.h || 700}`, 'about:blank'];
   const proc = spawn(findBrowser(), args, { stdio: 'ignore' });
   try {
     let targets = null;
