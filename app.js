@@ -347,14 +347,22 @@ vec3 terrainColor(){
     vec3 sd=mix(vec3(.76,.66,.46),vec3(.90,.81,.60),clamp(b*.9+c*.3,0.,1.))*(.9+.12*rip);
     col=mix(col,sd,sdw);
   }
-  // rubble: dry cracked earth strewn with stones
+  // Rubble: mineral soil and tiny angular chips, without circular bead shading.
   float rbw=smoothstep(.25,.6,vSA.w+(b-.5)*.3);
   if(rbw>0.){
-    vec3 cr0=vor(p*.8); float crack=1.-smoothstep(.0,.05,cr0.y-cr0.x);
-    vec3 dry=mix(vec3(.42,.36,.28),vec3(.60,.53,.41),clamp(b+c*.3-.1,0.,1.))*(1.-.45*crack);
-    vec3 st=vor(p*2.4); float isStone=step(.45,st.z)*smoothstep(.36,.26,st.x);
-    vec3 stone=mix(vec3(.44,.42,.39),vec3(.76,.73,.68),h21(vec2(st.z*91.,3.)))*(.62+.5*smoothstep(.36,.0,st.x));
-    col=mix(col,mix(dry,stone,isStone),rbw);
+    vec2 rp=p+vec2(fbm(p*1.8),fbm(p*1.8+17.))*.24;
+    float earth=fbm(rp*3.8),grit=vn(rp*48.);
+    vec3 dry=mix(vec3(.27,.23,.18),vec3(.51,.44,.34),earth)*(.84+.28*grit);
+    vec2 cell=floor(rp*9.),local=fract(rp*9.)-.5;
+    float seed=h21(cell+2.7),angle=seed*6.283;
+    local=mat2(cos(angle),-sin(angle),sin(angle),cos(angle))*local;
+    float shape=max(abs(local.x)*.85+abs(local.y)*1.25,max(local.x*.8-local.y*.4,-local.x*.7+local.y*.65));
+    float size=.08+.19*h21(cell+31.),aa=max(fwidth(shape),.015);
+    float chip=(1.-smoothstep(size-aa,size+aa,shape))*step(.42,seed);
+    vec3 mineral=mix(vec3(.35,.32,.27),vec3(.62,.58,.49),h21(cell+9.));
+    mineral*=.86+.14*step(0.,local.x+local.y*.7);
+    col=mix(col,mix(dry,mineral,chip*.8),rbw);
+    gSurfaceHeight+=rbw*(chip*.004+(grit-.5)*.002);
   }
   // swamp: mud, moss and murky puddles with rising bubbles
   float swW=smoothstep(.25,.6,vSB.x+(b-.5)*.3);
@@ -451,7 +459,7 @@ normal=surfaceNormal(-vViewPosition,normal,gSurfaceHeight);`)
     .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor=mix(roughnessFactor,.55,gGloss);')
     .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance+=pow(gGlow,vec3(2.2))*(1.-.6*uDim);');
 };
-terrainMat.customProgramCacheKey = () => 'terrain-ground-v4';
+terrainMat.customProgramCacheKey = () => 'terrain-surfaces-v1';
 
 function gridIndex() {
   const ix = new Uint32Array((N - 1) * (N - 1) * 6); let o = 0;
@@ -2188,8 +2196,7 @@ function regenGroundProps() {
     const x = vx(i) + (h2 - .5) * .45, z = vx(j) + (hash2(i, j * 5) - .5) * .45;
     if (heightAt(x, z) < state.water - .45 || slopeAt(x, z) > 1.2) continue;
     if (rb >= .45) {
-      if (h1 < .16 * rb && free(x, z, .4)) add(TYPE('pebble'), x, z, .6 + h2 * 1.1);
-      else if (h1 > .992 && free(x, z, 1.2)) add(TYPE('rock'), x, z, .45 + h2 * .4);
+      if (h1 < .13 * rb && free(x, z, .35)) add(TYPE('scree'), x, z, .7 + h2 * .65);
     }
     if (sw >= .45) {
       if (h1 < .045 * sw && free(x, z, .7)) add(TYPE('reed'), x, z, .8 + h2 * .5);
@@ -3611,7 +3618,7 @@ const placeOpen = new Set();   // groups of the 置く list the user opened
 const PROP_GROUPS = [
   ['木・倒木', ['pine', 'oak', 'scotspine', 'birch', 'willow', 'hazel', 'rowan', 'juniper', 'deadtree', 'twisttree', 'palm', 'banana', 'maple', 'cherry', 'zelkova', 'nara', 'sugi', 'hinoki', 'islandash', 'olive', 'eucalyptus', 'dragontree', 'elftree', 'worldtree', 'log', 'stump', 'rootfan', 'driftwood']],
   ['草花・低木', ['shortgrass', 'meadowgrass', 'groundlitter', 'grass', 'meadowwhite', 'meadowyellow', 'meadowpink', 'meadowred', 'meadowviolet', 'bush', 'fern', 'bramble', 'ivy', 'sedge', 'foxglove', 'horsetail', 'dock', 'clover', 'reed', 'flowers', 'mushroom', 'glowmush', 'shelfshroom', 'cactus', 'barrelcactus']],
-  ['岩・崖', ['rock', 'mossrock', 'pebble', 'cliff', 'cliff_split', 'cliff_shoulder', 'cliff_joint', 'cliff_slab', 'cliff_talus', 'rubblepile', 'stalagmite', 'crystal', 'lavarock', 'obsidian', 'fumarole', 'iceblock', 'icespike']],
+  ['岩・崖', ['scree', 'rock', 'mossrock', 'pebble', 'cliff', 'cliff_split', 'cliff_shoulder', 'cliff_joint', 'cliff_slab', 'cliff_talus', 'rubblepile', 'stalagmite', 'crystal', 'lavarock', 'obsidian', 'fumarole', 'iceblock', 'icespike']],
   ['遺跡・墓', ['column', 'brokencol', 'ruinwall', 'archgate', 'statue', 'stele', 'obelisk', 'pyramid', 'gravestone', 'crossgrave', 'mausoleum', 'bones', 'bonepile', 'magiccircle', 'demonspire']],
   ['建物・道具', ['torch', 'lantern', 'banner', 'woodfence', 'ironfence', 'castlewall', 'tower', 'gatehouse', 'lighthouse', 'rowboat', 'haystack', 'shells', 'snowman', 'kamakura']],
 ];
