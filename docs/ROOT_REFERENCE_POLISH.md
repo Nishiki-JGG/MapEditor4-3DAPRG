@@ -1,5 +1,7 @@
 # 資料に基づく根張り・広葉樹の葉塊改善
 
+葉塊と樹皮の反復に対する追加調整は [TREE_SURFACE_POLISH.md](TREE_SURFACE_POLISH.md) と [新しい比較ページ](../tests/tree_surface_compare.html) を参照してください。以下は372797fまでの改善記録です。
+
 9eeb579 を基準に、普通木の独立した爪状の根を幹と連続する根張りへ修正しました。裸地のまま形を確認し、草や地面シールで隠していません。既存96種・50共有モデル・ID・配置原点・設置幅と高さを維持しています。
 
 [変更前後の同一条件比較](../tests/root_reference_compare.html) / [実エディタで樹種・裸地・草地・斜面を確認](../tests/root_reference_view.html) / [本体](../index.html#size=64)
