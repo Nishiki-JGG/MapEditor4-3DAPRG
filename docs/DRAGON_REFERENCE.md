@@ -1,3 +1,5 @@
+現在の幹・根元・樹皮は[樹木の根幹改善](ROOT_BARK_POLISH.md)を参照。以下は `24897c5` 時点の樹形修正記録で、反復分岐と浅い天蓋は現在も保全している。
+
 # 参照写真に基づく龍血樹の修正
 
 [龍血樹を真上から確認](../tests/tree_view.html?id=dragontree) / [参照に近い低い視点](../tests/tree_view.html?id=dragontree&view=low) / [本体](../index.html#size=64)

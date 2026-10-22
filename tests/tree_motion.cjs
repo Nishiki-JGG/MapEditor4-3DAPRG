@@ -2,7 +2,7 @@ const fs=require('fs'),path=require('path'),assert=require('assert'),{withPage}=
 const out=path.resolve(process.env.EVIDENCE_OUT||path.join(__dirname,'../../tree-canopies-evidence')),url=process.argv[2]||'file:///'+path.join(__dirname,'../index.html').replaceAll('\\','/')+'#size=64';
 const ids=['oak','pine','palm','banana','deadtree','twisttree','birch','willow','scotspine','rowan','hazel','juniper','maple','cherry','zelkova','nara','sugi','hinoki','islandash','olive','eucalyptus','dragontree','elftree','worldtree'];
 (async()=>{const report=await withPage(url,async p=>{
- for(let i=0;i<120;i++){if(await p.eval('!!window.__app'))break;await new Promise(r=>setTimeout(r,500));}assert(await p.eval('!!window.__app'));
+ for(let i=0;i<120;i++){if(await p.eval('!!window.__app'))break;await new Promise(r=>setTimeout(r,500));}assert(await p.eval('!!window.__app'));assert.equal(await p.eval('TDSharedData.assets.filter(a=>a.rootGrounding).length'),24,'Current root/bark assets loaded');
  await p.eval('__app.genFlat();1');await new Promise(r=>setTimeout(r,100));for(let i=0;i<120;i++){if(await p.eval('!document.getElementById("save").disabled'))break;await new Promise(r=>setTimeout(r,100));}
  await p.eval(`window.requestAnimationFrame=()=>0;document.querySelectorAll('body>:not(canvas):not(script):not(style)').forEach(e=>e.style.visibility='hidden');__app.setMode('edit');__app.genFlat();__app.deserialize(__app.serialize());__app.props.length=0;__app.updateTerrain();__app.state.spawn={x:2,z:0};__app.state.agent.height=1.8;__app.state.atmo.kind='none';__app.state.sunOn=true;1`);
  const rows=[];

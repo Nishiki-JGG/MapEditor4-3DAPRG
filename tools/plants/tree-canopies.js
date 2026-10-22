@@ -28,7 +28,7 @@ const specs=[
  {id:'juniper',name:'地を這う針葉低木',kind:'creeping',h:.34,r:1.1,n:5,clumps:2,low:0x53735c,high:0x98ad8b,cell:'needle',legacy:true,shrub:true}
 ];
 const cells={broad:[0,0,256,256],fine:[256,0,256,256],needle:[512,0,256,128],dragon:[512,384,256,128],bark:[768,0,128,256],white:[896,0,128,256],palm:[0,256,512,128],banana:[512,256,512,128],leaf:[0,384,256,128],blossom:[256,384,256,128]};
-function build(id,legacy){const spec=specs.find(s=>s.id===id),index=specs.indexOf(spec),m=new M(47191+index*173),R=m.R,H=spec.legacy?legacy[id].bounds[1][1]:spec.h,r=spec.r,parts=[],branches=[],clumps=[];m.tree=true;const G=[];let glow=0;
+function build(id,legacy){const spec=specs.find(s=>s.id===id),index=specs.indexOf(spec),m=new M(47191+index*173),R=m.R,H=spec.legacy?legacy[id].bounds[1][1]:spec.h,r=spec.r,parts=[],branches=[],clumps=[],woodPaths=[];m.tree=true;const G=[];let glow=0;
  const original=m.tri.bind(m);m.tri=(...a)=>{const first=m.P.length/3;original(...a);for(let i=first;i<m.P.length/3;i++)G[i]=glow;};
  m.uv=(cell,u=.5,v=.5)=>{const box=cells[cell]||cells.broad;if(spec.kind==='dragon'&&cell==='bark')u=.24+u*.38;return[(box[0]+3+Math.min(1,Math.max(0,u))*(box[2]-6))/1024,(box[1]+3+Math.min(1,Math.max(0,v))*(box[3]-6))/512];};
  const dragonSurface=(x,z)=>H*(.99-.115*Math.min(1,Math.hypot(x,z)/(r+.1))**2);
@@ -36,7 +36,7 @@ function build(id,legacy){const spec=specs.find(s=>s.id===id),index=specs.indexO
  function tube(points,radii,sides,hex,from=0,to=0,role='branch',cell='bark'){
   const first=m.P.length/3,dist=[0];for(let j=1;j<points.length;j++)dist.push(dist[j-1]+V(points[j]).distanceTo(V(points[j-1])));m.tube(points,radii,sides,hex,cell,role==='branch'&&!['dead','twist'].includes(spec.kind));const start=m.uv(cell,0,0)[1],span=m.uv(cell,0,1)[1]-start,total=dist[dist.length-1];
   for(let i=first;i<m.P.length/3;i++){const local=i-first,segments=points.length-1;let t;if(local<segments*sides*6){const seg=Math.floor(local/(sides*6)),end=(m.U[i*2+1]-start)/span;t=(dist[seg]+end*(dist[seg+1]-dist[seg]))/total;m.U[i*2+1]=m.uv(cell,0,t)[1];}else t=local<segments*sides*6+sides*3?0:1;m.W[i]=from+(to-from)*Math.max(0,Math.min(1,t));}if(spec.kind==='dragon'){const capStart=first+(points.length-1)*sides*6;for(let i=first;i<Math.min(capStart,m.P.length/3);i++){const p=V(m.P.slice(i*3,i*3+3));let best=null,d=Infinity;for(let j=1;j<points.length;j++){const a=V(points[j-1]),v=V(points[j]).sub(a),t=Math.max(0,Math.min(1,p.clone().sub(a).dot(v)/v.lengthSq())),q=a.addScaledVector(v,t),n=p.clone().sub(q),dist=n.lengthSq();if(dist<d){d=dist;best=n}}if(best&&best.lengthSq()>1e-10)m.N.splice(i*3,3,...best.normalize().toArray());}}
-  mark(role,first);if(role==='branch')branches.push({points,from,to});
+  mark(role,first);woodPaths.push({role,first,points,radii,sides,cell,from,to});if(role==='branch')branches.push({points,from,to});
  }
  function cluster(p,rx,rz,rise,w,cell=spec.cell||'broad',twist=0){const first=m.P.length/3,n=7,ring=Array.from({length:n},(_,j)=>{const a=j/n*Math.PI*2,rr=.86+R()*.20,x=Math.cos(a)*rx*rr,z=Math.sin(a)*rz*rr;return[p[0]+Math.cos(twist)*x-Math.sin(twist)*z,p[1]+(R()-.5)*rise*.13,p[2]+Math.sin(twist)*x+Math.cos(twist)*z];}),top=[p[0]+rx*.07,p[1]+rise,p[2]-rz*.04],uv=(j)=>m.uv(cell,.5+Math.cos(j/n*Math.PI*2)*.46,.5+Math.sin(j/n*Math.PI*2)*.46);
   if(spec.kind==='dragon'){for(const p of ring)p[1]=dragonSurface(p[0],p[2]);top[1]=dragonSurface(top[0],top[2]);}
@@ -114,7 +114,7 @@ function build(id,legacy){const spec=specs.find(s=>s.id===id),index=specs.indexO
  const map=new Map(),p=[],n=[],c=[],u=[],w=[],e=[],triangles=[],remap=[],round=x=>Math.abs(x)<.0000005?0:Math.round(x*1e6)/1e6;
  for(let i=0;i<P.length/3;i++){const values=[...P.slice(i*3,i*3+3),...N.slice(i*3,i*3+3),...C.slice(i*3,i*3+3),...U.slice(i*2,i*2+2),W[i],G[i]||0].map(round),key=values.join(',');let vertex=map.get(key);if(vertex===undefined){vertex=p.length/3;map.set(key,vertex);p.push(...values.slice(0,3));n.push(...values.slice(3,6));c.push(...values.slice(6,9));u.push(...values.slice(9,11));w.push(values[11],values[11]);e.push(values[12]);}triangles.push(vertex);remap.push(vertex);}
  const partData=parts.map(part=>({...part,indices:[...new Set(remap.slice(part.first,part.first+part.count))]})),clusterData=clumps.map(part=>({...part,indices:[...new Set(remap.slice(part.first,part.first+part.count))]}));
- return{positions:p,normals:n,colors:c,uv:u,triangles,motionWeights:w,glow:e.some(v=>v>0)?e:null,parts:partData,clumps:clusterData,branches,scale,bounds:target};
+ return{positions:p,normals:n,colors:c,uv:u,triangles,motionWeights:w,glow:e.some(v=>v>0)?e:null,parts:partData,clumps:clusterData,branches,woodPaths,fit:{low:lo,high:hi,target},scale,bounds:target};
 }
 function coniferKind(s){return ['pine','spire','sprays'].includes(s.kind);}
 async function paint(data){const cv=document.createElement('canvas');cv.width=1024;cv.height=512;const ctx=cv.getContext('2d'),wood=data.textures.find(t=>t.id==='woodland-plants-atlas-v1'),image=new Image();image.src='data:image/png;base64,'+wood.png;await image.decode();const src=document.createElement('canvas');src.width=src.height=1024;src.getContext('2d').putImageData(new ImageData(new Uint8ClampedArray(TDGeo.ATLAS.paint()),1024,1024),0,0);

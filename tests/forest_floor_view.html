@@ -4,7 +4,7 @@
 <button onclick="floorView.arrange(false)">単体</button><button onclick="floorView.arrange(true)">群生</button>
 <button onclick="floorView.angle(false)">真上90度</button><button onclick="floorView.angle(true)">斜め</button>
 <select onchange="floorView.wind=this.value"><option value="none">無風</option><option value="breeze">そよ風</option><option value="gale">強風</option></select></div>
-<script src="../three.min.js"></script><script src="../props/shared/assets.js?v=floor1"></script><script src="../props/shared/pine-wind.js"></script><script src="../props/shared/shared.js"></script><script>
+<script src="../three.min.js"></script><script src="../props/shared/assets.js?v=root-bark1"></script><script src="../props/shared/pine-wind.js?v=root-bark1"></script><script src="../props/shared/shared.js?v=root-bark1"></script><script>
 window.floorReady=false;THREE.DefaultLoadingManager.onLoad=()=>{floorReady=true;floorView.step(0)};
 const renderer=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});renderer.setPixelRatio(1);renderer.setSize(innerWidth,innerHeight);renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.3;renderer.shadowMap.enabled=true;document.body.append(renderer.domElement);
 const scene=new THREE.Scene();scene.background=new THREE.Color('#acb5a0');scene.add(new THREE.HemisphereLight(0xd6e8ff,0x6a5a3e,1.05));const sun=new THREE.DirectionalLight(0xffe0b0,2.6);sun.position.set(-48,62,-14);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-10,right:10,top:8,bottom:-8,far:180});scene.add(sun);

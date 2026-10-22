@@ -22,7 +22,7 @@ public sealed class SharedPlantContact : MonoBehaviour {
  public void Register(Renderer renderer,float radius,float minY,float maxY,float maxDisplacement){entries.Add(new Entry{renderer=renderer,radius=radius,minY=minY,maxY=maxY,maxDisplacement=maxDisplacement});}
  // Call after moving/scaling imported plants. Actor movement requires no rebuild.
  public void Refresh(){grid.Clear();foreach(var e in entries){if(!e.renderer)continue;var tr=e.renderer.transform;float sx=Mathf.Abs(tr.lossyScale.x),sz=Mathf.Abs(tr.lossyScale.z),r=e.radius*Mathf.Max(sx,sz);var p=tr.position;
-   var mf=e.renderer.GetComponent<MeshFilter>();if(mf&&mf.sharedMesh){var b=mf.sharedMesh.bounds;float pad=(e.maxDisplacement+e.renderer.sharedMaterial.GetVector("_PineBand").z)/Mathf.Max(.0001f,Mathf.Min(sx,sz));b.Expand(new Vector3(pad*2,0,pad*2));e.renderer.localBounds=b;}
+   var mf=e.renderer.GetComponent<MeshFilter>();if(mf&&mf.sharedMesh){var b=mf.sharedMesh.bounds;float pad=(e.maxDisplacement+e.renderer.sharedMaterial.GetVector("_PineBand").z)/Mathf.Max(.0001f,Mathf.Min(sx,sz));b.Expand(new Vector3(pad*2,0,pad*2));e.renderer.localBounds=SharedRootGrounding.ExpandBounds(e.renderer,b);}
    for(int x=Mathf.FloorToInt((p.x-r)/Cell);x<=Mathf.FloorToInt((p.x+r)/Cell);x++)for(int z=Mathf.FloorToInt((p.z-r)/Cell);z<=Mathf.FloorToInt((p.z+r)/Cell);z++){var key=new Vector2Int(x,z);if(!grid.TryGetValue(key,out var list))grid.Add(key,list=new List<Entry>());list.Add(e);}
   }}
  void Write(Entry e){if(!e.renderer)return;if(block==null)block=new MaterialPropertyBlock();e.renderer.GetPropertyBlock(block);block.SetVector(Touch,new Vector4(e.bend.x,e.bend.y,0,0));e.renderer.SetPropertyBlock(block);}
