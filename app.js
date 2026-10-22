@@ -307,7 +307,7 @@ vec2 pavingPaint(vec2 world){
 ${DIM_GLSL}
 vec3 terrainColor(){
   vec3 wp=vWPos; vec3 n=normalize(vWNor); vec2 p=wp.xz;
-  float slope=max(1.-n.y,vReliefSlope);
+  float slope=vReliefSlope;
   float a=fbm(p*.22), b=fbm(p*1.6+5.), c=vn(p*11.);
   // grass
   vec3 grass=mix(uG0, uG1, clamp(a*1.2+b*.7-.5,0.,1.));
@@ -333,10 +333,12 @@ vec3 terrainColor(){
   stone=mix(stone,grass*.88,buried*.40);
   vec3 joint=mix(dirt*.90,grass*.84,smoothstep(.45,.73,fbm(p*2.7)+a*.16)*(1.-centrePaint*.65));
   vec3 cob=mix(joint,stone,ce);
-  vec3 col=mix(grass,dirt,smoothstep(.2,.55,vSA.x+(b-.5)*.35));
+  float dirtW=smoothstep(.16,.72,vSA.x+(b-.5)*.38+(vn(p*8.1+7.)-.5)*.12);
+  vec3 col=mix(grass,dirt,dirtW);
   col=mix(col,dirt,max(paint.r,centrePaint)*.16*(1.-cobbleEdge));
   col=mix(col,cob,cobbleEdge);
   gSurfaceHeight=bevel*(.010+cv.y*.012)*cobbleEdge;
+  if(uGroundTrial>0.) gSurfaceHeight+=(1.-cobbleEdge)*mix((dot(grass,vec3(.2126,.7152,.0722))-.35)*.018,groundSoilRelief(p),dirtW);
   col=mix(col,fcol,uFlowers*fl*(1.-uGroundTrial)*step(slope,.12)*(1.-smoothstep(.2,.4,vSA.x+vSA.y+vSA.z+vSA.w+vSB.x+vSB.y)));
   // sand: wind ripples
   float sdw=smoothstep(.25,.6,vSA.z+(b-.5)*.3);
@@ -449,7 +451,7 @@ normal=surfaceNormal(-vViewPosition,normal,gSurfaceHeight);`)
     .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor=mix(roughnessFactor,.55,gGloss);')
     .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance+=pow(gGlow,vec3(2.2))*(1.-.6*uDim);');
 };
-terrainMat.customProgramCacheKey = () => 'terrain-rock-contact-paving-v5';
+terrainMat.customProgramCacheKey = () => 'terrain-meadow-v3';
 
 function gridIndex() {
   const ix = new Uint32Array((N - 1) * (N - 1) * 6); let o = 0;
@@ -487,8 +489,27 @@ cliffRelief.name='Derived cliff relief';cliffRelief.castShadow=cliffRelief.recei
 let cliffReliefTimer=0;
 function rebuildCliffRelief(){
   clearTimeout(cliffReliefTimer);cliffReliefTimer=0;
-  const geometry=TDCliffRelief.build(tGeo,heightAt,HALF,fallReliefMask);cliffRelief.geometry.dispose();cliffRelief.geometry=geometry;
+  // Reconstruct only steep cells and their shoulder ring; never change editable H.
+  const oldSurface=terrain.geometry;
+  const visual=TDCliffShoulder.build(tGeo,N,CELL,{mask:shoulderMask()});
+  terrain.geometry=visual;if(oldSurface!==tGeo)oldSurface.dispose();
+  const geometry=TDCliffRelief.build(visual,heightAt,HALF,fallReliefMask);cliffRelief.geometry.dispose();cliffRelief.geometry=geometry;
   cliffRelief.visible=geometry.index.count>0;
+}
+// Suppress height interpolation near links, water, the rim and fitted rocks.
+function shoulderMask(){
+ const memo=new Map(),rocks=new SpatialHash(4);
+ for(const p of props)if(cliffFits?.valid(p))rocks.add(p,p[1],p[2]);
+ return(x,z)=>{const key=Math.round(x*32)+','+Math.round(z*32);if(memo.has(key))return memo.get(key);let m=1;
+  m*=sstep(0,.5,HALF-Math.max(Math.abs(x),Math.abs(z)));
+  m*=sstep(.12,.45,Math.abs(heightAt(x,z)-state.water));
+  const keep=(distance,radius)=>{m=Math.min(m,sstep(radius,radius+.4,distance));};
+  for(const b of bridges)keep(distToPolyline(x,z,[[b.x1,b.z1],[b.x2,b.z2]]),b.w/2+.4);
+  for(const st of stairs)keep(distToPolyline(x,z,[[st.x1,st.z1],[st.x2,st.z2]]),st.w/2+.4);
+  for(const f of falls){const[ux,uz]=fallDir(f),lat=Math.abs((x-f.x)*uz-(z-f.z)*ux),along=Math.abs((x-f.x)*ux+(z-f.z)*uz);if(along<2)keep(lat,f.w/2+.4);}
+  for(const q of markers)if(q.kind==='port'||isLink(q.kind))keep(Math.hypot(x-q.x,z-q.z),Math.max(q.r||0,(q.w||2)/2)+.5);
+  rocks.query(x,z,4,p=>keep(Math.hypot(x-p[1],z-p[2]),Math.max(1.5,PROP[p[0]].r||0)*p[4]+.6));
+  memo.set(key,m);return m;};
 }
 function scheduleCliffRelief(){clearTimeout(cliffReliefTimer);cliffRelief.visible=false;cliffReliefTimer=setTimeout(rebuildCliffRelief,100);}
 
@@ -669,6 +690,8 @@ function updateTerrain() {
   TDPavingMask.updateMask(pavingMask,S,NS);
   tGeo.attributes.position.needsUpdate = tGeo.attributes.splatA.needsUpdate = tGeo.attributes.splatB.needsUpdate = tGeo.attributes.splatC.needsUpdate = wGeo.attributes.depth.needsUpdate = true;
   tGeo.computeVertexNormals();
+  const slopeField=tGeo.attributes.reliefSlope;for(let k=0;k<N*N;k++)slopeField.array[k]=1-tGeo.attributes.normal.getY(k);slopeField.needsUpdate=true;
+  if(terrain.geometry!==tGeo){terrain.geometry.dispose();terrain.geometry=tGeo;}
   tGeo.computeBoundingSphere(); tGeo.computeBoundingBox();
   scheduleCliffRelief();
   const spos = sGeo.attributes.position.array;
@@ -2176,8 +2199,36 @@ function regenGroundProps() {
       else if (h1 < .02 && free(x, z, .5)) add(TYPE('pebble'), x, z, .5 + h2 * .5);
     }
   }
-  // meadow grass tufts on plain grass (no other ground painted), in biomes the grass prop belongs to
-  const GR = TYPE('grass');
+  // 草丈の低い地被を土台に、数m単位の群れと道端の短い草を重ねる。
+  const GR = TYPE('grass'), meadow = ['forest', 'grassland'].includes(state.biome);
+  if (meadow && GR >= 0) {
+    const noise=(x,z)=>{const i=Math.floor(x),j=Math.floor(z),u=x-i,v=z-j,s=u*u*(3-2*u),t=v*v*(3-2*v);return lerp(lerp(hash2(i,j),hash2(i+1,j),s),lerp(hash2(i,j+1),hash2(i+1,j+1),s),t);};
+    const density=Math.min(1,6400/(SIZE*SIZE));
+    const kinds=['meadowgrass','clover','meadowwhite','meadowyellow'].map(TYPE);
+    for(let j=1;j<N-1;j++)for(let i=1;i<N-1;i++){
+      const k=idx(i,j),dirt=S[k*NS]/255;let other=0;for(let c=1;c<NS;c++)other=Math.max(other,S[k*NS+c]/255);
+      if(other>.18||dirt>.67)continue;
+      const h=hash2(i*5+11,j*9+2),h2=hash2(i*3+7,j*7+1),x=vx(i)+(h2-.5)*CELL*.8,z=vx(j)+(hash2(i*9,j)-.5)*CELL*.8;
+      const cluster=noise(x*.24+31,z*.24-17),edge=clamp(dirt/.4,0,1),coverage=clamp((.67-dirt)/.4,0,1);
+      if(h>(.24+.65*cluster*cluster+.25*edge)*coverage*density)continue;
+      if(heightAt(x,z)<state.water+.12||slopeAt(x,z)>.55||!free(x,z,.24))continue;
+      if(bridgeAt(x,z)!==null||stairsAt(x,z)!==null)continue;
+      if(Math.hypot(x-state.spawn.x,z-state.spawn.z)<.8||markers.some(m=>(m.kind==='port'||isLink(m.kind))&&Math.hypot(x-m.x,z-m.z)<Math.max(m.r||0,(m.w||2)/2)+.35))continue;
+      const species=hash2(i*19+7,j*23-2),flowers=cluster>.55&&dirt<.25;
+      const t=flowers&&species>.94?kinds[3]:flowers&&species>.88?kinds[2]:species>.90?kinds[1]:kinds[0];
+      if(t<0)continue;
+      const scale=t===kinds[0]?(.70+.52*h2)*(1-.30*edge):t===kinds[1]?.50+h2*.35:.65+h2*.3;
+      add(t,x,z,scale);
+    }
+    // 土の中心は開け、少量の埋まった小石を縁に寄せる。
+    for(let j=1;j<N-1;j++)for(let i=1;i<N-1;i++){
+      const k=idx(i,j),dirt=S[k*NS]/255;let other=0;for(let c=1;c<NS;c++)other=Math.max(other,S[k*NS+c]/255);
+      if(other>.18||dirt<.2||hash2(i*17+3,j*11+7)>(dirt<.8?.035:.007)*density)continue;
+      const x=vx(i),z=vx(j);if(heightAt(x,z)<state.water+.12||slopeAt(x,z)>.45||!free(x,z,.3)||bridgeAt(x,z)!==null||stairsAt(x,z)!==null)continue;
+      add(TYPE('pebble'),x,z,.18+hash2(i*3,j*7)*.23);
+    }
+  } else {
+
   if (GR >= 0 && PROP[GR].tags.includes(state.biome)) for (let j = 1; j < N - 1; j++) for (let i = 1; i < N - 1; i++) {
     const k = idx(i, j); let painted = 0; for (let c = 0; c < NS; c++) painted = Math.max(painted, S[k * NS + c]); if (painted > 60) continue;
     const h1 = hash2(i * 5 + 11, j * 9 + 2); if (h1 > .045) continue;
@@ -2185,6 +2236,8 @@ function regenGroundProps() {
     if (heightAt(x, z) < state.water + .1 || slopeAt(x, z) > .9 || !free(x, z, .6)) continue;
     if ((bridges.length && bridgeAt(x, z) !== null) || (stairs.length && stairsAt(x, z) !== null)) continue;   // not on decks and steps
     add(GR, x, z, .75 + h2 * .6);
+  }
+
   }
   rebuildProps();
 }
@@ -2240,11 +2293,11 @@ function queueCliffContact(){cliffContactToken++;clearTimeout(cliffContactTimer)
 async function fitCliffContact(){
   clearTimeout(cliffContactTimer);cliffContactTimer=0;const token=++cliffContactToken;
   cliffContactProgress=0;rebuildCliffRelief();
-  const generation=()=>[tGeo.uuid,tGeo.attributes.position.version,cliffRelief.geometry.uuid,cliffRelief.geometry.attributes.position.version].join('/');
+  const generation=()=>[terrain.geometry.uuid,terrain.geometry.attributes.position.version,cliffRelief.geometry.uuid,cliffRelief.geometry.attributes.position.version].join('/');
   ensureIds();const version=generation(),source=props,input=cliffInputSignature(),signature=()=>JSON.stringify([source,markers,bridges,stairs,state.spawn,state.agent]),before=signature();
   const buttons=['autoRocks','save','saveAs','export','load'].map(id=>document.getElementById(id)).filter(Boolean);if(!cliffContactDisabled)cliffContactDisabled=buttons.map(b=>b.disabled);buttons.forEach(b=>b.disabled=true);
   try{
-    const r=await TDCliffLayering.fitAsync({layered:p=>cliffFits.records.get(p[8])?.layering===1,geometries:[tGeo,cliffRelief.geometry],types:PROP,height:heightAt,water:state.water,progress:n=>{cliffContactProgress=n;},protected:(p,g)=>cliffProtected(p,g||PROP[p[0]].geo),valid:()=>token===cliffContactToken&&generation()===version&&props===source&&signature()===before&&cliffInputSignature()===input},source);
+    const r=await TDCliffLayering.fitAsync({layered:p=>cliffFits.records.get(p[8])?.layering===1,geometries:[terrain.geometry,cliffRelief.geometry],types:PROP,height:heightAt,water:state.water,progress:n=>{cliffContactProgress=n;},protected:(p,g)=>cliffProtected(p,g||PROP[p[0]].geo),valid:()=>token===cliffContactToken&&generation()===version&&props===source&&signature()===before&&cliffInputSignature()===input},source);
     if(generation()!==version||props!==source||signature()!==before||token!==cliffContactToken){for(const f of r.fits)f.geometry.dispose();return{cancelled:true};}
     const adopted=adoptCliffContact(r,source,input);if(adopted.cancelled)return adopted;cliffContactStats={...r.stats,generation:version};toast('岩を'+r.stats.changed+'個調整しました（'+r.stats.keptOriginal+'個は元の位置を維持）');return cliffContactStats;
   }catch(e){if(e.message==='cliff-contact-cancelled')return{cancelled:true};console.error(e);return{error:e.message};}
@@ -3469,12 +3522,15 @@ revision・書き出し日時・ファイルごとの SHA-256・contentHash は 
 - 当たり判定（radius / offsets / solid）も同じローカル座標。エディター内部のローカル座標とは z の符号だけが違います。
 `;
   const fittedExport=cliffFits.export(props,HALF,mn);for(const f of fittedExport.instances){const p=props.find(p=>p[8]===f.instanceId),v=.86+.28*hash2(p[1]*97|0,p[2]*89|0);f.instanceTint=f.instanceTint||[v*(.95+.1*hash2(p[1]*13|0,7)),v,v*(.95+.1*hash2(3,p[2]*17|0))];f.cliffStyleIndex=cliffIndexNear(p[1],p[2]);}if(fittedExport.instances.length){meta.requiredFeatures=[...(meta.requiredFeatures||[]),'cliffFitsMeshV1'];meta.cliffFits={file:'cliff_fits_mesh.json',instanceIds:fittedExport.instances.map(x=>x.instanceId),replacement:'Replace original renderer and collider per ID; unsupported readers must reject'};}
+  const visualFile=terrain.geometry.userData.refinedCells?'terrain_visual_mesh.json':null;
+  if(visualFile)meta.terrain.visualSurface={file:visualFile,requiredForVisualParity:true,replace:'terrain renderer only; retain heightmap collider',clipHoles:holesPng?'holes.png':null,stats:terrain.geometry.userData,note:'Apply with the same ground splats, cliff styles and continuous cliffCoverageSlope; do not overlay the old terrain renderer.'};
   const reliefFile=cliffRelief.geometry.index.count?'cliff_relief_mesh.json':null;
   if(reliefFile)meta.terrain.cliffRelief={file:reliefFile,role:'visual rock skin; walking heightfield unchanged',maxOffsetMetres:+cliffRelief.geometry.userData.maxOffset.toFixed(5)};
   const rootPaintPng=await pngOf((i,j)=>[S[(j*N+i)*NS],S[(j*N+i)*NS+3],0],N);
   const files = [
     {name:'root_paint.png',data:rootPaintPng},
     ...(fittedExport.instances.length?[{name:'cliff_fits_mesh.json',data:JSON.stringify(fittedExport)}]:[]),
+    ...(visualFile?[{name:visualFile,data:JSON.stringify(TDCliffShoulder.exportMesh(terrain.geometry,HALF,mn))}]:[]),
     ...(reliefFile?[{name:reliefFile,data:JSON.stringify(TDCliffRelief.exportMesh(cliffRelief.geometry,HALF,mn))}]:[]),
     { name: 'heightmap_r16.raw', data: heightRaw }, { name: 'walk_floor_r16.raw', data: floorRaw },
     ...weightPngs.map((d, i) => ({ name: `weights_${i}.png`, data: d })), ...maskPngs.map((d, i) => ({ name: `mask_${i}.png`, data: d })),
@@ -3720,6 +3776,7 @@ $('walkView').onclick = () => setWalkView(!state.showWalk);
 if (heroBody) $('heroLookRemy').textContent = `Remy（ゲームの体・身長 ${heroBody.meta.height.toFixed(2)}m）`; else $('heroLookRemy').disabled = true;
 $('heroLook').onchange = e => setHeroLook(e.target.value);
 setHeroLook(heroBody ? 'remy' : 'box');
+$('refreshGroundProps').onclick = () => { pushUndo(); regenGroundProps(); toast('地面の塗りに合わせて草と小石を更新しました'); };
 $('autoRocks').onclick = () => { pushUndo(); autoRocks(); toast('崖のまわりに岩を配置しました'); };
 $('newSample').onclick = () => { if (SIZE !== 64) { reloadAtSize(64, 'sample'); return; } pushUndo(); genSample((Math.random() * 1e6) | 0); forgetSaveTarget('サンプル'); syncUI(); updateTerrain(); rebuildProps(); rebuildFalls(); rebuildBridges(); rebuildStairs(); };
 $('newSample2').onclick = () => {
@@ -4135,7 +4192,7 @@ requestAnimationFrame(frame);
 // hooks for automated checks
 window.__app = {
   get cliffContactProgress(){return cliffContactProgress;},cliffFits,effectiveGeometry,fitCliffContact,adoptCliffContact, cliffProtected,cliffProtectionReason,nearFeatureReason, get cliffContactStats(){return cliffContactStats;},
-  updateTouch,touchStats, pavingMask, cliffRelief, rebuildCliffRelief, groundTrial, groundTexture, terrain, renderer, camera, SIZE, state, H, S, O, F, C, propMeshes, ghostMeshes, cliffIndexAt, BIOMES, CLIFF_STYLES, applyCliffStyle, deckAt, linkDeckAt, runValidation, genSample, genSample2, secretRegions, secretLineX, passageGeometry, terrainRes, TERRAIN_RES, snapshot, sha256, LINK_KINDS, normalizeCatalog, catalogExport, valueIssues, areaIssue, deckAt, getColliders, PROP, get colliderMaxR() { return colliderMaxR; }, rebuildMarkers, portLanding, linkTrigger, linkArrival, LINK_SPEC, get markers() { return markers; }, placeMarker, ensureIds, applyCatalog, ATMOS, WEATHER, applyAtmo, makeCoast, glowLights, applyBiome, applyPalette, propVisible, toolVisible, updateTerrain, rebuildProps, genFlat, floorAt, bridgeAt, stairsAt, placeSlope, placeStairs, placeBridge, pickTarget, regenGroundProps, rebuildBridges, get stairs() { return stairs; }, get bridges() { return bridges; }, get falls() { return falls; }, overrideAt, heroMat, hero, heroBody, get heroLook() { return heroLook; }, setHeroLook, heroStyle, heroGlow, get ghosts() { return ghosts; }, get props() { return props; }, cam, playCam, player, keys, setMode, setTool, update, heightAt, walkable, slope: slopeAt,
+  updateTouch,touchStats, pavingMask, cliffRelief, rebuildCliffRelief, groundTrial, groundTexture, terrainSource:tGeo, terrain, renderer, camera, SIZE, state, H, S, O, F, C, propMeshes, ghostMeshes, cliffIndexAt, BIOMES, CLIFF_STYLES, applyCliffStyle, deckAt, linkDeckAt, runValidation, genSample, genSample2, secretRegions, secretLineX, passageGeometry, terrainRes, TERRAIN_RES, snapshot, sha256, LINK_KINDS, normalizeCatalog, catalogExport, valueIssues, areaIssue, deckAt, getColliders, PROP, get colliderMaxR() { return colliderMaxR; }, rebuildMarkers, portLanding, linkTrigger, linkArrival, LINK_SPEC, get markers() { return markers; }, placeMarker, ensureIds, applyCatalog, ATMOS, WEATHER, applyAtmo, makeCoast, glowLights, applyBiome, applyPalette, propVisible, toolVisible, updateTerrain, rebuildProps, genFlat, floorAt, bridgeAt, stairsAt, placeSlope, placeStairs, placeBridge, pickTarget, regenGroundProps, rebuildBridges, get stairs() { return stairs; }, get bridges() { return bridges; }, get falls() { return falls; }, overrideAt, heroMat, hero, heroBody, get heroLook() { return heroLook; }, setHeroLook, heroStyle, heroGlow, get ghosts() { return ghosts; }, get props() { return props; }, cam, playCam, player, keys, setMode, setTool, update, heightAt, walkable, slope: slopeAt,
   stroke(x, z, frames = 20, opts = {}) {
     hit = new THREE.Vector3(x, heightAt(x, z), z); beginStroke({ shiftKey: !!opts.shift });
     for (let f = 0; f < frames; f++) { if (stroke.active && !['scatter', 'erase'].includes(state.tool)) { applyBrush(x, z, 1 / 60); } }

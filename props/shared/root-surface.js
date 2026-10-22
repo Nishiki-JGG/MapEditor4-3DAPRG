@@ -32,7 +32,7 @@ ${shadow?'':TDGround.GLSL+'\nuniform sampler2D uRootPaint;uniform vec4 uRootPain
 float rootHash(vec2 p){p=fract(p*vec2(123.34,456.21));p+=dot(p,p+45.32);return fract(p.x*p.y);}
 float rootNoise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(rootHash(i),rootHash(i+vec2(1,0)),f.x),mix(rootHash(i+vec2(0,1)),rootHash(i+vec2(1,1)),f.x),f.y);}
 ${shadow?'':`
-float rootSoilWeight(vec2 p,float paint){float a=.5,s=0.;p=p*1.6+5.;for(int i=0;i<4;i++){s+=a*rootNoise(p);p=p*2.03+17.1;a*=.5;}return smoothstep(.2,.55,paint+(s-.5)*.35);}
+float rootSoilWeight(vec2 p,float paint){float a=.5,s=0.;p=p*1.6+5.;for(int i=0;i<4;i++){s+=a*rootNoise(p);p=p*2.03+17.1;a*=.5;}return smoothstep(.16,.72,paint+(s-.5)*.38+(rootNoise(vRootSurface.xy*8.1+7.)-.5)*.12);}
 vec2 rootPaint(vec2 p){if(uRootPaintMap.w<.5)return vRootTerrain.xy;vec2 uv=clamp((p+uRootPaintMap.xy)/(2.*uRootPaintMap.xy),0.,1.);return texture2D(uRootPaint,uv*(1.-1./uRootPaintMap.z)+.5/uRootPaintMap.z).ba;}
 vec3 rootSurfaceColor(vec3 bark){
  float enabled=dot(vRootTerrain,vec3(1.));float h=vRootSurface.z;
@@ -50,7 +50,7 @@ vec3 rootSurfaceColor(vec3 bark){
 if(vRootSurface.w>.5&&dot(vRootTerrain,vec3(1.))>.001&&vRootSurface.z<uRootSurface.x*.20*(rootNoise(vRootSurface.xy*17.3)-.18))discard;`);
   if(!shadow)sh.fragmentShader=sh.fragmentShader.replace('#include <color_fragment>','#include <color_fragment>\ndiffuseColor.rgb=rootSurfaceColor(diffuseColor.rgb);');
  };
- material.customProgramCacheKey=()=>key()+'/root-surface/3'+(shadow?'/shadow':'');return material;
+ material.customProgramCacheKey=()=>key()+'/root-surface/4'+(shadow?'/shadow':'');return material;
 }
 window.TDRootSurface={attach};
 })();
