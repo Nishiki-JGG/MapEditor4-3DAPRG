@@ -1,15 +1,16 @@
 Shader "Hidden/MapSharedProps/RootSurfaceProbe" {
- Properties {_MainTex("Surface samples",2D)="black"{} _Contexts("Terrain contexts",2D)="black"{} _RootGrass("Raw grass",2D)="white"{} _RootDirt("Raw soil",2D)="white"{}}
+ Properties {_MainTex("Surface samples",2D)="black"{} _Contexts("Terrain contexts",2D)="black"{} _RootGrass("Raw grass",2D)="white"{} _RootDirt("Raw soil",2D)="white"{} _RootPaint("Raw soil/rubble paint",2D)="black"{}}
  SubShader { Pass { ZTest Always ZWrite Off Cull Off
  CGPROGRAM
  #pragma target 3.0
  #pragma vertex vert_img
  #pragma fragment frag
  #include "UnityCG.cginc"
- sampler2D _MainTex,_Contexts,_RootGrass,_RootDirt;
- float4 _RootSurface,_RootGrassParams,_RootDirtParams,_RootGrassOffset,_RootDirtOffset,_RootWaveA,_RootWaveB,_TDRootSlope;
+ sampler2D _MainTex,_Contexts,_RootGrass,_RootDirt,_RootPaint;
+ float4 _RootPaintMap,_RootSurface,_RootGrassParams,_RootDirtParams,_RootGrassOffset,_RootDirtOffset,_RootWaveA,_RootWaveB,_TDRootSlope;
  float2 _TDPineOrigin;static float4 rootProbeTerrain;
  #define _TDRootTerrain rootProbeTerrain
+ #define ROOT_PAINT(uv) tex2D(_RootPaint,uv)
  #define ROOT_GRASS(uv) tex2D(_RootGrass,uv).rgb
  #define ROOT_DIRT(uv) tex2D(_RootDirt,uv).rgb
  #include "Assets/MapSharedProps/Runtime/SharedRootGrounding.hlsl"

@@ -33,4 +33,4 @@ function fernTexture(){const cv=document.createElement('canvas');cv.width=512;cv
  // Connected lobed pinnae survive mip reduction better than isolated sub-pixel dots.
  for(let i=0;i<19;i++)for(const sd of [-1,1]){const t=(i+.8)/20,x=10+t*484,L=51*Math.pow(Math.sin(Math.PI*(t*.92+.04)),.8),a=sd*(1.02+(R()-.5)*.12),dx=Math.cos(a),dy=Math.sin(a),w=6.0+R()*1.8;c.save();c.translate(x,64);c.rotate(a);c.beginPath();c.moveTo(0,0);for(let j=0;j<=8;j++){const u=j/8;c.lineTo(L*u,-Math.sin(Math.PI*u)*w*(j%2?.74:1))}for(let j=8;j>=0;j--){const u=j/8;c.lineTo(L*u,Math.sin(Math.PI*u)*w*(j%2?.80:1))}c.closePath();c.fillStyle=['#738e59','#829b64','#8b9e6c'][i%3];c.fill();c.strokeStyle='rgba(178,192,137,.30)';c.lineWidth=.8;c.beginPath();c.moveTo(0,0);c.lineTo(L*.88,0);c.stroke();c.restore();}
  const image=c.getImageData(0,0,512,128);for(let i=0;i<image.data.length;i+=4)if(image.data[i+3]===0){image.data[i]=121;image.data[i+1]=146;image.data[i+2]=95}c.putImageData(image,0,0);return cv.toDataURL('image/png').split(',')[1];}
-window.TDForestFloor={build,fernTexture};})();
+window.TDForestFloor={build,leaf,fernTexture};})();

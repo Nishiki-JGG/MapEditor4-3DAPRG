@@ -1,6 +1,6 @@
 const fs=require('fs'),path=require('path'),assert=require('assert'),{withPage}=require('./cdp');
 const out=path.resolve(process.env.EVIDENCE_OUT||path.join(__dirname,'../../tree-canopies-evidence')),url=process.argv[2]||'file:///'+path.join(__dirname,'../index.html').replaceAll('\\','/')+'#size=64';
-const ids=['oak','pine','palm','banana','deadtree','twisttree','birch','willow','scotspine','rowan','hazel','juniper','maple','cherry','zelkova','nara','sugi','hinoki','islandash','olive','eucalyptus','dragontree','elftree','worldtree'];
+const ids=['oak','pine','palm','banana','deadtree','twisttree','birch','willow','scotspine','rowan','hazel','juniper','maple','cherry','zelkova','nara','sugi','hinoki','islandash','olive','eucalyptus','dragontree','elftree','worldtree','bush'];
 (async()=>{const report=await withPage(url,async p=>{
  for(let i=0;i<120;i++){if(await p.eval('!!window.__app'))break;await new Promise(r=>setTimeout(r,500));}assert(await p.eval('!!window.__app'));assert.equal(await p.eval('TDSharedData.assets.filter(a=>a.rootGrounding).length'),24,'Current root/bark assets loaded');
  await p.eval('__app.genFlat();1');await new Promise(r=>setTimeout(r,100));for(let i=0;i<120;i++){if(await p.eval('!document.getElementById("save").disabled'))break;await new Promise(r=>setTimeout(r,100));}

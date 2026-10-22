@@ -8,6 +8,7 @@ Shader "MapSharedProps/Lit" {
   _PineResponse("Wind strength linear/quadratic/mean/gust", Vector)=(0,0,0,0)
   _PlantCombinedLimit("Optional combined wind/contact cap", Float)=0
   _TDRootSlope("Per renderer static ground plane XZ", Vector)=(0,0,0,0)
+  _RootPaint("Derived soil/rubble paint",2D)="black"{} _RootPaintMap("Half size / resolution / enabled",Vector)=(1,1,1,0)
   _RootSurface("Soil band / moss height",Vector)=(.11,.32,0,0)
   _TDRootTerrain("Paint dirt / rubble / grass / ground offset",Vector)=(0,0,0,0)
   _RootGrass("Shared raw grass",2D)="white"{} _RootDirt("Shared raw soil",2D)="white"{}
@@ -37,12 +38,14 @@ Shader "MapSharedProps/Lit" {
    #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
    TEXTURE2D(_BaseMap); SAMPLER(sampler_BaseMap);
    CBUFFER_START(UnityPerMaterial)
-    float4 _BaseMap_ST, _BaseColor, _PineBand, _PineWaves, _PinePhase, _PineResponse, _PlantTouch, _TDRootSlope, _RootSurface,_TDRootTerrain,_RootGrassParams,_RootDirtParams,_RootGrassOffset,_RootDirtOffset,_RootWaveA,_RootWaveB; float _Cutoff, _Cull, _PlantCombinedLimit;
+    float4 _BaseMap_ST, _BaseColor, _PineBand, _PineWaves, _PinePhase, _PineResponse, _PlantTouch, _TDRootSlope, _RootSurface,_TDRootTerrain,_RootPaintMap,_RootGrassParams,_RootDirtParams,_RootGrassOffset,_RootDirtOffset,_RootWaveA,_RootWaveB; float _Cutoff, _Cull, _PlantCombinedLimit;
    CBUFFER_END
    #define SHARED_PLANT_TOUCH_DECLARED
    #include "SharedPineWind.hlsl"
   #include "SharedRootGrounding.hlsl"
 #ifdef ROOT_SURFACE
+TEXTURE2D(_RootPaint);SAMPLER(sampler_RootPaint);
+#define ROOT_PAINT(uv) SAMPLE_TEXTURE2D(_RootPaint,sampler_RootPaint,uv)
 TEXTURE2D(_RootGrass);SAMPLER(sampler_RootGrass);TEXTURE2D(_RootDirt);SAMPLER(sampler_RootDirt);
 #define ROOT_GRASS(uv) SAMPLE_TEXTURE2D(_RootGrass,sampler_RootGrass,uv).rgb
 #define ROOT_DIRT(uv) SAMPLE_TEXTURE2D(_RootDirt,sampler_RootDirt,uv).rgb
@@ -115,12 +118,14 @@ n=normalize(n-float3(_TDRootSlope.x,0,_TDRootSlope.y)*n.y*v.rootMask.x);
    #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
    TEXTURE2D(_BaseMap); SAMPLER(sampler_BaseMap);
    CBUFFER_START(UnityPerMaterial)
-    float4 _BaseMap_ST, _BaseColor, _PineBand, _PineWaves, _PinePhase, _PineResponse, _PlantTouch, _TDRootSlope, _RootSurface,_TDRootTerrain,_RootGrassParams,_RootDirtParams,_RootGrassOffset,_RootDirtOffset,_RootWaveA,_RootWaveB; float _Cutoff, _Cull, _PlantCombinedLimit;
+    float4 _BaseMap_ST, _BaseColor, _PineBand, _PineWaves, _PinePhase, _PineResponse, _PlantTouch, _TDRootSlope, _RootSurface,_TDRootTerrain,_RootPaintMap,_RootGrassParams,_RootDirtParams,_RootGrassOffset,_RootDirtOffset,_RootWaveA,_RootWaveB; float _Cutoff, _Cull, _PlantCombinedLimit;
    CBUFFER_END
    #define SHARED_PLANT_TOUCH_DECLARED
    #include "SharedPineWind.hlsl"
   #include "SharedRootGrounding.hlsl"
 #ifdef ROOT_SURFACE
+TEXTURE2D(_RootPaint);SAMPLER(sampler_RootPaint);
+#define ROOT_PAINT(uv) SAMPLE_TEXTURE2D(_RootPaint,sampler_RootPaint,uv)
 TEXTURE2D(_RootGrass);SAMPLER(sampler_RootGrass);TEXTURE2D(_RootDirt);SAMPLER(sampler_RootDirt);
 #define ROOT_GRASS(uv) SAMPLE_TEXTURE2D(_RootGrass,sampler_RootGrass,uv).rgb
 #define ROOT_DIRT(uv) SAMPLE_TEXTURE2D(_RootDirt,sampler_RootDirt,uv).rgb
@@ -158,11 +163,12 @@ return 0; }
   #pragma shader_feature_local _ SHARED_GLOW
   #pragma shader_feature_local _ ROOT_GROUND
   sampler2D _BaseMap; half4 _BaseColor; half _Cutoff;float _PlantCombinedLimit;
-  float4 _PineBand,_PineWaves,_PinePhase,_PineResponse,_TDRootSlope,_RootSurface,_TDRootTerrain,_RootGrassParams,_RootDirtParams,_RootGrassOffset,_RootDirtOffset,_RootWaveA,_RootWaveB;
+  float4 _PineBand,_PineWaves,_PinePhase,_PineResponse,_TDRootSlope,_RootSurface,_TDRootTerrain,_RootPaintMap,_RootGrassParams,_RootDirtParams,_RootGrassOffset,_RootDirtOffset,_RootWaveA,_RootWaveB;
   #include "SharedPineWind.hlsl"
   #include "SharedRootGrounding.hlsl"
 #ifdef ROOT_SURFACE
-sampler2D _RootGrass,_RootDirt;
+sampler2D _RootGrass,_RootDirt,_RootPaint;
+#define ROOT_PAINT(uv) tex2D(_RootPaint,uv)
 #define ROOT_GRASS(uv) tex2D(_RootGrass,uv).rgb
 #define ROOT_DIRT(uv) tex2D(_RootDirt,uv).rgb
 #include "SharedRootSurface.hlsl"

@@ -16,4 +16,5 @@ assert.equal(mask.image.data[1],255);assert.equal(mask.image.data[(n*n-1)*4+1],0
 paint.fill(0);assert.equal(updateMask(mask,paint,channels),true);assert(mask.image.data.every(v=>v===0),'erased paving leaves a stale fringe');
 assert.equal(mask.magFilter,THREE.LinearFilter);assert.equal(mask.minFilter,THREE.LinearFilter);assert.equal(mask.generateMipmaps,false);
 assert.equal(mask.wrapS,THREE.ClampToEdgeWrapping);
+paint[(n+1)*channels]=113;paint[(n+1)*channels+3]=87;const rg=Array.from(mask.image.data).filter((_,i)=>i%4<2);assert(updateMask(mask,paint,channels));assert.equal(mask.image.data[(n+1)*4+2],113);assert.equal(mask.image.data[(n+1)*4+3],87);assert.deepEqual(Array.from(mask.image.data).filter((_,i)=>i%4<2),rg,'root paint changes paving');assert.equal(updateMask(mask,paint,channels),false);
 mask.dispose();console.log(JSON.stringify({pass:true,checks:['exact paint channel and orientation','one-cell search margin','no source changes','no unchanged upload','edge clamp','erase clears fringe','linear non-colour mask']}));

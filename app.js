@@ -280,6 +280,7 @@ function applyCliffStyle() {
 const groundTexture = TDGround.texture;
 groundTexture.anisotropy = Math.min(2, renderer.capabilities.getMaxAnisotropy());
 const groundTrial = { value: 0 };
+TDGround.rootPaint={texture:pavingMask,params:new THREE.Vector4(HALF,HALF,N,1)};
 const terrainMat = new THREE.MeshStandardMaterial({ roughness: .92, metalness: 0 });
 terrainMat.onBeforeCompile = (sh) => {
   Object.assign(sh.uniforms, TDGround.uniforms); sh.uniforms.uGroundTrial = groundTrial;
@@ -3470,7 +3471,9 @@ revision・書き出し日時・ファイルごとの SHA-256・contentHash は 
   const fittedExport=cliffFits.export(props,HALF,mn);for(const f of fittedExport.instances){const p=props.find(p=>p[8]===f.instanceId),v=.86+.28*hash2(p[1]*97|0,p[2]*89|0);f.instanceTint=f.instanceTint||[v*(.95+.1*hash2(p[1]*13|0,7)),v,v*(.95+.1*hash2(3,p[2]*17|0))];f.cliffStyleIndex=cliffIndexNear(p[1],p[2]);}if(fittedExport.instances.length){meta.requiredFeatures=[...(meta.requiredFeatures||[]),'cliffFitsMeshV1'];meta.cliffFits={file:'cliff_fits_mesh.json',instanceIds:fittedExport.instances.map(x=>x.instanceId),replacement:'Replace original renderer and collider per ID; unsupported readers must reject'};}
   const reliefFile=cliffRelief.geometry.index.count?'cliff_relief_mesh.json':null;
   if(reliefFile)meta.terrain.cliffRelief={file:reliefFile,role:'visual rock skin; walking heightfield unchanged',maxOffsetMetres:+cliffRelief.geometry.userData.maxOffset.toFixed(5)};
+  const rootPaintPng=await pngOf((i,j)=>[S[(j*N+i)*NS],S[(j*N+i)*NS+3],0],N);
   const files = [
+    {name:'root_paint.png',data:rootPaintPng},
     ...(fittedExport.instances.length?[{name:'cliff_fits_mesh.json',data:JSON.stringify(fittedExport)}]:[]),
     ...(reliefFile?[{name:reliefFile,data:JSON.stringify(TDCliffRelief.exportMesh(cliffRelief.geometry,HALF,mn))}]:[]),
     { name: 'heightmap_r16.raw', data: heightRaw }, { name: 'walk_floor_r16.raw', data: floorRaw },
@@ -3486,7 +3489,7 @@ revision・書き出し日時・ファイルごとの SHA-256・contentHash は 
     { name: 'asset_catalog.json', data: JSON.stringify(catalogExport(), null, 2) },
     { name: 'shared_props.json', data: TDSharedProps.exportJson() },
     { name: 'pine_wind.json', data: TDPineWind.exportJson() },
-    {name:'root_grounding.json',data:JSON.stringify({version:1,axes:'Unity world XZ',instances:props.filter(p=>PROP[p[0]].sharedAsset&&TDSharedProps.asset(PROP[p[0]].sharedAsset).rootGrounding).map(p=>{const v=rootSlopeAt(p);return{instanceId:p[8],slope:[v[0],-v[1]],terrain:rootTerrainAt(p)};})})},
+    {name:'root_grounding.json',data:JSON.stringify({version:1,axes:'Unity world XZ',paint:{file:'root_paint.png',resolution:N,sizeMetres:[SIZE,SIZE]},instances:props.filter(p=>PROP[p[0]].sharedAsset&&TDSharedProps.asset(PROP[p[0]].sharedAsset).rootGrounding).map(p=>{const v=rootSlopeAt(p);return{instanceId:p[8],slope:[v[0],-v[1]],terrain:rootTerrainAt(p)};})})},
     { name: 'shared_ground.json', data: JSON.stringify(TDGroundData) },
     { name: 'meta.json', data: JSON.stringify(meta, null, 2) }, { name: 'validation.json', data: JSON.stringify(validation, null, 2) },
     { name: 'map.json', data: mapJson }, { name: 'README.txt', data: readme },
