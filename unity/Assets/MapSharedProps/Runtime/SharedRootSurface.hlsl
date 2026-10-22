@@ -1,0 +1,12 @@
+#ifndef SHARED_ROOT_SURFACE_INCLUDED
+#define SHARED_ROOT_SURFACE_INCLUDED
+// Gamma-encoded ground samples are decoded once, matching terrain/shared.js.
+float RootHash(float2 p){p=frac(p*float2(123.34,456.21));p+=dot(p,p+45.32);return frac(p.x*p.y);}
+float RootNoise(float2 p){float2 i=floor(p),f=frac(p);f=f*f*(3-2*f);return lerp(lerp(RootHash(i),RootHash(i+float2(1,0)),f.x),lerp(RootHash(i+float2(0,1)),RootHash(i+float2(1,1)),f.x),f.y);}
+float3 RootGrass(float2 p){float2 uv=p/_RootGrassParams.x;float2 q=float2(uv.x*_RootGrassParams.z-uv.y*_RootGrassParams.w,uv.x*_RootGrassParams.w+uv.y*_RootGrassParams.z)+_RootGrassOffset.xy;float3 c=lerp(ROOT_GRASS(uv),ROOT_GRASS(q),_RootGrassParams.y);return c*(1+_RootWaveA.z*sin(dot(p,_RootWaveA.xy))+_RootWaveB.z*sin(dot(p,_RootWaveB.xy)));}
+float3 RootDirt(float2 p){float2 uv=p/_RootDirtParams.x;float2 q=float2(uv.x*_RootDirtParams.z-uv.y*_RootDirtParams.w,uv.x*_RootDirtParams.w+uv.y*_RootDirtParams.z)+_RootDirtOffset.xy;return lerp(ROOT_DIRT(uv),ROOT_DIRT(q),_RootDirtParams.y)*(1+.022*sin(dot(p,float2(.47,.29)))+.014*sin(dot(p,float2(-.21,.53))));}
+float4 RootSurfaceInfo(float3 p,float3 origin,float rootWeight,float wood,float scaleY){float h=(p.y+SharedRootRise(p,origin,rootWeight,_TDRootSlope.xy)-origin.y-_TDRootTerrain.w-dot(_TDRootSlope.xy,p.xz-origin.xz))/max(scaleY,.0001);return float4(p.x-_TDPineOrigin.x,_TDPineOrigin.y-p.z,h,wood);}
+float RootNormalBlend(float h,float wood){return (1-smoothstep(0,_RootSurface.x*.6,h))*wood*min(1,dot(_TDRootTerrain.xyz,float3(1,1,1)))*.4;}
+void RootSurfaceClip(float4 info){if(info.w>.5&&dot(_TDRootTerrain.xyz,float3(1,1,1))>.001)clip(info.z-_RootSurface.x*.20*(RootNoise(info.xy*17.3)-.18));}
+float3 RootSurfaceColor(float3 bark,float4 info){float enabled=dot(_TDRootTerrain.xyz,float3(1,1,1)),h=info.z;if(info.w<.5||enabled<.001||h>_RootSurface.y)return bark;float2 p=info.xy;float coarse=RootNoise(p*8.7),fine=RootNoise(p*31);float soil=(1-smoothstep(_RootSurface.x*.12,_RootSurface.x*(.55+.9*coarse),h))*info.w;float3 grass=RootGrass(p),dirt=RootDirt(p),stone=lerp(float3(.42,.40,.35),float3(.60,.57,.50),coarse)*(.84+.16*fine);float3 ground=(grass*_TDRootTerrain.z+dirt*_TDRootTerrain.x+stone*_TDRootTerrain.y)/enabled;float3 c=lerp(bark,pow(max(ground,0),2.2),soil);float moss=(1-smoothstep(.035,_RootSurface.y*(.45+.55*coarse),h))*smoothstep(.36,.71,coarse+.12*fine)*_TDRootTerrain.z*.43;c=lerp(c,pow(max(grass*.83,0),2.2),moss);return c*(1-.055*(1-smoothstep(0,_RootSurface.x*1.5,h)));}
+#endif

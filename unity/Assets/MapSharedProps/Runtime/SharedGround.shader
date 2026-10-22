@@ -8,6 +8,8 @@ Shader "MapSharedGround/Grass" {
    HLSLPROGRAM
    #pragma vertex Vert
    #pragma fragment Frag
+   #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE
+   #pragma multi_compile_fragment _ _SHADOWS_SOFT
    #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
    #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
    TEXTURE2D(_GroundMap);SAMPLER(sampler_GroundMap);
@@ -32,7 +34,7 @@ Shader "MapSharedGround/Grass" {
    half4 Frag(Varyings i):SV_Target{
     float2 p=float2(i.positionWS.x-_EditorZero.x,_EditorZero.y-i.positionWS.z);half3 c=pow(lerp(Grass(p),Dirt(p),SoilWeight(p,i.dirt)),_Decode);
     if(_Unlit>.5)return half4(c,1);
-    InputData input=(InputData)0;input.positionWS=i.positionWS;input.normalWS=normalize(i.normalWS);input.viewDirectionWS=GetWorldSpaceNormalizeViewDir(i.positionWS);input.bakedGI=SampleSH(input.normalWS);input.shadowMask=half4(1,1,1,1);input.normalizedScreenSpaceUV=GetNormalizedScreenSpaceUV(i.positionCS);
+    InputData input=(InputData)0;input.positionWS=i.positionWS;input.shadowCoord=TransformWorldToShadowCoord(i.positionWS);input.normalWS=normalize(i.normalWS);input.viewDirectionWS=GetWorldSpaceNormalizeViewDir(i.positionWS);input.bakedGI=SampleSH(input.normalWS);input.shadowMask=half4(1,1,1,1);input.normalizedScreenSpaceUV=GetNormalizedScreenSpaceUV(i.positionCS);
     SurfaceData surface=(SurfaceData)0;surface.albedo=c;surface.metallic=0;surface.specular=half3(.04,.04,.04);surface.smoothness=.08;surface.normalTS=half3(0,0,1);surface.occlusion=1;surface.alpha=1;
     return UniversalFragmentPBR(input,surface);
    }

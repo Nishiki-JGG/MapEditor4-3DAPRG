@@ -840,7 +840,7 @@ function touchMat(base) {
 const propMeshes = PROP.map(t => {
   const base = t.sharedAsset ? TDSharedProps.material(t.sharedAsset) : PROP_MATS[t.material] || propMat;
   const m = new THREE.InstancedMesh(t.geo, t.touch ? touchMat(base) : base, CAP);
-  if(t.sharedAsset&&TDSharedProps.asset(t.sharedAsset).rootGrounding){m.userData.rootSlope=new THREE.InstancedBufferAttribute(new Float32Array(CAP*2),2);t.geo.setAttribute('rootSlope',m.userData.rootSlope);}
+  if(t.sharedAsset&&TDSharedProps.asset(t.sharedAsset).rootGrounding){m.userData.rootSlope=new THREE.InstancedBufferAttribute(new Float32Array(CAP*2),2);t.geo.setAttribute('rootSlope',m.userData.rootSlope);m.userData.rootTerrain=new THREE.InstancedBufferAttribute(new Float32Array(CAP*4),4);t.geo.setAttribute('rootTerrain',m.userData.rootTerrain);}
   if (t.touch) { m.userData.touch = new THREE.InstancedBufferAttribute(new Float32Array(CAP * 3), 3).setUsage(THREE.DynamicDrawUsage); t.geo.setAttribute('touch', m.userData.touch); }
   m.castShadow = m.receiveShadow = true; m.frustumCulled = false; m.count = 0;
   if(t.sharedAsset&&(t.sharedAsset==='pine'||TDSharedProps.asset(t.sharedAsset).wind)){m.customDepthMaterial=TDPineWind.shadowMaterial(m.material);m.customDistanceMaterial=TDPineWind.shadowMaterial(m.material,true);}
@@ -856,7 +856,7 @@ const ghostCardMat2 = ghostCardMat.clone(); ghostCardMat2.map = atlasTex2;
 const ghostMeshes = PROP.map(t => {
   const root=t.sharedAsset&&TDSharedProps.asset(t.sharedAsset).rootGrounding,g=root?(()=>{const g=new THREE.BufferGeometry();g.setIndex(t.geo.index);for(const[name,a]of Object.entries(t.geo.attributes))g.setAttribute(name,a);g.boundingBox=t.geo.boundingBox;g.boundingSphere=t.geo.boundingSphere;return g;})():t.geo;
   const m = new THREE.InstancedMesh(g, t.sharedAsset ? TDSharedProps.material(t.sharedAsset, true) : t.material === 'cards' ? ghostCardMat : t.material === 'cards2' ? ghostCardMat2 : ghostMat, 256);
-  if(root){m.userData.rootSlope=new THREE.InstancedBufferAttribute(new Float32Array(256*2),2);g.setAttribute('rootSlope',m.userData.rootSlope);}
+  if(root){m.userData.rootSlope=new THREE.InstancedBufferAttribute(new Float32Array(256*2),2);g.setAttribute('rootSlope',m.userData.rootSlope);m.userData.rootTerrain=new THREE.InstancedBufferAttribute(new Float32Array(256*4),4);g.setAttribute('rootTerrain',m.userData.rootTerrain);}
   m.frustumCulled = false; m.count = 0; m.renderOrder = 8;
   m.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(256 * 3), 3);
   scene.add(m); return m;
@@ -938,6 +938,8 @@ function fittedFootprint(p){const c=cliffFits.get(p);if(!c)return null;if(c.foot
 
 // A bounded local plane moves only the root collar. Recomputed on placement/terrain rebuild, never per vertex/frame.
 function rootSlopeAt(p){const t=PROP[p[0]],a=t.sharedAsset&&TDSharedProps.asset(t.sharedAsset);if(!a?.rootGrounding||p[7]!=null)return[0,0];const d=.5,x=p[1],z=p[2],gx=(heightAt(x+d,z)-heightAt(x-d,z))/(2*d),gz=(heightAt(x,z+d)-heightAt(x,z-d))/(2*d),n=Math.hypot(gx,gz),k=n>a.rootGrounding.maxSlope?a.rootGrounding.maxSlope/n:1;return[gx*k,gz*k];}
+// 地面の塗りを配置時だけ調べる。未対応素材は色の混合を無効にする。
+function rootTerrainAt(p){const x=p[1],z=p[2],t=PROP[p[0]],supported=groundTrial.value>0&&TDGroundData.biomes.includes(state.biome),other=[1,2,4,5,6,7,8].reduce((s,c)=>s+splatAt(x,z,c),0),coverage=supported?Math.max(0,1-other):0,dirt=splatAt(x,z,0),rubble=splatAt(x,z,3),grass=Math.max(0,1-dirt-rubble),baseY=p[7]??heightAt(x,z)-(t.groundSink||0);const total=Math.max(1,dirt+rubble+grass);return[dirt*coverage/total,rubble*coverage/total,grass*coverage/total,heightAt(x,z)-baseY];}
 function rebuildProps(visualOnly = false) {
   refreshCliffFits(visualOnly);
   glowTick = 0;
@@ -955,7 +957,7 @@ function rebuildProps(visualOnly = false) {
     const fitColor=(()=>{const v=.86+.28*hash2(x*97|0,z*89|0);return savedCliffTint(p)?_c.fromArray(savedCliffTint(p)):_c.setRGB(v*(.95+.1*hash2(x*13|0,7)),v,v*(.95+.1*hash2(3,z*17|0)));})();
     if(drawCliffFit(p,_m,fitColor,ghost))continue;
     mesh.setMatrixAt(c[t], _m);
-    if(mesh.userData.rootSlope){const v=rootSlopeAt(p);mesh.userData.rootSlope.setXY(c[t],v[0],v[1]);mesh.userData.rootSlope.needsUpdate=true;}
+    if(mesh.userData.rootSlope){const v=rootSlopeAt(p);mesh.userData.rootSlope.setXY(c[t],v[0],v[1]);mesh.userData.rootSlope.needsUpdate=true;mesh.userData.rootTerrain.setXYZW(c[t],...rootTerrainAt(p));mesh.userData.rootTerrain.needsUpdate=true;}
     const v = .86 + .28 * hash2(x * 97 | 0, z * 89 | 0);
     mesh.setColorAt(c[t], shared ? _c.setRGB(1, 1, 1) : savedCliffTint(p)?_c.fromArray(savedCliffTint(p)):_c.setRGB(v * (.95 + .1 * hash2(x * 13 | 0, 7)), v, v * (.95 + .1 * hash2(3, z * 17 | 0))));
     if (!ghost && mesh.userData.cliffI) mesh.userData.cliffI.array[c[t]] = cliffIndexNear(x, z);
@@ -3484,7 +3486,7 @@ revision・書き出し日時・ファイルごとの SHA-256・contentHash は 
     { name: 'asset_catalog.json', data: JSON.stringify(catalogExport(), null, 2) },
     { name: 'shared_props.json', data: TDSharedProps.exportJson() },
     { name: 'pine_wind.json', data: TDPineWind.exportJson() },
-    {name:'root_grounding.json',data:JSON.stringify({version:1,axes:'Unity world XZ',instances:props.filter(p=>PROP[p[0]].sharedAsset&&TDSharedProps.asset(PROP[p[0]].sharedAsset).rootGrounding).map(p=>{const v=rootSlopeAt(p);return{instanceId:p[8],slope:[v[0],-v[1]]};})})},
+    {name:'root_grounding.json',data:JSON.stringify({version:1,axes:'Unity world XZ',instances:props.filter(p=>PROP[p[0]].sharedAsset&&TDSharedProps.asset(PROP[p[0]].sharedAsset).rootGrounding).map(p=>{const v=rootSlopeAt(p);return{instanceId:p[8],slope:[v[0],-v[1]],terrain:rootTerrainAt(p)};})})},
     { name: 'shared_ground.json', data: JSON.stringify(TDGroundData) },
     { name: 'meta.json', data: JSON.stringify(meta, null, 2) }, { name: 'validation.json', data: JSON.stringify(validation, null, 2) },
     { name: 'map.json', data: mapJson }, { name: 'README.txt', data: readme },
@@ -3517,7 +3519,7 @@ biomeSel.onchange = e => {
   pushUndo(); state.biome = e.target.value;
   state.sunOn = !BIOME().noSun; $('sunOn').checked = state.sunOn;
   const a = BIOME().atmo; state.atmo = { ...state.atmo, kind: a ? a[0] : 'none', amount: a ? a[1] : state.atmo.amount };
-  applyBiome(e.target.value); toast(`マップのバイオーム: ${BIOME().name}` + (a ? `（${ATMOS[a[0]].name}）` : ''));
+  applyBiome(e.target.value); rebuildProps(); toast(`マップのバイオーム: ${BIOME().name}` + (a ? `（${ATMOS[a[0]].name}）` : ''));
 };
 $('sunOn').onchange = e => { pushUndo(); state.sunOn = e.target.checked; applyAtmo(); };
 for (const [v, d] of Object.entries(DARK_LEVELS)) $('darkness').add(new Option(d.name, v));
