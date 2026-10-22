@@ -2114,7 +2114,7 @@ const TOOLS = [
   { id: 'marker', name: 'マーカー', key: 't', hint: '出入口・敵の候補・宝箱の候補・戦闘/出現禁止範囲を置きます。出入口は、置く場所から部屋の内側へドラッグ（クリックだけなら中央向き）。幅＝半径の半分。禁止範囲の大きさ＝半径。Shift+クリックで近くのマーカーを消します。' },
   { id: 'cliffpaint', name: '岩壁を塗る', key: '.', hint: '崖の面と岩・崖石の種類を、場所ごとに塗り分けます。「マップの既定」で塗ると、バイオーム欄の「岩壁」の設定に戻ります。平らな地面を塗っても見た目は変わりません（崖と岩にだけ効きます）。' },
   { id: 'link', name: '階層移動', key: ',', hint: '魔法陣・上り階段・下り階段を置きます。置く場所から、プレイヤーが近づいてくる側へドラッグすると向きが決まります（クリックだけなら部屋の中央向き）。タグには行き先（例: B2, 上の階）を入れます。Shift+クリックで近くの物を消します。歩くモードで触れると表示が出ます。' },
-  { id: 'spawn', name: '開始地点', key: '-', hint: 'クリックした場所を、歩くモードの開始地点にします。' },
+  { id: 'spawn', name: '開始地点', key: 'Home', hint: 'クリックした場所を、歩くモードの開始地点にします。' },
   { id: 'walkOn', name: '通行可', key: 'g', hint: '塗った所を、自動判定に関係なく「通れる」にします（緑の斜線）。崖や水の上でも歩けます。' },
   { id: 'walkOff', name: '通行不可', key: 'h', hint: '塗った所を、自動判定に関係なく「通れない」にします（赤紫の斜線）。見えない壁などに使います。' },
   { id: 'secret', name: '隠し通路', key: 'k', hint: '茂み・岩・崖の中を通り抜けられる隠し通路を塗ります（水色）。通路の床は入口と出口の地面の高さでつながり、キャラが入ると重なった物が透けます。' },
@@ -3802,7 +3802,11 @@ function setTool(id) {
 const wsf = $('waterShowFlow'), wsm = $('waterShowFoam');
 const syncWaterShow = which => { if (which === 'flow' && wsf.checked) wsm.checked = false; if (which === 'foam' && wsm.checked) wsf.checked = false; WATERU.uShow.value = wsf.checked ? 1 : wsm.checked ? 2 : 0; };
 wsf.onchange = () => syncWaterShow('flow'); wsm.onchange = () => syncWaterShow('foam');
-const sliders = [['radius', v => v.toFixed(1)], ['strength', v => v.toFixed(2)], ['density', v => v.toFixed(1)], ['water', v => v.toFixed(2)]];
+const sliders = [['radius', v => v.toFixed(1)+' m'], ['strength', v => v.toFixed(2)], ['density', v => v.toFixed(1)], ['water', v => v.toFixed(2)]];
+function setBrushRadius(value){state.radius=clamp(Math.round(value*2)/2,1,14);syncUI();}
+$('radiusMinus').onclick=()=>setBrushRadius(state.radius-.5);
+$('radiusPlus').onclick=()=>setBrushRadius(state.radius+.5);
+window.addEventListener('wheel',e=>{if(!e.shiftKey||e.ctrlKey||e.metaKey||e.altKey)return;const delta=e.deltaY||e.deltaX;if(!delta)return;e.preventDefault();e.stopPropagation();setBrushRadius(state.radius-Math.sign(delta)*.5);},{capture:true,passive:false});
 function syncUI() { for (const [id, f] of sliders) { $(id).value = state[id]; $(id + 'V').textContent = f(state[id]); } }
 for (const [id, f] of sliders) {
   $(id).addEventListener('input', e => {
@@ -4130,7 +4134,8 @@ canvas.addEventListener('wheel', e => {
 }, { passive: false });
 window.addEventListener('keydown', e => {
   if ((e.ctrlKey || e.metaKey) && e.code === 'KeyS') { e.preventDefault(); e.shiftKey ? saveMapAs() : saveMap(); return; }
-  if (e.target.tagName === 'INPUT' && e.target.type !== 'range' && e.target.type !== 'checkbox') return;
+  if (e.target.isContentEditable || ['SELECT','TEXTAREA'].includes(e.target.tagName) || (e.target.tagName === 'INPUT' && e.target.type !== 'range' && e.target.type !== 'checkbox')) return;
+  if(!e.ctrlKey&&!e.metaKey&&!e.altKey){const inc=e.key==='+'||e.code==='NumpadAdd'||e.key===']',dec=e.key==='-'||e.code==='NumpadSubtract'||e.key==='[';if(inc||dec){e.preventDefault();setBrushRadius(state.radius+(inc?.5:-.5));return;}}
   if (e.code === 'Tab') { e.preventDefault(); setMode(state.mode === 'edit' ? 'play' : 'edit'); return; }
   if ((e.ctrlKey || e.metaKey) && e.code === 'KeyZ') { e.preventDefault(); e.shiftKey ? redo() : undo(); return; }
   if ((e.ctrlKey || e.metaKey) && e.code === 'KeyY') { e.preventDefault(); redo(); return; }
@@ -4140,8 +4145,6 @@ window.addEventListener('keydown', e => {
     const t = TOOLS.find(t => t.key === e.key); if (t && toolVisible(t.id)) { setTool(t.id); return; }
     if (e.key === 'v' || e.key === 'V') { setWalkView(!state.showWalk); return; }
     if ((e.key === 'r' || e.key === 'R') && state.tool === 'place') { state.placeRot = (state.placeRot + 45) % 360; syncPlaceUI(); return; }
-    if (e.key === '[') { state.radius = clamp(state.radius - .5, 1, 14); syncUI(); }
-    if (e.key === ']') { state.radius = clamp(state.radius + .5, 1, 14); syncUI(); }
   }
   keys.add(e.code);
 });
