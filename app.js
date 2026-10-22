@@ -10,6 +10,7 @@ const STEP = 2.2;          // plateau tool step height (m)
 const SKIRT_Y = -14;       // bottom of the map's outer wall
 const H = new Float32Array(N * N);       // heights (m)
 const NS = 9;                            // splat channels
+const effectiveS = new Float32Array(N * N * NS);
 const S = new Uint8Array(N * N * NS);    // splat: [dirt, cobble, sand, rubble, swamp, poison] 0..255
 const GROUND = ['dirt', 'cobble', 'sand', 'rubble', 'swamp', 'poison', 'lava', 'snowfield', 'ice'];
 const GROUND_SPEED = [1, 1, .85, .8, .55, .6, .5, .8, 1];   // walk speed factor per ground type
@@ -51,7 +52,7 @@ function heightAt(x, z) {
   return lerp(lerp(H[k], H[k + 1], u), lerp(H[k + N], H[k + N + 1], u), v);
 }
 function slopeAt(x, z) { const e = .35; return Math.hypot(heightAt(x + e, z) - heightAt(x - e, z), heightAt(x, z + e) - heightAt(x, z - e)) / (2 * e); }
-function splatAt(x, z, ch) { const i = clamp(Math.round((x + HALF) * RES), 0, N - 1), j = clamp(Math.round((z + HALF) * RES), 0, N - 1); return S[idx(i, j) * NS + ch] / 255; }
+function splatAt(x, z, ch) { const i = clamp(Math.round((x + HALF) * RES), 0, N - 1), j = clamp(Math.round((z + HALF) * RES), 0, N - 1); return TDTerrainPaint.weight(S,idx(i,j)*NS,NS,ch,TDTerrainPaint.baseChannel(state.biome)); }
 function distToPolyline(x, z, pts) {
   let best = 1e9;
   for (let k = 0; k < pts.length - 1; k++) {
@@ -696,19 +697,21 @@ const water = new THREE.Mesh(wGeo, waterMat);
 water.renderOrder = 2;
 scene.add(water);
 
+function refreshGroundWeights(){TDTerrainPaint.resolve(S,effectiveS,NS,TDTerrainPaint.baseChannel(state.biome));}
 function updateTerrain() {
+  refreshGroundWeights();
   walkDirty = true;
   if (typeof linkGroup !== 'undefined') for (const g of linkGroup.children) g.position.y = heightAt(g.userData.m.x, g.userData.m.z);
   if (typeof updateAtmoHeights === 'function' && fogGroup) updateAtmoHeights();
   const pos = tGeo.attributes.position.array, sa = tGeo.attributes.splatA.array, sb = tGeo.attributes.splatB.array, sc = tGeo.attributes.splatC.array, dp = wGeo.attributes.depth.array;
   for (let k = 0; k < N * N; k++) {
     pos[k * 3 + 1] = H[k]; dp[k] = state.water - H[k];
-    for (let c = 0; c < 4; c++) sa[k * 4 + c] = S[k * NS + c] / 255;
-    for (let c = 0; c < 4; c++) sb[k * 4 + c] = S[k * NS + 4 + c] / 255;
-    sc[k] = S[k * NS + 8] / 255;
+    for (let c = 0; c < 4; c++) sa[k * 4 + c] = effectiveS[k * NS + c] / 255;
+    for (let c = 0; c < 4; c++) sb[k * 4 + c] = effectiveS[k * NS + 4 + c] / 255;
+    sc[k] = effectiveS[k * NS + 8] / 255;
   }
   fillCliffAttrs();
-  TDPavingMask.updateMask(pavingMask,S,NS);
+  TDPavingMask.updateMask(pavingMask,effectiveS,NS);
   tGeo.attributes.position.needsUpdate = tGeo.attributes.splatA.needsUpdate = tGeo.attributes.splatB.needsUpdate = tGeo.attributes.splatC.needsUpdate = wGeo.attributes.depth.needsUpdate = true;
   tGeo.computeVertexNormals();
   const slopeField=tGeo.attributes.reliefSlope;for(let k=0;k<N*N;k++)slopeField.array[k]=1-tGeo.attributes.normal.getY(k);slopeField.needsUpdate=true;
@@ -2088,7 +2091,7 @@ const TOOLS = [
   { id: 'lower', name: '下げる', key: '3', hint: 'なだらかに掘り下げます。水位より下は水になります。' },
   { id: 'flat', name: '平らに', key: '4', hint: 'ドラッグ開始地点の高さにそろえます。' },
   { id: 'smooth', name: 'なだらか', key: '5', hint: '段差や凸凹をならします。' },
-  { id: 'grass', name: '草', key: '6', hint: '土・石畳・砂・荒れ地・沼などを消して草に戻します。' },
+  { id: 'grass', name: '標準床', key: '6', hint: '塗装を消してバイオームの標準床に戻します。草原・森林は草、洞窟は砕石、砂漠は砂、古城・遺跡は石畳、雪原は雪です。' },
   { id: 'dirt', name: '土', key: '7', hint: '土の道を塗ります。' },
   { id: 'cobble', name: '石畳', key: '8', hint: '石畳を塗ります。' },
   { id: 'sand', name: '砂地', key: 'z', hint: '風紋のある砂地を塗ります。歩くと少し遅くなります（×0.85）。' },
@@ -2199,11 +2202,12 @@ function scatterAt(x, z, R = Math.random) {
 }
 const TYPE = id => PROP.findIndex(t => t.id === id);
 function regenGroundProps() {
+  refreshGroundWeights();
   props = props.filter(p => p[5] !== 2);
   const hash = buildPropHash(), add = (t, x, z, s) => { const p = [t, x, z, hash2(x * 31 | 0, z * 17 | 0) * 6.28, s, 2]; props.push(p); hash.add(p, x, z); };
   const free = (x, z, d) => { let ok = true; hash.query(x, z, 2.5, p => { if (ok && Math.hypot(p[1] - x, p[2] - z) < d) ok = false; }); return ok; };
   for (let j = 1; j < N - 1; j++) for (let i = 1; i < N - 1; i++) {
-    const k = idx(i, j), rb = S[k * NS + 3] / 255, sw = S[k * NS + 4] / 255, po = S[k * NS + 5] / 255;
+    const k = idx(i, j), rb = effectiveS[k * NS + 3] / 255, sw = effectiveS[k * NS + 4] / 255, po = effectiveS[k * NS + 5] / 255;
     if (rb < .45 && sw < .45 && po < .45) continue;
     const h1 = hash2(i * 7 + 3, j * 13 + 5), h2 = hash2(i * 11 + 1, j * 3 + 9);
     const x = vx(i) + (h2 - .5) * .45, z = vx(j) + (hash2(i, j * 5) - .5) * .45;
@@ -2229,7 +2233,7 @@ function regenGroundProps() {
     const kinds=['meadowgrass','clover','meadowwhite','meadowyellow','shortgrass','groundlitter'].map(TYPE);
     const treeHash=new SpatialHash(4);for(const p of props)if(/tree|pine|birch|oak/.test(PROP[p[0]].id))treeHash.add(p,p[1],p[2]);
     for(let j=1;j<N-1;j++)for(let i=1;i<N-1;i++){
-      const k=idx(i,j),dirt=S[k*NS]/255;let other=0;for(let c=1;c<NS;c++)other=Math.max(other,S[k*NS+c]/255);
+      const k=idx(i,j),dirt=effectiveS[k*NS]/255;let other=0;for(let c=1;c<NS;c++)other=Math.max(other,effectiveS[k*NS+c]/255);
       if(other>.18||dirt>.67)continue;
       const h=hash2(i*5+11,j*9+2),h2=hash2(i*3+7,j*7+1),x=vx(i)+(h2-.5)*CELL*.8,z=vx(j)+(hash2(i*9,j)-.5)*CELL*.8;
       const cluster=noise(x*.24+31,z*.24-17),edge=clamp(dirt/.4,0,1),coverage=clamp((.67-dirt)/.4,0,1);
@@ -2245,7 +2249,7 @@ function regenGroundProps() {
     }
     // 土の中心は開け、少量の埋まった小石を縁に寄せる。
     for(let j=1;j<N-1;j++)for(let i=1;i<N-1;i++){
-      const k=idx(i,j),dirt=S[k*NS]/255;let other=0;for(let c=1;c<NS;c++)other=Math.max(other,S[k*NS+c]/255);
+      const k=idx(i,j),dirt=effectiveS[k*NS]/255;let other=0;for(let c=1;c<NS;c++)other=Math.max(other,effectiveS[k*NS+c]/255);
       if(other>.18)continue;
       const x=vx(i),z=vx(j);let treeDist=Infinity;
       treeHash.query(x,z,2.8,p=>{treeDist=Math.min(treeDist,Math.hypot(x-p[1],z-p[2]));});
@@ -2258,7 +2262,7 @@ function regenGroundProps() {
   } else {
 
   if (GR >= 0 && PROP[GR].tags.includes(state.biome)) for (let j = 1; j < N - 1; j++) for (let i = 1; i < N - 1; i++) {
-    const k = idx(i, j); let painted = 0; for (let c = 0; c < NS; c++) painted = Math.max(painted, S[k * NS + c]); if (painted > 60) continue;
+    const k = idx(i, j); let painted = 0; for (let c = 0; c < NS; c++) painted = Math.max(painted, effectiveS[k * NS + c]); if (painted > 60) continue;
     const h1 = hash2(i * 5 + 11, j * 9 + 2); if (h1 > .045) continue;
     const h2 = hash2(i * 3 + 7, j * 7 + 1), x = vx(i) + (h2 - .5) * .45, z = vx(j) + (hash2(i * 9, j) - .5) * .45;
     if (heightAt(x, z) < state.water + .1 || slopeAt(x, z) > .9 || !free(x, z, .6)) continue;
@@ -3328,6 +3332,7 @@ function sha256(bytes) {
 const GROUND_EFFECT = { sand: 'slow_light', rubble: 'slow_light', swamp: 'slow', poison: 'poison', lava: 'lava', snowfield: 'slow_light', ice: 'ice' };
 const WEIGHT_LAYERS = ['grass', 'dirt', 'cobble', 'sand', 'rubble', 'swamp', 'poison', 'lava', 'snowfield', 'ice', 'cliff'];
 async function buildExport() {
+  refreshGroundWeights();
   if(cliffContactDisabled)throw Error('崖の岩を調整中です。完了後に書き出してください');
   ensureIds(); applyCatalog(); if (walkDirty) computeWalk();
   const validation = runValidation();
@@ -3376,10 +3381,10 @@ async function buildExport() {
   }
   // raw paint masks (game logic): nearest editor vertex, values kept as painted. Layer weights: masks sampled bilinearly.
   const near = (i, j) => idx(clamp(Math.round((tx(i) + HALF) * RES), 0, N - 1), clamp(Math.round((tx(j) + HALF) * RES), 0, N - 1));
-  const mask = (i, j, ch) => S[near(i, j) * NS + ch];
+  const mask = (i, j, ch) => effectiveS[near(i, j) * NS + ch];
   const sBil = (x, z, ch) => {
     const fx = clamp((x + HALF) * RES, 0, N - 1), fz = clamp((z + HALF) * RES, 0, N - 1), i = Math.min(Math.floor(fx), N - 2), j = Math.min(Math.floor(fz), N - 2), u = fx - i, w = fz - j;
-    const s = (a, b) => S[idx(a, b) * NS + ch];
+    const s = (a, b) => effectiveS[idx(a, b) * NS + ch];
     return lerp(lerp(s(i, j), s(i + 1, j), u), lerp(s(i, j + 1), s(i + 1, j + 1), u), w);
   };
   const maskPngs = [await pngOf((i, j) => [mask(i, j, 0), mask(i, j, 1), 0]), await pngOf((i, j) => [mask(i, j, 2), mask(i, j, 3), mask(i, j, 4)]),
@@ -3554,7 +3559,7 @@ revision・書き出し日時・ファイルごとの SHA-256・contentHash は 
   if(visualFile)meta.terrain.visualSurface={file:visualFile,requiredForVisualParity:true,replace:'terrain renderer only; retain heightmap collider',clipHoles:holesPng?'holes.png':null,stats:terrain.geometry.userData,note:'Apply with the same ground splats, cliff styles and continuous cliffCoverageSlope; do not overlay the old terrain renderer.'};
   const reliefFile=cliffRelief.geometry.index.count?'cliff_relief_mesh.json':null;
   if(reliefFile)meta.terrain.cliffRelief={file:reliefFile,role:'visual rock skin; walking heightfield unchanged',maxOffsetMetres:+cliffRelief.geometry.userData.maxOffset.toFixed(5)};
-  const rootPaintPng=await pngOf((i,j)=>[S[(j*N+i)*NS],S[(j*N+i)*NS+3],0],N);
+  const rootPaintPng=await pngOf((i,j)=>[effectiveS[(j*N+i)*NS],effectiveS[(j*N+i)*NS+3],0],N);
   const files = [
     {name:'root_paint.png',data:rootPaintPng},
     ...(fittedExport.instances.length?[{name:'cliff_fits_mesh.json',data:JSON.stringify(fittedExport)}]:[]),
@@ -3606,7 +3611,7 @@ biomeSel.onchange = e => {
   pushUndo(); state.biome = e.target.value;
   state.sunOn = !BIOME().noSun; $('sunOn').checked = state.sunOn;
   const a = BIOME().atmo; state.atmo = { ...state.atmo, kind: a ? a[0] : 'none', amount: a ? a[1] : state.atmo.amount };
-  applyBiome(e.target.value); rebuildProps(); toast(`マップのバイオーム: ${BIOME().name}` + (a ? `（${ATMOS[a[0]].name}）` : ''));
+  applyBiome(e.target.value); updateTerrain(); regenGroundProps(); toast(`マップのバイオーム: ${BIOME().name}` + (a ? `（${ATMOS[a[0]].name}）` : ''));
 };
 $('sunOn').onchange = e => { pushUndo(); state.sunOn = e.target.checked; applyAtmo(); };
 for (const [v, d] of Object.entries(DARK_LEVELS)) $('darkness').add(new Option(d.name, v));
@@ -3763,6 +3768,7 @@ function applyBiome(id) {
   if (B.moss) v3(BU.uMoss, B.moss); BU.uMossAmt.value = B.moss ? 1 : 0;
   BU.uLava.value = B.lava ? 1 : 0; BU.uSea.value = state.sea || B.id === 'beach' ? 1 : 0; BU.uFlowers.value = B.flowers ?? 1; BU.uSnow.value = B.snow || 0; BU.uSnowLine.value = B.snowLine ?? -100;
   if ($('biome')) $('biome').value = B.id;
+  if($('baseGroundInfo'))$('baseGroundInfo').textContent='標準床：'+(TDTerrainPaint.baseChannel(B.id)<0?'草地':TOOLS.find(t=>t.id===GROUND[TDTerrainPaint.baseChannel(B.id)]).name)+'（塗装済みの場所は保持）';
   walkDirty = true;
   applyAtmo();
 }
