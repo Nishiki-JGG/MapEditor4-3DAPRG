@@ -324,6 +324,8 @@ vec3 terrainColor(){
   vec3 wp=vWPos; vec3 n=normalize(vWNor); vec2 p=wp.xz;
   float slope=vReliefSlope;
   float a=fbm(p*.22), b=fbm(p*1.6+5.), c=vn(p*11.);
+  float paintTotal=dot(vSA,vec4(1.))+dot(vSB,vec4(1.))+vSC;
+  float baseWeight=max(0.,1.-paintTotal),paintNorm=max(1.,paintTotal);
   // grass
   vec3 grass=mix(uG0, uG1, clamp(a*1.2+b*.7-.5,0.,1.));
   grass=mix(grass, uGH, smoothstep(.62,.95,b)*.35);
@@ -345,25 +347,23 @@ vec3 terrainColor(){
   float cobbleEdge=smoothstep(.27,.33,centrePaint+(cv.y-.5)*.26);
   vec3 stone=mix(vec3(.48,.46,.40),vec3(.67,.64,.56),cv.y)*(.96+.08*c)*(.88+.12*bevel);
   float buried=smoothstep(.55,.84,fbm(p*3.1)+a*.18)*(1.-smoothstep(.48,.88,centrePaint));
-  stone=mix(stone,grass*.88,buried*.40);
-  vec3 joint=mix(dirt*.90,grass*.84,smoothstep(.45,.73,fbm(p*2.7)+a*.16)*(1.-centrePaint*.65));
+  stone=mix(stone,grass*.88,buried*.40*baseWeight);
+  vec3 joint=mix(dirt*.90,grass*.84,smoothstep(.45,.73,fbm(p*2.7)+a*.16)*(1.-centrePaint*.65)*baseWeight);
   vec3 cob=mix(joint,stone,ce);
-  float dirtW=smoothstep(.16,.72,vSA.x+(b-.5)*.38+(vn(p*8.1+7.)-.5)*.12);
-  vec3 col=mix(grass,dirt,dirtW);
-  col=mix(col,dirt,max(paint.r,centrePaint)*.16*(1.-cobbleEdge));
-  col=mix(col,cob,cobbleEdge);
-  gSurfaceHeight=bevel*(.010+cv.y*.012)*cobbleEdge;
-  if(uGroundTrial>0.) gSurfaceHeight+=(1.-cobbleEdge)*mix((dot(grass,vec3(.2126,.7152,.0722))-.35)*.018,groundSoilRelief(p),dirtW);
-  col=mix(col,fcol,uFlowers*fl*(1.-uGroundTrial)*step(slope,.12)*(1.-smoothstep(.2,.4,vSA.x+vSA.y+vSA.z+vSA.w+vSB.x+vSB.y)));
+  float dirtW=vSA.x;
+  vec3 col=grass*baseWeight+dirt*vSA.x+cob*vSA.y;
+  gSurfaceHeight=bevel*(.010+cv.y*.012)*cobbleEdge*vSA.y/paintNorm;
+  if(uGroundTrial>0.)gSurfaceHeight+=(baseWeight*(dot(grass,vec3(.2126,.7152,.0722))-.35)*.018+vSA.x*groundSoilRelief(p))/paintNorm;
+  col=mix(col,fcol,uFlowers*fl*(1.-uGroundTrial)*step(slope,.12)*baseWeight);
   // sand: wind ripples
-  float sdw=smoothstep(.25,.6,vSA.z+(b-.5)*.3);
+  float sdw=vSA.z;
   if(sdw>0.){
     float rip=sin((p.x*.8+p.y*.55)*7.+fbm(p*.45)*7.)*.5+.5;
     vec3 sd=mix(vec3(.76,.66,.46),vec3(.90,.81,.60),clamp(b*.9+c*.3,0.,1.))*(.9+.12*rip);
-    col=mix(col,sd,sdw);
+    col+=sd*sdw;
   }
   // Rubble: mineral soil and tiny angular chips, without circular bead shading.
-  float rbw=smoothstep(.25,.6,vSA.w+(b-.5)*.3);
+  float rbw=vSA.w;
   if(rbw>0.){
     vec2 rp=p+vec2(fbm(p*1.8),fbm(p*1.8+17.))*.24;
     float earth=fbm(rp*3.8),grit=vn(rp*48.);
@@ -376,11 +376,11 @@ vec3 terrainColor(){
     float chip=(1.-smoothstep(size-aa,size+aa,shape))*step(.42,seed);
     vec3 mineral=mix(vec3(.35,.32,.27),vec3(.62,.58,.49),h21(cell+9.));
     mineral*=.86+.14*step(0.,local.x+local.y*.7);
-    col=mix(col,mix(dry,mineral,chip*.8),rbw);
+    col+=mix(dry,mineral,chip*.8)*rbw;
     gSurfaceHeight+=rbw*(chip*.004+(grit-.5)*.002);
   }
   // swamp: mud, moss and murky puddles with rising bubbles
-  float swW=smoothstep(.25,.6,vSB.x+(b-.5)*.3);
+  float swW=vSB.x;
   if(swW>0.){
     vec3 mud=mix(vec3(.17,.15,.09),vec3(.31,.28,.15),b);
     mud=mix(mud,vec3(.24,.32,.11),smoothstep(.45,.75,a+c*.2)*.7);
@@ -388,44 +388,45 @@ vec3 terrainColor(){
     vec3 murk=vec3(.10,.14,.08)+.04*vec3(sin(uTime*.6+p.x),sin(uTime*.5+p.y),0.);
     vec2 bc=floor(p*1.8), bf=fract(p*1.8)-.5; float tt=fract(uTime*.3+h21(bc));
     float ring=smoothstep(.03,.0,abs(length(bf-(vec2(h21(bc+1.),h21(bc+2.))-.5)*.5)-tt*.3))*(1.-tt)*pud;
-    col=mix(col,mix(mud,murk,pud)+ring*.18,swW);
+    col+=(mix(mud,murk,pud)+ring*.18)*swW;
     gGloss=max(gGloss,pud*swW);
   }
   // poison swamp: purple sludge with glowing, bubbling pools
-  float poW=smoothstep(.25,.6,vSB.y+(b-.5)*.3);
+  float poW=vSB.y;
   if(poW>0.){
     vec3 sludge=mix(vec3(.16,.09,.19),vec3(.31,.15,.34),b);
     float pud=smoothstep(.46,.56,fbm(p*.65+9.1)+(c-.5)*.08);
     vec3 goo=mix(vec3(.42,.80,.22),vec3(.50,.30,.62),.5+.5*sin(uTime*.5+fbm(p*1.1)*5.));
     vec2 bc=floor(p*1.6), bf=fract(p*1.6)-.5; float tt=fract(uTime*.4+h21(bc+5.));
     float ring=step(.62,h21(bc+8.))*smoothstep(.03,.0,abs(length(bf-(vec2(h21(bc+3.),h21(bc+4.))-.5)*.5)-tt*.28))*(1.-tt)*pud;
-    col=mix(col,mix(sludge,goo*.42,pud)+ring*goo*.45,poW);
+    col+=(mix(sludge,goo*.42,pud)+ring*goo*.45)*poW;
     gGlow+=goo*(pud*.1+ring*.6)*poW;
     gGloss=max(gGloss,pud*poW);
   }
   // Lava: irregular cooling crust and flowing molten channels.
-  float lvW=smoothstep(.25,.6,vSB.z+(b-.5)*.3);
+  float lvW=vSB.z;
   if(lvW>0.){
     vec4 lava=lavaSurface(p,uTime);
-    col=mix(col,lava.rgb,lvW);
+    col+=lava.rgb*lvW;
     gGlow+=lava.rgb*lava.a*lvW*.85;
     gGloss=max(gGloss,lava.a*lvW*.30);
   }
   // snow field: soft white with sparkles
-  float snG=smoothstep(.25,.6,vSB.w+(b-.5)*.3);
+  float snG=vSB.w;
   if(snG>0.){
     vec3 sn=mix(vec3(.80,.85,.93),vec3(.97,.98,1.),b)*(.94+.08*c);
     sn+=step(.985,h21(floor(p*9.)))*.25;
-    col=mix(col,sn,snG);
+    col+=sn*snG;
   }
   // ice: glassy blue with white cracks
-  float icW=smoothstep(.25,.6,vSC+(b-.5)*.3);
+  float icW=vSC;
   if(icW>0.){
     vec3 iv=vor(p*.7); float crk=1.-smoothstep(.0,.04,iv.y-iv.x);
     vec3 ic=mix(vec3(.45,.68,.80),vec3(.70,.88,.95),fbm(p*.5))*(.9+.15*iv.z);
-    col=mix(col,mix(ic,vec3(.93,.97,1.),crk*.8),icW);
+    col+=mix(ic,vec3(.93,.97,1.),crk*.8)*icW;
     gGloss=max(gGloss,icW*.9);
   }
+  col/=paintNorm;gGlow/=paintNorm;
   // beach sand
   float hw=wp.y-uWater;
   float sandW=smoothstep(.42,.08,hw+(a-.5)*.3)*(1.-smoothstep(.3,.5,slope));
@@ -473,7 +474,7 @@ normal=surfaceNormal(-vViewPosition,normal,gSurfaceHeight);`)
     .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor=mix(roughnessFactor,.55,gGloss);')
     .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance+=pow(gGlow,vec3(2.2))*(1.-.6*uDim);');
 };
-terrainMat.customProgramCacheKey = () => 'terrain-surfaces-v3';
+terrainMat.customProgramCacheKey = () => 'terrain-surfaces-v4';
 
 function gridIndex() {
   const ix = new Uint32Array((N - 1) * (N - 1) * 6); let o = 0;
@@ -2165,10 +2166,10 @@ function applyBrush(x, z, dt) {
     walkDirty = true;
   } else if (tool === 'grass' || GROUND.includes(tool)) {
     const ch = GROUND.indexOf(tool);
-    if (ch >= 3) stroke.groundChanged = true;
+    stroke.groundChanged = true;
     forBrush(x, z, r, (i, d) => {
       const a = soft(d, r) * k * 700 * dt;
-      for (let c = 0; c < NS; c++) S[i * NS + c] = clamp(S[i * NS + c] + (c === ch ? a : -a), 0, 255);
+      TDTerrainPaint.paint(S,i*NS,NS,ch,a/255);
     }, sq);
   }
 }
