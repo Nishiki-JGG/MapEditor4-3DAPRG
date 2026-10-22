@@ -25,9 +25,30 @@ function geometry(id) {
   g.computeBoundingBox(); g.computeBoundingSphere();if(a.wind||id==='pine'){const pad=(a.wind||TDPineWind.spec).maxDisplacementMetres+(a.contact?.maxDisplacementMetres||0);g.boundingBox.min.x-=pad;g.boundingBox.min.z-=pad;g.boundingBox.max.x+=pad;g.boundingBox.max.z+=pad;g.boundingSphere.radius+=pad;}
   return g;
 }
+// 薄い葉の表裏を同じ上側の法線で照らす。樹皮・枝・根は既存の照明を保つ。
+function leafLighting(m, a) {
+  if (!a.rootWood || !a.rootWood.some(w => w < .5)) return;
+  const compile = m.onBeforeCompile, key = m.customProgramCacheKey.bind(m);
+  const declaration = m.userData.rootSurfaceSpec ? '' : 'attribute float rootWood;';
+  m.userData.sharedLeafLighting = 1;
+  m.onBeforeCompile = sh => {
+    compile(sh);
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\n' + declaration + '\nvarying float vSharedLeaf;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvSharedLeaf = 1. - rootWood;');
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying float vSharedLeaf;')
+      .replace('#include <normal_fragment_begin>', `#include <normal_fragment_begin>
+// SHARED_LEAF_LIGHT_BEGIN
+if (vSharedLeaf > .5) {
+  vec3 leafNormal = normal * faceDirection;
+  normal = dot(leafNormal, viewMatrix[1].xyz) < 0. ? -leafNormal : leafNormal;
+}
+// SHARED_LEAF_LIGHT_END`);
+  };
+  m.customProgramCacheKey = () => key() + '/shared-leaf-light/1';
+}
 function material(id, ghost = false) {
   if (ghost) {
-    if (!ghosts.has(id)) { const m = material(id).clone(); m.transparent = true; m.opacity = .28; m.depthWrite = false; if (m.alphaTest) m.alphaTest *= .25; if(id==='pine'||asset(id).wind) TDPineWind.attach(m,asset(id).wind||null,!!asset(id).motionWeights,!!asset(id).rootGrounding); if(window.TDRootSurface)TDRootSurface.attach(m,asset(id).rootSurface); ghosts.set(id, m); }
+    if (!ghosts.has(id)) { const m = material(id).clone(); m.transparent = true; m.opacity = .28; m.depthWrite = false; if (m.alphaTest) m.alphaTest *= .25; if(id==='pine'||asset(id).wind) TDPineWind.attach(m,asset(id).wind||null,!!asset(id).motionWeights,!!asset(id).rootGrounding); if(window.TDRootSurface)TDRootSurface.attach(m,asset(id).rootSurface); leafLighting(m,asset(id)); ghosts.set(id, m); }
     return ghosts.get(id);
   }
   if (materials.has(id)) return materials.get(id);
@@ -44,6 +65,7 @@ function material(id, ghost = false) {
     alphaTest: d.alphaCutoff, side: d.doubleSided ? THREE.DoubleSide : THREE.FrontSide});
   if(id==='pine'||asset(id).wind) TDPineWind.attach(m,asset(id).wind||null,!!asset(id).motionWeights,!!asset(id).rootGrounding);
   if(window.TDRootSurface)TDRootSurface.attach(m,a.rootSurface);
+  leafLighting(m,a);
   if(a.glow){const compile=m.onBeforeCompile,key=m.customProgramCacheKey.bind(m);m.onBeforeCompile=sh=>{compile(sh);sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nattribute float sharedGlow;varying vec2 vSharedGlow;').replace('#include <begin_vertex>','#include <begin_vertex>\nvSharedGlow=vec2(sharedGlow,position.y);');sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying vec2 vSharedGlow;uniform vec4 uPineWind;').replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\ntotalEmissiveRadiance+=diffuseColor.rgb*vSharedGlow.x*(.85+.15*sin(uPineWind.w*9.+vSharedGlow.y*13.));');};m.customProgramCacheKey=()=>key()+'/shared-glow/1';}
   m.name = data.libraryVersion + '/' + id; materials.set(id, m); return m;
 }

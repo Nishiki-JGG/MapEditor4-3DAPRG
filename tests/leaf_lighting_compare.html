@@ -1,0 +1,8 @@
+<!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>葉の表裏照明の比較</title>
+<style>body{margin:20px;background:#171e20;color:#eee;font:16px sans-serif}select{font:inherit;margin:8px}main{display:grid;grid-template-columns:1fr 1fr;gap:12px}img{width:100%;height:auto}a{color:#bde2a6}@media(max-width:650px){main{grid-template-columns:1fr}}</style>
+<h1>葉の表裏照明の比較</h1><p>形状・葉画像・光・風・カメラは同一。変更前は87b925dの照明、変更後は葉だけの両面補正です。樹皮や根の照明、環境光、発光は変更していません。</p>
+<label>対象<select id="tree"><option value="oak">広葉樹</option><option value="nara">ナラ</option><option value="zelkova">ケヤキ</option></select></label><label>視点<select id="view"><option value="low">低い補助視点</option><option value="walk">歩行の補助視点</option><option value="top">真上90度</option><option value="reverse">反対側の斜め視点</option></select></label>
+<main><section><h2>変更前</h2><img id="before" alt="同じモデルの補正前"></section><section><h2>変更後</h2><img id="fixed" alt="葉だけの補正後"></section></main>
+<p>黒い葉面の照明差を減らす修正です。枝・葉の重なりや、斜めから見える葉カードの細い輪郭まで消す処理ではありません。透過光や発光による明るさの底上げは加えていません。</p>
+<p><a id="live" href="root_reference_view.html?id=oak&view=walk">実エディタで確認</a>・<a href="../docs/LEAF_LIGHTING.md">原因と検証範囲</a>・<a href="../index.html#size=64">エディタ本体</a></p>
+<script>const tree=document.getElementById('tree'),view=document.getElementById('view');function update(){for(const mode of ['before','fixed'])document.getElementById(mode).src=`leaf-lighting/${tree.value}-${view.value}-${mode}.jpg`;document.getElementById('live').href=`root_reference_view.html?id=${tree.value}&view=${view.value==='low'?'side':view.value==='reverse'?'walk':view.value}`;}tree.onchange=view.onchange=update;update();</script></html>
