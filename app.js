@@ -281,6 +281,20 @@ const groundTexture = TDGround.texture;
 groundTexture.anisotropy = Math.min(2, renderer.capabilities.getMaxAnisotropy());
 const groundTrial = { value: 0 };
 TDGround.rootPaint={texture:pavingMask,params:new THREE.Vector4(HALF,HALF,N,1)};
+const LAVA_SURFACE_GLSL=`vec4 lavaSurface(vec2 p,float time){
+ vec2 flow=vec2(time*.028,-time*.011);
+ vec2 q=p+flow+vec2(fbm(p*.48+flow),fbm(p*.48+flow+21.))*.95;
+ float field=fbm(q*1.35+vec2(fbm(q*3.),fbm(q*3.+9.))*.42);
+ float vein=abs(field-.49),seam=1.-smoothstep(.025,.115,vein);
+ float core=1.-smoothstep(.012,.045,vein);
+ float pools=smoothstep(.64,.78,fbm(q*.32+41.));
+ float heat=max(seam,pools),rough=fbm(p*8.5);
+ vec3 crust=mix(vec3(.055,.045,.043),vec3(.19,.16,.14),rough)*(.8+.3*vn(p*37.));
+ vec3 hot=mix(vec3(.58,.055,.008),vec3(1.,.32,.025),heat);
+ hot=mix(hot,vec3(1.,.67,.14),max(core,pools*.7)*(.82+.18*fbm(q*6.-flow)));
+ vec3 surface=mix(crust,hot,smoothstep(.08,.58,heat));
+ return vec4(surface,heat);
+}`;
 const terrainMat = new THREE.MeshStandardMaterial({ roughness: .92, metalness: 0 });
 terrainMat.onBeforeCompile = (sh) => {
   Object.assign(sh.uniforms, TDGround.uniforms); sh.uniforms.uGroundTrial = groundTrial;
@@ -297,6 +311,7 @@ ${TDGround.GLSL}
 uniform float uGroundTrial;
 float gGloss=0.; float gSurfaceHeight=0.; vec3 gGlow=vec3(0.);
 ${GLSL_NOISE}
+${LAVA_SURFACE_GLSL}
 ${PAVING_GLSL}
 ${STONE_SURFACE_GLSL}
 uniform sampler2D uPavingMask;uniform vec2 uPavingMap;
@@ -388,15 +403,13 @@ vec3 terrainColor(){
     gGlow+=goo*(pud*.1+ring*.6)*poW;
     gGloss=max(gGloss,pud*poW);
   }
-  // lava: black crust split by glowing, slowly flowing magma
+  // Lava: irregular cooling crust and flowing molten channels.
   float lvW=smoothstep(.25,.6,vSB.z+(b-.5)*.3);
   if(lvW>0.){
-    vec3 cr=vor(p*.9+vec2(uTime*.02,0.)); float edge=1.-smoothstep(.0,.12,cr.y-cr.x);
-    vec3 hot=mix(vec3(.95,.30,.04),vec3(1.,.78,.32),fbm(p*1.2-uTime*.06));
-    float molten=max(edge,smoothstep(.6,.75,fbm(p*.35+3.)));
-    vec3 crust=mix(vec3(.07,.05,.05),vec3(.18,.14,.12),cr.z)*(.8+.3*c);
-    col=mix(col,mix(crust,hot,molten),lvW);
-    gGlow+=hot*molten*lvW*.9;
+    vec4 lava=lavaSurface(p,uTime);
+    col=mix(col,lava.rgb,lvW);
+    gGlow+=lava.rgb*lava.a*lvW*.85;
+    gGloss=max(gGloss,lava.a*lvW*.30);
   }
   // snow field: soft white with sparkles
   float snG=smoothstep(.25,.6,vSB.w+(b-.5)*.3);
@@ -460,7 +473,7 @@ normal=surfaceNormal(-vViewPosition,normal,gSurfaceHeight);`)
     .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor=mix(roughnessFactor,.55,gGloss);')
     .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance+=pow(gGlow,vec3(2.2))*(1.-.6*uDim);');
 };
-terrainMat.customProgramCacheKey = () => 'terrain-surfaces-v2';
+terrainMat.customProgramCacheKey = () => 'terrain-surfaces-v3';
 
 function gridIndex() {
   const ix = new Uint32Array((N - 1) * (N - 1) * 6); let o = 0;
@@ -598,6 +611,7 @@ const waterMat = new THREE.ShaderMaterial({
   fragmentShader: `uniform float uTime; uniform float uDim; uniform vec3 uSun; uniform vec3 uShallow; uniform vec3 uDeep; uniform float uLava; uniform float uSea; uniform sampler2D uFlow; uniform sampler2D uMask; uniform float uFlowMax; uniform float uBankRange; uniform float uTrailMax; uniform float uShow; uniform float uMapSize; uniform vec4 uFalls[8]; uniform float uFallCount; varying float vD; varying vec3 vWPos;
     ${DIM_GLSL}
     ${GLSL_NOISE}
+    ${LAVA_SURFACE_GLSL}
     float caus(vec2 p){
       vec2 q=p+vec2(fbm(p*.8+uTime*.025),fbm(p*.9-uTime*.021))*1.3;
       float a=sin(q.x*8.+q.y*3.5+uTime*.22),b=sin(q.y*9.-q.x*2.3-uTime*.18);
@@ -670,13 +684,7 @@ const waterMat = new THREE.ShaderMaterial({
         col=ov; alpha=max(alpha,.85);
       }
       if(uLava>.5){
-        // molten rock: glowing flow under a drifting dark crust
-        float n=fbm(p*.5+vec2(uTime*.03,0.));
-        vec3 hot=mix(vec3(.95,.28,.04),vec3(1.,.78,.30),fbm(p*1.4-uTime*.08));
-        float crust=smoothstep(.42,.62,n+(1.-caus(p*.3))*.15);
-        col=mix(hot,vec3(.10,.06,.05)+hot*.08,crust*.88);
-        col=mix(col,vec3(1.,.6,.2),fz*.6);
-        alpha=1.;
+        col=lavaSurface(p,uTime).rgb;alpha=1.;
       }
       gl_FragColor=vec4(dimc(pow(col,vec3(2.2))),alpha);
       #include <tonemapping_fragment>
