@@ -1,13 +1,14 @@
-// 既存ID bush の共有レシピ。縦十字カードを使わず、葉面と枝で裾を分ける。
+// 24ba292以前の茂みを正本に、葉クラスターの配置・色・5本の枝を継承する。
+// 十字板は使わず、分割してふくらませた葉面と同方向の重なりで密度を保つ。
 (()=>{
-function build(){const m=new TDNewPlants.MeshRecipe(86191),R=m.R;
- for(let k=0;k<7;k++){const a=k*2.399+(R()-.5)*.6,L=.39+R()*.12,h=k===0?.68:.25+R()*.16,b=[(R()-.5)*.12,-.035,(R()-.5)*.12],p=[b,[b[0]+Math.cos(a)*L*.48,h*.69,b[2]+Math.sin(a)*L*.48],[b[0]+Math.cos(a+.16)*L,h,b[2]+Math.sin(a+.16)*L]];
-  m.tube(p,[.014,.010,.0035],3,0x77735b,'stem',true);
-  for(let j=0;j<10;j++){const t=.17+j*.09,s=t<.5?0:1,f=s?t*2-1:t*2,q=new THREE.Vector3(...p[s]).lerp(new THREE.Vector3(...p[s+1]),f).toArray(),side=j%2?-.9:.9,low=j<3;
-   q[1]+=(R()-.5)*.035;TDForestFloor.leaf(m,q,a+side+(R()-.5)*1.5,.105+R()*.045,.046+R()*.015,low?0x61754b:[0x839565,0x7c925c,0x8b9c71][(k+j)%3]);
-  }
-  if(k%2===0)TDForestFloor.leaf(m,[p[0][0],.065,p[0][2]],a+.4,.14,.052,0x5c7146);
+function patch(){const g=new THREE.PlaneGeometry(1,1,2,2),p=g.attributes.position;for(let i=0;i<p.count;i++){const x=p.getX(i),y=p.getY(i);p.setZ(i,.09*(1-4*x*x)*(1-4*y*y)+.025*x*y);}return g;}
+function build(){const {rng,col,mixc,clamp,makeGeo,limb,faceOut,ATLAS}=TDGeo,R=rng(14),parts=[],C=[0,.3,0];
+ for(let k=0;k<5;k++){const a=k*1.3;limb(parts,[0,0,0],[Math.cos(a)*.45,.5,Math.sin(a)*.4],.04,.015,4,()=>col(0x5a4632));}
+ const leaf=(y,ny,Rr,pr,cx,cz)=>mixc(col(0x627a44),col(0xb8c888),clamp(y*1.1+Math.hypot(cx,cz)*.5+(pr-.5)*.25,0,1));
+ for(let k=0;k<15;k++){const th=k*2.4+R()*.5,ph=.15+R()*1.25,p=[Math.cos(th)*Math.sin(ph)*.58,.3+Math.cos(ph)*.32,Math.sin(th)*Math.sin(ph)*.52],scale=.7+R()*.3,roll=(R()-.5)*1.4,out=[p[0],p[1]-.15,p[2]],matrix=faceOut(p,out,[0,1,0],scale,roll);
+  parts.push({g:patch(),m:matrix,cfn:leaf,uvr:ATLAS.uvr('leaf'),j:.045,sn:C,snw:.85});
+  if(k<3){const normal=new THREE.Vector3(...out).normalize(),q=new THREE.Vector3(...p).addScaledVector(normal,-.055),back=faceOut(q.toArray(),out,[0,1,0],scale*.94,roll+.65);parts.push({g:patch(),m:back,cfn:leaf,uvr:ATLAS.uvr('leaf'),j:.045,sn:C,snw:.85});}
  }
- for(let k=0;k<5;k++)TDForestFloor.leaf(m,[(R()-.5)*.18,.10+R()*.08,(R()-.5)*.18],k*2.4,.12,.05,0x697d4f);
- return m.geometry();}
+ const g=makeGeo(parts,14,{ao:.55,uv:ATLAS.white}),u=g.attributes.uv,stem=new TDNewPlants.MeshRecipe(0).uv('stem');for(let i=0;i<u.count;i++)if(Math.abs(u.getX(i)-ATLAS.white[0])<1e-5&&Math.abs(u.getY(i)-ATLAS.white[1])<1e-5)u.setXY(i,...stem);return g;
+}
 window.TDBush={build};})();

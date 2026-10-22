@@ -18,7 +18,7 @@ for a in new['assets']:
   check(a['pivot']==[0,0,0] and a['assetKey']=='tdj/bush' and len(a['motionWeights'])==n*2,'Existing bush ID/origin and shared motion mask')
   check(all(math.isfinite(x)for k in ['positions','normals','colors','uv','motionWeights']for x in a[k]),'Finite bush attributes')
   check(all(a['motionWeights'][i*2]==a['motionWeights'][i*2+1]==0 for i in range(n)if a['positions'][i*3+1]<=.04),'Bush base fixed')
-  check(a['material']['alphaCutoff']==0 and a['material']['texture']=='woodland-plants-atlas-v1' and len(a['triangles'])//3<=500,'Bush opaque leaves and budget')
+  check(a['material']['alphaCutoff']==(.42 if a['version']==2 else 0) and a['material']['texture']=='woodland-plants-atlas-v1' and len(a['triangles'])//3<=500,'Bush opaque leaves and budget')
   continue
  b=next(b for b in old['assets'] if b['id']==a['id'])
  if not a.get('rootSurface'):check(a==b,'Protected model '+a['id']);continue
