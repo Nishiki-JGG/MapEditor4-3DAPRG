@@ -9,6 +9,7 @@ const SIZE = (() => { const m = /size=(\d+)/.exec(location.hash), v = m ? +m[1] 
 const STEP = 2.2;          // plateau tool step height (m)
 const SKIRT_Y = -14;       // bottom of the map's outer wall
 const H = new Float32Array(N * N);       // heights (m)
+const propGrounding=TDPropGrounding.createCache(H,N,CELL,HALF);
 const NS = 9;                            // splat channels
 const effectiveS = new Float32Array(N * N * NS);
 const S = new Uint8Array(N * N * NS);    // splat: [dirt, cobble, sand, rubble, swamp, poison] 0..255
@@ -832,6 +833,7 @@ function updateTerrain() {
   if (typeof updateAtmoHeights === 'function' && fogGroup) updateAtmoHeights();
   const pos = tGeo.attributes.position.array, sa = tGeo.attributes.splatA.array, sb = tGeo.attributes.splatB.array, sc = tGeo.attributes.splatC.array, dp = wGeo.attributes.depth.array;
   for (let k = 0; k < N * N; k++) {
+    if(pos[k*3+1]!==H[k])propGrounding.changed(k);
     pos[k * 3 + 1] = H[k]; dp[k] = state.water - H[k];
     for (let c = 0; c < 4; c++) sa[k * 4 + c] = effectiveS[k * NS + c] / 255;
     for (let c = 0; c < 4; c++) sb[k * 4 + c] = effectiveS[k * NS + 4 + c] / 255;
@@ -1116,6 +1118,14 @@ function makeFittedFootprint(p,c){if(c.footprint)return c.footprint;const g=c.ge
 function rootSlopeAt(p){const t=PROP[p[0]],a=t.sharedAsset&&TDSharedProps.asset(t.sharedAsset);if(!a?.rootGrounding||p[7]!=null)return[0,0];const d=.5,x=p[1],z=p[2],gx=(heightAt(x+d,z)-heightAt(x-d,z))/(2*d),gz=(heightAt(x,z+d)-heightAt(x,z-d))/(2*d),n=Math.hypot(gx,gz),k=n>a.rootGrounding.maxSlope?a.rootGrounding.maxSlope/n:1;return[gx*k,gz*k];}
 // 地面の塗りを配置時だけ調べる。未対応素材は色の混合を無効にする。
 function rootTerrainAt(p){const x=p[1],z=p[2],t=PROP[p[0]],supported=groundTrial.value>0&&TDGroundData.biomes.includes(state.biome),other=[1,2,4,5,6,7,8].reduce((s,c)=>s+splatAt(x,z,c),0),coverage=supported?Math.max(0,1-other):0,dirt=splatAt(x,z,0),rubble=splatAt(x,z,3),grass=Math.max(0,1-dirt-rubble),baseY=p[7]??heightAt(x,z)-(t.groundSink||0);const total=Math.max(1,dirt+rubble+grass);return[dirt*coverage/total,rubble*coverage/total,grass*coverage/total,heightAt(x,z)-baseY];}
+const groundedNormal=new Map(),groundedGhost=new Map();
+function propBaseY(p){const t=PROP[p[0]];return p[7]??(heightAt(p[1],p[2])-(t.groundSink??(t.sharedAsset?0:p[0]===2?.12*p[4]:.05)));}
+function groundedParts(p){return propGrounding.get(p,PROP[p[0]].geo,PROP[p[0]].groundSink??.001);}
+function groundedMeshes(type,ghost,needed){
+ const map=ghost?groundedGhost:groundedNormal,old=map.get(type);if(old&&old[0].instanceMatrix.count>=needed)return old;
+ const capacity=Math.min(ghost?256:CAP,Math.max(16,2**Math.ceil(Math.log2(needed)))),t=PROP[type];
+ const meshes=TDPropGrounding.parts(t.geo).map((part,i)=>{const m=new THREE.InstancedMesh(part.geometry,ghost?ghostMat:propMat,capacity);m.instanceColor=new THREE.InstancedBufferAttribute(new Float32Array(capacity*3),3);m.frustumCulled=false;m.count=0;m.castShadow=m.receiveShadow=!ghost;m.renderOrder=ghost?8:0;if(old){m.instanceMatrix.array.set(old[i].instanceMatrix.array);m.instanceColor.array.set(old[i].instanceColor.array);scene.remove(old[i]);old[i].dispose();}scene.add(m);return m;});map.set(type,meshes);return meshes;
+}
 function rebuildProps(visualOnly = false) {
   refreshCliffFits(visualOnly);
   glowTick = 0;
@@ -1127,7 +1137,8 @@ function rebuildProps(visualOnly = false) {
     if (c[t] >= CAP) continue;
     // Shared meshes have an explicit ground pivot; their catalog yaw offset applies to visuals too.
     const shared = PROP[t].sharedAsset;
-    _p.set(x, by ?? (heightAt(x, z) - (shared ? PROP[t].groundSink || 0 : t === 2 ? .12 * s : .05)), z);
+    if(PROP[t].geo.userData.groundParts){const v=.86+.28*hash2(x*97|0,z*89|0),color=_c.setRGB(v*(.95+.1*hash2(x*13|0,7)),v,v*(.95+.1*hash2(3,z*17|0))),fit=groundedParts(p),meshes=groundedMeshes(t,ghost,c[t]+1);meshes.forEach((m,i)=>{m.setMatrixAt(c[t],fit.matrices[i]);m.setColorAt(c[t],color);});c[t]++;continue;}
+    _p.set(x, propBaseY(p), z);
     _q.setFromAxisAngle(_up, r - (shared ? PROP[t].yawOffset * Math.PI / 180 : 0)); _s.set(s, s * sy, s);
     _m.compose(_p, _q, _s);
     const fitColor=(()=>{const v=.86+.28*hash2(x*97|0,z*89|0);return savedCliffTint(p)?_c.fromArray(savedCliffTint(p)):_c.setRGB(v*(.95+.1*hash2(x*13|0,7)),v,v*(.95+.1*hash2(3,z*17|0)));})();
@@ -1142,8 +1153,9 @@ function rebuildProps(visualOnly = false) {
   }
   for (const m of propMeshes) if (m.userData.touch) { m.userData.touch.array.fill(0); m.userData.touch.needsUpdate = true; }
   for (const [p, st] of touchState) if (touchIdx.has(p)) writeTouch(p, st); else touchState.delete(p);
-  propMeshes.forEach((m, t) => { m.count = cnt[t]; m.instanceMatrix.needsUpdate = true; m.instanceColor.needsUpdate = true; if (m.userData.cliffI) m.userData.cliffI.needsUpdate = true; });
-  ghostMeshes.forEach((m, t) => { m.count = gcnt[t]; m.instanceMatrix.needsUpdate = true; m.instanceColor.needsUpdate = true; });
+  propMeshes.forEach((m, t) => { m.count = PROP[t].geo.userData.groundParts?0:cnt[t]; m.instanceMatrix.needsUpdate = true; m.instanceColor.needsUpdate = true; if (m.userData.cliffI) m.userData.cliffI.needsUpdate = true; });
+  ghostMeshes.forEach((m, t) => { m.count = PROP[t].geo.userData.groundParts?0:gcnt[t]; m.instanceMatrix.needsUpdate = true; m.instanceColor.needsUpdate = true; });
+  for(const[map,counts]of [[groundedNormal,cnt],[groundedGhost,gcnt]])for(const[t,meshes]of map)for(const m of meshes){m.count=counts[t];m.instanceMatrix.needsUpdate=m.instanceColor.needsUpdate=true;}
   touchStats.registered=touchProps.length;
   if(state.tool==='detail')syncGroundDetailUI();
   if (!visualOnly) { colliders = null; walkDirty = true; }
@@ -3571,7 +3583,12 @@ async function buildExport() {
     return [walkable(x, z, auto) ? 255 : 0, d ? (d.kind === 'bridge' ? 32 : 48) : o === 1 ? 128 : o === 2 ? 255 : o === 3 ? 64 : 0, auto ? 255 : 0];
   });
   const ROCKY = ['rock', 'cliff', 'pebble'];
-  const csv = ['instanceId,type,assetKey,x,y,z,rotY_deg,scale,scaleY,auto,cliffStyle'].concat(props.map(p => { const t = PROP[p[0]]; return [p[8], t.id, t.assetKey, U.x(p[1]), U.y(p[7] ?? (heightAt(p[1], p[2]) - (t.groundSink || 0))), U.z(p[2]), U.yaw(p[3]), p[4].toFixed(3), (p[4] * (p[6] ?? 1)).toFixed(3), p[5], ROCKY.includes(t.id) ? CLIFF_STYLES[cliffIndexNear(p[1], p[2])][0] : ''].join(','); })).join('\n');
+  const csv = ['instanceId,type,assetKey,x,y,z,rotY_deg,scale,scaleY,auto,cliffStyle'].concat(props.map(p => { const t = PROP[p[0]]; return [p[8], t.id, t.assetKey, U.x(p[1]), U.y(t.geo.userData.groundParts?propBaseY(p):(p[7] ?? (heightAt(p[1], p[2]) - (t.groundSink || 0)))), U.z(p[2]), U.yaw(p[3]), p[4].toFixed(3), (p[4] * (p[6] ?? 1)).toFixed(3), p[5], ROCKY.includes(t.id) ? CLIFF_STYLES[cliffIndexNear(p[1], p[2])][0] : ''].join(','); })).join('\n');
+  const groundedInstances=props.filter(p=>PROP[p[0]].geo.userData.groundParts&&PROP[p[0]].assetKey==='tdj/'+PROP[p[0]].id);
+  // Unityの既存R16地形に合わせて小物の姿勢だけ再評価する。地形/画像/保存座標は変更しない。
+  const groundedExportH=groundedInstances.length?Float64Array.from(TH,h=>mn+Math.round(clamp((h-mn)/range,0,1)*65535)/65535*range):null;
+  const groundedExportPose=p=>TDPropGrounding.fitParts(PROP[p[0]].geo,p,(x,z)=>TDPropGrounding.surface(groundedExportH,TN,TS,HALF,x,z),PROP[p[0]].groundSink??.001);
+  const groundedData={version:1,units:'metres',axes:'Unity X/Y/Z',surface:'heightmap_r16.raw',assets:[...new Set(groundedInstances.map(p=>p[0]))].map(t=>TDPropGrounding.exportAsset(PROP[t])),instances:groundedInstances.map(p=>{const t=PROP[p[0]],v=.86+.28*hash2(p[1]*97|0,p[2]*89|0);return{instanceId:p[8],type:t.id,assetKey:t.assetKey,source:{position:P3(p[1],propBaseY(p),p[2]),yaw:U.yaw(p[3]),scale:[p[4],p[4]*(p[6]??1),p[4]]},tint:[v*(.95+.1*hash2(p[1]*13|0,7)),v,v*(.95+.1*hash2(3,p[2]*17|0))],parts:groundedExportPose(p).map((m,i)=>({id:TDPropGrounding.parts(t.geo)[i].id,...TDPropGrounding.exportPose(m,new THREE.Vector3(HALF,-mn,HALF))}))};})};
   const spawnY = floorAt(state.spawn.x, state.spawn.z);
   const portOut = m => { const [ix, iz] = portInward(m), L = portLanding(m); return { id: m.id, tag: m.tag || '', position: P3(m.x, floorAt(m.x, m.z), m.z), yawDeg: U.yaw(m.rot), inward: [+ix.toFixed(4), +(-iz).toFixed(4)], width: m.w, landing: P3(L.x, floorAt(L.x, L.z), L.z), safeRadius: m.r }; };
   const spotOut = m => ({ id: m.id, tag: m.tag || '', position: P3(m.x, floorAt(m.x, m.z), m.z), reserveRadius: m.r });
@@ -3775,6 +3792,7 @@ revision・書き出し日時・ファイルごとの SHA-256・contentHash は 
     ...(seaPng ? [{ name: 'sea_field.png', data: seaPng }] : []),
     { name: 'walkable.png', data: walkPng }, { name: 'cliff_style.png', data: cliffPng }, { name: 'props.csv', data: csv },
     { name: 'asset_catalog.json', data: JSON.stringify(catalogExport(), null, 2) },
+    ...(groundedInstances.length?[{name:'grounded_props.json',data:JSON.stringify(groundedData)}]:[]),
     { name: 'shared_props.json', data: TDSharedProps.exportJson() },
     { name: 'pine_wind.json', data: TDPineWind.exportJson() },
     {name:'root_grounding.json',data:JSON.stringify({version:1,axes:'Unity world XZ',paint:{file:'root_paint.png',resolution:N,sizeMetres:[SIZE,SIZE]},instances:props.filter(p=>PROP[p[0]].sharedAsset&&TDSharedProps.asset(PROP[p[0]].sharedAsset).rootGrounding).map(p=>{const v=rootSlopeAt(p);return{instanceId:p[8],slope:[v[0],-v[1]],terrain:rootTerrainAt(p)};})})},
@@ -4021,7 +4039,7 @@ $('placeRandom').onchange = e => { state.placeRandom = e.target.checked; };
 syncPlaceUI();
 // 自動下草を手直しした時だけ手置きへ切り替え、次回更新から保護する。
 let groundDetailId=null;
-const GROUND_DETAIL_IDS=new Set(['drysoil_curl','drysoil_cup','drysoil_flake','scree','shortgrass','meadowgrass','groundlitter','grass','clover','meadowwhite','meadowyellow','meadowpink','meadowred','meadowviolet','pebble','fern','sedge','dock','flowers','mushroom']);
+const GROUND_DETAIL_IDS=new Set(['drysoil_curl','drysoil_cup','drysoil_flake','scree','shortgrass','meadowgrass','groundlitter','grass','clover','meadowwhite','meadowyellow','meadowpink','meadowred','meadowviolet','pebble','fern','sedge','dock','flowers','mushroom','shells']);
 function selectedGroundDetail(){return props.find(p=>p[8]===groundDetailId)||null;}
 function pickGroundDetail(x,z){
  let best=null,distance=Infinity;
@@ -4125,7 +4143,7 @@ function setMode(m,prepared=false) {
   $('modeBtn').textContent = m === 'play' ? '編集' : '歩く';
   hero.visible = m === 'play'; spawnMarker.visible = markerGroup.visible = m === 'edit'; preview.visible = false;
   if (m !== 'play' && ghosts.size) { ghosts = new Set(); rebuildProps(true); }
-  heroStyle(false);
+  heroStyle(false);if(typeof groundPreview!=='undefined')groundPreview.visible=false;
   if (m === 'play') {
     if (walkDirty) computeWalk();
     player.x = state.spawn.x; player.z = state.spawn.z; player.y = heightAt(player.x, player.z);
@@ -4140,6 +4158,7 @@ const RING_N = 72;
 const ring = new THREE.LineLoop(new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(new Float32Array(RING_N * 3), 3)), new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: .85, depthTest: false }));
 ring.renderOrder = 5; scene.add(ring);
 function updateRing() {
+  groundPreview.visible=false;
   preview.visible = false;
   ring.visible = !!hit;
   if (!ring.visible) return;
@@ -4171,7 +4190,7 @@ function updateRing() {
   }
   if (state.tool === 'place') {
     const t = state.variant.place, s0 = (PROP[t].sc[0] + PROP[t].sc[1]) / 2 * state.placeScale;
-    preview.visible = true; preview.position.set(hit.x, heightAt(hit.x, hit.z), hit.z); preview.rotation.y = state.placeRot * Math.PI / 180; preview.scale.setScalar(s0);
+    if(PROP[t].geo.userData.groundParts){setGroundPreview(t,hit.x,hit.z,state.placeRot*Math.PI/180,s0);preview.visible=false;}else{preview.visible = true; preview.position.set(hit.x, heightAt(hit.x, hit.z), hit.z); preview.rotation.y = state.placeRot * Math.PI / 180; preview.scale.setScalar(s0);}
     outline(circle(hit.x, hit.z, VIS_R[t] * s0 * .75 + .15), 0x9cff8a, .15);
     return;
   }
@@ -4195,6 +4214,11 @@ function updateRing() {
 
 const preview = new THREE.Mesh(PROP[0].geo, new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, transparent: true, opacity: .6, depthWrite: false }));
 preview.visible = false; preview.renderOrder = 9; scene.add(preview);
+const groundPreview=new THREE.Group(),previewGroundPose=[];groundPreview.visible=false;scene.add(groundPreview);
+function setGroundPreview(type,x,z,yaw,scale){
+ const t=PROP[type];if(groundPreview.userData.type!==type){groundPreview.clear();TDPropGrounding.parts(t.geo).forEach(part=>{const m=new THREE.Mesh(part.geometry,preview.material);m.matrixAutoUpdate=false;m.frustumCulled=false;m.renderOrder=9;groundPreview.add(m);});groundPreview.userData.type=type;groundPreview.userData.fit=null;}
+ previewGroundPose.splice(0,previewGroundPose.length,type,x,z,yaw,scale,0,1,null);const fit=groundedParts(previewGroundPose);if(groundPreview.userData.fit!==fit){groundPreview.children.forEach((m,i)=>m.matrix.copy(fit.matrices[i]));groundPreview.userData.fit=fit;}groundPreview.visible=true;
+}
 // nearest deletable thing under the cursor
 function pickTarget(x, z) {
   let best = null, bd = 1;
@@ -4754,7 +4778,7 @@ const bootReady=bootPending?.startsWith('prepared:')?prepareMap('pending',0,{tok
 
 // hooks for automated checks
 window.__app = { fillGroundAll,buildPreparedSample,prepareMap,cancelMapPreparation,bootReady,get preparation(){return mapPreparation?{id:mapPreparation.id,phase:mapPreparation.phase,requestedMode:mapPreparation.requestedMode,elapsedMs:performance.now()-mapPreparation.start}:null;},get preparationStats(){return lastPreparedState;},
-  get cliffContactProgress(){return cliffContactProgress;},cliffFits,effectiveGeometry,fitCliffContact,adoptCliffContact, cliffProtected,cliffProtectionReason,nearFeatureReason, get cliffContactStats(){return cliffContactStats;},
+  propGrounding,groundedParts,groundedNormal,groundedGhost,groundPreview,setGroundPreview,propBaseY,get cliffContactProgress(){return cliffContactProgress;},cliffFits,effectiveGeometry,fitCliffContact,adoptCliffContact, cliffProtected,cliffProtectionReason,nearFeatureReason, get cliffContactStats(){return cliffContactStats;},
   pickGroundDetail,adjustGroundDetail,selectedGroundDetail,updateTouch,touchStats, pavingMask, cliffRelief, rebuildCliffRelief, groundTrial, groundTexture, terrainSource:tGeo, terrain, renderer, camera, SIZE, state, H, S, O, F, C, propMeshes, ghostMeshes, cliffIndexAt, BIOMES, CLIFF_STYLES, applyCliffStyle, deckAt, linkDeckAt, runValidation, genSample, genSample2, secretRegions, secretLineX, passageGeometry, terrainRes, TERRAIN_RES, snapshot, sha256, LINK_KINDS, normalizeCatalog, catalogExport, valueIssues, areaIssue, deckAt, getColliders, PROP, get colliderMaxR() { return colliderMaxR; }, rebuildMarkers, portLanding, linkTrigger, linkArrival, LINK_SPEC, get markers() { return markers; }, placeMarker, ensureIds, applyCatalog, ATMOS, WEATHER, applyAtmo, makeCoast, glowLights, applyBiome, applyPalette, propVisible, toolVisible, updateTerrain, rebuildProps, genFlat, floorAt, bridgeAt, stairsAt, placeSlope, placeStairs, placeBridge, pickTarget, regenGroundProps, rebuildBridges, get stairs() { return stairs; }, get bridges() { return bridges; }, get falls() { return falls; }, overrideAt, heroMat, hero, heroBody, get heroLook() { return heroLook; }, setHeroLook, heroStyle, heroGlow, get ghosts() { return ghosts; }, get props() { return props; }, cam, playCam, player, keys, setMode, setTool, update, heightAt, walkable, slope: slopeAt,
   stroke(x, z, frames = 20, opts = {}) {
     hit = new THREE.Vector3(x, heightAt(x, z), z); beginStroke({ shiftKey: !!opts.shift });

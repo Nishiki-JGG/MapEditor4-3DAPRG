@@ -2,7 +2,7 @@
 const fs=require('fs'),path=require('path'),http=require('http'),crypto=require('crypto'),zlib=require('zlib'),assert=require('assert/strict'),{withPage}=require('../tests/cdp');
 const root=path.resolve(__dirname,'..'),dir=path.join(root,'prepared'),recipeVersion='fixed-samples/1';
 const digest=b=>crypto.createHash('sha256').update(b).digest('hex');
-function sourceHashes(){const names=['app.js','index.html','props/shared/rock-surface.js',...fs.readdirSync(path.join(root,'terrain')).filter(x=>x.endsWith('.js')).map(x=>'terrain/'+x),...fs.readdirSync(path.join(root,'props')).filter(x=>x.startsWith('cliff')&&x.endsWith('.js')).map(x=>'props/'+x)];return Object.fromEntries(names.sort().map(n=>[n,digest(fs.readFileSync(path.join(root,n),'utf8').replace(/\r\n?/g,'\n'))]));}
+function sourceHashes(){const names=['app.js','index.html','props/grounding.js','props/shells.js','props/shared/rock-surface.js',...fs.readdirSync(path.join(root,'terrain')).filter(x=>x.endsWith('.js')).map(x=>'terrain/'+x),...fs.readdirSync(path.join(root,'props')).filter(x=>x.startsWith('cliff')&&x.endsWith('.js')).map(x=>'props/'+x)];return Object.fromEntries(names.sort().map(n=>[n,digest(fs.readFileSync(path.join(root,n),'utf8').replace(/\r\n?/g,'\n'))]));}
 function readManifest(){const s=fs.readFileSync(path.join(dir,'manifest.js'),'utf8');return JSON.parse(s.slice('window.TDPreparedManifest='.length).trim().replace(/;$/,''));}
 if(process.argv.includes('--check')){
  const m=readManifest();assert.equal(m.recipeVersion,recipeVersion);assert.deepEqual(m.sources,sourceHashes(),'生成元が変わっています。固定サンプルを再生成してください');

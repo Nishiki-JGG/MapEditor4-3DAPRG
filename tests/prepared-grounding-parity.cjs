@@ -1,0 +1,11 @@
+// 接地修正以外の完成サンプル内容が上流と同一であることを読み取り比較する。
+const fs=require('fs'),path=require('path'),cp=require('child_process'),zlib=require('zlib'),crypto=require('crypto'),assert=require('assert/strict'),{isDeepStrictEqual}=require('util'),codec=require('../terrain/prepared-codec');
+const root=path.resolve(__dirname,'..'),base=process.env.BASE_REF||'973fa00',read=n=>cp.execFileSync('git',['show',base+':'+n],{cwd:root,maxBuffer:30e6}),manifest=b=>JSON.parse(b.toString().slice('window.TDPreparedManifest='.length).trim().replace(/;$/,''));
+function decode(script){const s=script.toString(),packed=Buffer.from(JSON.parse(s.slice(s.indexOf(',')+1).trim().replace(/\);$/,'')),'base64');return codec.decode(zlib.gunzipSync(packed));}
+const old=manifest(read('prepared/manifest.js')),now=manifest(fs.readFileSync(path.join(root,'prepared/manifest.js'))),report={base,tests:[]};
+for(const e of now.entries){const ref=old.entries.find(v=>v.kind===e.kind&&v.seed===e.seed&&v.size===e.size);assert(ref);const a=decode(read('prepared/'+ref.file)),b=decode(fs.readFileSync(path.join(root,'prepared',e.file)));
+ assert(isDeepStrictEqual(b.profile,a.profile),'profile differs');assert(isDeepStrictEqual(b.snapshot,a.snapshot),'completed snapshot differs');assert(isDeepStrictEqual(b.collision,a.collision),'collision differs');assert.notEqual(b.key,a.key);
+ report.tests.push({kind:e.kind,allSnapshotFieldsIdentical:true,allRawCliffEncodingIdentical:true,allCollisionFieldsIdentical:true,profileIdentical:true,keyUpdated:true,props:e.props,fits:e.fits,gzipBytes:e.gzipBytes,scriptBytes:e.scriptBytes,snapshotNonCFSha256:crypto.createHash('sha256').update(JSON.stringify(Object.fromEntries(Object.entries(b.snapshot).filter(([k])=>k!=='CF')))).digest('hex')});
+}
+for(const file of ['water.js','sea.js','unity/Assets/MapWater/Editor/MapWaterBuilder.cs','unity/Assets/MapWater/Runtime/Shaders/MapWater.shader'])assert.equal(fs.readFileSync(path.join(root,file),'utf8').replace(/\r\n?/g,'\n'),read(file).toString().replace(/\r\n?/g,'\n'),file+' 上流を保全');
+report.waterSourcesMatchBase=true;report.pass=true;if(process.env.REPORT_FILE)fs.writeFileSync(process.env.REPORT_FILE,JSON.stringify(report,null,2));console.log(JSON.stringify(report));
