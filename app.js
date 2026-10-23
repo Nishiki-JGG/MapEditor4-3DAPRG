@@ -1933,6 +1933,7 @@ function shapeFootprint(t) {
 // distance field of a footprint for one scale (cached per 5 % step)
 function shapeField(f, s) {
   const key = Math.round(s * 20); let d = f.fields.get(key); if (d) return d;
+  if(f.fieldOnly)throw Error('この完成衝突の倍率は未準備です');
   const { x0, z0, nx, nz, top } = f, min = (SHAPE_MIN_H + f.sink) / (key / 20), solid = k => top[k] > min, edge = [];
   for (let j = 0; j < nz; j++) for (let i = 0; i < nx; i++) {
     const k = j * nx + i; if (!solid(k)) continue;
@@ -2199,7 +2200,7 @@ const TOOLS = [
 ];
 const undoStack = [], redoStack = [];
 const snapshot = () => ({ H: H.slice(), S: S.slice(), O: O.slice(), C: C.slice(), CF: cliffFits.save(), P: props.map(p => p.slice()), F: falls.map(f => ({ ...f })), B: bridges.map(b => ({ ...b })), T: stairs.map(st => ({ ...st })), W: state.water, sp: { ...state.spawn }, bi: state.biome, at: { ...state.atmo }, sea: state.sea, we: { ...state.weather }, sun: state.sunOn, dk: state.darkness, M: markers.map(m => ({ ...m })), nid: state.nextId, rid: state.roomId, cat: JSON.stringify(state.catalog), ag: { ...state.agent }, cs: state.cliffStyle });
-function restore(s,prepared) { cliffFits.clear();H.set(s.H); S.set(s.S); O.set(s.O); if (s.C) C.set(s.C); else C.fill(0); walkDirty = true; props = s.P.map(p => p.slice()); falls = s.F.map(f => ({ ...f })); bridges = s.B.map(b => ({ ...b })); stairs = (s.T || []).map(st => ({ ...st })); state.water = s.W; state.spawn = { ...s.sp }; if (s.at) state.atmo = { ...s.at }; if (s.we) state.weather = { ...s.we }; state.sunOn = s.sun !== false; state.darkness = s.dk || 'dark'; markers = (s.M || []).map(m => ({ ...m })); state.nextId = s.nid || state.nextId; state.roomId = s.rid || state.roomId; if (s.cat) { state.catalog = JSON.parse(s.cat); applyCatalog(); } if (s.ag) { state.agent = { ...s.ag }; syncAgentUI(); colliders = null; } state.cliffStyle = s.cs || 'standard'; applyCliffStyle(); if ($('cliffStyle')) $('cliffStyle').value = state.cliffStyle; rebuildMarkers(); state.sea = !!s.sea; applyBiome(s.bi || state.biome); syncUI(); updateTerrain(); rebuildProps(); rebuildFalls(); rebuildBridges(); rebuildStairs();if(prepared)cliffFits.installPrepared(prepared,props,cliffInputSignature());else cliffFits.load(s.CF,props,cliffInputSignature());rebuildProps(); }
+function restore(s,prepared,deferMarkers=false) { cliffFits.clear();H.set(s.H); S.set(s.S); O.set(s.O); if (s.C) C.set(s.C); else C.fill(0); walkDirty = true; props = s.P.map(p => p.slice()); falls = s.F.map(f => ({ ...f })); bridges = s.B.map(b => ({ ...b })); stairs = (s.T || []).map(st => ({ ...st })); state.water = s.W; state.spawn = { ...s.sp }; if (s.at) state.atmo = { ...s.at }; if (s.we) state.weather = { ...s.we }; state.sunOn = s.sun !== false; state.darkness = s.dk || 'dark'; markers = (s.M || []).map(m => ({ ...m })); state.nextId = s.nid || state.nextId; state.roomId = s.rid || state.roomId; if (s.cat) { state.catalog = JSON.parse(s.cat); applyCatalog(); } if (s.ag) { state.agent = { ...s.ag }; syncAgentUI(); colliders = null; } state.cliffStyle = s.cs || 'standard'; applyCliffStyle(); if ($('cliffStyle')) $('cliffStyle').value = state.cliffStyle; if(!deferMarkers)rebuildMarkers(); state.sea = !!s.sea; applyBiome(s.bi || state.biome); syncUI(); updateTerrain(); rebuildProps(); rebuildFalls(); rebuildBridges(); rebuildStairs();if(prepared)cliffFits.installPrepared(prepared,props,cliffInputSignature());else cliffFits.load(s.CF,props,cliffInputSignature());rebuildProps(); }
 function pushUndo() { undoStack.push(snapshot()); if (undoStack.length > 40) undoStack.shift(); redoStack.length = 0; }
 function undo() { if (!undoStack.length) return; redoStack.push(snapshot()); restore(undoStack.pop()); toast('取り消し'); }
 function redo() { if (!redoStack.length) return; undoStack.push(snapshot()); restore(redoStack.pop()); toast('やり直し'); }
@@ -4423,20 +4424,35 @@ function cancelMapPreparation(restoreMap=true){
 function captureCollisionPreparation(){
  const fitted=[];for(const [id,c]of cliffFits.cache){if(c.footprint)fitted.push([id,{pose:cliffFits.records.get(id)?.pose,input:cliffFits.input,footprint:c.footprint,y0:c.y0,y1:c.y1}]);}
  const prototypes=PROP.map(t=>t.footprint?[t.id,t.footprint.fields]:null).filter(Boolean);
- return {version:1,fitted,prototypes};
+ return {version:1,fitted,prototypes,walk:walkDirty?undefined:{signature:walkPreparationSignature(),auto:A.slice(),floor:F.slice(),walk:Uint8Array.from(wkGeo.attributes.walk.array),forced:Uint8Array.from(wkGeo.attributes.forced.array),secret:Uint8Array.from(wkGeo.attributes.secret.array)}};
 }
 function validFootprint(f){
- return f&&Number.isInteger(f.nx)&&Number.isInteger(f.nz)&&f.nx>0&&f.nz>0&&f.nx*f.nz<2e6&&f.top instanceof Float32Array&&f.top.length===f.nx*f.nz&&f.top.every(Number.isFinite)&&['x0','z0','R','sink'].every(k=>Number.isFinite(f[k]))&&f.fields instanceof Map;
+ return f&&Number.isInteger(f.nx)&&Number.isInteger(f.nz)&&f.nx>0&&f.nz>0&&f.nx*f.nz<2e6&&((f.top instanceof Float32Array&&f.top.length===f.nx*f.nz&&f.top.every(Number.isFinite))||(f.fieldOnly===true&&f.top===undefined&&f.sink===0&&f.fields instanceof Map&&f.fields.size===1&&f.fields.has(20)))&&['x0','z0','R','sink'].every(k=>Number.isFinite(f[k]))&&f.fields instanceof Map;
 }
-function validFields(fields,n){return fields instanceof Map&&[...fields].every(([key,d])=>Number.isInteger(key)&&key>=0&&d.dist instanceof Float32Array&&d.dist.length===n&&Array.isArray(d.edge)&&d.edge.length%2===0&&d.edge.every(Number.isFinite)&&d.dist.every(Number.isFinite));}
+function validFields(fields,n){return fields instanceof Map&&[...fields].every(([key,d])=>Number.isInteger(key)&&key>=0&&d.dist instanceof Float32Array&&d.dist.length===n&&(Array.isArray(d.edge)||d.edge instanceof Float64Array)&&d.edge.length%2===0&&d.edge.every(Number.isFinite)&&d.dist.every(Number.isFinite));}
 async function installCollisionPreparation(data,job){
  if(!data||data.version!==1||!Array.isArray(data.fitted)||!Array.isArray(data.prototypes))throw Error('衝突準備の形式が違います');
  const ids=new Map(props.map(p=>[p[8],p]));
- await TDPreparation.each(data.fitted,([id,v])=>{const p=ids.get(id),r=cliffFits.records.get(id);if(!p||!r||v.pose!==r.pose||v.input!==cliffFits.input||!validFootprint(v.footprint)||!validFields(v.footprint.fields,v.footprint.top.length)||![v.y0,v.y1].every(Number.isFinite))throw Error('衝突準備と岩が一致しません');Object.assign(cliffFits.get(p),{footprint:v.footprint,y0:v.y0,y1:v.y1});},job);
- await TDPreparation.each(data.prototypes,([id,fields])=>{const f=PROP.find(t=>t.id===id)?.footprint;if(!f||!validFields(fields,f.top.length))throw Error('元部品の衝突準備が違います');for(const [key,v]of fields)f.fields.set(key,v);},job);
+ await TDPreparation.each(data.fitted,([id,v])=>{const p=ids.get(id),r=cliffFits.records.get(id);if(!p||!r||v.pose!==r.pose||v.input!==cliffFits.input||!validFootprint(v.footprint)||!validFields(v.footprint.fields,v.footprint.nx*v.footprint.nz)||![v.y0,v.y1].every(Number.isFinite))throw Error('衝突準備と岩が一致しません');Object.assign(cliffFits.get(p),{footprint:v.footprint,y0:v.y0,y1:v.y1});},job);
+ await installPrototypePreparation(data,job);
+ if(data.walk)installWalkPreparation(data.walk);
+}
+async function installPrototypePreparation(data,job){
+ if(!Array.isArray(data?.prototypes))throw Error('元部品の衝突準備がありません');
+ // 完成岩の読込検査も元部品の距離場を使うので、検査より先に復元する。
+ const entries=[];await TDPreparation.each(data.prototypes,([id,fields])=>{const f=PROP.find(t=>t.id===id)?.footprint;if(!f||!validFields(fields,f.top.length))throw Error('元部品の衝突準備が違います');entries.push([f,fields]);},job);
+ for(const[f,fields]of entries)for(const[key,v]of fields)f.fields.set(key,v);
+}
+function walkPreparationSignature(){return cliffInputSignature()+'/'+sha256(O)+'/'+sha256(S)+'/'+sha256(new TextEncoder().encode(JSON.stringify([props,bridges,stairs,markers,state.agent,state.biome])));}
+function installWalkPreparation(w){
+ const count=N*N,flags=a=>a instanceof Uint8Array&&a.length===count&&a.every(x=>x<=1);
+ if(!w||w.signature!==walkPreparationSignature()||!flags(w.auto)||!flags(w.walk)||!flags(w.forced)||!flags(w.secret)||!(w.floor instanceof Float32Array)||w.floor.length!==count||!w.floor.every(Number.isFinite))throw Error('通行準備とマップが一致しません');
+ A.set(w.auto);F.set(w.floor);wkGeo.attributes.walk.array.set(w.walk);wkGeo.attributes.forced.array.set(w.forced);wkGeo.attributes.secret.array.set(w.secret);
+ const pos=wkGeo.attributes.position.array;for(let j=0;j<N;j++)for(let i=0;i<N;i++){const k=idx(i,j);pos[k*3]=vx(i);pos[k*3+1]=Math.max(H[k],state.water)+.06;pos[k*3+2]=vx(j);}
+ for(const n of ['position','walk','forced','secret'])wkGeo.attributes[n].needsUpdate=true;wkGeo.computeBoundingSphere();walkDirty=false;
 }
 async function preparationKey(kind,seed,job){
- const config=JSON.stringify([kind,seed,SIZE,kind==='sample2'?'ruins':state.biome,state.agent,state.cliffStyle,state.catalog,TDPreparation.version,'startup/99b66fa/3',[...document.scripts].map(s=>s.getAttribute('src')).filter(Boolean)]);
+ const config=JSON.stringify([kind,seed,SIZE,kind==='sample2'?'ruins':state.biome,state.agent,state.cliffStyle,state.catalog,TDPreparation.version,TDPreparedSamples.recipeVersion,[...document.scripts].filter(s=>!s.dataset.preparedSample).map(s=>s.getAttribute('src')).filter(Boolean)]);
  if(preparationKeys.has(config))return preparationKeys.get(config);
  const hashes=[];
  await TDPreparation.each(PROP,async t=>{if(t.r<=0)return;const a=t.geo.attributes.position.array,ix=t.geo.index?.array;const hash=async a=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new Uint8Array(a.buffer,a.byteOffset,a.byteLength))),v=>v.toString(16).padStart(2,'0')).join('');hashes.push([t.id,t.r,t.height,t.yawOffset,await hash(a),ix?await hash(ix):'']);},job);
@@ -4444,6 +4460,29 @@ async function preparationKey(kind,seed,job){
  TDPreparation.check(job);preparationKeys.set(config,key);return key;
 }
 async function stageSnapshot(s,job){return cliffFits.prepareLoad(s.CF,s.P,cliffInputSignature(s.H,s.F,s.W),job);}
+async function expandPreparedGeometry(value,job){
+ await TDPreparation.each(Object.values(value.snapshot.CF.instances),r=>{
+  const d=r.geometry;if(d?.preparedAffineDelta!==1)return;const type=PROP.findIndex(t=>t.id===r.type);if(type<0||cliffFits.sourceHash(type)!==r.sourceSha256||!Array.isArray(r.affine)||r.affine.length!==16||!r.affine.every(Number.isFinite))throw Error('完成岩の元モデルまたは変換が一致しません');
+  const g=PROP[type].geo.clone().applyMatrix4(new THREE.Matrix4().fromArray(r.affine));try{for(const[name,v]of Object.entries(d.attributes)){const a=g.attributes[name];if(!a||a.itemSize!==v.size)throw Error('完成岩の属性が一致しません');const direct=v.delta instanceof Int32Array&&v.delta.length===a.array.length,palette=v.values instanceof Int32Array&&v.indices instanceof Uint16Array&&v.indices.length===a.count&&v.values.length%v.size===0&&v.indices.every(i=>i<v.values.length/v.size);if(!direct&&!palette)throw Error('完成岩の頂点差分が一致しません');const bits=new Uint32Array(a.array.buffer,a.array.byteOffset,a.array.length);for(let i=0;i<bits.length;i++)bits[i]=(bits[i]+(direct?v.delta[i]:v.values[v.indices[Math.floor(i/v.size)]*v.size+i%v.size]))>>>0;}r.geometry=TDCliffFits.describe(g);}finally{g.dispose();}
+ },job);
+}
+function preparedProfile(kind){return{biome:kind==='sample2'?'ruins':state.biome,agent:{...state.agent},cliffStyle:state.cliffStyle,catalog:state.catalog};}
+async function buildPreparedSample(kind,seed){
+ if(!await prepareMap(kind,seed,{build:true,boot:true}))throw Error('固定サンプルの事前生成に失敗しました');
+ const key=await preparationKey(kind,seed),cached=await TDPreparation.get(key);if(!cached?.collision.walk)throw Error('通行準備がありません');
+ // 配布前にも完成岩の読込検査を通す。描画用geometryは検査後に破棄する。
+ const checked=await stageSnapshot(cached.snapshot);for(const c of checked.cache.values())c.geometry.dispose();
+ const readyCollision=captureCollisionPreparation();
+ const fields=m=>new Map([...m].map(([k,d])=>[k,{...d,edge:Float64Array.from(d.edge)}]));
+ const collision={...readyCollision,fitted:readyCollision.fitted.map(([id,d])=>[id,{...d,footprint:{...d.footprint,top:undefined,fieldOnly:true,fields:fields(d.footprint.fields)}}]),prototypes:readyCollision.prototypes.map(([id,m])=>[id,fields(m)])};
+ const value={...cached,kind,seed,size:SIZE,profile:preparedProfile(kind),snapshot:{...cached.snapshot,CF:structuredClone(cached.snapshot.CF),rid:'prepared:'+kind+':'+SIZE+':'+seed},collision};
+ for(const r of Object.values(value.snapshot.CF.instances)){
+  const type=PROP.findIndex(t=>t.id===r.type),g=PROP[type].geo.clone().applyMatrix4(new THREE.Matrix4().fromArray(r.affine)),attributes={};
+  try{for(const[name,v]of Object.entries(r.geometry.attributes)){const a=g.attributes[name],bytes=unb64(v.f32),actual=new Uint32Array(bytes.buffer),expected=new Uint32Array(a.array.buffer,a.array.byteOffset,a.array.length);if(a.itemSize!==v.size||actual.length!==expected.length)throw Error('頂点差分を作れません');const delta=new Int32Array(actual.length);let changed=false;for(let i=0;i<delta.length;i++){delta[i]=(actual[i]-expected[i])|0;changed||=delta[i]!==0;}if(changed){const table=[],indices=[],lookup=new Map();for(let i=0;i<delta.length;i+=v.size){const tuple=Array.from(delta.subarray(i,i+v.size)),key=tuple.join(',');let id=lookup.get(key);if(id===undefined){id=table.length/v.size;lookup.set(key,id);table.push(...tuple);}indices.push(id);}attributes[name]=table.length*4+indices.length*2<delta.byteLength&&lookup.size<65536?{size:v.size,values:Int32Array.from(table),indices:Uint16Array.from(indices)}:{size:v.size,delta};}}r.geometry={preparedAffineDelta:1,attributes};}finally{g.dispose();}
+ }
+ const raw=TDPreparedCodec.encode(value),packed=new Uint8Array(await new Response(new Blob([raw]).stream().pipeThrough(new CompressionStream('gzip'))).arrayBuffer());
+ return{key,kind,seed,size:SIZE,profile:value.profile,rawBytes:raw.length,gzipBase64:b64(packed),props:props.length,fits:cliffFits.records.size};
+}
 async function compilePreparedMap(job){
  // 風の値・カメラを確定してから初回プログラムを待つ。編集中の別ジョブは適用しない。
  for(;;){TDPreparation.check(job);const mode=job.requestedMode;setMode(mode,true);update(0);job.progress('初回の描画を準備',0,0);await renderer.compileAsync(scene,camera);await TDPreparation.pause(job);if(mode===job.requestedMode)break;}
@@ -4459,7 +4498,7 @@ async function prepareMap(kind,seed=7,options={}){
  for(const el of document.querySelectorAll('button,input,select,textarea')){if(preparationPanel.contains(el))continue;job.controls.push([el,el.disabled]);el.disabled=true;}
  preparationPanel.hidden=false;preparationPanel.style.display='flex';job.clock=setInterval(()=>{preparationPanel.querySelector('span').textContent=((performance.now()-job.start)/1000).toFixed(1)+' 秒';},100);
  const viewSettings={atmo:{...state.atmo},weather:{...state.weather},sunOn:state.sunOn,darkness:state.darkness};
- let staged=null,cacheHit=false,fitStats=null,cacheKey=null,persistent=false,persistentStored=false,outgoingToken=null;
+ let staged=null,cacheHit=false,fitStats=null,cacheKey=null,persistent=false,persistentStored=false,outgoingToken=null,preparedSource='generated',bundleBytes=0;
  try{
   await TDPreparation.pause(job);
   if(kind==='restore'){
@@ -4483,13 +4522,17 @@ async function prepareMap(kind,seed=7,options={}){
    TDPreparation.check(job);deserialize(d,staged);staged=null;
   }else{
    if(kind==='sample'||kind==='sample2'){
-    job.progress('完成済みサンプルを照合',0,0);cacheKey=await preparationKey(kind,seed,job);const cached=await TDPreparation.get(cacheKey);TDPreparation.check(job);
+    job.progress('完成済みサンプルを照合',0,0);cacheKey=await preparationKey(kind,seed,job);let cached=options.build?null:await TDPreparation.get(cacheKey);TDPreparation.check(job);
+    for(let attempt=0;attempt<2&&!cacheHit;attempt++){
+    if(!cached&&!options.build){const bundled=await TDPreparedSamples.load({kind,seed,size:SIZE,key:cacheKey,profile:preparedProfile(kind)},job);if(bundled){cached=bundled.value;preparedSource='bundle';bundleBytes=bundled.bytes;}}
+    if(!cached)break;
     if(cached)try{
      if(cached.key!==cacheKey||cached.version!==1)throw Error('古いサンプル準備です');
-     staged=await stageSnapshot(cached.snapshot,job);TDPreparation.check(job);restore(cached.snapshot,staged);staged=null;await installCollisionPreparation(cached.collision,job);cacheHit=true;
+     await installPrototypePreparation(cached.collision,job);if(preparedSource==='bundle')await expandPreparedGeometry(cached,job);staged=await stageSnapshot(cached.snapshot,job);TDPreparation.check(job);restore(cached.snapshot,staged,true);staged=null;await installCollisionPreparation(cached.collision,job);rebuildMarkers();cacheHit=true;if(preparedSource!=='bundle')preparedSource='cache';
      // 完成テンプレートの個体IDは維持し、新しい部屋の識別子だけを発行する。
      state.roomId=newRoomId();state.revision=0;state.lastExportHash='';Object.assign(state,viewSettings);applyAtmo();syncUI();
-    }catch(e){if(e.name==='AbortError')throw e;for(const c of staged?.cache.values()||[])c.geometry.dispose();staged=null;await TDPreparation.remove(cacheKey);TDPreparation.check(job);}
+    }catch(e){if(e.name==='AbortError'||preparedSource==='bundle')throw e;for(const c of staged?.cache.values()||[])c.geometry.dispose();staged=null;cacheHit=false;cached=null;await TDPreparation.remove(cacheKey);TDPreparation.check(job);}
+    }
    }
    if(!cacheHit){
     if(kind!=='rocks')cliffFits.clear();colliders=null;cliffContactStats=null;
@@ -4502,8 +4545,8 @@ async function prepareMap(kind,seed=7,options={}){
     }
    }
   }
-  job.progress('歩行用の衝突を準備',0,props.length);await primeCollisionFields(props,job);TDPreparation.check(job);computeWalk();
-  if(cacheKey&&!cacheHit){
+  job.progress('歩行用の衝突を準備',0,props.length);await primeCollisionFields(props,job);TDPreparation.check(job);const walkReused=!walkDirty;if(walkDirty)computeWalk();
+  if(cacheKey&&(!cacheHit||preparedSource==='bundle')){
    job.progress('完成状態を再利用用に保存',0,0);persistent=(kind==='sample'&&seed===7)||(kind==='sample2'&&seed===11);
    // 別領域のキャッシュ。ユーザーのファイルや保存先を上書きしない。
    const value={version:1,key:cacheKey,snapshot:snapshot(),collision:captureCollisionPreparation()};
@@ -4512,7 +4555,7 @@ async function prepareMap(kind,seed=7,options={}){
   await compilePreparedMap(job);TDPreparation.check(job);job.progress('最初の画面を描画',0,0);await TDPreparation.pause(job);const firstRender=performance.now();renderer.render(scene,camera);job.firstRenderMs=performance.now()-firstRender;await TDPreparation.pause(job);
   if(kind==='pending'){await TDPreparation.clearPending(options.token);if(sessionStorage.getItem('me_pending')==='prepared:'+options.token)sessionStorage.removeItem('me_pending');TDPreparation.check(job);}
   if(!options.boot){undoStack.push(backup);if(undoStack.length>40)undoStack.shift();redoStack.length=0;if(kind!=='rocks'&&kind!=='load')forgetSaveTarget(kind==='sample'?'サンプル':kind==='sample2'?'サンプル2（隠し通路）':'');}
-  lastPreparedState={kind,seed,cacheHit,persistent,persistentStored,elapsedMs:performance.now()-job.start,firstRenderMs:job.firstRenderMs,props:props.length,fits:cliffFits.records.size,fitStats};
+  lastPreparedState={kind,seed,cacheHit:cacheHit&&preparedSource==='cache',persistent,persistentStored,preparedSource,bundleBytes,walkReused,elapsedMs:performance.now()-job.start,firstRenderMs:job.firstRenderMs,props:props.length,fits:cliffFits.records.size,fitStats};
   mapPreparation=null;unlockPreparation(job);hud();toast(kind==='restore'?'元のマップに戻しました':'準備が完了しました（'+(lastPreparedState.elapsedMs/1000).toFixed(1)+'秒）');return true;
  }catch(e){
   for(const c of staged?.cache.values()||[])c.geometry.dispose();
@@ -4522,7 +4565,7 @@ async function prepareMap(kind,seed=7,options={}){
   if(e.name!=='AbortError'){console.error(e);toast('準備失敗: '+e.message);}
   if(kind==='restore'){lastPreparedState={kind,error:e.message,elapsedMs:performance.now()-job.start};return false;}
   // 失敗時も部分生成をユーザーのマップとして残さない。
-  await prepareMap('restore',0,{snapshot:backup,collision:backupCollision,metadata:backupMetadata,boot:true});return false;
+  await prepareMap('restore',0,{snapshot:backup,collision:backupCollision,metadata:backupMetadata,boot:true});if(e.name!=='AbortError')toast('準備失敗: '+e.message);return false;
  }
 }
 
@@ -4539,7 +4582,7 @@ const bootReady=bootPending?.startsWith('prepared:')?prepareMap('pending',0,{tok
   prepareMap(bootPending==='sample2'&&SIZE===SAMPLE2_SIZE?'sample2':bootPending==='flat'||SIZE!==64?'flat':'sample',bootPending==='sample2'?11:7,{boot:true});
 
 // hooks for automated checks
-window.__app = { fillGroundAll,prepareMap,cancelMapPreparation,bootReady,get preparation(){return mapPreparation?{id:mapPreparation.id,phase:mapPreparation.phase,requestedMode:mapPreparation.requestedMode,elapsedMs:performance.now()-mapPreparation.start}:null;},get preparationStats(){return lastPreparedState;},
+window.__app = { fillGroundAll,buildPreparedSample,prepareMap,cancelMapPreparation,bootReady,get preparation(){return mapPreparation?{id:mapPreparation.id,phase:mapPreparation.phase,requestedMode:mapPreparation.requestedMode,elapsedMs:performance.now()-mapPreparation.start}:null;},get preparationStats(){return lastPreparedState;},
   get cliffContactProgress(){return cliffContactProgress;},cliffFits,effectiveGeometry,fitCliffContact,adoptCliffContact, cliffProtected,cliffProtectionReason,nearFeatureReason, get cliffContactStats(){return cliffContactStats;},
   pickGroundDetail,adjustGroundDetail,selectedGroundDetail,updateTouch,touchStats, pavingMask, cliffRelief, rebuildCliffRelief, groundTrial, groundTexture, terrainSource:tGeo, terrain, renderer, camera, SIZE, state, H, S, O, F, C, propMeshes, ghostMeshes, cliffIndexAt, BIOMES, CLIFF_STYLES, applyCliffStyle, deckAt, linkDeckAt, runValidation, genSample, genSample2, secretRegions, secretLineX, passageGeometry, terrainRes, TERRAIN_RES, snapshot, sha256, LINK_KINDS, normalizeCatalog, catalogExport, valueIssues, areaIssue, deckAt, getColliders, PROP, get colliderMaxR() { return colliderMaxR; }, rebuildMarkers, portLanding, linkTrigger, linkArrival, LINK_SPEC, get markers() { return markers; }, placeMarker, ensureIds, applyCatalog, ATMOS, WEATHER, applyAtmo, makeCoast, glowLights, applyBiome, applyPalette, propVisible, toolVisible, updateTerrain, rebuildProps, genFlat, floorAt, bridgeAt, stairsAt, placeSlope, placeStairs, placeBridge, pickTarget, regenGroundProps, rebuildBridges, get stairs() { return stairs; }, get bridges() { return bridges; }, get falls() { return falls; }, overrideAt, heroMat, hero, heroBody, get heroLook() { return heroLook; }, setHeroLook, heroStyle, heroGlow, get ghosts() { return ghosts; }, get props() { return props; }, cam, playCam, player, keys, setMode, setTool, update, heightAt, walkable, slope: slopeAt,
   stroke(x, z, frames = 20, opts = {}) {
