@@ -610,86 +610,7 @@ function showWaterInfo() {
   }
   el.textContent = lines.join('\n');
 }
-// ---------- sea ----------
-// Height of the sea above its still level at p: s = distance to the still waterline (m, + at sea), d = still depth.
-// Crests roll in toward the shore (they line up with the shoreline and bend a little along it, each with its own height),
-// grow and steepen as the water shallows, break (brk) a little over 1 m deep and run on as a lower bore; past the
-// waterline the bore runs up the sand, lagging as it climbs, and slides back.
-const SEA_WAVE_GLSL = `
-const float TAU=6.2831853, WK=TAU/7.5, WW=TAU/4.4;
-float crestShape(float u, float st){   // u: 0 at the crest, rising to 1 just in front of the next crest; 0..1
-  float sym=.5+.5*cos(TAU*u), saw=u<.86?exp(-u*3.6):mix(exp(-.86*3.6),1.,smoothstep(.86,1.,u));
-  return mix(sym,saw,st);
-}
-float seaH(vec2 p, float s, float d, out float ph, out float brk){
-  float bend=(fbm(p*.03)-.5)*5.;
-  ph=WK*max(s,0.)+WW*uTime+bend;
-  float u=fract(ph/TAU), ci=floor(ph/TAU), crest=.62+.38*fract(sin(ci*12.9898)*43758.5453);
-  float along=.7+.6*fbm(p*.06+vec2(ci*1.7,ci*.9));
-  float st=smoothstep(3.2,1.,d); brk=smoothstep(1.5,.75,d)*step(0.,s);
-  float A=uWaveH*crest*along*(1.+.8*smoothstep(4.5,1.2,d))*mix(1.,.5,smoothstep(1.,0.,d))*mix(1.,.5,smoothstep(14.,40.,s));
-  float hw=(crestShape(u,st)-.3)*A;
-  float phl=WW*uTime+bend-WK*1.8*max(-s,0.), ul=fract(phl/TAU), cl=floor(phl/TAU);
-  float hl=uWaveH*(.75+.45*fract(sin(cl*12.9898)*43758.5453))*crestShape(ul,1.)*exp(-max(-s,0.)/1.4)-.05;   // spent within a few metres of the waterline
-  return mix(hl,hw,smoothstep(0.,1.6,s));
-}`;
-const SEA_FRAG_GLSL = `
-// tileable water caustics (two drifting layers so the tile does not show)
-float causticL(vec2 uv, float time){
-  vec2 p=mod(uv*6.2831853,6.2831853)-250.; vec2 i=p; float c=1., inten=.005;
-  for(int n=0;n<4;n++){ float t=time*(1.-(3.5/float(n+1))); i=p+vec2(cos(t-i.x)+sin(t+i.y),sin(t-i.y)+cos(t+i.x)); c+=1./length(vec2(p.x/(sin(i.x+t)/inten),p.y/(cos(i.y+t)/inten))); }
-  c/=4.; c=1.17-pow(c,1.4); return clamp(pow(abs(c),8.),0.,1.);
-}
-float caustic(vec2 p, float t){
-  vec2 w=vec2(fbm(p*.11+t*.03),fbm(p*.11-t*.025+5.))*2.4;
-  return causticL(p*.30+w*.05,t*.55)*.6+causticL(p*.47-w*.04+.37,t*.42+1.7)*.45;
-}
-// sand the run-up has just left: darker, with a thin sheen right behind the water's edge
-vec4 wetSand(vec2 p, float d, float d0, vec4 sea){
-  float e=-d0, run=sea.w*1.25;
-  float soaked=smoothstep(run+.05,run*.25,e), fresh=smoothstep(.22,0.,-d);
-  float wet=clamp(max(soaked*.6,fresh),0.,1.);
-  vec3 V=normalize(cameraPosition-vWPos); float sp=pow(max(dot(reflect(-uSun,vec3(0.,1.,0.)),V),0.),60.)*fresh;
-  return vec4(vec3(.04,.06,.07)+sp*.8, wet*.42+sp*.3);
-}
-vec4 seaColor(vec2 p, float d, float d0, vec4 sea, vec2 ph, vec2 grad, vec2 dir){
-  float t=1.-exp(-d*.55), brk=sea.y;
-  vec3 col=mix(mix(uShallow,vec3(.10,.78,.80),.35),uDeep,t);   // clear tropical water: emerald over the sand, deep blue further out
-  // dark beds of sea grass and rock on the floor between the shallows and the deep (seen through the water)
-  float bed=smoothstep(.56,.7,fbm(p*.11+3.7)+fbm(p*.5)*.25)*smoothstep(.5,1.4,d)*(1.-smoothstep(3.5,7.,d));
-  col=mix(col,vec3(.03,.22,.20),bed*.75);
-  // surface: the wave's own slope plus two scales of ripples
-  float tt=uTime;
-  vec2 r1=vec2(fbm(p*1.7+tt*.35+vec2(.13,0.))-fbm(p*1.7+tt*.35-vec2(.13,0.)),fbm(p*1.7+tt*.35+vec2(0.,.13))-fbm(p*1.7+tt*.35-vec2(0.,.13)))/.26;
-  vec2 r2=vec2(vn(p*6.1-tt*.9+vec2(.05,0.))-vn(p*6.1-tt*.9-vec2(.05,0.)),vn(p*6.1-tt*.9+vec2(0.,.05))-vn(p*6.1-tt*.9-vec2(0.,.05)))/.1;
-  vec3 n=normalize(vec3(-(grad.x*3.+r1.x*.10+r2.x*.03),1.,-(grad.y*3.+r1.y*.10+r2.y*.03)));
-  vec3 V=normalize(cameraPosition-vWPos);
-  float face=dot(normalize(vec3(-grad.x*3.,1.,-grad.y*3.)),uSun)-dot(vec3(0.,1.,0.),uSun);
-  col*=1.+clamp(face*2.2,-.38,.32)*mix(1.,.35,smoothstep(6.,16.,sea.z));   // wave faces turned to the sun are lighter, the backs darker: the rows of crests read from above
-  float fres=pow(1.-max(dot(n,V),0.),4.); col=mix(col,vec3(.72,.87,.97),fres*.6);
-  // light network on the floor, strongest in the shallows
-  float c=caustic(p,tt)*(1.-t*.85)*smoothstep(0.,.2,d)*(1.-bed*.6)*1.6;
-  // foam: white tops as the crests steepen, white water trailing a broken crest, a lace line at the run-up's edge
-  float u=fract(atan(ph.y,ph.x)/6.2831853+1.), cu=min(u,1.-u);
-  float cap=smoothstep(.08,0.,cu)*smoothstep(3.,1.4,d0)*smoothstep(-.2,.8,sea.z);
-  float wash=brk*(exp(-u*3.2)*.95+.05)*step(u,.93);
-  float edge=smoothstep(.12,0.,d)*smoothstep(-.4,.4,sea.z+1.2);
-  vec2 q=p+dir*tt*1.1;   // foam drifts shoreward with the bores
-  vec2 qw=q+(vec2(fbm(q*.6),fbm(q*.6+9.))-.5)*1.6;   // warped, two sizes of holes: an irregular lace, not a dot grid
-  float holes=smoothstep(.06,.42,vor(qw*1.3).x)*.55+smoothstep(.08,.45,vor(qw*3.2+7.).x)*.45;
-  float pat=holes*.7+fbm(q*2.6+tt*.1)*.42;
-  float dens=max(max(cap*.95,wash*.8),edge*.95);
-  float foam=clamp((pat-(1.-dens)*1.05)*2.2,0.,1.)*smoothstep(0.,.25,dens);
-  foam=clamp(foam+smoothstep(.78,.95,fbm(q*.9-tt*.03))*.10*smoothstep(1.,4.,d0),0.,1.);   // faint streaks offshore
-  vec3 R=reflect(-uSun,n); float sp=max(dot(R,V),0.);
-  float glint=pow(sp,240.)*2.4+pow(sp,36.)*.10+step(.986,vn(p*9.+tt*2.3))*pow(sp,10.)*1.3;
-  float a=max(mix(.34,.96,t),bed*.7);
-  float ca=c; col=(col*a+vec3(1.,1.,.9)*ca)/(a+ca+1e-4); a=a+ca*(1.-a);
-  col=mix(col,vec3(.97,.99,1.),foam); a=max(a,foam*.96);
-  a*=smoothstep(0.,.025,d);   // the thin edge of the run-up fades onto the sand
-  col+=glint*(1.-foam); a=max(a,clamp(glint,0.,1.)*.8);
-  return vec4(col,clamp(a,0.,1.));
-}`;
+// ---------- sea: the surf's shader code is in sea.js (shared with Unity) ----------
 const wGeo = new THREE.BufferGeometry();
 wGeo.setAttribute('position', new THREE.BufferAttribute(tGeo.attributes.position.array.map((v, k) => k % 3 === 1 ? 0 : v), 3));
 wGeo.setAttribute('depth', new THREE.BufferAttribute(new Float32Array(N * N), 1));
@@ -751,7 +672,7 @@ const waterMat = new THREE.ShaderMaterial({
   vertexShader: `attribute float depth; attribute vec4 shore; uniform float uTime; uniform float uSea; uniform float uWaveH;
     varying float vD; varying float vD0; varying vec3 vWPos; varying vec4 vSea; varying vec2 vPh; varying vec2 vGrad; varying vec2 vDir;
     ${GLSL_NOISE}
-    ${SEA_WAVE_GLSL}
+    ${TDSea.GLSL_PRELUDE}${TDSea.COMMON}
     void main(){
       vec4 w0=modelMatrix*vec4(position,1.); float seaW=shore.w*uSea, h=0., ph=0., brk=0.; vec2 grad=vec2(0.);
       if(seaW>.001){
@@ -767,7 +688,7 @@ const waterMat = new THREE.ShaderMaterial({
     ${DIM_GLSL}
     ${GLSL_NOISE}
     ${LAVA_SURFACE_GLSL}
-    ${SEA_FRAG_GLSL}
+    ${TDSea.GLSL_PRELUDE}${TDSea.COMMON}${TDSea.SHADE}
     float caus(vec2 p){
       vec2 q=p+vec2(fbm(p*.8+uTime*.025),fbm(p*.9-uTime*.021))*1.3;
       float a=sin(q.x*8.+q.y*3.5+uTime*.22),b=sin(q.y*9.-q.x*2.3-uTime*.18);
@@ -822,7 +743,7 @@ const waterMat = new THREE.ShaderMaterial({
       fz=max(fz,foamAdd);
       float alpha=max(mix(.42,.93,t),fz*.95);
       if(dry){ col=vec3(0.); alpha=0.; }
-      // the sea: waves, surf, run-up, wet sand, clear water and the light network on the floor (SEA_FRAG_GLSL)
+      // the sea: waves, surf, run-up, wet sand, clear water and the light network on the floor (sea.js)
       if(seaW>.001){ vec4 sc=dry?wetSand(p,vD,vD0,vSea):seaColor(p,max(d,0.),vD0,vSea,vPh,vGrad,vDir); col=mix(col,sc.rgb,seaW); alpha=mix(alpha,sc.a,seaW); }
       if(uShow>.5){   // 水の表示：1 = 流れの矢印と速さの色、2 = 水際の帯（緑）と泡の帯（赤紫）
         vec3 ov=col;
@@ -3581,10 +3502,38 @@ async function buildExport() {
   const waterIn = { TN, TS, HALF, TH, level: state.water, falls: falls.map(f => ({ id: f.id, x: f.x, z: f.z, w: f.w })) };
   const waterRes = TDWater.analyze(waterIn);
   buildExport.lastWater = { input: waterIn, result: waterRes };   // 試験とエディターの水の表示が、書き出しと同じ解析を使うための控え
-  const waterWhy = BIOME().lava ? 'liquid=lava is not supported yet' : state.sea ? 'sea (surf) is not supported yet' : !waterRes.wetCount ? 'no terrain below the water level' : null;
+  const waterWhy = BIOME().lava ? 'liquid=lava is not supported yet' : state.sea ? 'sea: the flow images are for lakes and rivers; the surf is described by meta.sea (sea_field.png)' : !waterRes.wetCount ? 'no terrain below the water level' : null;
   for (const w of waterRes.warnings) if (!waterWhy && w.includes('乾いた')) validation.warnings.push('水: ' + w);
   const waterPack = !waterWhy ? TDWater.pack(waterRes) : null;
   const waterPngs = waterPack ? [{ name: 'water_flow.png', data: TDWater.encodePngRGBA(TN, TN, waterPack.flow) }, { name: 'water_mask.png', data: TDWater.encodePngRGBA(TN, TN, waterPack.mask) }] : [];
+  // ---- the sea (sea.js): the field its waves follow, and their settings, so that Unity builds the same surf
+  let seaPng = null, sea = null;
+  if (BU.uSea.value && !BIOME().lava) {
+    computeShoreField();
+    const sh = wGeo.attributes.shore.array, rgba = new Uint8Array(TN * TN * 4), S0 = -20, S1 = 60;
+    const field = (x, z) => {   // bilinear over the editor's vertices
+      const fx = clamp((x + HALF) * RES, 0, N - 1.0001), fz = clamp((z + HALF) * RES, 0, N - 1.0001), i = Math.floor(fx), j = Math.floor(fz), u = fx - i, v = fz - j, o = [0, 0, 0, 0];
+      for (const [di, dj, w] of [[0, 0, (1 - u) * (1 - v)], [1, 0, u * (1 - v)], [0, 1, (1 - u) * v], [1, 1, u * v]]) { const k = ((j + dj) * N + i + di) * 4; for (let c = 0; c < 4; c++) o[c] += sh[k + c] * w; }
+      return o;
+    };
+    for (let j = 0; j < TN; j++) for (let i = 0; i < TN; i++) {   // row j from the top = editor z min = Unity z max, as every image here
+      const [sd, dx, dz, w] = field(tx(i), tx(j)), q = Math.round(clamp((sd - S0) / (S1 - S0), 0, 1) * 65535), ang = Math.atan2(-dz, dx) / (2 * Math.PI), o = (j * TN + i) * 4;
+      rgba[o] = q >> 8; rgba[o + 1] = q & 255; rgba[o + 2] = Math.hypot(dx, dz) > .01 ? Math.round((ang + 1) % 1 * 256) % 256 : 0; rgba[o + 3] = Math.round(clamp(w, 0, 1) * 255);
+    }
+    seaPng = TDWater.encodePngRGBA(TN, TN, rgba);
+    const H0 = waterMat.uniforms.uWaveH.value, sunE = waterMat.uniforms.uSun.value, c3 = c => [+c.r.toFixed(4), +c.g.toFixed(4), +c.b.toFixed(4)];
+    sea = {
+      version: 1, field: 'sea_field.png', resolution: TN, cellSize: +TS.toFixed(6),
+      encoding: {
+        field: `RGBA8, linear, point or bilinear, no mips, clamp; PNG row 0 (top) = Unity z max like every image here. R,G = distance to the still waterline s (m, + at sea, - on land) = (R*256+G)/65535*${S1 - S0}+(${S0}). B = direction to the shore, angle in Unity xz = B/256*360 deg from +x toward +z (0 where there is none). A = sea weight 0..1 (water joined to the map edge = 1, its beach fading out ~4 m inland, enclosed lakes 0).`,
+        shader: 'MapWater/Sea and the editor run the same code: sea.js (editor) = Assets/MapWater/Runtime/Shaders/MapSeaShared.hlsl (generated). It works in the editor frame: x = Unity x - size/2, z = size/2 - Unity z.',
+      },
+      waves: { wavelength: TDSea.WAVELENGTH, period: TDSea.PERIOD, height: +H0.toFixed(3), steepenFromDepth: TDSea.STEEPEN_DEPTH, breakDepth: TDSea.BREAK_DEPTH, runupHeight: +(H0 * TDSea.RUNUP_GAIN).toFixed(3), runupReach: TDSea.RUNUP_REACH },
+      colors: { shallow: c3(BU.uShallow.value), deep: c3(BU.uDeep.value), space: 'the shader mixes these as given and raises the result to 2.2 (gamma 2.2 to linear), like the editor' },
+      sunDirection: [+sunE.x.toFixed(4), +sunE.y.toFixed(4), +(-sunE.z).toFixed(4)],
+      note: 'Visual only: walkability, walkable.png and the flow images do not change. Lakes and rivers of a map with sea are not built in Unity (waterSim is off for such maps).',
+    };
+  }
   const wo = waterRes.options;
   const waterSim = {
     version: 1, available: !waterWhy, ...(waterWhy ? { reason: waterWhy } : {}),
@@ -3644,9 +3593,10 @@ async function buildExport() {
     weather: { ...state.weather, wind: WEATHER[state.weather.kind].wind || 0, windDir: [+WIND_DIR.x.toFixed(4), +(-WIND_DIR.y).toFixed(4)] },
     atmosphere: { ...state.atmo, color: ATMOS[state.atmo.kind].color || null },
     water: [{ id: 'water_main', type: 'plane', level: U.y(state.water), liquid: BIOME().lava ? 'lava' : 'water', sea: state.sea,
-      waves: BU.uSea.value ? { wavelength: 7.5, period: 4.4, height: +waterMat.uniforms.uWaveH.value.toFixed(3), steepenFromDepth: 3.2, breakDepth: [.75, 1.5], runupHeight: +(waterMat.uniforms.uWaveH.value * 1.2).toFixed(3), runupReach: 1.4,
-        note: 'editor preview of the surf (app.js SEA_WAVE_GLSL): crests travel toward the shore along the distance-to-waterline field, steepen below steepenFromDepth m, break between breakDepth m, then run up the sand (height × e^(-distance/runupReach)). Only water joined to the map edge is sea; enclosed lakes stay calm. Visual only: walkability and water.png are unchanged.' } : null }],
+      waves: sea ? { ...sea.waves, see: 'meta.sea',
+        note: 'the editor preview of the surf; meta.sea has its field and settings for Unity (MapWater/Sea)' } : null }],
     waterSim,
+    sea,
     spawnPoints: [{ id: state.spawn.id, position: P3(state.spawn.x, spawnY, state.spawn.z), yawDeg: 0 }],
     ports: markers.filter(m => m.kind === 'port').map(portOut),
     enemySpots: markers.filter(m => m.kind === 'enemy').map(spotOut),
@@ -3691,6 +3641,7 @@ revision・書き出し日時・ファイルごとの SHA-256・contentHash は 
 - mask_0〜3.png    : 塗りの元データ（毒沼・溶岩などのゲーム判定用）。効果は groundTypes の effectId。
 - holes.png        : 隠し通路がある場合だけ。地形の穴（0 = 穴、(解像度-1)² セル）。
 - secret_passages_mesh.json : 隠し通路の床・壁・天井・ふた（穴と同じ形から作成。Unity 座標）。meta.secretPassages に輪郭・出入口・検査結果。route と width は目安。
+- sea_field.png    : 海がある場合だけ。波が進む向きの元（R,G = 水際までの距離、B = 岸への向き、A = 海の重み）。Unity の MapWater/Sea がエディターと同じ波・泡・光の網目を作ります（meta.sea）。
 - water_flow.png / water_mask.png : 水の流れ（RG=流れ、B=流れ関数、A=岸からの距離）と、滝から流れの筋にそった泡の帯（R）。水の無い部屋・溶岩・海では出ません。読み方は meta.waterSim.encoding。水深は heightmap_r16.raw と水位から Unity 側で作ります。
 - cliff_relief_mesh.json : 急斜面がある場合だけ。岩面の実形状（Unity座標・頂点法線・三角形・岩色/苔/濡れ/雪の属性）。meta.terrain.cliffRelief が参照します。表示用の追加メッシュで、歩行用高さ/通行判定は変更しません。Unity側では別途読み込みと材質の割当が必要です。
 - cliff_style.png  : 岩壁の種類（場所ごと。R = meta.cliffStyles の番号）。岩・崖石・小石は props.csv の cliffStyle 列。
@@ -3731,6 +3682,7 @@ revision・書き出し日時・ファイルごとの SHA-256・contentHash は 
       passages: geo.passages.map(g => ({ id: g.id, vertices: g.verts.flatMap(([x, y, z]) => P3(x, y, z)), triangles: g.sub })),
     }) }] : []),
     ...waterPngs,
+    ...(seaPng ? [{ name: 'sea_field.png', data: seaPng }] : []),
     { name: 'walkable.png', data: walkPng }, { name: 'cliff_style.png', data: cliffPng }, { name: 'props.csv', data: csv },
     { name: 'asset_catalog.json', data: JSON.stringify(catalogExport(), null, 2) },
     { name: 'shared_props.json', data: TDSharedProps.exportJson() },
