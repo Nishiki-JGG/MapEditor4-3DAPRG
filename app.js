@@ -311,7 +311,7 @@ terrainMat.onBeforeCompile = (sh) => {
   sh.fragmentShader = sh.fragmentShader
     .replace('#include <common>', `#include <common>
 varying float vReliefSlope; varying vec4 vSA; varying vec4 vSB; varying float vSC; varying vec3 vWPos; varying vec3 vWNor; uniform float uWater; uniform float uDim; uniform float uTime;
-uniform vec3 uG0; uniform vec3 uG1; uniform vec3 uGH; uniform vec3 uRockTint; uniform float uFlowers; uniform float uSnow; uniform float uSnowLine; uniform float uWet;
+uniform vec3 uG0; uniform vec3 uG1; uniform vec3 uGH; uniform vec3 uRockTint; uniform float uFlowers; uniform float uSnow; uniform float uSnowLine; uniform float uWet; uniform float uSea;
 varying vec3 vCT; varying vec4 vCM; varying vec2 vCW; uniform int uPitN; uniform vec4 uPitA[8]; uniform vec4 uPitB[8];
 ${TDGround.GLSL}
 uniform float uGroundTrial;
@@ -442,9 +442,9 @@ vec3 terrainColor(){
     gGloss=max(gGloss,icW*.9);
   }
   col/=paintNorm;gGlow/=paintNorm;
-  // beach sand
+  // beach sand (ground painted with sand keeps its own sand, so the beach has one colour)
   float hw=wp.y-uWater;
-  float sandW=smoothstep(.42,.08,hw+(a-.5)*.3)*(1.-smoothstep(.3,.5,slope));
+  float sandW=smoothstep(.42,.08,hw+(a-.5)*.3)*(1.-smoothstep(.3,.5,slope))*(1.-clamp(sdw,0.,1.));
   col=mix(col, mix(vec3(.60,.52,.36),vec3(.76,.68,.50),b), sandW);
   // rock (cliffs)
   vec2 rq=vec2((wp.x*.75+wp.z*.65)*1.1, wp.y*1.5);
@@ -467,13 +467,14 @@ vec3 terrainColor(){
     float bedNoise=fbm(p*2.6+13.),sandGrain=vn(p*42.);
     float ripple=sin(p.x*8.+p.y*3.+fbm(p*.7)*5.);
     vec3 bed=mix(vec3(.49,.45,.35),vec3(.70,.64,.49),bedNoise)*(.91+.18*sandGrain+.025*ripple);
-    bed=mix(bed,col,rockW*.6);
-    col=mix(col,bed,smoothstep(0.,.06,dpt));
+    bed=mix(bed,col,max(rockW*.6,max(sandW,clamp(sdw,0.,1.))*.7));   // the beach's sand runs on under the water
+    col=mix(col,bed,smoothstep(0.,.6,dpt));
   }
   // snow cover on flat ground above the snow line
   float snW=uSnow*smoothstep(uSnowLine-.4,uSnowLine+.6,wp.y+(a-.5)*1.2)*(1.-smoothstep(.32,.62,slope))*step(0.,hw);
   col=mix(col, mix(vec3(.80,.86,.95),vec3(.97,.98,1.),b)*(.93+.1*c), snW);
-  col*=mix(1.,.72,smoothstep(.18,.0,hw)*step(0.,hw));
+  // wet sand at the water's edge (up to the run-up's reach at the sea), going on darkening under the water: no step at the still level
+  col*=mix(1.,.74,smoothstep(mix(.18,.5,uSea),-.04,hw+(a-.5)*.08));
   col*=1.-.3*uWet*(1.-snW);
   gGloss=max(gGloss,uWet*.6*(1.-snW));
   float otherPaint=max(vSA.z,max(vSB.x,max(vSB.y,max(vSB.z,max(vSB.w,vSC)))));
@@ -776,6 +777,7 @@ const waterMat = new THREE.ShaderMaterial({
       if(dry){ col=vec3(0.); alpha=0.; }
       // the sea: waves, surf, run-up, wet sand, clear water and the light network on the floor (sea.js)
       if(seaW>.001){ vec4 sv=vec4(seaW,brkP,vSea.z,vSea.w); vec4 sc=dry?wetSand(p,dP,vD0,sv):seaColor(p,max(dP,0.),vD0,sv,vec2(cos(phP),sin(phP)),gP,vDir); col=mix(col,sc.rgb,seaW); alpha=mix(alpha,sc.a,seaW); }
+      if(dry&&alpha<.004) discard;   // the bare beach: the terrain draws its wet sand itself
       if(uShow>.5){   // 水の表示：1 = 流れの矢印と速さの色、2 = 水際の帯（緑）と泡の帯（赤紫）
         vec3 ov=col;
         if(uShow<1.5){

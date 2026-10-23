@@ -112,7 +112,7 @@ hero/                   主人公の体（見た目だけ）。Remy のデータ
 water.js                水の流れ・泡の計算（画面に依存しない。node でも動く）
 three.min.js            three.js r160（MIT License）
 samples/                書き出しのサンプル（通常サンプル 64m / 隠し通路サンプル 48m）
-docs/                   修正報告（REVISION_3〜21）と画像
+docs/                   修正報告（REVISION_3〜22）と画像
 tests/                  受け入れテスト（Playwright、水は Chrome の CDP）と、その結果
 unity/Assets/MapWater/  Unity 側の水（書き出しから水面・滝・飛沫・波紋を作る。docs/REVISION_8_NOTES.md）。海は MapWater/Sea（エディターと同じ式。docs/REVISION_19_NOTES.md）
 ```
@@ -129,6 +129,7 @@ PW=<playwright のパス> node tests/rev5_terrain_grid.js
 - `rev4_acceptance.js`：橋・階段の幅、yawOffset、壊れたデータの拒否
 - `rev5_terrain_grid.js`：全サイズの Terrain 解像度、隠し通路と穴の一致
 - `sample2_secret.js`：隠し通路サンプルの検証
+- `sea_shore_seam.js`：海岸の境目（陸と水の中の砂がつながる・水際に黒いにじみが無い・波の届かない浜に水面の板が何も描かない）
 - `mobile_walk.js`：スマホ・タブレットの操作（メニューの出し入れ・スティック・走る・縦横・指での編集）と、PC でボタンが出ないこと
 
 水の試験は、Playwright なしで Chrome（または Edge）を直接動かします（`tests/cdp.js`。場所は環境変数 `BROWSER` でも指定できます）。
