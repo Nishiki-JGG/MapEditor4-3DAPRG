@@ -18,6 +18,6 @@
   const value=clamp(.84+(n1-.5)*.15+(n2-.5)*.09+grain+layer-split*.12,.58,.98),p=(y*size+x)*4;
   im.data[p]=Math.round(value*255);im.data[p+1]=Math.round(value*.99*255);im.data[p+2]=Math.round(value*.965*255);im.data[p+3]=255;
  }ctx.putImageData(im,0,0);
- const id='placed-rock-mineral-v3';TDSharedData.textures.push({id,width:size,height:size,png:c.toDataURL('image/png').split(',')[1],wrap:'repeat',filter:'trilinear',mipmaps:true,anisotropy:4,appearanceVersion:3});
+ const id='placed-rock-mineral-v3';TDSharedData.textures.push({id,width:size,height:size,png:c.toDataURL('image/png').split(',')[1],colorSpace:'sRGB',wrap:'repeat',filter:'trilinear',mipmaps:true,anisotropy:4,appearanceVersion:3});
  a.material={...a.material,texture:id};a.version=5;a.appearance='灰褐色の鉱物粒、薄い層理、細い割れ目、上向き面の控えめな地衣。形状・配置・接地は既存のまま。';
 })();

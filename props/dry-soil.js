@@ -5,7 +5,7 @@
  for(let k=0;k<128*128;k++){const v=219+Math.floor(noise()*36);im.data.set([v,v,v,255],k*4);}ctx.putImageData(im,0,0);
  ctx.strokeStyle='rgba(125,110,90,.25)';ctx.lineWidth=.55;
  for(let k=0;k<35;k++){let x=noise()*128,y=noise()*128;ctx.beginPath();ctx.moveTo(x,y);for(let j=0;j<3;j++){x+=(noise()-.4)*7;y+=(noise()-.5)*7;ctx.lineTo(x,y);}ctx.stroke();}
- TDSharedData.textures.push({id:textureId,width:128,height:128,png:canvas.toDataURL('image/png').split(',')[1],wrap:'repeat',filter:'trilinear',mipmaps:true,anisotropy:4});
+ TDSharedData.textures.push({id:textureId,width:128,height:128,png:canvas.toDataURL('image/png').split(',')[1],colorSpace:'sRGB',wrap:'repeat',filter:'trilinear',mipmaps:true,anisotropy:4});
  for(let variant=0;variant<3;variant++){
   const id=['drysoil_curl','drysoil_cup','drysoil_flake'][variant],name=['乾いた土片・片反り','乾いた土片・両反り','乾いた土片・割れ片'][variant];
   const R=TDGeo.rng(3081+variant*291),n=variant===2?6:8,P=[],C=[],UV=[],I=[],radius=.23+variant*.025,thickness=.022+variant*.004;
