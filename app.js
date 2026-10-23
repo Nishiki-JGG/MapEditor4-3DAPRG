@@ -591,7 +591,7 @@ const WATERU = {
 let waterTimer = 0, waterInfo = null;
 function refreshWaterData() {
   waterTimer = 0;
-  const res = TDWater.analyze({ TN: N, TS: CELL, HALF, TH: H, level: state.water, falls: falls.map(f => ({ id: f.id, x: f.x, z: f.z, w: f.w })) });
+  const res = TDWater.analyze({ TN: N, TS: CELL, HALF, TH: H, level: state.water, falls: falls.map(f => ({ id: f.id, x: f.x, z: f.z, w: f.w })), sea: seaMaskFor(N, CELL) });
   const pk = TDWater.pack(res);
   WFLOW.set(pk.flow); WMASK.set(pk.mask); WATERU.uFlow.value.needsUpdate = true; WATERU.uMask.value.needsUpdate = true;
   WATERU.uFlowMax.value = res.options.maxSpeed; WATERU.uBankRange.value = res.options.bankRange; WATERU.uTrailMax.value = res.options.trailMaxCover;
@@ -601,6 +601,13 @@ function refreshWaterData() {
     WATERU.uFalls.value[n++].set(rf.cx, rf.cz, (Math.abs(Math.sin(f.x * 12.9898 + f.z * 78.233)) * 43758.5453) % 1, f.w);
   }
   WATERU.uFallCount.value = n; waterInfo = res; showWaterInfo();
+}
+// the open sea on a TN×TN grid with spacing TS (1 = sea), from the shore field; water.js leaves it out when it sets the river's speed
+function seaMaskFor(TN, TS) {
+  if (!BU.uSea.value) return undefined;
+  const sh = wGeo.attributes.shore.array, m = new Uint8Array(TN * TN), at = v => clamp(Math.round(v * TS * RES), 0, N - 1);
+  for (let j = 0; j < TN; j++) for (let i = 0; i < TN; i++) m[j * TN + i] = sh[(at(j) * N + at(i)) * 4 + 3] > .5 ? 1 : 0;
+  return m;
 }
 function scheduleWater() { clearTimeout(waterTimer); waterTimer = setTimeout(refreshWaterData, 350); }
 function showWaterInfo() {
@@ -626,6 +633,7 @@ wGeo.setAttribute('depth', new THREE.BufferAttribute(new Float32Array(N * N), 1)
 wGeo.setAttribute('shore', new THREE.BufferAttribute(new Float32Array(N * N * 4), 4));
 wGeo.setIndex(gridIndex());
 let shoreFieldOn = false;
+const SEA_OPEN = 4, SEA_MOUTH = 6;   // m: open sea is at least this far from land (narrower water joined to it is a river); a river's mouth blends over this
 function computeShoreField() {
   const sh = wGeo.attributes.shore.array, NN = N * N;
   if (!BU.uSea.value) { if (shoreFieldOn) { sh.fill(0); wGeo.attributes.shore.needsUpdate = true; shoreFieldOn = false; } return; }
@@ -672,10 +680,20 @@ function computeShoreField() {
   const toLand = edt(k => !wet[k]), toWater = edt(k => wet[k]);
   const sd0 = new Float32Array(NN);
   for (let k = 0; k < NN; k++) sd0[k] = clamp(wet[k] ? (toLand[k] - .5) * CELL : -(toWater[k] - .5) * CELL, -60, 60);
-  // the sea: water reachable from the map edge
-  const sea = new Uint8Array(NN), q = [];
-  for (let t = 0; t < N; t++) for (const k of [t, (N - 1) * N + t, t * N, t * N + N - 1]) if (wet[k] && !sea[k]) { sea[k] = 1; q.push(k); }
-  while (q.length) { const k = q.pop(), i = k % N, j = (k / N) | 0; for (const n of [i > 0 ? k - 1 : -1, i < N - 1 ? k + 1 : -1, j > 0 ? k - N : -1, j < N - 1 ? k + N : -1]) if (n >= 0 && wet[n] && !sea[n]) { sea[n] = 1; q.push(n); } }
+  // the sea: open water reachable from the map edge. A river or a channel joined to it stays a river (calm, flowing; water.js):
+  // the sea grows only from water at least SEA_OPEN m from any land (the map's edge is open water, not land), reaches out
+  // SEA_OPEN m from there, and gives way to the river over SEA_MOUTH m in a river's mouth
+  const flood = (seed, ok) => {
+    const m = new Uint8Array(NN), q = [];
+    for (let t = 0; t < N; t++) for (const k of [t, (N - 1) * N + t, t * N, t * N + N - 1]) if (seed(k) && !m[k]) { m[k] = 1; q.push(k); }
+    while (q.length) { const k = q.pop(), i = k % N, j = (k / N) | 0; for (const n of [i > 0 ? k - 1 : -1, i < N - 1 ? k + 1 : -1, j > 0 ? k - N : -1, j < N - 1 ? k + N : -1]) if (n >= 0 && ok(n) && !m[n]) { m[n] = 1; q.push(n); } }
+    return m;
+  };
+  const open = k => wet[k] && toLand[k] * CELL >= SEA_OPEN;
+  const core = flood(open, open), joined = flood(k => wet[k], k => wet[k]), toCore = edt(k => core[k]);
+  const seaW0 = new Float32Array(NN);
+  for (let k = 0; k < NN; k++) seaW0[k] = joined[k] ? clamp(1 - (toCore[k] * CELL - SEA_OPEN) / SEA_MOUTH, 0, 1) : 0;
+  const sea = seaW0.map(v => v > .5 ? 1 : 0);
   const toSea = cham(k => sea[k]);
   const blur = (a, r) => {   // separable box blur, r cells
     const t = new Float32Array(NN), o = new Float32Array(NN);
@@ -685,11 +703,11 @@ function computeShoreField() {
   };
   const sd = blur(sd0, 1);   // soften the grid's stair steps right at the waterline
   const sb = blur(blur(sd, 3), 3), sw = new Float32Array(NN);
-  for (let k = 0; k < NN; k++) sw[k] = sea[k] ? 1 : wet[k] ? 0 : clamp(1 - (toSea[k] * CELL - 4) / 3, 0, 1);   // banks of the sea, up to ~4 m inland
+  for (let k = 0; k < NN; k++) sw[k] = wet[k] ? seaW0[k] : clamp(1 - (toSea[k] * CELL - 4) / 3, 0, 1);   // banks of the sea, up to ~4 m inland
   const swb = blur(sw, 2);
   for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
     const k = j * N + i, gx = (sb[j * N + Math.min(N - 1, i + 1)] - sb[j * N + Math.max(0, i - 1)]), gz = (sb[Math.min(N - 1, j + 1) * N + i] - sb[Math.max(0, j - 1) * N + i]), gl = Math.hypot(gx, gz);
-    sh[k * 4] = sd[k]; sh[k * 4 + 1] = gl > 1e-5 ? -gx / gl : 0; sh[k * 4 + 2] = gl > 1e-5 ? -gz / gl : 0; sh[k * 4 + 3] = wet[k] && !sea[k] ? 0 : swb[k];
+    sh[k * 4] = sd[k]; sh[k * 4 + 1] = gl > 1e-5 ? -gx / gl : 0; sh[k * 4 + 2] = gl > 1e-5 ? -gz / gl : 0; sh[k * 4 + 3] = wet[k] && !joined[k] ? 0 : wet[k] ? Math.min(swb[k], seaW0[k] * 1.5) : swb[k];
   }
   wGeo.attributes.shore.needsUpdate = true;
 }
@@ -3568,10 +3586,13 @@ async function buildExport() {
   };
   const zoneOut = m => ({ id: m.id, kind: m.kind === 'nobattle' ? 'noBattle' : 'noSpawn', center: P3(m.x, floorAt(m.x, m.z), m.z), radius: m.r });
   // ---- water simulation data (water.js): flow / foam-trail images that the Unity water and the editor's water view both read
-  const waterIn = { TN, TS, HALF, TH, level: state.water, falls: falls.map(f => ({ id: f.id, x: f.x, z: f.z, w: f.w })) };
+  const waterIn = { TN, TS, HALF, TH, level: state.water, falls: falls.map(f => ({ id: f.id, x: f.x, z: f.z, w: f.w })), sea: seaMaskFor(TN, TS) };
   const waterRes = TDWater.analyze(waterIn);
   buildExport.lastWater = { input: waterIn, result: waterRes };   // 試験とエディターの水の表示が、書き出しと同じ解析を使うための控え
-  const waterWhy = BIOME().lava ? 'liquid=lava is not supported yet' : state.sea ? 'sea: the flow images are for lakes and rivers; the surf is described by meta.sea (sea_field.png)' : !waterRes.wetCount ? 'no terrain below the water level' : null;
+  // with a sea, the flow images are still written when a river or a lake is left besides it (Unity then builds both; the
+  // ordinary water fades out by sea_field.png's sea weight)
+  let inland = waterRes.wetCount; if (waterIn.sea) { inland = 0; for (let k = 0; k < TN * TN; k++) if (waterRes.wet[k] && !waterIn.sea[k]) inland++; }
+  const waterWhy = BIOME().lava ? 'liquid=lava is not supported yet' : !waterRes.wetCount ? 'no terrain below the water level' : !inland ? 'sea only: the flow images are for lakes and rivers; the surf is described by meta.sea (sea_field.png)' : null;
   for (const w of waterRes.warnings) if (!waterWhy && w.includes('乾いた')) validation.warnings.push('水: ' + w);
   const waterPack = !waterWhy ? TDWater.pack(waterRes) : null;
   const waterPngs = waterPack ? [{ name: 'water_flow.png', data: TDWater.encodePngRGBA(TN, TN, waterPack.flow) }, { name: 'water_mask.png', data: TDWater.encodePngRGBA(TN, TN, waterPack.mask) }] : [];
@@ -3710,8 +3731,8 @@ revision・書き出し日時・ファイルごとの SHA-256・contentHash は 
 - mask_0〜3.png    : 塗りの元データ（毒沼・溶岩などのゲーム判定用）。効果は groundTypes の effectId。
 - holes.png        : 隠し通路がある場合だけ。地形の穴（0 = 穴、(解像度-1)² セル）。
 - secret_passages_mesh.json : 隠し通路の床・壁・天井・ふた（穴と同じ形から作成。Unity 座標）。meta.secretPassages に輪郭・出入口・検査結果。route と width は目安。
-- sea_field.png    : 海がある場合だけ。波が進む向きの元（R,G = 水際までの距離、B = 岸への向き、A = 海の重み）。Unity の MapWater/Sea がエディターと同じ波・泡・光の網目を作ります（meta.sea）。
-- water_flow.png / water_mask.png : 水の流れ（RG=流れ、B=流れ関数、A=岸からの距離）と、滝から流れの筋にそった泡の帯（R）。水の無い部屋・溶岩・海では出ません。読み方は meta.waterSim.encoding。水深は heightmap_r16.raw と水位から Unity 側で作ります。
+- sea_field.png    : 海がある場合だけ。波が進む向きの元（R,G = 水際までの距離、B = 岸への向き、A = 海の重み。海と、それにつながる川の境目は、この重みで混ぜます）。Unity の MapWater/Sea がエディターと同じ波・泡・光の網目を作ります（meta.sea）。
+- water_flow.png / water_mask.png : 水の流れ（RG=流れ、B=流れ関数、A=岸からの距離）と、滝から流れの筋にそった泡の帯（R）。水の無い部屋・溶岩、海だけの部屋では出ません（海につながる川・池があれば出ます。海の所は sea_field.png の A で見分けます）。読み方は meta.waterSim.encoding。水深は heightmap_r16.raw と水位から Unity 側で作ります。
 - cliff_relief_mesh.json : 急斜面がある場合だけ。岩面の実形状（Unity座標・頂点法線・三角形・岩色/苔/濡れ/雪の属性）。meta.terrain.cliffRelief が参照します。表示用の追加メッシュで、歩行用高さ/通行判定は変更しません。Unity側では別途読み込みと材質の割当が必要です。
 - cliff_style.png  : 岩壁の種類（場所ごと。R = meta.cliffStyles の番号）。岩・崖石・小石は props.csv の cliffStyle 列。
 - walkable.png     : 通行判定（離散値。補間しないでください）。meta.json の agentProfile の体格で計算。

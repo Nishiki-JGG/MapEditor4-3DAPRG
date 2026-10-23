@@ -2,7 +2,7 @@
 // ブラウザでは window.TDWater、node では module.exports で使う。
 //
 // 入力は「書き出しの格子」（TN×TN、間隔 TS、エディター座標: x = -HALF + i*TS, z = -HALF + j*TS）の高さ TH と水位。
-//   analyze({ TN, TS, HALF, TH, level, falls:[{id,x,z,w}], options })
+//   analyze({ TN, TS, HALF, TH, level, falls:[{id,x,z,w}], sea, options })   sea（任意）: 開けた海のセル（1）。流れの速さを合わせるときに数えない
 //     wet      水の所（水位より 2cm 以上低い）
 //     depth    水深(m)。陸は 0
 //     flow     流れ(ux, uz) m/s（エディター座標）。滝の着水点から出口（地図の端の水）へ。出口が無い池は小さな漏れ項で流れが広がって消える
@@ -13,7 +13,7 @@
 //   encodePngRGBA(w, h, rgba)  無圧縮(stored)の PNG（どのブラウザ・node でも同じバイト列になる）
 //
 // 流れの式（CAV-002 の水と同じ）: ∇・(D∇φ)=0 に漏れ項 ε・D・φ を足したものを共役勾配法で解く。入口 φ=1（滝の着水点のまわり）、出口 φ=0。
-// 流れ u = -∇φ を、水の格子の速さの 95% 点が speedP95 になるよう全体を同じ倍率で合わせる。
+// 流れ u = -∇φ を、水の格子（海を除く）の速さの 95% 点が speedP95 になるよう全体を同じ倍率で合わせる。
 (function (root) {
   'use strict';
   const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
@@ -221,7 +221,10 @@
       return out;
     };
     ux = smooth(ux); uz = smooth(uz);
-    const sp = []; for (let k = 0; k < n; k++) if (wet[k]) sp.push(hyp(ux[k], uz[k]));
+    // the open sea (o.sea) is left out: its water spreads slowly, and counting it would push the river joined to it to full speed
+    const sea = o.sea, sp = [];
+    for (let k = 0; k < n; k++) if (wet[k] && !(sea && sea[k])) sp.push(hyp(ux[k], uz[k]));
+    if (!sp.length) for (let k = 0; k < n; k++) if (wet[k]) sp.push(hyp(ux[k], uz[k]));
     sp.sort((a, c) => a - c);
     const p95 = sp[Math.floor(sp.length * .95)] || 0;
     const scale = p95 > 1e-12 ? opt.speedP95 / p95 : 0;

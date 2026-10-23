@@ -71,7 +71,7 @@
 
 - **地形**：台地・上げる・下げる・平らに・なだらか。部屋の大きさは 24 / 32 / 48 / 64 / 96 / 128m から選べます。
 - **地面**：土・石畳・砂地・荒れ地・沼地・毒沼・溶岩・雪・氷・海岸
-- **海**：「海岸」ツールの海と「浜辺・磯」では、地図の端につながる水が海になり、波が岸へ寄せて砕け、砂浜を駆け上がって引きます。風で波が高くなります。浅瀬は澄んだエメラルドで、海底に光の網目が揺れ、泡はレース状に流れます（`docs/REVISION_18_NOTES.md`）。囲まれた池や湖は静かなままです。Unity でも、書き出しの `sea_field.png` と `meta.sea` から同じ海を作れます（`MapWaterBuilder`。海の式は `sea.js` の 1 か所だけで、Unity 用の HLSL は `node tools/sea/build-sea-hlsl.cjs` で作ります）。
+- **海**：「海岸」ツールの海と「浜辺・磯」では、地図の端につながる水が海になり、波が岸へ寄せて砕け、砂浜を駆け上がって引きます。風で波が高くなります。浅瀬は澄んだエメラルドで、海底に光の網目が揺れ、泡はレース状に流れます（`docs/REVISION_18_NOTES.md`）。囲まれた池や湖は静かなままです。地図の端や海につながっていても、幅がおよそ 8m より細い水路は川になり、海へ流れます（`docs/REVISION_23_NOTES.md`）。Unity でも、書き出しの `sea_field.png` と `meta.sea` から同じ海を作れます（`MapWaterBuilder`。海の式は `sea.js` の 1 か所だけで、Unity 用の HLSL は `node tools/sea/build-sea-hlsl.cjs` で作ります）。
 - **岩壁**：標準・土壁・黒い岩壁・濡れた岩壁・苔むした岩壁・砂漠の岩壁・雪山の岩壁。マップ全体の既定を選べるほか、「岩壁を塗る」ツールで場所ごとに塗り分けられます。
 - **構造物**：坂、階段（4 種）、橋（7 種）、滝
 - **水の流れ・泡**：滝の着水点から出口への流れ、滝の無い川の流れ、泡の帯を自動で計算します。「水」の欄で、流れの矢印と泡の帯を表示できます（`water.js`）。
@@ -112,7 +112,7 @@ hero/                   主人公の体（見た目だけ）。Remy のデータ
 water.js                水の流れ・泡の計算（画面に依存しない。node でも動く）
 three.min.js            three.js r160（MIT License）
 samples/                書き出しのサンプル（通常サンプル 64m / 隠し通路サンプル 48m）
-docs/                   修正報告（REVISION_3〜22）と画像
+docs/                   修正報告（REVISION_3〜23）と画像
 tests/                  受け入れテスト（Playwright、水は Chrome の CDP）と、その結果
 unity/Assets/MapWater/  Unity 側の水（書き出しから水面・滝・飛沫・波紋を作る。docs/REVISION_8_NOTES.md）。海は MapWater/Sea（エディターと同じ式。docs/REVISION_19_NOTES.md）
 ```
@@ -129,6 +129,7 @@ PW=<playwright のパス> node tests/rev5_terrain_grid.js
 - `rev4_acceptance.js`：橋・階段の幅、yawOffset、壊れたデータの拒否
 - `rev5_terrain_grid.js`：全サイズの Terrain 解像度、隠し通路と穴の一致
 - `sample2_secret.js`：隠し通路サンプルの検証
+- `sea_river.js`：海につながる細い水路は川（海の重み 0、海へ流れる）になり、河口でなめらかに替わる。書き出しに海と川の両方が入る
 - `sea_shore_seam.js`：海岸の境目（陸と水の中の砂がつながる・水際に黒いにじみが無い・波の届かない浜に水面の板が何も描かない）
 - `mobile_walk.js`：スマホ・タブレットの操作（メニューの出し入れ・スティック・走る・縦横・指での編集）と、PC でボタンが出ないこと
 

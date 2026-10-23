@@ -11,6 +11,7 @@ Shader "MapWater/Water"
   _FlowTex("Flow (RG, B stream function, A bank distance)",2D)="gray"{}
   _MaskTex("Mask (R foam trail cover)",2D)="black"{}
   _DepthTex("Signed water depth (m)",2D)="black"{}
+  _SeaTex("Sea field (A = sea weight; sea_field.png). Black = no sea",2D)="black"{}
   _Phase("Time seconds",Float)=0
   _DetailScale("Fine wave tiles per metre",Float)=0.24
   _NormalStrength("Fine wave slope",Float)=0.11
@@ -61,6 +62,7 @@ Shader "MapWater/Water"
    TEXTURE2D(_FlowTex);SAMPLER(sampler_FlowTex);
    TEXTURE2D(_MaskTex);SAMPLER(sampler_MaskTex);
    TEXTURE2D(_DepthTex);SAMPLER(sampler_DepthTex);
+   TEXTURE2D(_SeaTex);SAMPLER(sampler_SeaTex);
    // MapWaterController が設定するグローバル（波紋のアトラス。滝ごとの窓）
    TEXTURE2D(_MWRippleTex);SAMPLER(sampler_MWRippleTex);
    float4 _MWFallRect[8];      // x,y = 窓の最小xz  z = 1/窓の大きさ  w = アトラスの窓の番号
@@ -231,6 +233,8 @@ Shader "MapWater/Water"
     }
     // 岸の縁は透けて消える
     a*=smoothstep(0,.04,depth);
+    // 海のある地図：海（MapWater/Sea が描く所）では消え、河口では海へ受け渡す（エディターと同じく海の重みで混ぜる）
+    a*=1-SAMPLE_TEXTURE2D_LOD(_SeaTex,sampler_SeaTex,muv,0).a;
     return half4(rgb,a);
    }
    ENDHLSL

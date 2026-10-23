@@ -9,8 +9,9 @@ namespace MapWater.EditorTools {
 //   MapWaterBuilder.Build(exportDir) → Result。撮影や Scene の作成とは別の関数（EditMode から単独で呼べる）。
 // 作らない場合（落ちずに理由を返す）：meta.json が無い／読めない、waterSim が無い（古い書き出し）、available=false（溶岩・水なし）、
 //   画像・heightmap が無い。どの場合も Scene と資産は増えない。
-// 海（meta.sea がある書き出し）：エディターと同じ波・泡・光の網目を描く MapWater/Sea の海を作る（BuildSea）。海のある地図では、
-//   エディターは池・川の流れの画像を書き出さない（waterSim は off）ので、Unity でも海だけを作る。
+// 海（meta.sea がある書き出し）：エディターと同じ波・泡・光の網目を描く MapWater/Sea の海を作る（BuildSea）。
+//   海につながる川・池があれば（waterSim が available）、ふつうの水面も海の下に "Rivers" として作る。その水面は sea_field.png の
+//   海の重みで消えるので、海と重ならず、河口では海へ受け渡す。
 public static class MapWaterBuilder {
  public const string RuntimeDir = "Assets/MapWater/Runtime", GeneratedDir = "Assets/MapWaterGenerated";
 
@@ -40,7 +41,25 @@ public static class MapWaterBuilder {
    try { meta = JsonUtility.FromJson<MetaDto>(File.ReadAllText(metaPath)); } catch (Exception e) { return Fail("meta.json を読めません: " + e.Message); }
    if (meta == null || meta.terrain == null || meta.terrain.size == null || meta.terrain.size.Length < 3 || meta.terrain.heightmapResolution < 3) return Fail("meta.json に terrain がありません");
    // JsonUtility は "sea": null でも空の物を作るので、version で見分ける
-   if (meta.sea != null && meta.sea.version >= 1 && !string.IsNullOrEmpty(meta.sea.field)) return BuildSea(exportDir, meta, res, parent, origin, assetName);
+   if (meta.sea != null && meta.sea.version >= 1 && !string.IsNullOrEmpty(meta.sea.field)) {
+    var seaRes = BuildSea(exportDir, meta, res, parent, origin, assetName);
+    if (!seaRes.built || meta.waterSim == null || meta.waterSim.version < 1 || !meta.waterSim.available) return seaRes;
+    var rivers = BuildWater(exportDir, meta, new Result(), seaRes.root.transform, null, assetName, "Rivers", Path.Combine(exportDir, meta.sea.field));
+    if (!rivers.built) { seaRes.message += "（川・池：" + rivers.message + "）"; return seaRes; }
+    seaRes.controller = rivers.controller; seaRes.gameObjects += rivers.gameObjects; seaRes.materials += rivers.materials; seaRes.textures += rivers.textures; seaRes.meshes += rivers.meshes;
+    seaRes.message += " ／ " + rivers.message; return seaRes;
+   }
+   return BuildWater(exportDir, meta, res, parent, origin, assetName, null, null);
+  } catch (Exception e) {
+   res.message = "MapWater: 例外 — " + e; Debug.LogError(res.message); return res;
+  }
+ }
+
+ // 池・川の水面（流れの画像 waterSim から）。rootName を渡すと、その名前の物を parent の下に作る（海の下の川）。
+ // seaFieldPath を渡すと、その画像の A（海の重み）で水面を消す。
+ static Result BuildWater(string exportDir, MetaDto meta, Result res, Transform parent, Vector3? origin, string assetName, string rootName, string seaFieldPath) {
+  Result Fail(string why) { res.message = "MapWater: 水は作りません — " + why; Debug.Log(res.message); return res; }
+  try {
    if (meta.waterSim == null || meta.waterSim.version < 1) return Fail("この書き出しには水の流れのデータ（waterSim）がありません（古い書き出し。エディターで書き出し直してください）");
    if (!meta.waterSim.available) return Fail("waterSim.available=false（" + (string.IsNullOrEmpty(meta.waterSim.reason) ? "理由なし" : meta.waterSim.reason) + "）");
    if (meta.water == null || meta.water.Length == 0) return Fail("meta.water がありません");
@@ -70,6 +89,8 @@ public static class MapWaterBuilder {
    }
    var flowTex = Import(flowPath, "water_flow.png"); var maskTex = Import(maskPath, "water_mask.png");
    if (flowTex == null || maskTex == null) return Fail("流れの画像を取り込めませんでした");
+   Texture2D seaTex = null;
+   if (seaFieldPath != null) { seaTex = Import(seaFieldPath, "sea_field.png"); if (seaTex == null) return Fail("sea_field.png を取り込めませんでした"); }
 
    // ---- 符号つき水深（水位 − 地形。陸は負）。heightmap_r16.raw は行 r = z、列 = x、行0 が z=0（テクスチャの v=0）
    var half = new ushort[TN * TN]; float maxD = 0; int i0 = TN, i1 = -1, j0 = TN, j1 = -1;
@@ -83,13 +104,14 @@ public static class MapWaterBuilder {
    depthTex.SetPixelData(half, 0); depthTex.Apply(false, false);
    string depthPath = dir + "/WaterDepth.asset"; AssetDatabase.DeleteAsset(depthPath); AssetDatabase.CreateAsset(depthTex, depthPath);
    depthTex = AssetDatabase.LoadAssetAtPath<Texture2D>(depthPath);
-   res.textures = 3;
+   res.textures = seaTex != null ? 4 : 3;
 
    // ---- 材質
    Material Mat(Shader s, string n) { string pth = dir + "/" + n + ".mat"; AssetDatabase.DeleteAsset(pth); var m = new Material(s) { name = n }; AssetDatabase.CreateAsset(m, pth); return AssetDatabase.LoadAssetAtPath<Material>(pth); }
    var water = Mat(shW, "Water"); var fall = Mat(shF, "Fall"); var splash = Mat(shS, "Splash"); var stream = Mat(shT, "Stream");
    water.SetTexture("_DetailTex", detail); water.SetTexture("_FlowTex", flowTex); water.SetTexture("_MaskTex", maskTex); water.SetTexture("_DepthTex", depthTex);
    water.SetVector("_MapRect", new Vector4(0, 0, 1f / size, 1f / size));
+   if (seaTex != null) water.SetTexture("_SeaTex", seaTex);
    if (meta.waterSim.maxSpeed > 0) water.SetFloat("_FlowMax", meta.waterSim.maxSpeed);
    if (meta.waterSim.bankRange > 0) water.SetFloat("_BankRange", meta.waterSim.bankRange);
    if (meta.waterSim.trailMaxCover > 0) water.SetFloat("_TrailMaxCover", meta.waterSim.trailMaxCover);
@@ -98,7 +120,7 @@ public static class MapWaterBuilder {
    res.materials = 4;
 
    // ---- 物
-   var root = new GameObject("MapWater_" + name); if (parent != null) root.transform.SetParent(parent, false);
+   var root = new GameObject(rootName ?? "MapWater_" + name); if (parent != null) root.transform.SetParent(parent, false);
    root.transform.position = origin ?? (parent != null ? parent.position : Vector3.zero); root.transform.rotation = Quaternion.identity; root.transform.localScale = Vector3.one;
    res.gameObjects++;
    float cell = size / (TN - 1); const int margin = 2;
