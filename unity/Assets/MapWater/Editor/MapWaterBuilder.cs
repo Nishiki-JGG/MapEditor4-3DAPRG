@@ -22,7 +22,7 @@ public static class MapWaterBuilder {
  [Serializable] class FallDto { public string id; public float[] position, upstream, source; public float yawDeg, width, top, bottom; }
  [Serializable] class SeaWavesDto { public float wavelength, period, height, steepenFromDepth, runupHeight, runupReach; public float[] breakDepth; }
  [Serializable] class SeaColorsDto { public float[] shallow, deep; }
- [Serializable] class SeaDto { public int version, resolution; public string field; public float cellSize; public SeaWavesDto waves; public SeaColorsDto colors; public float[] sunDirection; }
+ [Serializable] class SeaDto { public int version, resolution; public string field, field2; public float cellSize; public SeaWavesDto waves; public SeaColorsDto colors; public float[] sunDirection; }
  [Serializable] class MetaDto { public TerrainDto terrain; public WaterDto[] water; public WaterSimDto waterSim; public FallDto[] waterfalls; public SeaDto sea; }
 
  public sealed class Result {
@@ -177,7 +177,8 @@ public static class MapWaterBuilder {
  }
 
  // ---- 海：sea_field.png（水際までの距離・岸への向き・海の重み）と heightmap から、約 0.5m 間隔の格子のメッシュを作り、MapWater/Sea を付ける。
- // 頂点に入れるもの（MapSea.shader の説明と同じ）：uv0 = (s, 海の重み)、uv1 = 岸への向き（エディター座標）、uv2.x = 静水の水深。
+ // 頂点に入れるもの（MapSea.shader の説明と同じ）：uv0 = (s, 海の重み)、uv1 = 岸への向き（エディター座標）、uv2.x = 静水の水深、
+ // uv3 = (o, j)：波の山の位置と、河口から出る川の流れ（sea_field2.png）。
  static Result BuildSea(string exportDir, MetaDto meta, Result res, Transform parent, Vector3? origin, string assetName) {
   Result Fail(string why) { res.message = "MapWater: 海は作りません — " + why; Debug.Log(res.message); return res; }
   var sea = meta.sea; int TN = meta.terrain.heightmapResolution;
@@ -191,6 +192,15 @@ public static class MapWaterBuilder {
   var fieldTex = new Texture2D(2, 2, TextureFormat.RGBA32, false, true);
   if (!fieldTex.LoadImage(File.ReadAllBytes(fieldPath)) || fieldTex.width != TN || fieldTex.height != TN) { UnityEngine.Object.DestroyImmediate(fieldTex); return Fail("sea_field.png を読めないか、大きさが違います"); }
   var px = fieldTex.GetPixels32(); UnityEngine.Object.DestroyImmediate(fieldTex);   // GetPixels32 の行0 = 画像の一番下 = Unity z 0（heightmap の行と同じ並び）
+  // 2 枚目（version 2 から）：R,G = 波の山の位置 o、B = 河口から出る川の流れ j。無い古い書き出しでは o = 0, j = 0（これまでの波）
+  Color32[] px2 = null;
+  if (!string.IsNullOrEmpty(sea.field2)) {
+   string field2Path = Path.Combine(exportDir, sea.field2);
+   if (!File.Exists(field2Path)) return Fail("ファイルがありません: " + Path.GetFileName(field2Path));
+   var tex2 = new Texture2D(2, 2, TextureFormat.RGBA32, false, true);
+   if (!tex2.LoadImage(File.ReadAllBytes(field2Path)) || tex2.width != TN || tex2.height != TN) { UnityEngine.Object.DestroyImmediate(tex2); return Fail(sea.field2 + " を読めないか、大きさが違います"); }
+   px2 = tex2.GetPixels32(); UnityEngine.Object.DestroyImmediate(tex2);
+  }
   var shader = Shader.Find("MapWater/Sea");
   if (shader == null) return Fail("shader MapWater/Sea が見つかりません（Assets/MapWater/Runtime/Shaders）");
 
@@ -200,15 +210,16 @@ public static class MapWaterBuilder {
   float W(int k) => px[k].a / 255f;
   Vector2 Dir(int k) { float a = px[k].b / 256f * Mathf.PI * 2f; return px[k].b == 0 && px[k].a == 0 ? Vector2.zero : new Vector2(Mathf.Cos(a), -Mathf.Sin(a)); }   // Unity の角度 → エディター座標の向き（z を反転）
   float Depth(int k) => level - (raw[k * 2] | (raw[k * 2 + 1] << 8)) / 65535f * rangeY;
+  Vector2 Riv(int k) => px2 == null ? Vector2.zero : new Vector2((px2[k].r * 256 + px2[k].g) / 65535f * 80f - 40f, px2[k].b / 255f);   // meta.sea.encoding.field2
 
   // 使う頂点：海の重みがある所と、その隣（打ち上がりは静水の水際から数 m）
   var vid = new int[G * G]; for (int k = 0; k < vid.Length; k++) vid[k] = -1;
-  var pos = new List<Vector3>(); var uv0 = new List<Vector2>(); var uv1 = new List<Vector2>(); var uv2 = new List<Vector2>(); var tri = new List<int>();
+  var pos = new List<Vector3>(); var uv0 = new List<Vector2>(); var uv1 = new List<Vector2>(); var uv2 = new List<Vector2>(); var uv3 = new List<Vector2>(); var tri = new List<int>();
   int Vert(int gi, int gj) {
    int g = gj * G + gi; if (vid[g] >= 0) return vid[g];
    int i = Mathf.Min(gi * stride, TN - 1), j = Mathf.Min(gj * stride, TN - 1), k = j * TN + i;
    vid[g] = pos.Count; pos.Add(new Vector3(i * cell, level, j * cell * sizeZ / size));
-   uv0.Add(new Vector2(S(k), W(k))); uv1.Add(Dir(k)); uv2.Add(new Vector2(Depth(k), 0)); return vid[g];
+   uv0.Add(new Vector2(S(k), W(k))); uv1.Add(Dir(k)); uv2.Add(new Vector2(Depth(k), 0)); uv3.Add(Riv(k)); return vid[g];
   }
   bool Used(int gi, int gj) { int i = Mathf.Min(gi * stride, TN - 1), j = Mathf.Min(gj * stride, TN - 1), k = j * TN + i; return W(k) > 0.001f && Depth(k) > -3f; }
   for (int gj = 0; gj < G - 1; gj++) for (int gi = 0; gi < G - 1; gi++) {
@@ -221,7 +232,7 @@ public static class MapWaterBuilder {
   string name = assetName ?? new DirectoryInfo(exportDir).Name; string dir = GeneratedDir + "/" + name;
   Directory.CreateDirectory(dir); AssetDatabase.Refresh();
   var mesh = new Mesh { name = "Sea", indexFormat = UnityEngine.Rendering.IndexFormat.UInt32 };
-  mesh.SetVertices(pos); mesh.SetUVs(0, uv0); mesh.SetUVs(1, uv1); mesh.SetUVs(2, uv2); mesh.SetTriangles(tri, 0);
+  mesh.SetVertices(pos); mesh.SetUVs(0, uv0); mesh.SetUVs(1, uv1); mesh.SetUVs(2, uv2); mesh.SetUVs(3, uv3); mesh.SetTriangles(tri, 0);
   mesh.RecalculateNormals(); mesh.RecalculateBounds(); var bb = mesh.bounds; bb.Expand(new Vector3(0, 4f, 0)); mesh.bounds = bb;   // 波の上下の分
   string meshPath = dir + "/Sea.mesh.asset"; AssetDatabase.DeleteAsset(meshPath); AssetDatabase.CreateAsset(mesh, meshPath); mesh = AssetDatabase.LoadAssetAtPath<Mesh>(meshPath);
   string matPath = dir + "/Sea.mat"; AssetDatabase.DeleteAsset(matPath); var mat = new Material(shader) { name = "Sea" }; AssetDatabase.CreateAsset(mat, matPath); mat = AssetDatabase.LoadAssetAtPath<Material>(matPath);

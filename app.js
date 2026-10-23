@@ -631,12 +631,16 @@ wGeo.setAttribute('depth', new THREE.BufferAttribute(new Float32Array(N * N), 1)
 // the shore (unit, xz) and how much of the sea this is (water joined to the map edge, and the beach next to it: 1;
 // inland lakes and their banks: 0, so they stay calm)
 wGeo.setAttribute('shore', new THREE.BufferAttribute(new Float32Array(N * N * 4), 4));
+// and two more: o = where the crests run (m, from the coast smoothed over about a wavelength with river mouths closed,
+// minus s: waves refract on the large-scale bed, not on every inlet) and j = the river's outflow jet in front of a mouth (0..1)
+wGeo.setAttribute('shore2', new THREE.BufferAttribute(new Float32Array(N * N * 2), 2));
 wGeo.setIndex(gridIndex());
 let shoreFieldOn = false;
-const SEA_OPEN = 4, SEA_MOUTH = 6;   // m: open sea is at least this far from land (narrower water joined to it is a river); a river's mouth blends over this
+const SEA_OPEN = 4, SEA_MOUTH = 6, SEA_JET = 8, SEA_LAG = 3;   // m: open sea is at least this far from land (narrower water joined to it is a river); a river's mouth blends over this; its jet is half as strong this far out; crests lag this much against it
 function computeShoreField() {
   const sh = wGeo.attributes.shore.array, NN = N * N;
-  if (!BU.uSea.value) { if (shoreFieldOn) { sh.fill(0); wGeo.attributes.shore.needsUpdate = true; shoreFieldOn = false; } return; }
+  const sh2 = wGeo.attributes.shore2.array;
+  if (!BU.uSea.value) { if (shoreFieldOn) { sh.fill(0); sh2.fill(0); wGeo.attributes.shore.needsUpdate = wGeo.attributes.shore2.needsUpdate = true; shoreFieldOn = false; } return; }
   shoreFieldOn = true;
   const W = state.water, wet = new Uint8Array(NN), INF = 1e9, R2 = Math.SQRT2;
   for (let k = 0; k < NN; k++) wet[k] = H[k] < W ? 1 : 0;
@@ -702,35 +706,64 @@ function computeShoreField() {
     return o;
   };
   const sd = blur(sd0, 1);   // soften the grid's stair steps right at the waterline
-  const sb = blur(blur(sd, 3), 3), sw = new Float32Array(NN);
+  const sw = new Float32Array(NN);
+  // where the crests run: the distance to the coast as the waves see it (rivers, lakes and land all count as coast, so a
+  // river's mouth is closed), smoothed over about a wavelength (refraction follows the bed's large shapes, not every inlet)
+  const coast = k => !(wet[k] && seaW0[k] > .5), toCoast = edt(coast), fromCoast = edt(k => !coast(k)), q0 = new Float32Array(NN);
+  for (let k = 0; k < NN; k++) q0[k] = clamp(coast(k) ? -(fromCoast[k] - .5) * CELL : (toCoast[k] - .5) * CELL, -60, 60);
+  const sb = blur(blur(blur(q0, 8), 8), 8);
+  // across the crests (toward the shore), from the smoothed coast
+  const dX = new Float32Array(NN), dZ = new Float32Array(NN);
+  for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
+    const k = j * N + i, gx = sb[j * N + Math.min(N - 1, i + 1)] - sb[j * N + Math.max(0, i - 1)], gz = sb[Math.min(N - 1, j + 1) * N + i] - sb[Math.max(0, j - 1) * N + i], gl = Math.hypot(gx, gz);
+    if (gl > 1e-5) { dX[k] = -gx / gl; dZ[k] = -gz / gl; }
+  }
+  // the river's jet: a river joined to the sea pushes its water out through the mouth, straight out to sea and spreading a
+  // little, at half strength SEA_JET metres out. Each step carries it one cell seaward (it takes the value from one cell shoreward)
+  const river = k => wet[k] && joined[k] && seaW0[k] < .5, at = (a, x, z) => {
+    x = clamp(x, 0, N - 1.001); z = clamp(z, 0, N - 1.001); const i = Math.floor(x), j = Math.floor(z), u = x - i, v = z - j, k = j * N + i;
+    return (a[k] * (1 - u) + a[k + 1] * u) * (1 - v) + (a[k + N] * (1 - u) + a[k + N + 1] * u) * v;
+  };
+  let jet = new Float32Array(NN); for (let k = 0; k < NN; k++) jet[k] = river(k) ? 1 : 0;
+  const fade = Math.pow(.5, CELL / SEA_JET), steps = Math.ceil(SEA_JET / CELL * 3);
+  for (let it = 0; it < steps; it++) {
+    const nj = jet.slice();
+    for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) { const k = j * N + i; if (!wet[k] || !joined[k] || river(k)) continue; nj[k] = Math.max(nj[k], at(jet, i + dX[k], j + dZ[k]) * fade); }
+    jet = it % 4 === 3 ? blur(nj, 1).map((v, k) => Math.max(v, nj[k] * .96)) : nj;   // the jet spreads as it goes
+  }
+  const jb = blur(jet, 2).map((v, k) => wet[k] && joined[k] ? v : 0);
   for (let k = 0; k < NN; k++) sw[k] = wet[k] ? seaW0[k] : clamp(1 - (toSea[k] * CELL - 4) / 3, 0, 1);   // banks of the sea, up to ~4 m inland
   const swb = blur(sw, 2);
   for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
-    const k = j * N + i, gx = (sb[j * N + Math.min(N - 1, i + 1)] - sb[j * N + Math.max(0, i - 1)]), gz = (sb[Math.min(N - 1, j + 1) * N + i] - sb[Math.max(0, j - 1) * N + i]), gl = Math.hypot(gx, gz);
-    sh[k * 4] = sd[k]; sh[k * 4 + 1] = gl > 1e-5 ? -gx / gl : 0; sh[k * 4 + 2] = gl > 1e-5 ? -gz / gl : 0; sh[k * 4 + 3] = wet[k] && !joined[k] ? 0 : wet[k] ? Math.min(swb[k], seaW0[k] * 1.5) : swb[k];
+    const k = j * N + i;
+    sh[k * 4] = sd[k]; sh[k * 4 + 1] = dX[k]; sh[k * 4 + 2] = dZ[k];
+    // crests at sb in the water, held back by up to SEA_LAG m where the river's jet opposes them (waves slow down against a
+    // current), so the crest line bows out to sea in front of a mouth; on the sand the run-up keeps the phase it had at the waterline
+    sh2[k * 2] = clamp(sb[k] - sd[k] - SEA_LAG * jb[k], -40, 40); sh2[k * 2 + 1] = jb[k];
+    sh[k * 4 + 3] = wet[k] && !joined[k] ? 0 : wet[k] ? Math.min(swb[k], seaW0[k] * 1.5) : swb[k];
   }
-  wGeo.attributes.shore.needsUpdate = true;
+  wGeo.attributes.shore.needsUpdate = wGeo.attributes.shore2.needsUpdate = true;
 }
 const waterMat = new THREE.ShaderMaterial({
   // pulled a few depth steps toward the camera: where the sheet lies on the sand (the run-up's edge) it must stay in front of
   // it even with a phone's coarse depth buffer, or the two flicker in a pattern of the 0.5 m grid
   transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: 0, polygonOffsetUnits: -2,
   uniforms: { uTime: timeU, uDim: dimU, uSun: { value: sun.position.clone().normalize() }, uShallow: BU.uShallow, uDeep: BU.uDeep, uLava: BU.uLava, uSea: BU.uSea, uWaveH: { value: .38 }, ...WATERU },
-  vertexShader: `attribute float depth; attribute vec4 shore; uniform float uTime; uniform float uSea; uniform float uWaveH;
-    varying float vD; varying float vD0; varying vec3 vWPos; varying vec4 vSea; varying vec2 vPh; varying vec2 vGrad; varying vec2 vDir;
+  vertexShader: `attribute float depth; attribute vec4 shore; attribute vec2 shore2; uniform float uTime; uniform float uSea; uniform float uWaveH;
+    varying float vD; varying float vD0; varying vec3 vWPos; varying vec4 vSea; varying vec2 vPh; varying vec2 vGrad; varying vec2 vDir; varying vec2 vRiv;
     ${GLSL_NOISE}
     ${TDSea.GLSL_PRELUDE}${TDSea.COMMON}
     void main(){
       vec4 w0=modelMatrix*vec4(position,1.); float seaW=shore.w*uSea, h=0., ph=0., brk=0.; vec2 grad=vec2(0.);
       if(seaW>.001){
-        grad=seaWave(w0.xz,shore.x,depth,shore.yz,h,ph,brk)*seaW; h*=seaW;
+        grad=seaWave(w0.xz,shore.x,depth,shore.yz,shore2,h,ph,brk)*seaW; h*=seaW;
         if(depth<0.) h=max(h,-depth+.02);   // on the beach the sheet lies just on the sand, so the wet sand it draws is never hidden under it
       }
       vec4 w=modelMatrix*vec4(position+vec3(0.,h,0.),1.);
-      vD=depth+h; vD0=depth; vWPos=w.xyz; vSea=vec4(seaW,brk*seaW,shore.x,uWaveH); vPh=vec2(cos(ph),sin(ph)); vGrad=grad; vDir=shore.yz;
+      vD=depth+h; vD0=depth; vWPos=w.xyz; vSea=vec4(seaW,brk*seaW,shore.x,uWaveH); vPh=vec2(cos(ph),sin(ph)); vGrad=grad; vDir=shore.yz; vRiv=shore2;
       gl_Position=projectionMatrix*viewMatrix*w;
     }`,
-  fragmentShader: `uniform float uTime; uniform float uDim; uniform vec3 uSun; uniform vec3 uShallow; uniform vec3 uDeep; uniform float uLava; uniform float uSea; uniform sampler2D uFlow; uniform sampler2D uMask; uniform float uFlowMax; uniform float uBankRange; uniform float uTrailMax; uniform float uShow; uniform float uMapSize; uniform vec4 uFalls[8]; uniform float uFallCount; uniform float uWaveH; varying float vD; varying float vD0; varying vec3 vWPos; varying vec4 vSea; varying vec2 vPh; varying vec2 vGrad; varying vec2 vDir;
+  fragmentShader: `uniform float uTime; uniform float uDim; uniform vec3 uSun; uniform vec3 uShallow; uniform vec3 uDeep; uniform float uLava; uniform float uSea; uniform sampler2D uFlow; uniform sampler2D uMask; uniform float uFlowMax; uniform float uBankRange; uniform float uTrailMax; uniform float uShow; uniform float uMapSize; uniform vec4 uFalls[8]; uniform float uFallCount; uniform float uWaveH; varying float vD; varying float vD0; varying vec3 vWPos; varying vec4 vSea; varying vec2 vPh; varying vec2 vGrad; varying vec2 vDir; varying vec2 vRiv;
     ${DIM_GLSL}
     ${GLSL_NOISE}
     ${LAVA_SURFACE_GLSL}
@@ -745,7 +778,7 @@ const waterMat = new THREE.ShaderMaterial({
       // the sea is worked out again per pixel (sea.js seaWave): its depth here decides the water's edge, so the edge,
       // the crests and their foam follow smooth curves instead of the 0.5 m triangles
       float hP=0., phP=0., brkP=0.; vec2 gP=vec2(0.);
-      if(seaW>.001){ gP=seaWave(p,vSea.z,vD0,vDir,hP,phP,brkP)*seaW; hP*=seaW; brkP*=seaW; }
+      if(seaW>.001){ gP=seaWave(p,vSea.z,vD0,vDir,vRiv,hP,phP,brkP)*seaW; hP*=seaW; brkP*=seaW; }
       float dP=seaW>.001?vD0+hP:vD;
       bool dry=dP<=0.;
       if(dry&&seaW<.01) discard;
@@ -796,7 +829,7 @@ const waterMat = new THREE.ShaderMaterial({
       float alpha=max(mix(.42,.93,t),fz*.95);
       if(dry){ col=vec3(0.); alpha=0.; }
       // the sea: waves, surf, run-up, wet sand, clear water and the light network on the floor (sea.js)
-      if(seaW>.001){ vec4 sv=vec4(seaW,brkP,vSea.z,vSea.w); vec4 sc=dry?wetSand(p,dP,vD0,sv):seaColor(p,max(dP,0.),vD0,sv,vec2(cos(phP),sin(phP)),gP,vDir); col=mix(col,sc.rgb,seaW); alpha=mix(alpha,sc.a,seaW); }
+      if(seaW>.001){ vec4 sv=vec4(seaW,brkP,vSea.z,vSea.w); vec4 sc=dry?wetSand(p,dP,vD0,sv):seaColor(p,max(dP,0.),vD0,sv,vec2(cos(phP),sin(phP)),gP,vDir,vRiv); col=mix(col,sc.rgb,seaW); alpha=mix(alpha,sc.a,seaW); }
       if(dry&&alpha<.004) discard;   // the bare beach: the terrain draws its wet sand itself
       if(uShow>.5){   // 水の表示：1 = 流れの矢印と速さの色、2 = 水際の帯（緑）と泡の帯（赤紫）
         vec3 ov=col;
@@ -3597,7 +3630,7 @@ async function buildExport() {
   const waterPack = !waterWhy ? TDWater.pack(waterRes) : null;
   const waterPngs = waterPack ? [{ name: 'water_flow.png', data: TDWater.encodePngRGBA(TN, TN, waterPack.flow) }, { name: 'water_mask.png', data: TDWater.encodePngRGBA(TN, TN, waterPack.mask) }] : [];
   // ---- the sea (sea.js): the field its waves follow, and their settings, so that Unity builds the same surf
-  let seaPng = null, sea = null;
+  let seaPng = null, sea2Png = null, sea = null;
   if (BU.uSea.value && !BIOME().lava) {
     computeShoreField();
     const sh = wGeo.attributes.shore.array, rgba = new Uint8Array(TN * TN * 4), S0 = -20, S1 = 60;
@@ -3611,17 +3644,30 @@ async function buildExport() {
       rgba[o] = q >> 8; rgba[o + 1] = q & 255; rgba[o + 2] = Math.hypot(dx, dz) > .01 ? Math.round((ang + 1) % 1 * 256) % 256 : 0; rgba[o + 3] = Math.round(clamp(w, 0, 1) * 255);
     }
     seaPng = TDWater.encodePngRGBA(TN, TN, rgba);
+    // the second field: o = where the crests run relative to s (m) and j = the river's outflow jet (sea.js seaH)
+    const sh2 = wGeo.attributes.shore2.array, rgba2 = new Uint8Array(TN * TN * 4), O0 = -40, O1 = 40;
+    const field2 = (x, z) => {
+      const fx = clamp((x + HALF) * RES, 0, N - 1.0001), fz = clamp((z + HALF) * RES, 0, N - 1.0001), i = Math.floor(fx), j = Math.floor(fz), u = fx - i, v = fz - j, o = [0, 0];
+      for (const [di, dj, w] of [[0, 0, (1 - u) * (1 - v)], [1, 0, u * (1 - v)], [0, 1, (1 - u) * v], [1, 1, u * v]]) { const k = ((j + dj) * N + i + di) * 2; o[0] += sh2[k] * w; o[1] += sh2[k + 1] * w; }
+      return o;
+    };
+    for (let j = 0; j < TN; j++) for (let i = 0; i < TN; i++) {
+      const [ov, jv] = field2(tx(i), tx(j)), q = Math.round(clamp((ov - O0) / (O1 - O0), 0, 1) * 65535), o = (j * TN + i) * 4;
+      rgba2[o] = q >> 8; rgba2[o + 1] = q & 255; rgba2[o + 2] = Math.round(clamp(jv, 0, 1) * 255); rgba2[o + 3] = 255;
+    }
+    sea2Png = TDWater.encodePngRGBA(TN, TN, rgba2);
     const H0 = waterMat.uniforms.uWaveH.value, sunE = waterMat.uniforms.uSun.value, c3 = c => [+c.r.toFixed(4), +c.g.toFixed(4), +c.b.toFixed(4)];
     sea = {
-      version: 1, field: 'sea_field.png', resolution: TN, cellSize: +TS.toFixed(6),
+      version: 2, field: 'sea_field.png', field2: 'sea_field2.png', resolution: TN, cellSize: +TS.toFixed(6),
       encoding: {
         field: `RGBA8, linear, point or bilinear, no mips, clamp; PNG row 0 (top) = Unity z max like every image here. R,G = distance to the still waterline s (m, + at sea, - on land) = (R*256+G)/65535*${S1 - S0}+(${S0}). B = direction to the shore, angle in Unity xz = B/256*360 deg from +x toward +z (0 where there is none). A = sea weight 0..1 (water joined to the map edge = 1, its beach fading out ~4 m inland, enclosed lakes 0).`,
+        field2: `RGBA8, linear, as field. R,G = o, where the crests run relative to s (m: the crests follow the coast smoothed over about a wavelength with river mouths closed, held back in front of a river's mouth) = (R*256+G)/65535*${O1 - O0}+(${O0}). B = the river's outflow jet in front of a mouth, B/255 (waves steepen and break against it, and stop inside it). A = 255.`,
         shader: 'MapWater/Sea and the editor run the same code: sea.js (editor) = Assets/MapWater/Runtime/Shaders/MapSeaShared.hlsl (generated). It works in the editor frame: x = Unity x - size/2, z = size/2 - Unity z.',
       },
       waves: { wavelength: TDSea.WAVELENGTH, period: TDSea.PERIOD, height: +H0.toFixed(3), steepenFromDepth: TDSea.STEEPEN_DEPTH, breakDepth: TDSea.BREAK_DEPTH, runupHeight: +(H0 * TDSea.RUNUP_GAIN).toFixed(3), runupReach: TDSea.RUNUP_REACH },
       colors: { shallow: c3(BU.uShallow.value), deep: c3(BU.uDeep.value), space: 'the shader mixes these as given and raises the result to 2.2 (gamma 2.2 to linear), like the editor' },
       sunDirection: [+sunE.x.toFixed(4), +sunE.y.toFixed(4), +(-sunE.z).toFixed(4)],
-      note: 'Visual only: walkability, walkable.png and the flow images do not change. Lakes and rivers of a map with sea are not built in Unity (waterSim is off for such maps).',
+      note: 'Visual only: walkability, walkable.png and the flow images do not change. Rivers and lakes besides the sea come with the flow images (waterSim); MapWaterBuilder builds them too, faded out where sea_field.png gives the sea.',
     };
   }
   const wo = waterRes.options;
@@ -3731,7 +3777,7 @@ revision・書き出し日時・ファイルごとの SHA-256・contentHash は 
 - mask_0〜3.png    : 塗りの元データ（毒沼・溶岩などのゲーム判定用）。効果は groundTypes の effectId。
 - holes.png        : 隠し通路がある場合だけ。地形の穴（0 = 穴、(解像度-1)² セル）。
 - secret_passages_mesh.json : 隠し通路の床・壁・天井・ふた（穴と同じ形から作成。Unity 座標）。meta.secretPassages に輪郭・出入口・検査結果。route と width は目安。
-- sea_field.png    : 海がある場合だけ。波が進む向きの元（R,G = 水際までの距離、B = 岸への向き、A = 海の重み。海と、それにつながる川の境目は、この重みで混ぜます）。Unity の MapWater/Sea がエディターと同じ波・泡・光の網目を作ります（meta.sea）。
+- sea_field.png / sea_field2.png : 海がある場合だけ。sea_field.png は波が進む向きの元（R,G = 水際までの距離、B = 岸への向き、A = 海の重み。海と、それにつながる川の境目は、この重みで混ぜます）。sea_field2.png は波の山の位置（R,G）と、河口から出る川の流れの強さ（B）。Unity の MapWater/Sea がエディターと同じ波・泡・光の網目を作ります（meta.sea）。
 - water_flow.png / water_mask.png : 水の流れ（RG=流れ、B=流れ関数、A=岸からの距離）と、滝から流れの筋にそった泡の帯（R）。水の無い部屋・溶岩、海だけの部屋では出ません（海につながる川・池があれば出ます。海の所は sea_field.png の A で見分けます）。読み方は meta.waterSim.encoding。水深は heightmap_r16.raw と水位から Unity 側で作ります。
 - cliff_relief_mesh.json : 急斜面がある場合だけ。岩面の実形状（Unity座標・頂点法線・三角形・岩色/苔/濡れ/雪の属性）。meta.terrain.cliffRelief が参照します。表示用の追加メッシュで、歩行用高さ/通行判定は変更しません。Unity側では別途読み込みと材質の割当が必要です。
 - cliff_style.png  : 岩壁の種類（場所ごと。R = meta.cliffStyles の番号）。岩・崖石・小石は props.csv の cliffStyle 列。
@@ -3772,7 +3818,7 @@ revision・書き出し日時・ファイルごとの SHA-256・contentHash は 
       passages: geo.passages.map(g => ({ id: g.id, vertices: g.verts.flatMap(([x, y, z]) => P3(x, y, z)), triangles: g.sub })),
     }) }] : []),
     ...waterPngs,
-    ...(seaPng ? [{ name: 'sea_field.png', data: seaPng }] : []),
+    ...(seaPng ? [{ name: 'sea_field.png', data: seaPng }, { name: 'sea_field2.png', data: sea2Png }] : []),
     { name: 'walkable.png', data: walkPng }, { name: 'cliff_style.png', data: cliffPng }, { name: 'props.csv', data: csv },
     { name: 'asset_catalog.json', data: JSON.stringify(catalogExport(), null, 2) },
     { name: 'shared_props.json', data: TDSharedProps.exportJson() },
