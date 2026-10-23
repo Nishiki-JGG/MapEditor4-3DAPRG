@@ -21,6 +21,7 @@ Shader "MapWater/Sea"
    Blend SrcAlpha OneMinusSrcAlpha
    ZWrite Off
    Cull Off
+   Offset 0, -2   // a few depth steps toward the camera, as the editor: on the beach the sheet lies on the sand and must not flicker against it
    HLSLPROGRAM
    #pragma vertex vert
    #pragma fragment frag

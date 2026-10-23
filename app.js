@@ -694,7 +694,9 @@ function computeShoreField() {
   wGeo.attributes.shore.needsUpdate = true;
 }
 const waterMat = new THREE.ShaderMaterial({
-  transparent: true, depthWrite: false,
+  // pulled a few depth steps toward the camera: where the sheet lies on the sand (the run-up's edge) it must stay in front of
+  // it even with a phone's coarse depth buffer, or the two flicker in a pattern of the 0.5 m grid
+  transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: 0, polygonOffsetUnits: -2,
   uniforms: { uTime: timeU, uDim: dimU, uSun: { value: sun.position.clone().normalize() }, uShallow: BU.uShallow, uDeep: BU.uDeep, uLava: BU.uLava, uSea: BU.uSea, uWaveH: { value: .38 }, ...WATERU },
   vertexShader: `attribute float depth; attribute vec4 shore; uniform float uTime; uniform float uSea; uniform float uWaveH;
     varying float vD; varying float vD0; varying vec3 vWPos; varying vec4 vSea; varying vec2 vPh; varying vec2 vGrad; varying vec2 vDir;
