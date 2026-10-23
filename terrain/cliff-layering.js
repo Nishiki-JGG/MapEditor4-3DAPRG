@@ -16,7 +16,7 @@ function row(ctx,surface,original,type,height,width,foot,x,z,yaw,u){
  const p=original.slice();p[0]=type;const local=pose(p).invert();g.applyMatrix4(local);matrix.premultiply(local);g.computeBoundingBox();g.computeBoundingSphere();return{p,geometry:g,affine:Array.from(matrix.elements),original,layering:1,shift};
 }
 function* build(ctx,props){
- const T=TDCliffContact,started=performance.now(),surface=new T.Surface(ctx.geometries),types=family.map(id=>ctx.types.findIndex(t=>t.id===id)),candidates=props.filter(p=>p[5]===1&&family.includes(ctx.types[p[0]].id)&&!ctx.layered?.(p)),data=new Map();
+ const T=TDCliffContact,started=performance.now(),surface=ctx.surface||new T.Surface(ctx.geometries),types=family.map(id=>ctx.types.findIndex(t=>t.id===id)),candidates=props.filter(p=>p[5]===1&&family.includes(ctx.types[p[0]].id)&&!ctx.layered?.(p)),data=new Map();
  for(const p of candidates){const g=ctx.types[p[0]].geo;g.computeBoundingBox();const b=g.boundingBox;data.set(p,{u:T.direction(ctx,p),height:(b.max.y-b.min.y)*p[4]*(p[6]??1),foot:p[7]+b.min.y*p[4]*(p[6]??1),width:T.samples(g).width*p[4]});}
  const ordered=[...candidates].sort((a,b)=>Math.sign(data.get(a).u[0])-Math.sign(data.get(b).u[0])||a[2]-b[2]),updates=new Map(),fits=[],records=[];let delivered=false;
  try{for(let i=0;i<ordered.length;i++){
@@ -32,5 +32,5 @@ function* build(ctx,props){
  }delivered=true;return{props:props.flatMap(p=>updates.get(p)||[p]),fits,stats:{total:records.length,changed:records.filter(r=>r.ok).length,keptOriginal:records.filter(r=>!r.ok).length,unresolved:records.filter(r=>!r.ok).length,records,totalMs:performance.now()-started,mode:'layered-12deg-height105'}};
  }finally{if(!delivered)for(const f of fits)f.geometry.dispose();}
 }
-async function fitAsync(ctx,props){const it=build(ctx,props);let r,chunk=performance.now(),checked=0;do{if(ctx.valid&&performance.now()-checked>50){checked=performance.now();if(!ctx.valid()){it.return();throw Error('cliff-contact-cancelled');}}r=it.next();if(!r.done&&performance.now()-chunk>12){ctx.progress?.(r.value);await new Promise(resolve=>setTimeout(resolve,0));chunk=performance.now();}}while(!r.done);return r.value;}
+async function fitAsync(ctx,props){const started=performance.now();if(ctx.preparationJob){ctx.preparationJob.progress('崖の接地面を準備',0,0);ctx={...ctx,surface:await TDCliffContact.Surface.prepare(ctx.geometries,ctx.preparationJob)};}const it=build(ctx,props);let r,chunk=performance.now(),checked=0;do{if(ctx.valid&&performance.now()-checked>50){checked=performance.now();if(!ctx.valid()){it.return();throw Error('cliff-contact-cancelled');}}r=it.next();if(!r.done&&performance.now()-chunk>12){ctx.progress?.(r.value);await new Promise(resolve=>setTimeout(resolve,0));chunk=performance.now();}}while(!r.done);r.value.stats.totalMs=performance.now()-started;return r.value;}
 window.TDCliffLayering={fitAsync};})();

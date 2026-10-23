@@ -27,6 +27,8 @@ async function withPage(url, fn, opts = {}) {
     };
     const send = (method, params = {}) => new Promise((res, rej) => { if(navigationError)return rej(navigationError);const i = ++id,timer=setTimeout(()=>{pending.delete(i);rej(new Error('CDP command timed out: '+method));},120000);pending.set(i, {res:v=>{clearTimeout(timer);res(v);},rej:e=>{clearTimeout(timer);rej(e);}}); ws.send(JSON.stringify({ id: i, method, params })); });
     await send('Runtime.enable'); await send('Page.enable');
+    if(opts.exactViewport)await send('Emulation.setDeviceMetricsOverride',{width:opts.w,height:opts.h,deviceScaleFactor:1,mobile:false});
+    if(opts.initScript)await send('Page.addScriptToEvaluateOnNewDocument',{source:opts.initScript});
     await send('Page.navigate', { url }); await new Promise(r => setTimeout(r, opts.wait || 4000));
     const page = {
       errors,

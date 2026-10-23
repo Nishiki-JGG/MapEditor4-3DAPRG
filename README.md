@@ -1,5 +1,7 @@
 # MapEditor4-3DAPRG
 
+サンプルの崖岩・通路・衝突準備を操作開始前に完了し、完成状態を再利用するようにしました。[読込の改善・検証・残る待ち時間](docs/SAMPLE_PREPARATION.md)。
+
 樹木・木質低木24モデルの根元と幹を改善しました。細い棘状の根を根張り・厚い主根へ変え、9系統の樹皮と緩斜面の根元補正を共用しています。[根と幹の確認](tests/tree_roots_view.html) / [比較・負荷・検証](docs/ROOT_BARK_POLISH.md)。
 
 龍血樹を実物の参照写真と照合し、反復分岐と浅い連続天蓋へ修正しました。[真上](tests/tree_view.html?id=dragontree) / [低い視点](tests/tree_view.html?id=dragontree&view=low) / [変更と検証](docs/DRAGON_REFERENCE.md)。

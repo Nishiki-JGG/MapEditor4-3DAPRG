@@ -16,8 +16,8 @@ for(const [i,t]of one.entries()){
 }
 // 橋が輪郭の内側を横切る場合と、中心は離れていても回転した端が入る場合。
 const app=fs.readFileSync(path.join(root,'app.js'),'utf8');
-const prelude=app.slice(app.indexOf('const cliffHulls'),app.indexOf('function autoRocks('));assert(prelude.length>100);
-Object.assign(c,{PROP:one,state:{agent:{radius:.3},spawn:{x:100,z:100}},bridges:[],stairs:[],markers:[],nearFeature:()=>false,clamp:(x,a,b)=>Math.max(a,Math.min(b,x)),lerp:(a,b,t)=>a+(b-a)*t});vm.runInContext(prelude,c);
+const prelude=app.slice(app.indexOf('const cliffHulls'),app.indexOf('let mapPreparation',app.indexOf('const cliffHulls')));assert(prelude.length>100);
+Object.assign(c,{PROP:one,effectiveGeometry:p=>one[p[0]].geo,nearFeatureReason:()=>null,portLanding:m=>({x:m.x,z:m.z+3}),isLink:()=>false,state:{agent:{radius:.3},spawn:{x:100,z:100}},bridges:[],stairs:[],markers:[],nearFeature:()=>false,clamp:(x,a,b)=>Math.max(a,Math.min(b,x)),lerp:(a,b,t)=>a+(b-a)*t});vm.runInContext(prelude,c);
 assert.equal(c.cliffOverlapsLink([[-2,-2],[2,-2],[2,2],[-2,2]],[-4,0],[4,0],.1),true);
 c.bridges.push({x1:-5,z1:0,x2:5,z2:0,w:2});
 assert.equal(c.cliffProtected([0,0,2,Math.PI/2,1]),true,'中心だけで橋際を通してしまう');

@@ -1051,13 +1051,13 @@ function updateTouch(dt) {
   touchStats.active=touchState.size;touchStats.lastMs=performance.now()-started;
 }
 const cliffFits=new TDCliffFits.Store(PROP,sha256);
-function cliffInputSignature(heights=H,waterfalls=falls,water=state.water){return sha256(new Uint8Array(heights.buffer))+'/'+sha256(new TextEncoder().encode(JSON.stringify([waterfalls,water,SIZE])));}
+function cliffInputSignature(heights=H,waterfalls=falls,water=state.water,size=SIZE){return sha256(new Uint8Array(heights.buffer))+'/'+sha256(new TextEncoder().encode(JSON.stringify([waterfalls,water,size])));}
 function effectiveGeometry(p){return cliffFits.effectiveGeometry(p);}
 function refreshCliffFits(visualOnly=false){if(!visualOnly){const stale=cliffFits.synchronize(cliffInputSignature(),props);if(stale)toast('地形または岩を変更したため、密着加工を解除しました。岩を自動配置で更新できます。');}for(const c of cliffFits.cache.values())if(c.mesh)c.mesh.visible=false;}
 function cliffTintAt(x,z){const v=.86+.28*hash2(x*97|0,z*89|0);return[v*(.95+.1*hash2(x*13|0,7)),v,v*(.95+.1*hash2(3,z*17|0))];}
 function savedCliffTint(p){return cliffFits.valid(p)?cliffFits.records.get(p[8]).instanceTint:null;}
 function drawCliffFit(p,matrix,color,ghost){const c=cliffFits.get(p);if(!c)return false;const record=cliffFits.records.get(p[8]);if(record.affine){if(!c.affine)c.affine=new THREE.Matrix4().fromArray(record.affine);matrix.multiply(c.affine);return false;}if(!c.mesh){const g=c.geometry;g.setAttribute('cliffI',new THREE.InstancedBufferAttribute(new Float32Array([cliffIndexNear(p[1],p[2])]),1));const m=new THREE.InstancedMesh(g,propMeshes[p[0]].material,1);m.instanceColor=new THREE.InstancedBufferAttribute(new Float32Array(3),3);m.castShadow=m.receiveShadow=true;m.frustumCulled=false;c.mesh=m;scene.add(m);}const m=c.mesh;m.material=ghost?ghostMat:propMeshes[p[0]].material;m.renderOrder=ghost?8:0;m.visible=true;m.setMatrixAt(0,matrix);m.setColorAt(0,color);m.instanceMatrix.needsUpdate=m.instanceColor.needsUpdate=true;c.geometry.attributes.cliffI.array[0]=cliffIndexNear(p[1],p[2]);c.geometry.attributes.cliffI.needsUpdate=true;return true;}
-function fittedFootprint(p){const c=cliffFits.get(p);if(!c)return null;if(c.footprint)return c.footprint;const g=c.geometry.clone(),P=g.attributes.position;for(let i=0;i<P.count;i++){const w=TDCliffContact.world(p,[P.getX(i),P.getY(i),P.getZ(i)]);P.setXYZ(i,w[0]-p[1],w[1],w[2]-p[2]);}g.computeBoundingBox();const f=shapeFootprint({geo:g,sharedAsset:true});for(let j=0;j<f.nz;j++)for(let i=0;i<f.nx;i++){const k=j*f.nx+i;if(f.top[k]>-1e8)f.top[k]-=heightAt(p[1]+f.x0+i*SHAPE_CELL,p[2]+f.z0+j*SHAPE_CELL);}const box=g.boundingBox;f.R=Math.hypot(Math.max(Math.abs(box.min.x),Math.abs(box.max.x)),Math.max(Math.abs(box.min.z),Math.abs(box.max.z)));c.y0=box.min.y;c.y1=box.max.y;g.dispose();return c.footprint=f;}
+function makeFittedFootprint(p,c){if(c.footprint)return c.footprint;const g=c.geometry.clone(),P=g.attributes.position;for(let i=0;i<P.count;i++){const w=TDCliffContact.world(p,[P.getX(i),P.getY(i),P.getZ(i)]);P.setXYZ(i,w[0]-p[1],w[1],w[2]-p[2]);}g.computeBoundingBox();const f=shapeFootprint({geo:g,sharedAsset:true});for(let j=0;j<f.nz;j++)for(let i=0;i<f.nx;i++){const k=j*f.nx+i;if(f.top[k]>-1e8)f.top[k]-=heightAt(p[1]+f.x0+i*SHAPE_CELL,p[2]+f.z0+j*SHAPE_CELL);}const box=g.boundingBox;f.R=Math.hypot(Math.max(Math.abs(box.min.x),Math.abs(box.max.x)),Math.max(Math.abs(box.min.z),Math.abs(box.max.z)));c.y0=box.min.y;c.y1=box.max.y;g.dispose();return c.footprint=f;}
 
 // A bounded local plane moves only the root collar. Recomputed on placement/terrain rebuild, never per vertex/frame.
 function rootSlopeAt(p){const t=PROP[p[0]],a=t.sharedAsset&&TDSharedProps.asset(t.sharedAsset);if(!a?.rootGrounding||p[7]!=null)return[0,0];const d=.5,x=p[1],z=p[2],gx=(heightAt(x+d,z)-heightAt(x-d,z))/(2*d),gz=(heightAt(x,z+d)-heightAt(x,z-d))/(2*d),n=Math.hypot(gx,gz),k=n>a.rootGrounding.maxSlope?a.rootGrounding.maxSlope/n:1;return[gx*k,gz*k];}
@@ -1095,6 +1095,7 @@ function rebuildProps(visualOnly = false) {
   if(state.tool==='detail')syncGroundDetailUI();
   if (!visualOnly) { colliders = null; walkDirty = true; }
 }
+function fittedFootprint(p){const c=cliffFits.get(p);return c?makeFittedFootprint(p,c):null;}
 
 // ============================================================
 // Atmosphere (fog / miasma)
@@ -1940,9 +1941,9 @@ function shapeField(f, s) {
   const dist = new Float32Array(nx * nz);
   for (let j = 0; j < nz; j++) for (let i = 0; i < nx; i++) {
     const k = j * nx + i; if (solid(k)) continue;
-    const x = x0 + i * SHAPE_CELL, z = z0 + j * SHAPE_CELL; let m = 1e9;
-    for (let e = 0; e < edge.length; e += 2) m = Math.min(m, Math.hypot(edge[e] - x, edge[e + 1] - z));
-    dist[k] = m;
+    const x = x0 + i * SHAPE_CELL, z = z0 + j * SHAPE_CELL; let m = 1e18;
+    for (let e = 0; e < edge.length; e += 2) { const dx = edge[e] - x, dz = edge[e + 1] - z; m = Math.min(m, dx * dx + dz * dz); }
+    dist[k] = Math.sqrt(m);
   }
   f.fields.set(key, d = { dist, edge }); return d;
 }
@@ -2198,7 +2199,7 @@ const TOOLS = [
 ];
 const undoStack = [], redoStack = [];
 const snapshot = () => ({ H: H.slice(), S: S.slice(), O: O.slice(), C: C.slice(), CF: cliffFits.save(), P: props.map(p => p.slice()), F: falls.map(f => ({ ...f })), B: bridges.map(b => ({ ...b })), T: stairs.map(st => ({ ...st })), W: state.water, sp: { ...state.spawn }, bi: state.biome, at: { ...state.atmo }, sea: state.sea, we: { ...state.weather }, sun: state.sunOn, dk: state.darkness, M: markers.map(m => ({ ...m })), nid: state.nextId, rid: state.roomId, cat: JSON.stringify(state.catalog), ag: { ...state.agent }, cs: state.cliffStyle });
-function restore(s) { cliffFits.clear();H.set(s.H); S.set(s.S); O.set(s.O); if (s.C) C.set(s.C); else C.fill(0); walkDirty = true; props = s.P.map(p => p.slice()); falls = s.F.map(f => ({ ...f })); bridges = s.B.map(b => ({ ...b })); stairs = (s.T || []).map(st => ({ ...st })); state.water = s.W; state.spawn = { ...s.sp }; if (s.at) state.atmo = { ...s.at }; if (s.we) state.weather = { ...s.we }; state.sunOn = s.sun !== false; state.darkness = s.dk || 'dark'; markers = (s.M || []).map(m => ({ ...m })); state.nextId = s.nid || state.nextId; state.roomId = s.rid || state.roomId; if (s.cat) { state.catalog = JSON.parse(s.cat); applyCatalog(); } if (s.ag) { state.agent = { ...s.ag }; syncAgentUI(); colliders = null; } state.cliffStyle = s.cs || 'standard'; applyCliffStyle(); if ($('cliffStyle')) $('cliffStyle').value = state.cliffStyle; rebuildMarkers(); state.sea = !!s.sea; applyBiome(s.bi || state.biome); syncUI(); updateTerrain(); rebuildProps(); rebuildFalls(); rebuildBridges(); rebuildStairs();cliffFits.load(s.CF,props,cliffInputSignature());rebuildProps(); }
+function restore(s,prepared) { cliffFits.clear();H.set(s.H); S.set(s.S); O.set(s.O); if (s.C) C.set(s.C); else C.fill(0); walkDirty = true; props = s.P.map(p => p.slice()); falls = s.F.map(f => ({ ...f })); bridges = s.B.map(b => ({ ...b })); stairs = (s.T || []).map(st => ({ ...st })); state.water = s.W; state.spawn = { ...s.sp }; if (s.at) state.atmo = { ...s.at }; if (s.we) state.weather = { ...s.we }; state.sunOn = s.sun !== false; state.darkness = s.dk || 'dark'; markers = (s.M || []).map(m => ({ ...m })); state.nextId = s.nid || state.nextId; state.roomId = s.rid || state.roomId; if (s.cat) { state.catalog = JSON.parse(s.cat); applyCatalog(); } if (s.ag) { state.agent = { ...s.ag }; syncAgentUI(); colliders = null; } state.cliffStyle = s.cs || 'standard'; applyCliffStyle(); if ($('cliffStyle')) $('cliffStyle').value = state.cliffStyle; rebuildMarkers(); state.sea = !!s.sea; applyBiome(s.bi || state.biome); syncUI(); updateTerrain(); rebuildProps(); rebuildFalls(); rebuildBridges(); rebuildStairs();if(prepared)cliffFits.installPrepared(prepared,props,cliffInputSignature());else cliffFits.load(s.CF,props,cliffInputSignature());rebuildProps(); }
 function pushUndo() { undoStack.push(snapshot()); if (undoStack.length > 40) undoStack.shift(); redoStack.length = 0; }
 function undo() { if (!undoStack.length) return; redoStack.push(snapshot()); restore(undoStack.pop()); toast('取り消し'); }
 function redo() { if (!redoStack.length) return; undoStack.push(snapshot()); restore(redoStack.pop()); toast('やり直し'); }
@@ -2404,20 +2405,26 @@ function cliffProtectionReason(p,geometry){
 }
 function cliffProtected(p,geometry){return!!cliffProtectionReason(p,geometry);}
 
+let mapPreparation=null,mapPreparationSerial=0,lastPreparedState=null;
+function stopCliffPreparation(){cliffContactToken++;clearTimeout(cliffContactTimer);cliffContactTimer=0;if(cliffContactDisabled?.length){const buttons=['autoRocks','save','saveAs','export','load'].map(id=>document.getElementById(id)).filter(Boolean);buttons.forEach((b,i)=>b.disabled=cliffContactDisabled[i]);}cliffContactDisabled=null;}
+async function primeCollisionFields(list,job){await TDPreparation.each(list,p=>{const t=PROP[p[0]];if(t.r<=0)return;const f=fittedFootprint(p);if(f)shapeField(f,1);else if(t.footprint)shapeField(t.footprint,p[4]);},job);}
+async function prepareCliffResult(r,input,job){
+ job?.progress('岩の当たり形状を準備',0,r.fits.length);await primeCollisionFields(props,job);
+ await TDPreparation.each(r.fits,(f,i)=>{f.prepared=cliffFits.prepare(f.p,f.geometry,input,{affine:f.affine,layering:f.layering,instanceTint:cliffTintAt(f.original[1],f.original[2])});makeFittedFootprint(f.p,f.prepared.cache);shapeField(f.prepared.cache.footprint,1);job?.progress('岩の当たり形状を準備',i+1,r.fits.length);},job);
+}
 let cliffContactProgress=0,cliffContactStats=null,cliffContactToken=0,cliffContactTimer=0,cliffContactDisabled=null;
-function queueCliffContact(){cliffContactToken++;clearTimeout(cliffContactTimer);cliffContactTimer=setTimeout(()=>{cliffContactTimer=0;fitCliffContact();},0);}
-async function fitCliffContact(){
+async function fitCliffContact(job=null){
   clearTimeout(cliffContactTimer);cliffContactTimer=0;const token=++cliffContactToken;
   cliffContactProgress=0;rebuildCliffRelief();
   const generation=()=>[terrain.geometry.uuid,terrain.geometry.attributes.position.version,cliffRelief.geometry.uuid,cliffRelief.geometry.attributes.position.version].join('/');
   ensureIds();const version=generation(),source=props,input=cliffInputSignature(),signature=()=>JSON.stringify([source,markers,bridges,stairs,state.spawn,state.agent]),before=signature();
-  const buttons=['autoRocks','save','saveAs','export','load'].map(id=>document.getElementById(id)).filter(Boolean);if(!cliffContactDisabled)cliffContactDisabled=buttons.map(b=>b.disabled);buttons.forEach(b=>b.disabled=true);
+  let pendingFits=null;const managed=!!mapPreparation;const buttons=['autoRocks','save','saveAs','export','load'].map(id=>document.getElementById(id)).filter(Boolean);if(!cliffContactDisabled)cliffContactDisabled=managed?[]:buttons.map(b=>b.disabled);if(!managed)buttons.forEach(b=>b.disabled=true);
   try{
-    const r=await TDCliffLayering.fitAsync({layered:p=>cliffFits.records.get(p[8])?.layering===1,geometries:[terrain.geometry,cliffRelief.geometry],types:PROP,height:heightAt,water:state.water,progress:n=>{cliffContactProgress=n;},protected:(p,g)=>cliffProtected(p,g||PROP[p[0]].geo),valid:()=>token===cliffContactToken&&generation()===version&&props===source&&signature()===before&&cliffInputSignature()===input},source);
+    const r=pendingFits=await TDCliffLayering.fitAsync({preparationJob:job,layered:p=>cliffFits.records.get(p[8])?.layering===1,geometries:[terrain.geometry,cliffRelief.geometry],types:PROP,height:heightAt,water:state.water,progress:n=>{cliffContactProgress=n;},protected:(p,g)=>cliffProtected(p,g||PROP[p[0]].geo),valid:()=>token===cliffContactToken&&generation()===version&&props===source&&signature()===before&&cliffInputSignature()===input},source);
     if(generation()!==version||props!==source||signature()!==before||token!==cliffContactToken){for(const f of r.fits)f.geometry.dispose();return{cancelled:true};}
-    const adopted=adoptCliffContact(r,source,input);if(adopted.cancelled)return adopted;cliffContactStats={...r.stats,generation:version};toast('岩を'+r.stats.changed+'個調整しました（'+r.stats.keptOriginal+'個は元の位置を維持）');return cliffContactStats;
-  }catch(e){if(e.message==='cliff-contact-cancelled')return{cancelled:true};console.error(e);return{error:e.message};}
-  finally{if(token===cliffContactToken){buttons.forEach((b,i)=>b.disabled=cliffContactDisabled[i]);cliffContactDisabled=null;}}
+    const prepStart=performance.now(),primeJob={valid:()=>token===cliffContactToken&&generation()===version&&props===source&&(!job||job.valid()),progress:(...args)=>job?.progress(...args)};await prepareCliffResult(r,input,primeJob);TDPreparation.check(primeJob);if(signature()!==before||cliffInputSignature()!==input){for(const f of r.fits)f.geometry.dispose();return{cancelled:true};}r.stats.prepareMs=performance.now()-prepStart;await TDPreparation.pause(primeJob);const adoptStart=performance.now();const adopted=managed?await TDPreparation.run(adoptCliffContactSteps(r,source,input),{valid:()=>token===cliffContactToken&&job.valid(),progress:(...a)=>job.progress(...a)}):adoptCliffContact(r,source,input);r.stats.adoptMs=performance.now()-adoptStart;if(adopted.cancelled)return adopted;cliffContactStats={...r.stats,generation:version};toast('岩を'+r.stats.changed+'個調整しました（'+r.stats.keptOriginal+'個は元の位置を維持）');return cliffContactStats;
+  }catch(e){if(pendingFits){const installed=new Set([...cliffFits.cache.values()].map(c=>c.geometry));for(const f of pendingFits.fits)if(!installed.has(f.geometry))f.geometry.dispose();}if(e.name==='AbortError'||e.message==='cliff-contact-cancelled')return{cancelled:true};console.error(e);return{error:e.message};}
+  finally{if(token===cliffContactToken){if(!managed)buttons.forEach((b,i)=>b.disabled=cliffContactDisabled?.[i]||false);cliffContactDisabled=null;}}
 }
 
 
@@ -2438,38 +2445,42 @@ function cliffAdoptionReason(original,parts,geometries,preserveEveryPoint=true){
 
 
 // 岸際の実際の岩による通行境界は変わり得るが、元の通行領域を切断しない。
-function cliffWalkTopology(){
+function* cliffWalkTopologySteps(){
  const step=SIZE>64?1:.5,n=Math.floor((SIZE-2)/step)+1,start=-HALF+1,open=new Uint8Array(n*n),labels=new Int32Array(n*n).fill(-1);
- for(let z=0;z<n;z++)for(let x=0;x<n;x++)open[z*n+x]=walkable(start+x*step,start+z*step)?1:0;
- const sizes=[];let label=0;for(let i=0;i<open.length;i++){if(!open[i]||labels[i]!==-1)continue;const queue=[i];labels[i]=label;for(let k=0;k<queue.length;k++){const j=queue[k],x=j%n,z=Math.floor(j/n);for(const next of [x?j-1:-1,x<n-1?j+1:-1,z?j-n:-1,z<n-1?j+n:-1])if(next>=0&&open[next]&&labels[next]===-1){labels[next]=label;queue.push(next);}}sizes[label]=queue.length;label++;}
+ for(let z=0;z<n;z++){yield {phase:"通路の接続を検査",current:z,total:n};for(let x=0;x<n;x++)open[z*n+x]=walkable(start+x*step,start+z*step)?1:0;}
+ const sizes=[];let label=0;for(let i=0;i<open.length;i++){if(!open[i]||labels[i]!==-1)continue;const queue=[i];labels[i]=label;for(let k=0;k<queue.length;k++){if((k&511)===0)yield;const j=queue[k],x=j%n,z=Math.floor(j/n);for(const next of [x?j-1:-1,x<n-1?j+1:-1,z?j-n:-1,z<n-1?j+n:-1])if(next>=0&&open[next]&&labels[next]===-1){labels[next]=label;queue.push(next);}}sizes[label]=queue.length;label++;}
  const anchored=new Set(),points=[state.spawn,...bridges.flatMap(b=>[{x:b.x1,z:b.z1},{x:b.x2,z:b.z2}]),...stairs.flatMap(b=>[{x:b.x1,z:b.z1},{x:b.x2,z:b.z2}]),...markers.flatMap(m=>m.kind==='port'?[m,portLanding(m)]:isLink(m.kind)?[linkArrival(m),linkTrigger(m)]:[m])];for(const p of points){const x=Math.round((p.x-start)/step),z=Math.round((p.z-start)/step),id=x>=0&&x<n&&z>=0&&z<n?labels[z*n+x]:-1;if(id>=0)anchored.add(id);}const probes=[];for(const m of markers){const centers=m.kind==='port'?[m,portLanding(m)]:isLink(m.kind)?[linkArrival(m),linkTrigger(m)]:[];for(const p of centers)for(let k=-1;k<16;k++){const a=k*Math.PI/8,r=m.r+state.agent.radius+.15,x=p.x+(k<0?0:Math.cos(a)*r),z=p.z+(k<0?0:Math.sin(a)*r);probes.push({x,z,open:walkable(x,z)});}}for(const b of [...bridges,...stairs])for(let k=-2;k<=22;k++){const t=k/20,x=b.x1+(b.x2-b.x1)*t,z=b.z1+(b.z2-b.z1)*t;probes.push({x,z,open:walkable(x,z)});}return{n,step,start,open,labels,sizes,anchored,probes};
 }
+function cliffWalkTopology(){return drainMapSteps(cliffWalkTopologySteps());}
 function cliffCutOwners(before,after,owners){
  const regions=new Map();for(let i=0;i<before.open.length;i++)if(before.open[i]&&after.open[i]&&(after.sizes[after.labels[i]]*after.step*after.step>=4||after.anchored.has(after.labels[i]))){const old=before.labels[i];if(!regions.has(old))regions.set(old,new Set());regions.get(old).add(after.labels[i]);}const cut=new Set([...regions].filter(([id,set])=>set.size>1).map(([id])=>id)),reject=new Set(),minority=new Set();const addOwners=(x,z)=>{const d=deckAt(x,z,0);getColliders().query(x,z,state.agent.radius+colliderMaxR,c=>{const owner=owners.get(c.prop);if(owner&&Math.hypot(c[0]-x,c[1]-z)-c[2]<state.agent.radius&&(!c[5]||shapeDist(c,x,z)<state.agent.radius)&&(!d||(c[4]>d.y+.05&&c[3]<d.y+state.agent.height)))reject.add(owner);});};for(let i=0;i<before.probes.length;i++)if(before.probes[i].open&&!after.probes[i].open)addOwners(before.probes[i].x,before.probes[i].z);if(!cut.size)return reject;for(const id of cut){const labels=[...regions.get(id)].sort((a,b)=>after.sizes[b]-after.sizes[a]);for(const label of labels.slice(1))minority.add(label);}
  for(let i=0;i<before.open.length;i++){if(!before.open[i]||after.open[i]||!cut.has(before.labels[i]))continue;const gx=i%before.n,gz=Math.floor(i/before.n),adjacent=[gx?i-1:-1,gx<before.n-1?i+1:-1,gz?i-before.n:-1,gz<before.n-1?i+before.n:-1];if(!adjacent.some(j=>j>=0&&minority.has(after.labels[j])))continue;const x=before.start+(i%before.n)*before.step,z=before.start+Math.floor(i/before.n)*before.step,d=deckAt(x,z,0);getColliders().query(x,z,state.agent.radius+colliderMaxR,c=>{const owner=owners.get(c.prop);if(owner&&Math.hypot(c[0]-x,c[1]-z)-c[2]<state.agent.radius&&(!c[5]||shapeDist(c,x,z)<state.agent.radius)&&(!d||(c[4]>d.y+.05&&c[3]<d.y+state.agent.height)))reject.add(owner);});}
  return reject.size?reject:new Set(owners.values());
 }
 
-function adoptCliffContact(r,source=props,input=cliffInputSignature()){
+function adoptCliffContact(r,source=props,input=cliffInputSignature()){return drainMapSteps(adoptCliffContactSteps(r,source,input));}
+function* adoptCliffContactSteps(r,source=props,input=cliffInputSignature()){
  const dispose=()=>{for(const f of r.fits)f.geometry.dispose();};if(source!==props||input!==cliffInputSignature()){dispose();return{cancelled:true,reason:'input-changed'};}
- const routeBefore=r.stats.records.some(q=>q.ok&&q.method==='layered')?cliffWalkTopology():null,previousFits=routeBefore?cliffFits.save():null;
+ const routeBefore=r.stats.records.some(q=>q.ok&&q.method==='layered')?(yield* cliffWalkTopologySteps()):null,previousFits=routeBefore?cliffFits.save():null;
  const sourceById=new Map(source.map(p=>[p[8],p])),resultById=new Map(r.props.filter(p=>p[8]).map(p=>[p[8],p])),geometryByProp=new Map(r.fits.map(f=>[f.p,f.geometry])),updates=new Map();
- for(const record of r.stats.records){const original=sourceById.get(record.id);if(!original){dispose();throw Error('元の岩IDがありません');}if(!record.ok){const retained=resultById.get(record.id);if(JSON.stringify(retained)!==JSON.stringify(original)){dispose();throw Error('維持する岩が変わっています');}updates.set(record.id,[original]);continue;}const parts=record.nextParts||[resultById.get(record.id)];if(parts.some(p=>!p)){dispose();throw Error('採用する岩がありません');}if(record.method!=='already-contact'&&parts.some(p=>cliffProtected(p,geometryByProp.get(p)||PROP[p[0]].geo))){dispose();return{cancelled:true,reason:'protection-changed'};}const reason=record.method==='already-contact'?null:cliffAdoptionReason(original,parts,geometryByProp,record.method!=='layered');if(reason){record.ok=false;record.method='kept-original';record.reason=reason;delete record.next;delete record.nextParts;updates.set(record.id,[original]);}else updates.set(record.id,parts);}
+ for(const record of r.stats.records){yield;const original=sourceById.get(record.id);if(!original){dispose();throw Error('元の岩IDがありません');}if(!record.ok){const retained=resultById.get(record.id);if(JSON.stringify(retained)!==JSON.stringify(original)){dispose();throw Error('維持する岩が変わっています');}updates.set(record.id,[original]);continue;}const parts=record.nextParts||[resultById.get(record.id)];if(parts.some(p=>!p)){dispose();throw Error('採用する岩がありません');}if(record.method!=='already-contact'&&parts.some(p=>cliffProtected(p,geometryByProp.get(p)||PROP[p[0]].geo))){dispose();return{cancelled:true,reason:'protection-changed'};}const reason=record.method==='already-contact'?null:cliffAdoptionReason(original,parts,geometryByProp,record.method!=='layered');if(reason){record.ok=false;record.method='kept-original';record.reason=reason;delete record.next;delete record.nextParts;updates.set(record.id,[original]);}else updates.set(record.id,parts);}
  r.fits=r.fits.filter(f=>{const keep=[...updates.values()].some(parts=>parts.includes(f.p));if(!keep)f.geometry.dispose();return keep;});r.stats.changed=r.stats.records.filter(q=>q.ok&&q.method!=='already-contact').length;r.stats.keptOriginal=r.stats.unresolved=r.stats.records.filter(q=>!q.ok).length;
  for(const record of r.stats.records)if(record.ok&&record.method!=='already-contact')cliffFits.remove(record.id);
- props=source.flatMap(p=>updates.get(p[8])||[p]);ensureIds();cliffFits.input=input;for(const f of r.fits)cliffFits.set(f.p,f.geometry,input,{affine:f.affine,layering:f.layering,instanceTint:cliffTintAt(f.original[1],f.original[2])});
- if(routeBefore){colliders=null;let rolledBack=0;for(let pass=0;pass<=r.stats.records.length;pass++){const owners=new Map();for(const record of r.stats.records)if(record.ok&&record.method==='layered')for(const p of updates.get(record.id))owners.set(p,record.id);const reject=cliffCutOwners(routeBefore,cliffWalkTopology(),owners);if(!reject.size)break;for(const id of reject){const record=r.stats.records.find(q=>q.id===id);for(const p of updates.get(id))cliffFits.remove(p[8]);if(previousFits.instances[id])cliffFits.records.set(id,previousFits.instances[id]);updates.set(id,[sourceById.get(id)]);record.ok=false;record.method='kept-original';record.reason='route-connectivity';delete record.nextParts;rolledBack++;}props=source.flatMap(p=>updates.get(p[8])||[p]);colliders=null;}r.stats.routeRollback=rolledBack;r.stats.routeCuts=0;}
+ props=source.flatMap(p=>updates.get(p[8])||[p]);ensureIds();cliffFits.input=input;for(const f of r.fits){if(f.prepared)cliffFits.setPrepared(f.p,f.prepared);else cliffFits.set(f.p,f.geometry,input,{affine:f.affine,layering:f.layering,instanceTint:cliffTintAt(f.original[1],f.original[2])});}
+ if(routeBefore){colliders=null;let rolledBack=0;for(let pass=0;pass<=r.stats.records.length;pass++){const owners=new Map();for(const record of r.stats.records)if(record.ok&&record.method==='layered')for(const p of updates.get(record.id))owners.set(p,record.id);const reject=cliffCutOwners(routeBefore,(yield* cliffWalkTopologySteps()),owners);if(!reject.size)break;for(const id of reject){const record=r.stats.records.find(q=>q.id===id);for(const p of updates.get(id))cliffFits.remove(p[8]);if(previousFits.instances[id])cliffFits.records.set(id,previousFits.instances[id]);updates.set(id,[sourceById.get(id)]);record.ok=false;record.method='kept-original';record.reason='route-connectivity';delete record.nextParts;rolledBack++;}props=source.flatMap(p=>updates.get(p[8])||[p]);colliders=null;}r.stats.routeRollback=rolledBack;r.stats.routeCuts=0;}
  r.stats.changed=r.stats.records.filter(q=>q.ok&&q.method!=='already-contact').length;r.stats.keptOriginal=r.stats.unresolved=r.stats.records.filter(q=>!q.ok).length;
  rebuildProps();return{applied:true,changed:r.stats.changed,keptOriginal:r.stats.keptOriginal};
 }
-function autoRocks(seed=Date.now()){
+function* autoRocksSteps(seed=Date.now()){
   const R=rng(seed|0),shapeR=rng((seed|0)^0x7b0d37e);
   props=props.filter(p=>p[5]!==1);
   const hash=buildPropHash(),ch=new SpatialHash(3),e=.4;
   const types=['cliff','cliff_split','cliff_shoulder'].map(TYPE),joint=TYPE('cliff_joint'),slab=TYPE('cliff_slab'),talus=TYPE('cliff_talus');
   const pts=[];for(let j=1;j<N-1;j++)for(let i=1;i<N-1;i++)pts.push([vx(i)+(R()-.5)*.4,vx(j)+(R()-.5)*.4]);
   for(let k=pts.length-1;k>0;k--){const m=R()*(k+1)|0;[pts[k],pts[m]]=[pts[m],pts[k]];}
+  let rockStep=0;
   for(const [x,z]of pts){
+    if(((++rockStep)&31)===0)yield {phase:"崖岩の配置",current:rockStep,total:pts.length};
     if(nearEdge(x,z)||slopeAt(x,z)<1.3||nearFeature(x,z))continue;
     const gx=(heightAt(x+e,z)-heightAt(x-e,z))/(2*e),gz=(heightAt(x,z+e)-heightAt(x,z-e))/(2*e),gl=Math.hypot(gx,gz);if(gl<1e-5)continue;
     const ux=gx/gl,uz=gz/gl;let hT=heightAt(x,z),hB=hT;
@@ -2504,7 +2515,7 @@ function autoRocks(seed=Date.now()){
     p[7]=Math.min(...heights)-.025;
     props.push(p);hash.add(p,px,pz);
   }
-  rebuildProps();queueCliffContact();
+  rebuildProps();
 }
 
 
@@ -2520,7 +2531,7 @@ function reloadAtSize(size, pending) {
 // passage through the ridge (no other route), with a hidden staircase down inside.
 const SAMPLE2_SIZE = 48;
 const secretLineX = z => -7 + 1.3 * Math.sin((z - 2) / 9 * Math.PI);   // centre line of the hidden way (bends a little)
-function genSample2(seed = 11) {
+function* sample2Steps(seed = 11) {
   C.fill(0);
   state.roomId = newRoomId(); state.nextId = 1; state.revision = 0; state.lastExportHash = ''; markers = [];
   state.sea = false; S.fill(0); O.fill(0); bridges = []; stairs = []; falls = []; props = [];
@@ -2528,6 +2539,7 @@ function genSample2(seed = 11) {
   const R = rng(seed);
   const dirt = [[[0, -24], [0, -12]], [[-24, -8], [-12, -10], [0, -12]], [[0, -12], [7, -8], [13, -4]], [[-6.2, 13], [-5, 14.5], [-3, 15.5]]];
   for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
+    if(i===0)yield {phase:"地形と地面",current:j,total:N};
     const x = vx(i), z = vx(j), k = idx(i, j);
     let h = 3 + (fbm(x * .07 + 5, z * .07) - .5) * .8 + (fbm(x * .25, z * .25) - .5) * .2;
     const d = Math.max(Math.abs(x), Math.abs(z)) / HALF, rn = (fbm(x * .15 + 3, z * .15) - .5) * .06;
@@ -2556,7 +2568,7 @@ function genSample2(seed = 11) {
     if (!canPlace(t, x, z, hash)) continue;
     const p = [t, x, z, R() * Math.PI * 2, lerp(PROP[t].sc[0], PROP[t].sc[1], R()), 0]; props.push(p); hash.add(p, x, z);
   }
-  autoRocks(seed * 13); regenGroundProps();
+  yield* autoRocksSteps(seed * 13); regenGroundProps();
   props = props.filter(p => !keepClear(p[1], p[2]));
   // hints and decoration: a weathered stele near the hidden way, bushes in front of it, columns around the sanctum stairs
   const put = (id, x, z, r = 0, s = 1) => props.push([TYPE(id), x, z, r, s, 0]);
@@ -2571,13 +2583,17 @@ function genSample2(seed = 11) {
   props = props.filter(p => !markers.some(m => isLink(m.kind) && Math.hypot(p[1] - m.x, p[2] - m.z) < 3.4 + PROP[p[0]].r * p[4])); rebuildProps(); clearPortLandings();
   rebuildProps(); ensureIds(); rebuildMarkers();
 }
-function genFlat() { C.fill(0); state.roomId = newRoomId(); state.nextId = 1; state.revision = 0; state.lastExportHash = ''; markers = []; state.sea = false; H.fill(3); S.fill(0); O.fill(0); props = []; falls = []; bridges = []; stairs = []; state.water = .8; state.spawn = { x: 0, z: 0 }; }
+function drainMapSteps(it){let r;do{r=it.next();}while(!r.done);return r.value;}
+function genSample(seed=7){cancelMapPreparation(false);return drainMapSteps(sampleSteps(seed));}
+function genSample2(seed=11){cancelMapPreparation(false);return drainMapSteps(sample2Steps(seed));}
+function autoRocks(seed=Date.now()){return drainMapSteps(autoRocksSteps(seed));}
+function genFlat() { cancelMapPreparation(false);cliffFits.clear();C.fill(0); state.roomId = newRoomId(); state.nextId = 1; state.revision = 0; state.lastExportHash = ''; markers = []; state.sea = false; H.fill(3); S.fill(0); O.fill(0); props = []; falls = []; bridges = []; stairs = []; state.water = .8; state.spawn = { x: 0, z: 0 }; }
 function pickFlora(R, list) {
   let tot = 0; for (const [, w] of list) tot += w;
   let r = R() * tot; for (const [id, w] of list) { r -= w; if (r <= 0) return TYPE(id); }
   return TYPE(list[0][0]);
 }
-function genSample(seed = 7) {
+function* sampleSteps(seed = 7) {
   C.fill(0);
   state.roomId = newRoomId(); state.nextId = 1; state.revision = 0; state.lastExportHash = ''; markers = [];
   state.sea = false; S.fill(0);   // channels 2+ are only ever raised below, so start clean
@@ -2588,6 +2604,7 @@ function genSample(seed = 7) {
   const path2 = [[-34, 8], [-20, 6], [-8, 4], [-2, 4]];
   const path3 = [[-2, 4], [9, 5], [16, 4], [34, 3]];
   for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
+    if(i===0)yield {phase:"地形と地面",current:j,total:N};
     const x = vx(i), z = vx(j), k = idx(i, j);
     let h = 3 + (fbm(x * .05 + 3, z * .05) - .5) * 1.3 + (fbm(x * .2, z * .2) - .5) * .3;
     const d = Math.max(Math.abs(x), Math.abs(z)) / HALF, wn = (fbm(x * .09 + 9, z * .09) - .5) * .14;
@@ -2619,6 +2636,7 @@ function genSample(seed = 7) {
   // forests: dense near the rim, clumps inside
   const hash = buildPropHash();
   for (let k = 0; k < 9000; k++) {
+    if((k&31)===0)yield {phase:"植生の配置",current:k,total:9000};
     const x = (R() - .5) * (SIZE - 3), z = (R() - .5) * (SIZE - 3), d = Math.max(Math.abs(x), Math.abs(z)) / HALF, f = fbm(x * .08 + 11, z * .08);
     const dens = d > .7 ? .35 + f * .45 : sstep(.62, .74, f) * .55;
     if (R() > dens * .3 * BIOME().flora.density) continue;
@@ -2627,6 +2645,7 @@ function genSample(seed = 7) {
     const p = [t, x, z, R() * Math.PI * 2, lerp(PROP[t].sc[0], PROP[t].sc[1], R()), 0]; props.push(p); hash.add(p, x, z);
   }
   for (let k = 0; k < 500; k++) {
+    if((k&31)===0)yield {phase:"小物の配置",current:k,total:500};
     const x = (R() - .5) * (SIZE - 4), z = (R() - .5) * (SIZE - 4);
     const st = TYPE(BIOME().flora.small);
     if (!canPlace(st, x, z, hash) || R() < .4) continue;
@@ -2634,6 +2653,7 @@ function genSample(seed = 7) {
   }
   // ground types: rubble in the north-west, a bog with a poison pool in the south-west, sandy river banks
   for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
+    if(i===0)yield {phase:"地形と地面",current:j,total:N};
     const x = vx(i), z = vx(j), k = idx(i, j), n = (fbm(x * .3 + 40, z * .3) - .5) * 2.2, h = H[k];
     if (h < WL - .2) continue;
     const put = (c, v) => { if (state.biome === 'forest' ? c > 5 : !GTOOL_TAGS[GROUND[c]].includes(state.biome)) return; if (v > 0) { S[k * NS + c] = Math.max(S[k * NS + c], clamp(v * 255, 0, 255)); for (const o of [0, 1]) S[k * NS + o] = Math.round(S[k * NS + o] * (1 - clamp(v, 0, 1))); } };
@@ -2643,7 +2663,7 @@ function genSample(seed = 7) {
     put(6, sstep(4.2, 2.6, Math.hypot(x + 20, z + 19) + n) + sstep(1.6, .8, distToPolyline(x, z, [[-20, -19], [-12, -24], [-6, -27]]) + n * .4));
     put(2, sstep(2.4, 1.2, distToPolyline(x, z, river) - (3.1 + 1.1 * Math.sin(z * .18)) - 1.8 + n * .5) * (x > 12 && z > 6 ? 1 : 0));
   }
-  autoRocks(seed * 13);
+  yield* autoRocksSteps(seed * 13);
   falls = []; autoFalls(R);
   bridgeAlong(path3, 2.6);
   bridgeAlong([[8, -21], [27, -21]], 1.6, 'vine');
@@ -2954,8 +2974,8 @@ function placeMarker(kind, a, c) {
 // ---------- validation before export
 // ---------- value checks: run on loaded data before it is applied, and on the editor state before export
 const FIN = v => typeof v === 'number' && Number.isFinite(v);
-function valueIssues(src) {
-  const out = [], bad = (what, why) => out.push(`${what}: ${why}`), inMap = (x, z) => FIN(x) && FIN(z) && Math.abs(x) <= HALF && Math.abs(z) <= HALF;
+function valueIssues(src,size=SIZE) {
+  const half=size/2;const out = [], bad = (what, why) => out.push(`${what}: ${why}`), inMap = (x, z) => FIN(x) && FIN(z) && Math.abs(x) <= half && Math.abs(z) <= half;
   const ag = src.agent || {};
   for (const [k, ok] of [['radius', v => v > 0], ['height', v => v > 0], ['maxSlopeDeg', v => v > 0 && v < 90], ['maxWaterDepth', v => v >= 0], ['maxStep', v => v > 0], ['arrivalClearance', v => v >= 0]])
     if (ag[k] !== undefined && !(FIN(ag[k]) && ok(ag[k]))) bad(`体格 ${k}`, `不正な値 ${ag[k]}`);
@@ -3302,7 +3322,7 @@ function showValidation(v) {
 }
 
 function serialize() {
-  if(cliffContactDisabled)throw Error('崖の岩を調整中です。完了後に保存してください');
+  if(mapPreparation||cliffContactDisabled)throw Error('崖の岩を調整中です。完了後に保存してください');
   cliffFits.synchronize(cliffInputSignature(),props);
   return {
     format: 'map-editor-proto', version: 2, size: SIZE, resolution: RES, vertices: N,
@@ -3328,39 +3348,44 @@ function remapPropTypes(d) {
   if (missing.size) throw new Error('この版に無い小物の種類があります: ' + [...missing].join(', '));
   return { ...d, props: d.props.map(p => Array.isArray(p) && Number.isInteger(p[0]) && to[p[0]] >= 0 ? [to[p[0]], ...p.slice(1)] : p) };
 }
-function deserialize(d) {
-  if (d.format !== 'map-editor-proto') throw new Error('形式が違います');
-  if (d.vertices !== N) {
-    if (d.resolution === RES && MAP_SIZES.includes(d.size) && reloadAtSize(d.size, JSON.stringify(d))) return;
-    throw new Error('サイズが違います');
-  }
+function decodeMap(d,size=SIZE){
+  const count=(size*RES+1)**2;
   d = remapPropTypes(d);
   // decode and check everything first; the current map is touched only after all checks pass
-  const issues = valueIssues(d);
+  const issues = valueIssues(d,size);
   const dec = (name, s) => { if (typeof s !== 'string') { issues.push(`${name}: ありません`); return null; } try { return unb64(s); } catch (e) { issues.push(`${name}: base64 として読めません`); return null; } };
   let newH = null;
   if (d.heightsF32 !== undefined) {
     const u = dec('heightsF32', d.heightsF32);
-    if (u && u.length !== N * N * 4) issues.push(`heightsF32: ${u.length} バイト（${N * N * 4} バイトが必要）`);
+    if (u && u.length !== count * 4) issues.push(`heightsF32: ${u.length} バイト（${count * 4} バイトが必要）`);
     else if (u) newH = new Float32Array(u.buffer.slice(u.byteOffset, u.byteOffset + u.length));
   } else {
     const u = dec('heightsCm', d.heightsCm);
-    if (u && u.length !== N * N * 2) issues.push(`heightsCm: ${u.length} バイト（${N * N * 2} バイトが必要）`);
+    if (u && u.length !== count * 2) issues.push(`heightsCm: ${u.length} バイト（${count * 2} バイトが必要）`);
     else if (u) { const hc = new Int16Array(u.buffer.slice(u.byteOffset, u.byteOffset + u.length)); newH = Float32Array.from(hc, v => v / 100); }
   }
   if (newH) { let bad = 0; for (let k = 0; k < newH.length; k++) if (!Number.isFinite(newH[k]) || Math.abs(newH[k]) > 1000) bad++; if (bad) issues.push(`高さ: 不正な値（NaN・Infinity・±1000m 超）が ${bad} 点あります`); }
-  const sp = dec('splat', d.splat), spLayers = sp ? sp.length / (N * N) : 0;
-  if (sp && !(Number.isInteger(spLayers) && spLayers >= 1 && spLayers <= NS)) issues.push(`splat: ${sp.length} バイト（${N * N} の 1〜${NS} 倍が必要）`);
-  const wo = d.walkOverride !== undefined ? dec('walkOverride', d.walkOverride) : new Uint8Array(N * N);
-  if (wo && wo.length !== N * N) issues.push(`walkOverride: ${wo.length} バイト（${N * N} バイトが必要）`);
+  const sp = dec('splat', d.splat), spLayers = sp ? sp.length / (count) : 0;
+  if (sp && !(Number.isInteger(spLayers) && spLayers >= 1 && spLayers <= NS)) issues.push(`splat: ${sp.length} バイト（${count} の 1〜${NS} 倍が必要）`);
+  const wo = d.walkOverride !== undefined ? dec('walkOverride', d.walkOverride) : new Uint8Array(count);
+  if (wo && wo.length !== count) issues.push(`walkOverride: ${wo.length} バイト（${count} バイトが必要）`);
   else if (wo && wo.some(v => v > 3)) issues.push('walkOverride: 0〜3 以外の値があります');
-  const cm = d.cliffMap !== undefined ? dec('cliffMap', d.cliffMap) : new Uint8Array(N * N);
-  if (cm && cm.length !== N * N) issues.push(`cliffMap: ${cm.length} バイト（${N * N} バイトが必要）`);
+  const cm = d.cliffMap !== undefined ? dec('cliffMap', d.cliffMap) : new Uint8Array(count);
+  if (cm && cm.length !== count) issues.push(`cliffMap: ${cm.length} バイト（${count} バイトが必要）`);
   else if (cm && cm.some(v => v > CLIFF_STYLES.length)) issues.push(`cliffMap: 0〜${CLIFF_STYLES.length} 以外の値があります`);
   if (!Array.isArray(d.props)) issues.push('props: 配列ではありません');
   for (const k of ['falls', 'bridges', 'stairs', 'markers']) if (d[k] !== undefined && !Array.isArray(d[k])) issues.push(`${k}: 配列ではありません`);
-  if(!issues.length)cliffFits.validate(d.cliffFits,d.props,cliffInputSignature(newH,d.falls||[],d.waterLevel));
   if (issues.length) throw new Error(`不正な値が ${issues.length} 件あります: ` + issues.slice(0, 3).join(' / ') + (issues.length > 3 ? ' …' : ''));
+  return{data:d,newH,sp,spLayers,wo,cm};
+}
+function deserialize(d,prepared) {
+  if (d.format !== 'map-editor-proto') throw new Error('形式が違います');
+  if (d.vertices !== N) {
+    if (d.resolution === RES && MAP_SIZES.includes(d.size)) return prepareMap('load',0,{data:d});
+    throw new Error('サイズが違います');
+  }
+  const {data,newH,sp,spLayers,wo,cm}=decodeMap(d);d=data;
+  if(!prepared){cliffFits.validate(d.cliffFits,d.props,cliffInputSignature(newH,d.falls||[],d.waterLevel));cancelMapPreparation(false);}
   cliffFits.clear();H.set(newH);
   if (spLayers === NS) S.set(sp); else { S.fill(0); for (let k = 0; k < N * N; k++) for (let c = 0; c < spLayers; c++) S[k * NS + c] = sp[k * spLayers + c]; }
   O.set(wo); C.set(cm); walkDirty = true; props = d.props.map(p => p.slice()); falls = (d.falls || []).map(f => ({ ...f })); bridges = (d.bridges || []).map(b => ({ ...b })); stairs = (d.stairs || []).map(st => ({ ...st })); rebuildFalls(); rebuildBridges(); rebuildStairs(); state.water = d.waterLevel; state.spawn = d.spawn; state.sea = !!d.sea; state.weather = d.weather ? { ...d.weather } : { kind: 'none', amount: .7 }; state.sunOn = d.sunlight !== false; state.darkness = DARK_LEVELS[d.darkness] ? d.darkness : 'dark'; setMapName(typeof d.name === 'string' ? d.name : ''); state.cliffStyle = CLIFF_STYLES.some(c => c[0] === d.cliffStyle) ? d.cliffStyle : 'standard'; applyCliffStyle(); if ($('cliffStyle')) $('cliffStyle').value = state.cliffStyle; state.atmo = d.atmosphere ? { ...d.atmosphere } : { kind: 'none', amount: .6, height: 3 };
@@ -3368,7 +3393,7 @@ function deserialize(d) {
   state.agent = { ...state.agent, ...(d.agent || {}) }; state.catalog = normalizeCatalog(d.catalog); state.lastExportHash = d.lastExportHash || ''; applyCatalog(); syncAgentUI();
   markers = (d.markers || []).map(m => ({ ...m })); ensureIds();
   applyBiome(d.biome || 'forest');
-  syncUI(); updateTerrain();cliffFits.load(d.cliffFits,props,cliffInputSignature()); rebuildProps(); rebuildMarkers();
+  syncUI(); updateTerrain();if(prepared)cliffFits.installPrepared(prepared,props,cliffInputSignature());else cliffFits.load(d.cliffFits,props,cliffInputSignature()); rebuildProps(); rebuildMarkers();
 }
 function download(name, blob) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); }
 const CRC = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
@@ -3417,7 +3442,7 @@ const GROUND_EFFECT = { sand: 'slow_light', rubble: 'slow_light', swamp: 'slow',
 const WEIGHT_LAYERS = ['grass', 'dirt', 'cobble', 'sand', 'rubble', 'swamp', 'poison', 'lava', 'snowfield', 'ice', 'cliff'];
 async function buildExport() {
   refreshGroundWeights();
-  if(cliffContactDisabled)throw Error('崖の岩を調整中です。完了後に書き出してください');
+  if(mapPreparation||cliffContactDisabled)throw Error('崖の岩を調整中です。完了後に書き出してください');
   ensureIds(); applyCatalog(); if (walkDirty) computeWalk();
   const validation = runValidation();
   rebuildCliffRelief();
@@ -3968,17 +3993,10 @@ if (heroBody) $('heroLookRemy').textContent = `Remy（ゲームの体・身長 $
 $('heroLook').onchange = e => setHeroLook(e.target.value);
 setHeroLook(heroBody ? 'remy' : 'box');
 $('refreshGroundProps').onclick = () => { pushUndo(); regenGroundProps(); toast('地面の塗りに合わせて草と小石を更新しました'); };
-$('autoRocks').onclick = () => { pushUndo(); autoRocks(); toast('崖のまわりに岩を配置しました'); };
-$('newSample').onclick = () => { if (SIZE !== 64) { reloadAtSize(64, 'sample'); return; } pushUndo(); genSample((Math.random() * 1e6) | 0); forgetSaveTarget('サンプル'); syncUI(); updateTerrain(); rebuildProps(); rebuildFalls(); rebuildBridges(); rebuildStairs(); };
-$('newSample2').onclick = () => {
-  if (SIZE !== SAMPLE2_SIZE) { if (!reloadAtSize(SAMPLE2_SIZE, 'sample2')) toast('このブラウザではサイズを変えられません'); return; }
-  pushUndo(); genSample2(); forgetSaveTarget('サンプル2（隠し通路）'); applyBiome(state.biome); syncUI(); updateTerrain(); rebuildProps(); rebuildFalls(); rebuildBridges(); rebuildStairs(); rebuildMarkers();
-};
-$('newFlat').onclick = () => {
-  const size = +$('mapSize').value;
-  if (size !== SIZE) { if (!reloadAtSize(size, 'flat')) toast('このブラウザではサイズを変えられません'); return; }
-  pushUndo(); genFlat(); forgetSaveTarget(''); syncUI(); updateTerrain(); rebuildProps(); rebuildFalls(); rebuildBridges(); rebuildStairs(); rebuildMarkers();
-};
+$('autoRocks').onclick = () => prepareMap('rocks', Date.now());
+$('newSample').onclick = () => { if(SIZE!==64){reloadAtSize(64,'sample');return;}prepareMap('sample',(Math.random()*1e6)|0); };
+$('newSample2').onclick = () => { if(SIZE!==SAMPLE2_SIZE){reloadAtSize(SAMPLE2_SIZE,'sample2');return;}prepareMap('sample2',11); };
+$('newFlat').onclick = () => { const size=+$('mapSize').value;if(size!==SIZE){reloadAtSize(size,'flat');return;}prepareMap('flat'); };
 $('mapSize').innerHTML = MAP_SIZES.map(v => `<option value="${v}" ${v === SIZE ? 'selected' : ''}>${v} × ${v} m${v === 64 ? '（標準）' : v < 64 ? '（狭い部屋）' : '（広い部屋）'}</option>`).join('');
 $('mapSizeNow').textContent = `いまのマップ: ${SIZE} × ${SIZE} m`;
 // map name: shown in the tab title, kept in the save data and the export, and used as the file name
@@ -4021,7 +4039,7 @@ $('load').onclick = () => $('file').click();
 $('file').onchange = async e => {
   const f = e.target.files[0]; if (!f) return;
   try {
-    const d = JSON.parse(await f.text()), before = snapshot(); deserialize(d); undoStack.push(before); redoStack.length = 0;
+    const d = JSON.parse(await f.text()); if(await prepareMap('load',0,{data:d})!==true){e.target.value='';return;}
     forgetSaveTarget(state.mapName || f.name.replace(/\.json$/i, '')); toast(`${state.mapName} を読み込みました`);
   } catch (err) { toast('読み込み失敗: ' + err.message); }
   e.target.value = '';
@@ -4043,7 +4061,8 @@ const AGENT_KEYS = ['radius', 'height', 'maxSlopeDeg', 'maxWaterDepth', 'maxStep
 for (const k of AGENT_KEYS) $('ag_' + k).onchange = e => { state.agent[k] = +e.target.value; walkDirty = true; colliders = null; };
 syncAgentUI();
 
-function setMode(m) {
+function setMode(m,prepared=false) {
+  if(mapPreparation&&!prepared){mapPreparation.requestedMode=m;return;}
   state.mode = m; document.body.classList.toggle('play', m === 'play');
   $('modeEdit').classList.toggle('on', m === 'edit'); $('modePlay').classList.toggle('on', m === 'play');
   hero.visible = m === 'play'; spawnMarker.visible = markerGroup.visible = m === 'edit'; preview.visible = false;
@@ -4250,10 +4269,11 @@ canvas.addEventListener('wheel', e => {
   else playCam.dist = clamp(playCam.dist * Math.exp(e.deltaY * .0012), 7, 40);
 }, { passive: false });
 window.addEventListener('keydown', e => {
+  if(mapPreparation){if(e.code==='Tab'){e.preventDefault();setMode(mapPreparation.requestedMode==='edit'?'play':'edit');}else if(e.code==='Escape'){e.preventDefault();cancelMapPreparation(true);}return;}
   if ((e.ctrlKey || e.metaKey) && e.code === 'KeyS') { e.preventDefault(); e.shiftKey ? saveMapAs() : saveMap(); return; }
   if (e.target.isContentEditable || ['SELECT','TEXTAREA'].includes(e.target.tagName) || (e.target.tagName === 'INPUT' && e.target.type !== 'range' && e.target.type !== 'checkbox')) return;
   if(!e.ctrlKey&&!e.metaKey&&!e.altKey){const inc=e.key==='+'||e.code==='NumpadAdd'||e.key===']',dec=e.key==='-'||e.code==='NumpadSubtract'||e.key==='[';if(inc||dec){e.preventDefault();setBrushRadius(state.radius+(inc?.5:-.5));return;}}
-  if (e.code === 'Tab') { e.preventDefault(); setMode(state.mode === 'edit' ? 'play' : 'edit'); return; }
+  if (e.code === 'Tab') { e.preventDefault(); setMode((mapPreparation?.requestedMode||state.mode) === 'edit' ? 'play' : 'edit'); return; }
   if ((e.ctrlKey || e.metaKey) && e.code === 'KeyZ') { e.preventDefault(); e.shiftKey ? redo() : undo(); return; }
   if ((e.ctrlKey || e.metaKey) && e.code === 'KeyY') { e.preventDefault(); redo(); return; }
   const dg = /^(?:Digit|Numpad)([1-9])$/.exec(e.code);
@@ -4372,26 +4392,154 @@ function hud() {
 let last = performance.now();
 function frame(now) {
   const dt = Math.min((now - last) / 1000, .1); last = now;
+  if(mapPreparation){requestAnimationFrame(frame);return;}
   update(dt);
   renderer.render(scene, camera);
   fpsAcc += dt; fpsN++; if (fpsAcc > .5) { fps = Math.round(fpsN / fpsAcc); fpsAcc = 0; fpsN = 0; hud(); }
   requestAnimationFrame(frame);
 }
 
+
+// サンプルは仕上げ・通路検査・衝突準備まで終えてから操作可能にする。
+// 処理中の状態を保存せず、別の生成要求と古い非同期ジョブを混ぜない。
+const preparationPanel=document.createElement('div');
+preparationPanel.id='mapPreparation';preparationPanel.hidden=true;
+preparationPanel.setAttribute('role','status');preparationPanel.setAttribute('aria-live','polite');
+preparationPanel.innerHTML='<div><strong>マップを準備しています</strong><p></p><span></span> <button type="button">中止して元に戻す</button></div>';
+Object.assign(preparationPanel.style,{position:'fixed',inset:'0',zIndex:'10000',background:'#1119',alignItems:'center',justifyContent:'center',color:'#fff'});
+Object.assign(preparationPanel.firstChild.style,{background:'#233039',padding:'24px',borderRadius:'8px',maxWidth:'440px'});
+document.body.append(preparationPanel);
+preparationPanel.querySelector('button').onclick=()=>cancelMapPreparation(true);
+const preparationKeys=new Map();
+function unlockPreparation(job){
+ clearInterval(job.clock);for(const [el,disabled]of job.controls)el.disabled=disabled;
+ preparationPanel.hidden=true;preparationPanel.style.display='none';keys.clear();stroke.active=false;
+}
+function cancelMapPreparation(restoreMap=true){
+ const old=mapPreparation;stopCliffPreparation();if(!old)return;
+ mapPreparation=null;mapPreparationSerial++;unlockPreparation(old);
+ if(restoreMap)return prepareMap('restore',0,{snapshot:old.backup,collision:old.backupCollision,metadata:old.backupMetadata,boot:true});
+}
+function captureCollisionPreparation(){
+ const fitted=[];for(const [id,c]of cliffFits.cache){if(c.footprint)fitted.push([id,{pose:cliffFits.records.get(id)?.pose,input:cliffFits.input,footprint:c.footprint,y0:c.y0,y1:c.y1}]);}
+ const prototypes=PROP.map(t=>t.footprint?[t.id,t.footprint.fields]:null).filter(Boolean);
+ return {version:1,fitted,prototypes};
+}
+function validFootprint(f){
+ return f&&Number.isInteger(f.nx)&&Number.isInteger(f.nz)&&f.nx>0&&f.nz>0&&f.nx*f.nz<2e6&&f.top instanceof Float32Array&&f.top.length===f.nx*f.nz&&f.top.every(Number.isFinite)&&['x0','z0','R','sink'].every(k=>Number.isFinite(f[k]))&&f.fields instanceof Map;
+}
+function validFields(fields,n){return fields instanceof Map&&[...fields].every(([key,d])=>Number.isInteger(key)&&key>=0&&d.dist instanceof Float32Array&&d.dist.length===n&&Array.isArray(d.edge)&&d.edge.length%2===0&&d.edge.every(Number.isFinite)&&d.dist.every(Number.isFinite));}
+async function installCollisionPreparation(data,job){
+ if(!data||data.version!==1||!Array.isArray(data.fitted)||!Array.isArray(data.prototypes))throw Error('衝突準備の形式が違います');
+ const ids=new Map(props.map(p=>[p[8],p]));
+ await TDPreparation.each(data.fitted,([id,v])=>{const p=ids.get(id),r=cliffFits.records.get(id);if(!p||!r||v.pose!==r.pose||v.input!==cliffFits.input||!validFootprint(v.footprint)||!validFields(v.footprint.fields,v.footprint.top.length)||![v.y0,v.y1].every(Number.isFinite))throw Error('衝突準備と岩が一致しません');Object.assign(cliffFits.get(p),{footprint:v.footprint,y0:v.y0,y1:v.y1});},job);
+ await TDPreparation.each(data.prototypes,([id,fields])=>{const f=PROP.find(t=>t.id===id)?.footprint;if(!f||!validFields(fields,f.top.length))throw Error('元部品の衝突準備が違います');for(const [key,v]of fields)f.fields.set(key,v);},job);
+}
+async function preparationKey(kind,seed,job){
+ const config=JSON.stringify([kind,seed,SIZE,kind==='sample2'?'ruins':state.biome,state.agent,state.cliffStyle,state.catalog,TDPreparation.version,'startup/99b66fa/3',[...document.scripts].map(s=>s.getAttribute('src')).filter(Boolean)]);
+ if(preparationKeys.has(config))return preparationKeys.get(config);
+ const hashes=[];
+ await TDPreparation.each(PROP,async t=>{if(t.r<=0)return;const a=t.geo.attributes.position.array,ix=t.geo.index?.array;const hash=async a=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new Uint8Array(a.buffer,a.byteOffset,a.byteLength))),v=>v.toString(16).padStart(2,'0')).join('');hashes.push([t.id,t.r,t.height,t.yawOffset,await hash(a),ix?await hash(ix):'']);},job);
+ const key='sample:'+await crypto.subtle.digest('SHA-256',new TextEncoder().encode(config+JSON.stringify(hashes))).then(b=>Array.from(new Uint8Array(b),v=>v.toString(16).padStart(2,'0')).join(''));
+ TDPreparation.check(job);preparationKeys.set(config,key);return key;
+}
+async function stageSnapshot(s,job){return cliffFits.prepareLoad(s.CF,s.P,cliffInputSignature(s.H,s.F,s.W),job);}
+async function compilePreparedMap(job){
+ // 風の値・カメラを確定してから初回プログラムを待つ。編集中の別ジョブは適用しない。
+ for(;;){TDPreparation.check(job);const mode=job.requestedMode;setMode(mode,true);update(0);job.progress('初回の描画を準備',0,0);await renderer.compileAsync(scene,camera);await TDPreparation.pause(job);if(mode===job.requestedMode)break;}
+}
+async function prepareMap(kind,seed=7,options={}){
+ const previous=mapPreparation;
+ const backup=previous?.backup||snapshot(),backupCollision=previous?.backupCollision||captureCollisionPreparation();
+ const backupMetadata=previous?.backupMetadata||{name:state.mapName,revision:state.revision,lastExportHash:state.lastExportHash,saveHandle};
+ const requestedMode=previous?.requestedMode||state.mode;
+ if(previous)cancelMapPreparation(false);else stopCliffPreparation();
+ const job={id:++mapPreparationSerial,start:performance.now(),phase:'準備を開始',requestedMode,backup,backupCollision,backupMetadata,controls:[],valid(){return mapPreparation===this;},progress(phase,current,total){this.phase=phase;this.current=current;this.total=total;preparationPanel.querySelector('p').textContent=phase+(total?' '+current+' / '+total:'');}};
+ mapPreparation=job;keys.clear();stroke.active=false;
+ for(const el of document.querySelectorAll('button,input,select,textarea')){if(preparationPanel.contains(el))continue;job.controls.push([el,el.disabled]);el.disabled=true;}
+ preparationPanel.hidden=false;preparationPanel.style.display='flex';job.clock=setInterval(()=>{preparationPanel.querySelector('span').textContent=((performance.now()-job.start)/1000).toFixed(1)+' 秒';},100);
+ const viewSettings={atmo:{...state.atmo},weather:{...state.weather},sunOn:state.sunOn,darkness:state.darkness};
+ let staged=null,cacheHit=false,fitStats=null,cacheKey=null,persistent=false,persistentStored=false,outgoingToken=null;
+ try{
+  await TDPreparation.pause(job);
+  if(kind==='restore'){
+   staged=await stageSnapshot(options.snapshot,job);TDPreparation.check(job);restore(options.snapshot,staged);staged=null;
+   await installCollisionPreparation(options.collision,job);Object.assign(state,{revision:options.metadata.revision,lastExportHash:options.metadata.lastExportHash});setMapName(options.metadata.name);saveHandle=options.metadata.saveHandle;showSaveTarget();
+  }else if(kind==='load'||kind==='pending'){
+   const incoming=kind==='pending'?await TDPreparation.pending(options.token):options.data;TDPreparation.check(job);if(!incoming)throw Error('読み込むマップの一時データがありません');
+   const d=remapPropTypes(incoming),targetSize=MAP_SIZES.includes(d.size)?d.size:SIZE;
+   if(d.format!=='map-editor-proto'||d.vertices!==targetSize*RES+1)throw Error('サイズまたは形式が違います');
+   const decoded=decodeMap(d,targetSize);job.progress('保存マップの岩を読み込み',0,0);
+   staged=await cliffFits.prepareLoad(d.cliffFits,d.props,cliffInputSignature(decoded.newH,d.falls||[],d.waterLevel,targetSize),job);TDPreparation.check(job);
+   if(d.vertices!==N){
+    if(d.resolution!==RES||!MAP_SIZES.includes(d.size))throw Error('サイズまたは形式が違います');
+    // 不正な入力は現在のマップを保ったまま拒否。形状の一時メモリはページ変更前に解放する。
+    for(const c of staged.cache.values())c.geometry.dispose();staged=null;
+    job.progress('サイズ変更後へ保存マップを引き継ぐ',0,0);outgoingToken=crypto.randomUUID();
+    if(!await TDPreparation.stash(outgoingToken,d))throw Error('サイズ変更用の一時保存ができません（ブラウザの保存容量・設定を確認してください）');
+    TDPreparation.check(job);if(kind==='pending')await TDPreparation.clearPending(options.token);TDPreparation.check(job);
+    if(!reloadAtSize(d.size,'prepared:'+outgoingToken))throw Error('サイズ変更の識別子を保存できません');return 'redirected';
+   }
+   TDPreparation.check(job);deserialize(d,staged);staged=null;
+  }else{
+   if(kind==='sample'||kind==='sample2'){
+    job.progress('完成済みサンプルを照合',0,0);cacheKey=await preparationKey(kind,seed,job);const cached=await TDPreparation.get(cacheKey);TDPreparation.check(job);
+    if(cached)try{
+     if(cached.key!==cacheKey||cached.version!==1)throw Error('古いサンプル準備です');
+     staged=await stageSnapshot(cached.snapshot,job);TDPreparation.check(job);restore(cached.snapshot,staged);staged=null;await installCollisionPreparation(cached.collision,job);cacheHit=true;
+     // 完成テンプレートの個体IDは維持し、新しい部屋の識別子だけを発行する。
+     state.roomId=newRoomId();state.revision=0;state.lastExportHash='';Object.assign(state,viewSettings);applyAtmo();syncUI();
+    }catch(e){if(e.name==='AbortError')throw e;for(const c of staged?.cache.values()||[])c.geometry.dispose();staged=null;await TDPreparation.remove(cacheKey);TDPreparation.check(job);}
+   }
+   if(!cacheHit){
+    if(kind!=='rocks')cliffFits.clear();colliders=null;cliffContactStats=null;
+    if(kind==='flat'){// genFlat の外部キャンセルを管理済みジョブでは行わない
+     const active=mapPreparation;mapPreparation=null;genFlat();mapPreparation=active;
+    }else await TDPreparation.run(kind==='rocks'?autoRocksSteps(seed):kind==='sample2'?sample2Steps(seed):sampleSteps(seed),job);
+    TDPreparation.check(job);applyBiome(state.biome);syncUI();updateTerrain();rebuildProps();rebuildFalls();rebuildBridges();rebuildStairs();rebuildMarkers();
+    if(kind!=='flat'){
+     job.progress('崖の接地と通路を確認',0,0);fitStats=await fitCliffContact(job);TDPreparation.check(job);if(fitStats?.error||fitStats?.cancelled)throw Error(fitStats.error||'岩の準備を完了できませんでした');
+    }
+   }
+  }
+  job.progress('歩行用の衝突を準備',0,props.length);await primeCollisionFields(props,job);TDPreparation.check(job);computeWalk();
+  if(cacheKey&&!cacheHit){
+   job.progress('完成状態を再利用用に保存',0,0);persistent=(kind==='sample'&&seed===7)||(kind==='sample2'&&seed===11);
+   // 別領域のキャッシュ。ユーザーのファイルや保存先を上書きしない。
+   const value={version:1,key:cacheKey,snapshot:snapshot(),collision:captureCollisionPreparation()};
+   TDPreparation.check(job);persistentStored=await TDPreparation.put(cacheKey,value,persistent);TDPreparation.check(job);
+  }
+  await compilePreparedMap(job);TDPreparation.check(job);job.progress('最初の画面を描画',0,0);await TDPreparation.pause(job);const firstRender=performance.now();renderer.render(scene,camera);job.firstRenderMs=performance.now()-firstRender;await TDPreparation.pause(job);
+  if(kind==='pending'){await TDPreparation.clearPending(options.token);if(sessionStorage.getItem('me_pending')==='prepared:'+options.token)sessionStorage.removeItem('me_pending');TDPreparation.check(job);}
+  if(!options.boot){undoStack.push(backup);if(undoStack.length>40)undoStack.shift();redoStack.length=0;if(kind!=='rocks'&&kind!=='load')forgetSaveTarget(kind==='sample'?'サンプル':kind==='sample2'?'サンプル2（隠し通路）':'');}
+  lastPreparedState={kind,seed,cacheHit,persistent,persistentStored,elapsedMs:performance.now()-job.start,firstRenderMs:job.firstRenderMs,props:props.length,fits:cliffFits.records.size,fitStats};
+  mapPreparation=null;unlockPreparation(job);hud();toast(kind==='restore'?'元のマップに戻しました':'準備が完了しました（'+(lastPreparedState.elapsedMs/1000).toFixed(1)+'秒）');return true;
+ }catch(e){
+  for(const c of staged?.cache.values()||[])c.geometry.dispose();
+  if(outgoingToken)await TDPreparation.clearPending(outgoingToken);if(kind==='pending'){await TDPreparation.clearPending(options.token);if(sessionStorage.getItem('me_pending')==='prepared:'+options.token)sessionStorage.removeItem('me_pending');}
+  if(!job.valid())return false;
+  mapPreparation=null;unlockPreparation(job);
+  if(e.name!=='AbortError'){console.error(e);toast('準備失敗: '+e.message);}
+  if(kind==='restore'){lastPreparedState={kind,error:e.message,elapsedMs:performance.now()-job.start};return false;}
+  // 失敗時も部分生成をユーザーのマップとして残さない。
+  await prepareMap('restore',0,{snapshot:backup,collision:backupCollision,metadata:backupMetadata,boot:true});return false;
+ }
+}
+
 // ============================================================
 // Boot
 // ============================================================
 let bootPending = null;
-try { bootPending = sessionStorage.getItem('me_pending'); sessionStorage.removeItem('me_pending'); } catch (e) { }
-if (bootPending === 'sample2' && SIZE === SAMPLE2_SIZE) genSample2(); else if (bootPending === 'flat' || (!bootPending && SIZE !== 64)) genFlat(); else genSample(7);
+try { bootPending = sessionStorage.getItem('me_pending'); if(!bootPending?.startsWith('prepared:'))sessionStorage.removeItem('me_pending'); } catch (e) { }
+genFlat();
 applyCatalog(); applyBiome(state.biome); applyCliffStyle(); applyPalette(); setTool('plateau'); syncUI(); resize(); updateTerrain(); rebuildProps(); rebuildFalls(); rebuildBridges(); rebuildStairs(); rebuildMarkers(); hud();
-if (bootPending && bootPending[0] === '{') { try { deserialize(JSON.parse(bootPending)); toast(`読み込みました（${SIZE} × ${SIZE} m）`); } catch (err) { toast('読み込み失敗: ' + err.message); } }
-else if (bootPending === 'flat') toast(`${SIZE} × ${SIZE} m の新規マップ`);
-else if (bootPending === 'sample2') toast('サンプル2（遺跡・隠し通路）');
 requestAnimationFrame(frame);
+let bootData=null;if(bootPending?.[0]==='{')try{bootData=JSON.parse(bootPending);}catch(e){toast('読み込み失敗: '+e.message);bootPending='flat';}
+const bootReady=bootPending?.startsWith('prepared:')?prepareMap('pending',0,{token:bootPending.slice(9),boot:true}):bootData?prepareMap('load',0,{data:bootData,boot:true}):
+  prepareMap(bootPending==='sample2'&&SIZE===SAMPLE2_SIZE?'sample2':bootPending==='flat'||SIZE!==64?'flat':'sample',bootPending==='sample2'?11:7,{boot:true});
 
 // hooks for automated checks
-window.__app = { fillGroundAll,
+window.__app = { fillGroundAll,prepareMap,cancelMapPreparation,bootReady,get preparation(){return mapPreparation?{id:mapPreparation.id,phase:mapPreparation.phase,requestedMode:mapPreparation.requestedMode,elapsedMs:performance.now()-mapPreparation.start}:null;},get preparationStats(){return lastPreparedState;},
   get cliffContactProgress(){return cliffContactProgress;},cliffFits,effectiveGeometry,fitCliffContact,adoptCliffContact, cliffProtected,cliffProtectionReason,nearFeatureReason, get cliffContactStats(){return cliffContactStats;},
   pickGroundDetail,adjustGroundDetail,selectedGroundDetail,updateTouch,touchStats, pavingMask, cliffRelief, rebuildCliffRelief, groundTrial, groundTexture, terrainSource:tGeo, terrain, renderer, camera, SIZE, state, H, S, O, F, C, propMeshes, ghostMeshes, cliffIndexAt, BIOMES, CLIFF_STYLES, applyCliffStyle, deckAt, linkDeckAt, runValidation, genSample, genSample2, secretRegions, secretLineX, passageGeometry, terrainRes, TERRAIN_RES, snapshot, sha256, LINK_KINDS, normalizeCatalog, catalogExport, valueIssues, areaIssue, deckAt, getColliders, PROP, get colliderMaxR() { return colliderMaxR; }, rebuildMarkers, portLanding, linkTrigger, linkArrival, LINK_SPEC, get markers() { return markers; }, placeMarker, ensureIds, applyCatalog, ATMOS, WEATHER, applyAtmo, makeCoast, glowLights, applyBiome, applyPalette, propVisible, toolVisible, updateTerrain, rebuildProps, genFlat, floorAt, bridgeAt, stairsAt, placeSlope, placeStairs, placeBridge, pickTarget, regenGroundProps, rebuildBridges, get stairs() { return stairs; }, get bridges() { return bridges; }, get falls() { return falls; }, overrideAt, heroMat, hero, heroBody, get heroLook() { return heroLook; }, setHeroLook, heroStyle, heroGlow, get ghosts() { return ghosts; }, get props() { return props; }, cam, playCam, player, keys, setMode, setTool, update, heightAt, walkable, slope: slopeAt,
   stroke(x, z, frames = 20, opts = {}) {
