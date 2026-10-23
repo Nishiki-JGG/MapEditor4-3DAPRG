@@ -1,7 +1,7 @@
 // 上流と修正版を各々の実app/index/manifestで読み、復元後の岩・保存データを比較する。
 // 型チェックやkey/hash検証は変更しない。比較対象の旧ソースはGitから読み取る。
 const fs=require('fs'),path=require('path'),http=require('http'),assert=require('assert/strict'),cp=require('child_process'),{withPage}=require('./cdp');
-const root=path.resolve(__dirname,'..'),out=path.resolve(root,'../slope-grounding-evidence'),base='973fa00',old=new Map();
+const root=path.resolve(__dirname,'..'),out=path.resolve(process.env.EVIDENCE||path.join(root,'../slope-grounding-evidence')),base='f09fe40',old=new Map();
 function oldFile(n){if(!old.has(n))old.set(n,cp.execFileSync('git',['show',base+':'+n],{cwd:root,maxBuffer:30e6}));return old.get(n);}
 const server=http.createServer((q,r)=>{let rel=new URL(q.url,'http://x').pathname,before=rel.startsWith('/before/');if(before)rel=rel.slice(7);const f=path.resolve(root,'.'+rel);if(!f.startsWith(root+path.sep)){r.writeHead(403).end();return;}try{const n=path.relative(root,f).replaceAll('\\','/'),bytes=before&&(['app.js','index.html','props/shells.js'].includes(n)||n.startsWith('prepared/'))?oldFile(n):fs.readFileSync(f);r.writeHead(200,{'Content-Type':f.endsWith('.js')?'text/javascript':f.endsWith('.html')?'text/html':'application/octet-stream'});r.end(bytes);}catch(e){r.writeHead(404).end('404');}});
 const sleep=ms=>new Promise(r=>setTimeout(r,ms)),report={base,tests:[]};

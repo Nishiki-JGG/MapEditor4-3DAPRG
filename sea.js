@@ -14,6 +14,7 @@ const COMMON = `
 #define SEA_TAU 6.2831853
 #define SEA_WK (SEA_TAU/${WAVELENGTH.toFixed(4)})
 #define SEA_WW (SEA_TAU/${PERIOD.toFixed(4)})
+#define SEA_DRIFT 4.
 float2 seaMod(float2 x, float y){ return x-y*floor(x/y); }
 // value noise and Voronoi (same as the editor's GLSL_NOISE, own names)
 float seaH21(float2 p){ p=frac(p*float2(123.34,456.21)); p+=dot(p,p+45.32); return frac(p.x*p.y); }
@@ -31,29 +32,35 @@ float seaCrest(float u, float st){
   return lerp(sym,saw,st);
 }
 // Height of the sea above its still level at p (m). s = distance to the still waterline (m, + at sea), d = still depth (m).
-// Crests roll in toward the shore (they line up with the shoreline and bend a little along it, each with its own height),
-// grow and steepen below ${STEEPEN_DEPTH} m, break (brk) between ${BREAK_DEPTH[1]} and ${BREAK_DEPTH[0]} m and run on as a lower bore; past the
-// waterline the bore runs up the sand, lagging as it climbs, spent within a few metres, and slides back. ph = wave phase.
-float seaH(float2 p, float s, float d, out float ph, out float brk){
+// riv = (o, j): o = how far the crests are from where the shoreline alone would put them (m): the crests follow the coast
+// smoothed over about a wavelength, with river mouths closed (waves refract on the large-scale bed, not on every inlet);
+// j = 0..1, the river's outflow jet in front of a mouth: the waves steepen and break against it and are stopped inside it.
+// Crests roll in toward the shore (each with its own height, bent a little along it), grow and steepen below ${STEEPEN_DEPTH} m,
+// break (brk) between ${BREAK_DEPTH[1]} and ${BREAK_DEPTH[0]} m and run on as a lower bore; past the waterline the bore runs up the
+// sand, lagging as it climbs, spent within a few metres, and slides back. ph = wave phase.
+float seaH(float2 p, float s, float d, float2 riv, out float ph, out float brk){
   float bend=(seaFbm(p*.03)-.5)*5.;
-  ph=SEA_WK*max(s,0.)+SEA_WW*seaTime+bend;
+  ph=SEA_WK*(max(s,0.)+riv.x)+SEA_WW*seaTime+bend;
   float u=frac(ph/SEA_TAU), ci=floor(ph/SEA_TAU), crest=.62+.38*frac(sin(ci*12.9898)*43758.5453);
   float along=.7+.6*seaFbm(p*.06+float2(ci*1.7,ci*.9));
-  float st=smoothstep(${STEEPEN_DEPTH.toFixed(2)},1.,d); brk=smoothstep(${BREAK_DEPTH[1].toFixed(2)},${BREAK_DEPTH[0].toFixed(2)},d)*step(0.,s);
-  float A=seaWaveH*crest*along*(1.+.8*smoothstep(4.5,1.2,d))*lerp(1.,.5,smoothstep(1.,0.,d))*lerp(1.,.5,smoothstep(14.,40.,s));
+  // against the river's jet: steep and breaking at its front, stopped inside it (no waves run up the river)
+  float stop=smoothstep(.5,.9,riv.y), front=smoothstep(.05,.3,riv.y)*(1.-stop);
+  float st=max(smoothstep(${STEEPEN_DEPTH.toFixed(2)},1.,d),front); brk=max(smoothstep(${BREAK_DEPTH[1].toFixed(2)},${BREAK_DEPTH[0].toFixed(2)},d),front*.85)*step(0.,s);
+  float A=seaWaveH*crest*along*(1.+.8*smoothstep(4.5,1.2,d))*lerp(1.,.5,smoothstep(1.,0.,d))*lerp(1.,.5,smoothstep(14.,40.,s))*(1.+.3*front)*(1.-.9*stop);
   float hw=(seaCrest(u,st)-.3)*A;
-  float phl=SEA_WW*seaTime+bend-SEA_WK*1.8*max(-s,0.), ul=frac(phl/SEA_TAU), cl=floor(phl/SEA_TAU);
-  float hl=seaWaveH*(.75+.45*frac(sin(cl*12.9898)*43758.5453))*seaCrest(ul,1.)*exp(-max(-s,0.)/${RUNUP_REACH.toFixed(2)})-.05;
+  float phl=SEA_WK*riv.x+SEA_WW*seaTime+bend-SEA_WK*1.8*max(-s,0.), ul=frac(phl/SEA_TAU), cl=floor(phl/SEA_TAU);
+  float hl=seaWaveH*(.75+.45*frac(sin(cl*12.9898)*43758.5453))*seaCrest(ul,1.)*exp(-max(-s,0.)/${RUNUP_REACH.toFixed(2)})*(1.-stop)-.05;
   return lerp(hl,hw,smoothstep(0.,1.6,s));
 }
 // the sea surface at p: returns its slope; h = height above the still level, ph = phase, brk = breaking. Used per vertex
 // (to move the mesh) and again per pixel (so crests, shading, foam and the water's edge are smooth curves, not 0.5 m facets).
-// d0 = still depth, dir = toward the shore
-float2 seaWave(float2 p, float s, float d0, float2 dir, out float h, out float ph, out float brk){
+// d0 = still depth, dir = toward the shore (across the crests), riv = (o, j) as seaH
+float2 seaWave(float2 p, float s, float d0, float2 dir, float2 riv, out float h, out float ph, out float brk){
   float ph2, b2, dd=max(d0,0.);
   float lace=(seaFbm(p*2.7+float2(seaTime*.21,-seaTime*.17))-.5)*.035*(1.-smoothstep(.3,2.,abs(s)));   // near the waterline only
-  h=seaH(p,s,dd,ph,brk)+lace;
-  float h2=seaH(p,s+.3,dd,ph2,b2)+lace;
+  float chop=(seaFbm(p*1.9+float2(seaTime*.5,-seaTime*.4))-.5)*.10*smoothstep(.15,.6,riv.y)*seaWaveH;   // short, confused chop where the river runs out into the sea
+  h=seaH(p,s,dd,riv,ph,brk)+lace+chop;
+  float h2=seaH(p,s+.3,dd,riv,ph2,b2)+lace+chop;
   return -dir*(h2-h)/.3;   // s grows away from the shore, so the slope points back out to sea
 }
 `;
@@ -80,11 +87,20 @@ float4 wetSand(float2 p, float d, float d0, float4 sea){
   float sp=pow(max(dot(reflect(-seaSun,float3(0.,1.,0.)),seaView),0.),60.)*fresh;
   return float4(float3(.04,.06,.07)+sp*.8, (wet*.24+sp*.3)*smoothstep(0.,.3,sea.x));   // gone before the sea's weight ends (no slivers where the sheet dips under the sand)
 }
+// the foam's lace at q: warped, two sizes of holes (an irregular lace, not a dot grid)
+float seaFoamPat(float2 q, float tt){
+  float2 qw=q+(float2(seaFbm(q*.6),seaFbm(q*.6+9.))-.5)*1.6;
+  float holes=smoothstep(.06,.42,seaVor(qw*1.3).x)*.55+smoothstep(.08,.45,seaVor(qw*3.2+7.).x)*.45;
+  return holes*.7+seaFbm(q*2.6+tt*.1)*.42;
+}
 // colour and opacity of the sea at p. sea = (sea weight, breaking, distance to the still waterline, wave height);
-// ph = (cos, sin) of the wave phase; grad = slope of the wave surface; dir = toward the shore
-float4 seaColor(float2 p, float d, float d0, float4 sea, float2 ph, float2 grad, float2 dir){
+// ph = (cos, sin) of the wave phase; grad = slope of the wave surface; dir = toward the shore; riv = (o, j) as seaH
+float4 seaColor(float2 p, float d, float d0, float4 sea, float2 ph, float2 grad, float2 dir, float2 riv){
   float t=1.-exp(-d*.55), brk=sea.y;
   float3 col=lerp(lerp(seaShallow,float3(.10,.78,.80),.35),seaDeep,t);   // clear tropical water: emerald over the sand, deep blue further out
+  // the river's water fanning out from its mouth: greener and cloudier, in uneven tongues
+  float plume=riv.y*smoothstep(.25,.6,riv.y+(seaFbm(p*.35-dir*seaTime*.05)-.5)*.5);
+  col=lerp(col,float3(.32,.44,.34),plume*.7);
   // dark beds of sea grass and rock on the floor between the shallows and the deep (seen through the water)
   float bed=smoothstep(.56,.7,seaFbm(p*.11+3.7)+seaFbm(p*.5)*.25)*smoothstep(.5,1.4,d)*(1.-smoothstep(3.5,7.,d));
   col=lerp(col,float3(.03,.22,.20),bed*.75);
@@ -99,22 +115,28 @@ float4 seaColor(float2 p, float d, float d0, float4 sea, float2 ph, float2 grad,
   col*=1.+clamp(face*2.2,-.38,.32)*lerp(1.,.35,smoothstep(6.,16.,sea.z));
   float fres=pow(1.-max(dot(n,V),0.),4.); col=lerp(col,float3(.72,.87,.97),fres*.6);
   // light network on the floor, strongest in the shallows
-  float c=seaCaustic(p,tt)*(1.-t*.85)*smoothstep(0.,.2,d)*(1.-bed*.6)*1.6;
+  float c=seaCaustic(p,tt)*(1.-t*.85)*smoothstep(0.,.2,d)*(1.-bed*.6)*(1.-plume*.8)*1.6;
   // foam: white tops as the crests steepen, white water trailing a broken crest, a lace line at the run-up's edge
   float u=frac(atan2(ph.y,ph.x)/SEA_TAU+1.), cu=min(u,1.-u);
-  float cap=smoothstep(.08,0.,cu)*smoothstep(3.,1.4,d0)*smoothstep(-.2,.8,sea.z);
-  float wash=brk*(exp(-u*3.2)*.95+.05)*step(u,.93);
+  float calm=1.-smoothstep(.5,.9,riv.y);   // no crests inside the river's jet
+  float cap=smoothstep(.08,0.,cu)*smoothstep(3.,1.4,d0)*smoothstep(-.2,.8,sea.z)*calm;
+  float wash=brk*(exp(-u*3.2)*.95+.05)*step(u,.93)*calm;
   float edge=smoothstep(.12,0.,d)*smoothstep(-.4,.4,sea.z+1.2);
-  float2 q=p+dir*tt*1.1;   // foam drifts shoreward with the bores
-  float2 qw=q+(float2(seaFbm(q*.6),seaFbm(q*.6+9.))-.5)*1.6;   // warped, two sizes of holes: an irregular lace, not a dot grid
-  float holes=smoothstep(.06,.42,seaVor(qw*1.3).x)*.55+smoothstep(.08,.45,seaVor(qw*3.2+7.).x)*.45;
-  float pat=holes*.7+seaFbm(q*2.6+tt*.1)*.42;
-  float dens=max(max(cap*.95,wash*.8),edge*.95);
+  // foam drifts shoreward with the bores. Each copy of the pattern drifts for SEA_DRIFT s and starts again, crossfaded with a
+  // copy half a cycle behind: drifting by direction × time for ever would stretch the lace into streaks wherever the direction
+  // turns (and so would a drift that changes from place to place, so the white water at a river's jet stands where it is)
+  float2 drift=dir*1.1*SEA_DRIFT;
+  float f0=frac(tt/SEA_DRIFT), f1=frac(tt/SEA_DRIFT+.5), w0=1.-abs(2.*f0-1.);
+  float2 q=p+drift*f0;
+  float pat=lerp(seaFoamPat(p+drift*f1+float2(7.3,1.9),tt),seaFoamPat(q,tt),w0);
+  float jf=smoothstep(.05,.3,riv.y)*(1.-smoothstep(.5,.9,riv.y));   // white water standing at the front of the river's jet, where the waves break against it
+  float dens=max(max(max(cap*.95,wash*.8),edge*.95),jf*(.35+.3*seaFbm(p*.8+float2(tt*.3,-tt*.2))));
   float foam=clamp((pat-(1.-dens)*1.05)*2.2,0.,1.)*smoothstep(0.,.25,dens);
-  foam=clamp(foam+smoothstep(.78,.95,seaFbm(q*.9-tt*.03))*.10*smoothstep(1.,4.,d0),0.,1.);   // faint streaks offshore
+  float streak=lerp(seaFbm((p+drift*f1)*.9-tt*.03),seaFbm(q*.9-tt*.03),w0);
+  foam=clamp(foam+smoothstep(.78,.95,streak)*.10*smoothstep(1.,4.,d0),0.,1.);   // faint streaks offshore
   float3 R=reflect(-seaSun,n); float sp=max(dot(R,V),0.);
   float glint=pow(sp,240.)*2.4+pow(sp,36.)*.10+step(.986,seaVn(p*9.+tt*2.3))*pow(sp,10.)*1.3;
-  float a=max(lerp(.34,.96,t),bed*.7);
+  float a=max(lerp(.34,.96,t),bed*.7); a=lerp(a,max(a,.8),plume);   // the river's silt hides the floor
   float ca=c; col=(col*a+float3(1.,1.,.9)*ca)/(a+ca+1e-4); a=a+ca*(1.-a);
   col=lerp(col,float3(.97,.99,1.),foam); a=max(a,foam*.96);
   float thin=smoothstep(0.,.04,d); a=max(a*thin,foam*.96*smoothstep(0.,.012,d));   // at the water's edge the water fades out onto the wet sand under it (the lace stays to the edge)

@@ -1,7 +1,7 @@
 // 今回のr=0接地修正用。完成済み上流データを維持し、検証済みの新しい識別キーだけ渡す。
 // 先に build-prepared-samples.cjs で現在のkey/profileを確認する。通常の生成器にはしない。
 const fs=require('fs'),path=require('path'),cp=require('child_process'),zlib=require('zlib'),crypto=require('crypto'),assert=require('assert/strict'),{isDeepStrictEqual}=require('util'),codec=require('../terrain/prepared-codec');
-const root=path.resolve(__dirname,'..'),base='973fa00',dir=path.join(root,'prepared'),read=n=>cp.execFileSync('git',['show',base+':'+n],{cwd:root,maxBuffer:30e6}),sha=b=>crypto.createHash('sha256').update(b).digest('hex'),manifest=s=>JSON.parse(s.toString().slice('window.TDPreparedManifest='.length).trim().replace(/;$/,''));
+const root=path.resolve(__dirname,'..'),base='f09fe40',dir=path.join(root,'prepared'),read=n=>cp.execFileSync('git',['show',base+':'+n],{cwd:root,maxBuffer:30e6}),sha=b=>crypto.createHash('sha256').update(b).digest('hex'),manifest=s=>JSON.parse(s.toString().slice('window.TDPreparedManifest='.length).trim().replace(/;$/,''));
 const norm=b=>b.toString().replace(/\r\n?/g,'\n');
 // 接地対象以外の元メッシュ・衝突・生成部品が変わった場合は再利用しない。
 for(const n of cp.execFileSync('git',['ls-tree','-r','--name-only',base,'props','terrain'],{cwd:root,encoding:'utf8'}).trim().split('\n'))if(n.endsWith('.js')&&n!=='props/shells.js')assert.equal(norm(fs.readFileSync(path.join(root,n))),norm(read(n)),n+' source changed');

@@ -1,6 +1,6 @@
 // 接地修正以外の完成サンプル内容が上流と同一であることを読み取り比較する。
 const fs=require('fs'),path=require('path'),cp=require('child_process'),zlib=require('zlib'),crypto=require('crypto'),assert=require('assert/strict'),{isDeepStrictEqual}=require('util'),codec=require('../terrain/prepared-codec');
-const root=path.resolve(__dirname,'..'),base=process.env.BASE_REF||'973fa00',read=n=>cp.execFileSync('git',['show',base+':'+n],{cwd:root,maxBuffer:30e6}),manifest=b=>JSON.parse(b.toString().slice('window.TDPreparedManifest='.length).trim().replace(/;$/,''));
+const root=path.resolve(__dirname,'..'),base=process.env.BASE_REF||'f09fe40',read=n=>cp.execFileSync('git',['show',base+':'+n],{cwd:root,maxBuffer:30e6}),manifest=b=>JSON.parse(b.toString().slice('window.TDPreparedManifest='.length).trim().replace(/;$/,''));
 function decode(script){const s=script.toString(),packed=Buffer.from(JSON.parse(s.slice(s.indexOf(',')+1).trim().replace(/\);$/,'')),'base64');return codec.decode(zlib.gunzipSync(packed));}
 const old=manifest(read('prepared/manifest.js')),now=manifest(fs.readFileSync(path.join(root,'prepared/manifest.js'))),report={base,tests:[]};
 for(const e of now.entries){const ref=old.entries.find(v=>v.kind===e.kind&&v.seed===e.seed&&v.size===e.size);assert(ref);const a=decode(read('prepared/'+ref.file)),b=decode(fs.readFileSync(path.join(root,'prepared',e.file)));
