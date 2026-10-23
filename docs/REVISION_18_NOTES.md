@@ -93,4 +93,10 @@
   - ページのエラー 0
 - 森のサンプルの川と滝つぼの見た目は、変更前と同じです。
 
-- 全体の回帰テスト：実行中（結果はこの後に追記します）。
+- 全体の回帰テスト：ユーザーの版 31319eb（Revision 18・19 の前）と、今の版で同じ一式を流して比べました。
+  - 私の変更で新しく失敗したものはありません。
+  - 両方の版で失敗するもの（9 本）：walktest・secret・bridgetest・v5test・reviewtest・rev3_acceptance・rev5_terrain_grid・touch_sway・water_export。
+    - water_export 以外は、すべて「崖の岩を調整中です。完了後に保存してください」で止まります。31319eb までに入った崖の岩の位置合わせ（終わるまで保存・書き出しできない）の後、テストが位置合わせの終わりを待たずに保存しているためです。
+    - water_export は、テストの道具 tests/cdp.js が、ページの読み込み直しを想定外として止めています。
+  - linkui は 31319eb で失敗、今の版で合格。
+  - それ以外は両方で合格です。今回の新しいテストも合格しました（sea_waves・sea_hlsl_sync・editor_ui・map_name_light・secret_climb・water_unit）。
