@@ -19,6 +19,15 @@ function geometry(id) {
   const indices = a.triangles.slice();
   for (let k = 0; k < indices.length; k += 3) [indices[k + 1], indices[k + 2]] = [indices[k + 2], indices[k + 1]];
   g.setIndex(indices);
+  // 茂みv2の枝は単色UV、葉塊は面積のあるUV。形状を変えず葉だけを識別する。
+  if (id === 'bush' && a.version === 2) {
+    const leaf = new Float32Array(a.positions.length / 3), uv = a.uv;
+    for (let k = 0; k < indices.length; k += 3) {
+      const [x, y, z] = indices.slice(k, k + 3), area = (uv[y*2]-uv[x*2])*(uv[z*2+1]-uv[x*2+1])-(uv[y*2+1]-uv[x*2+1])*(uv[z*2]-uv[x*2]);
+      if (Math.abs(area) > 1e-8) leaf[x] = leaf[y] = leaf[z] = 1;
+    }
+    g.setAttribute('bushLeaf', new THREE.BufferAttribute(leaf, 1));
+  }
   if(a.motionWeights)g.setAttribute('plantWeight',new THREE.Float32BufferAttribute(a.motionWeights,2));if(a.glow)g.setAttribute('sharedGlow',new THREE.Float32BufferAttribute(a.glow,1));
   if(a.rootWood)g.setAttribute('rootWood',new THREE.Float32BufferAttribute(a.rootWood,1));
   if(a.rootWeights)g.setAttribute('rootWeight',new THREE.Float32BufferAttribute(a.rootWeights,1));
@@ -27,6 +36,7 @@ function geometry(id) {
 }
 // 薄い葉の表裏を同じ上側の法線で照らす。樹皮・枝・根は既存の照明を保つ。
 function leafLighting(m, a) {
+  if (a.id === 'bush' && a.version === 2) { bushLeafLighting(m); return; }
   if (!a.rootWood || !a.rootWood.some(w => w < .5)) return;
   const compile = m.onBeforeCompile, key = m.customProgramCacheKey.bind(m);
   const declaration = m.userData.rootSurfaceSpec ? '' : 'attribute float rootWood;';
@@ -45,6 +55,26 @@ if (vSharedLeaf > .5) {
 // SHARED_LEAF_LIGHT_END`);
   };
   m.customProgramCacheKey = () => key() + '/shared-leaf-light/1';
+}
+// 茂みの葉のみ両面照明を揃え、弱い透過光を与える。枝・影・焼込みAOは維持する。
+function bushLeafLighting(m) {
+  const compile = m.onBeforeCompile, key = m.customProgramCacheKey.bind(m);
+  m.userData.sharedBushLighting = 1;
+  m.onBeforeCompile = sh => {
+    compile(sh);
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute float bushLeaf; varying float vBushLeaf;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvBushLeaf = bushLeaf;');
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying float vBushLeaf;')
+      .replace('#include <normal_fragment_begin>', `#include <normal_fragment_begin>
+if (vBushLeaf > .5) {
+  vec3 leafNormal = normal * faceDirection;
+  normal = dot(leafNormal, viewMatrix[1].xyz) < 0. ? -leafNormal : leafNormal;
+}`)
+      .replace('#include <lights_lambert_pars_fragment>', THREE.ShaderChunk.lights_lambert_pars_fragment.replace(
+        'float dotNL = saturate( dot( geometryNormal, directLight.direction ) );',
+        'float ndl = dot(geometryNormal, directLight.direction);\nfloat dotNL = vBushLeaf > .5 ? max(ndl, -ndl * .35) : max(ndl, 0.);'));
+  };
+  m.customProgramCacheKey = () => key() + '/shared-bush-light/1';
 }
 function material(id, ghost = false) {
   if (ghost) {

@@ -30,6 +30,7 @@ Shader "MapSharedProps/Lit" {
    #pragma target 3.0
    #pragma shader_feature_local _ ROOT_SURFACE
    #pragma shader_feature_local _ SHARED_GLOW
+   #pragma shader_feature_local _ SHARED_BUSH_LEAF
   #pragma shader_feature_local _ ROOT_GROUND
    #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE
    #pragma multi_compile_fragment _ _SHADOWS_SOFT
@@ -53,6 +54,9 @@ TEXTURE2D(_RootGrass);SAMPLER(sampler_RootGrass);TEXTURE2D(_RootDirt);SAMPLER(sa
 #endif
 
    struct Attributes { float4 positionOS:POSITION; float3 normalOS:NORMAL; float2 uv:TEXCOORD0; float2 weights:TEXCOORD1;
+#ifdef SHARED_BUSH_LEAF
+float2 bushLeaf:TEXCOORD4;
+#endif
 #ifdef SHARED_GLOW
 float glow:TEXCOORD2;
 #endif
@@ -89,7 +93,11 @@ n=normalize(lerp(n,float3(0,1,0),RootNormalBlend(o.rootSurface.z,v.rootMask.y)))
 #ifdef ROOT_GROUND
 n=normalize(n-float3(_TDRootSlope.x,0,_TDRootSlope.y)*n.y*v.rootMask.x);
 #endif
- Light light=GetMainLight(); o.directF=light.color*max(0,dot(n,light.direction)); o.directB=light.color*max(0,dot(-n,light.direction)); o.ambientF=SampleSH(n); o.ambientB=SampleSH(-n); o.uv=TRANSFORM_TEX(v.uv,_BaseMap); o.color=v.color; return o;
+ Light light=GetMainLight(); o.directF=light.color*max(0,dot(n,light.direction)); o.directB=light.color*max(0,dot(-n,light.direction)); o.ambientF=SampleSH(n); o.ambientB=SampleSH(-n);
+#ifdef SHARED_BUSH_LEAF
+ if(v.bushLeaf.x>.5){n=n.y<0?-n:n;half ndl=dot(n,light.direction);o.directF=o.directB=light.color*max(ndl,-ndl*.35);o.ambientF=o.ambientB=SampleSH(n);}
+#endif
+ o.uv=TRANSFORM_TEX(v.uv,_BaseMap); o.color=v.color; return o;
    }
    half4 Frag(Varyings i, FRONT_FACE_TYPE front:FRONT_FACE_SEMANTIC):SV_Target {
     half4 c=SAMPLE_TEXTURE2D(_BaseMap,sampler_BaseMap,i.uv)*_BaseColor*i.color; clip(c.a-_Cutoff);

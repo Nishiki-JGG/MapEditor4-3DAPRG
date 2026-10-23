@@ -136,8 +136,15 @@ public static class MapSharedPropsBuilder {
      colors[i] = new Color(a.colors[k], a.colors[k+1], a.colors[k+2], 1); uv[i] = new Vector2(a.uv[i*2], a.uv[i*2+1]);
     }
     var mesh = new Mesh { name = a.assetKey + "/v" + a.version, indexFormat = IndexFormat.UInt16, vertices = vertices, normals = normals, colors = colors, uv = uv, triangles = a.triangles };
+    if(a.id=="bush"&&a.version==2){
+     // ブラウザと同じUV面積判定。葉144面と単色UVの木質40面を分離する。
+     var leaves=new List<Vector2>(new Vector2[n]);
+     for(int k=0;k<a.triangles.Length;k+=3){int x=a.triangles[k],y=a.triangles[k+1],z=a.triangles[k+2];var d1=uv[y]-uv[x];var d2=uv[z]-uv[x];if(Mathf.Abs(d1.x*d2.y-d1.y*d2.x)>1e-8f)leaves[x]=leaves[y]=leaves[z]=Vector2.right;}
+     mesh.SetUVs(4,leaves);
+    }
     if(a.motionWeights!=null){var mask=new Vector2[n];for(int i=0;i<n;i++)mask[i]=new Vector2(a.motionWeights[i*2],a.motionWeights[i*2+1]);mesh.uv2=mask;}if(a.glow!=null){var emission=new Vector2[n];for(int i=0;i<n;i++)emission[i]=new Vector2(a.glow[i],0);mesh.uv3=emission;}if(a.rootGrounding!=null){var roots=new Vector2[n];for(int i=0;i<n;i++)roots[i]=new Vector2(a.rootWeights[i],a.rootWood!=null?a.rootWood[i]:0);mesh.uv4=roots;}mesh.RecalculateBounds();if(a.rootGrounding!=null){var b=mesh.bounds;float radius=Mathf.Max(Mathf.Abs(b.min.x),Mathf.Abs(b.max.x))+Mathf.Max(Mathf.Abs(b.min.z),Mathf.Abs(b.max.z));b.Expand(new Vector3(0,radius*.3f,0));mesh.bounds=b;}if((a.wind!=null&&a.wind.maxDisplacementMetres>0)||(a.id=="pine"&&wind!=null)){var bounds=mesh.bounds;float pad=(a.wind!=null&&a.wind.maxDisplacementMetres>0?a.wind.maxDisplacementMetres:wind.maxDisplacementMetres)+(a.contact!=null?a.contact.maxDisplacementMetres:0);bounds.Expand(new Vector3(pad*2,0,pad*2));mesh.bounds=bounds;} AssetDatabase.CreateAsset(mesh, r.assetDirectory + "/" + a.id + ".asset");
     var d = a.material; var mat = new Material(shader) { name = a.id + "/v" + a.version };
+    if(a.id=="bush"&&a.version==2)mat.EnableKeyword("SHARED_BUSH_LEAF");
     mat.SetTexture("_BaseMap", textures[d.texture]); mat.SetColor("_BaseColor", new Color(d.baseColor[0],d.baseColor[1],d.baseColor[2],d.baseColor[3]));
     if(a.id=="pine"&&wind!=null){mat.SetVector("_PineBand",new Vector4(wind.minY,wind.maxY,wind.maxDisplacementMetres,1));mat.SetVector("_PineWaves",new Vector4(wind.waves[0],wind.waves[1],wind.waves[2],wind.waves[3]));mat.SetVector("_PinePhase",new Vector4(wind.phase[0],wind.phase[1],0,0));}
     if(a.wind!=null&&a.wind.maxDisplacementMetres>0){mat.SetVector("_PineBand",new Vector4(a.wind.minY,a.wind.maxY,a.wind.maxDisplacementMetres,a.motionWeights!=null?3:2));if(a.motionWeights!=null)mat.SetVector("_PinePhase",new Vector4(.17f,.13f,a.wind.phaseOffset,0));}
