@@ -36,7 +36,7 @@ Shader "MapWater/Sea"
    #include "MapSeaShared.hlsl"
 
    struct A { float4 p:POSITION; float2 sh:TEXCOORD0; float2 dir:TEXCOORD1; float2 dep:TEXCOORD2; };
-   struct V { float4 p:SV_POSITION; float3 w:TEXCOORD0; float4 sea:TEXCOORD1; float4 phg:TEXCOORD2; float2 dd:TEXCOORD3; float2 dir:TEXCOORD4; float2 pe:TEXCOORD5; };
+   struct V { float4 p:SV_POSITION; float3 w:TEXCOORD0; float4 sea:TEXCOORD1; float2 dir:TEXCOORD2; float2 pe:TEXCOORD3; };   // sea = (weight, distance to the waterline, still depth, wave height)
    void SetGlobals(){
     seaTime=_Time.y*_TimeScale; seaWaveH=_WaveHeight;
     float3 s=normalize(_SunDirection.xyz); seaSun=float3(s.x,s.y,-s.z);   // editor frame: z flipped
@@ -45,25 +45,29 @@ Shader "MapWater/Sea"
    // object space of the generated mesh = map space (origin at the map corner) → the editor's frame (origin at the centre, z flipped)
    float2 EditorXZ(float3 o){ return float2(o.x-_MapSize*.5,_MapSize*.5-o.z); }
 
-   // same as the editor's water vertex shader: the surface rises by the wave height; its slope shades the faces
+   // same as the editor's water vertex shader: the surface rises by the wave height (sea.js seaWave); on the beach the sheet
+   // lies just on the sand, so the wet sand it draws is never hidden under it
    V vert(A a){
     SetGlobals();
-    V o; float2 pe=EditorXZ(a.p.xyz); float s=a.sh.x, seaW=a.sh.y, depth=a.dep.x, h=0., ph=0., brk=0.; float2 grad=float2(0.,0.);
+    V o; float2 pe=EditorXZ(a.p.xyz); float s=a.sh.x, seaW=a.sh.y, depth=a.dep.x, h=0., ph=0., brk=0.;
     if(seaW>.001){
-     float ph2, b2; h=seaH(pe,s,max(depth,0.),ph,brk);
-     float h2=seaH(pe,s+.3,max(depth,0.),ph2,b2);
-     grad=-a.dir*(h2-h)/.3*seaW; h*=seaW;   // s grows away from the shore, so the slope points back out to sea
+     float2 grad=seaWave(pe,s,depth,a.dir,h,ph,brk); h*=seaW;
+     if(depth<0.) h=max(h,-depth+.02);
     }
     o.w=TransformObjectToWorld(a.p.xyz+float3(0.,h,0.)); o.p=TransformWorldToHClip(o.w);
-    o.sea=float4(seaW,brk*seaW,s,_WaveHeight); o.phg=float4(cos(ph),sin(ph),grad.x,grad.y); o.dd=float2(depth+h,depth); o.dir=a.dir; o.pe=pe;
+    o.sea=float4(seaW,s,depth,_WaveHeight); o.dir=a.dir; o.pe=pe;
     return o;
    }
+   // per pixel, as the editor: the wave is worked out again, and its depth here decides the water's edge,
+   // so the edge, the crests and their foam follow smooth curves instead of the mesh's triangles
    half4 frag(V i):SV_Target{
     SetGlobals();
     float3 v=normalize(GetCameraPositionWS()-i.w); seaView=float3(v.x,v.y,-v.z);
-    float seaW=i.sea.x, d=i.dd.x; float4 c=float4(0.,0.,0.,0.);
-    if(d<=0.){ if(seaW<.01) discard; c=wetSand(i.pe,d,i.dd.y,i.sea); }   // above the water: wet sand behind the run-up, else nothing
-    else c=seaColor(i.pe,d,i.dd.y,i.sea,i.phg.xy,i.phg.zw,i.dir);
+    float seaW=i.sea.x, s=i.sea.y, d0=i.sea.z, h=0., ph=0., brk=0.;
+    float2 grad=seaWave(i.pe,s,d0,i.dir,h,ph,brk)*seaW; h*=seaW; brk*=seaW;
+    float d=d0+h; float4 sv=float4(seaW,brk,s,i.sea.w); float4 c=float4(0.,0.,0.,0.);
+    if(d<=0.){ if(seaW<.01) discard; c=wetSand(i.pe,d,d0,sv); }   // above the water: wet sand behind the run-up, else nothing
+    else c=seaColor(i.pe,d,d0,sv,float2(cos(ph),sin(ph)),grad,i.dir);
     c.a*=saturate(seaW);   // the sea fades out where its weight does (beach far from the water, lakes)
     return half4(pow(max(c.rgb,float3(0.,0.,0.)),float3(2.2,2.2,2.2)),c.a);   // gamma 2.2 → linear, as the editor does
    }

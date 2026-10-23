@@ -18,6 +18,6 @@ const globals = ['seaTime', 'seaWaveH', 'seaSun', 'seaShallow', 'seaDeep', 'seaV
 check('共有のコードが読む大域は seaTime・seaWaveH・seaSun・seaShallow・seaDeep・seaView だけ', !unknown.length, unknown.join(','));
 const shader = fs.readFileSync(out.replace('MapSeaShared.hlsl', 'MapSea.shader'), 'utf8');
 check('MapSea.shader がこの大域をすべて宣言して代入する', globals.every(g => new RegExp('static\\s+float3?\\s+[^;]*\\b' + g + '\\b').test(shader) && new RegExp('\\b' + g + '\\s*=').test(shader)));
-check('MapSea.shader が MapSeaShared.hlsl を読み、seaH・seaColor・wetSand を呼ぶ', /#include\s+"MapSeaShared\.hlsl"/.test(shader) && /\bseaH\s*\(/.test(shader) && /\bseaColor\s*\(/.test(shader) && /\bwetSand\s*\(/.test(shader));
+check('MapSea.shader が MapSeaShared.hlsl を読み、seaWave（頂点と画素の両方）・seaColor・wetSand を呼ぶ', /#include\s+"MapSeaShared\.hlsl"/.test(shader) && (shader.match(/\bseaWave\s*\(/g) || []).length >= 2 && /\bseaColor\s*\(/.test(shader) && /\bwetSand\s*\(/.test(shader));
 for (const [n, ok, d] of checks) console.log((ok ? 'PASS ' : 'FAIL ') + n + (ok || !d ? '' : '  — ' + d));
 process.exit(checks.every(c => c[1]) ? 0 : 1);
