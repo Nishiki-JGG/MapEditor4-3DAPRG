@@ -1,13 +1,13 @@
-# 置物の岩の石肌改善（2026-10-23）
+# 置物の岩：割れ面と石肌（2026-10-24）
 
-「岩」の既存3塊・120三角形を流用し、黒い面ごとの塗り分けを位置に沿う灰褐色へ変更した。緩い面の法線を平均して三角形の陰影を弱め、大きな稜線は残す。512²の鉱物粒・細い層理・途切れる亀裂を重ね、上面には少量の地衣、接地部には控えめな暗さを付けた。
+大岩の丸すぎる形状を改善。既存の3塊構成・配置寸法・接地を保ち、大塊だけを、向きの異なる節理面が交差する岩体へ変更した。斜めの割れ目、上面の欠け、面の小さな起伏を形状に加え、割れ面の稜線を残す。脇石2個は元の形状を維持。灰褐色の鉱物粒・層理・細い亀裂・控えめな地衣の512²画像を流用する。
 
-- 位置・面・UV・ピボット・共有ID・配置寸法は不変。
-- 法線・頂点色・PNGを共有データとして保存し、Webと共有モデル書き出しで同じデータを使う。モデル版は5。Unity再描画は未実施。
-- 配布データ: `props/shared/rock-surface.js`。起動時に画像生成を行わない。
-- 原稿: `tools/nature/rock-surface-recipe.js`。再生成は `node tools/nature/bake-rock-surface.cjs`。
-- 見た目変更後は `node tools/build-prepared-samples.cjs`、続けて `--check` で固定サンプルの署名を更新・検査する。新材質を生成元一覧に含めた。
-- `node tests/rock-surface-browser.cjs`：固定サンプル初回読込、形状・UV保全、法線、保存、共有メッシュ/画像書出しを確認。
-- 既存の岩もページ再読込で更新される。再配置は不要。
+- 版はrock v6。大塊の位置・UV・面は更新、全体の外接寸法・ピボット・種類ID・配置と衝突設定は維持。
+- 合計120→1,480三角形。単純に全体を滑らかにせず、割れ目を造るために面を増やした。描画速度や実機性能の改善は主張しない。
+- 配布: `props/shared/rock-surface.js`。起動時の形状/画像生成は不要。原稿: `tools/nature/rock-surface-recipe.js`。
+- 再生成: `node tools/nature/bake-rock-surface.cjs`、続いて `node tools/build-prepared-samples.cjs`。旧固定サンプルは新版で置換する。
+- `node tests/rock-surface-browser.cjs`: 小石・外接寸法の保持、閉じた面、退化面/法線の反転なし、保存・書き出し、固定サンプル読込を確認。
+- Unity: v4/v5互換を維持しv6を受入れ。同一PNG・位置・法線・頂点色・UV・面の受渡し、実取り込みとURP描画まで20項目PASS。
+- Webの既存配置はページ再読込で更新。Unityの既存配置には最新インポーターでの再取り込みが必要。手順は [UNITY_SURFACE_SYNC.md](UNITY_SURFACE_SYNC.md)。
 
-旧表面調整の記録は [ROCK_SURFACE_REFRESH.md](ROCK_SURFACE_REFRESH.md) に保持。
+旧表面調整はv5として履歴に保持。ゲーム本体のScene更新、Windows build、スマホ実機の性能測定は未実施。

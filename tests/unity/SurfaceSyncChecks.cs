@@ -20,10 +20,11 @@ public static class SurfaceSyncChecks {
  try {
   EditorSceneManager.NewScene(NewSceneSetup.EmptyScene,NewSceneMode.Single);
   var old=Builder.ReadLibrary(Path.Combine(output,"legacy-library.json"));Verify("Legacy rock v4 accepted",old.assets.Single(a=>a.id=="rock").version==4);
+  var old5=Builder.ReadLibrary(Path.Combine(output,"legacy-v5-library.json"));Verify("Legacy rock v5 accepted",old5.assets.Single(a=>a.id=="rock").version==5);
   var rd=ScriptableObject.CreateInstance<UniversalRendererData>();var pipeline=UniversalRenderPipelineAsset.Create(rd);GraphicsSettings.defaultRenderPipeline=pipeline;QualitySettings.renderPipeline=pipeline;
   var lib=Builder.ReadLibrary(Path.Combine(export,"shared_props.json"));Verify("Current 56 assets and 9 textures accepted",lib.assets.Length==56&&lib.textures.Length==9);
   var rock=lib.assets.Single(a=>a.id=="rock");var tx=lib.textures.Single(t=>t.id=="placed-rock-mineral-v3");
-  Reject(output,lib,"Unknown rock version rejected",()=>rock.version=6,()=>rock.version=5);
+  Reject(output,lib,"Unknown rock version rejected",()=>rock.version=99,()=>rock.version=6);
   Reject(output,lib,"Wrong rock texture rejected",()=>rock.material.texture="rock-basecolor-v1",()=>rock.material.texture="placed-rock-mineral-v3");
   Reject(output,lib,"Missing sRGB metadata rejected",()=>tx.colorSpace=null,()=>tx.colorSpace="sRGB");
   built=Builder.Build(export);Verify("All four exported placements imported",built.placed==4&&built.skipped==0);

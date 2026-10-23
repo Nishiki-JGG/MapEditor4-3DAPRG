@@ -1,6 +1,6 @@
-# 岩・乾いた土片のUnity反映（2026-10-23）
+# 岩・乾いた土片のUnity反映（2026-10-24更新）
 
-Webの共有素材を正本として、Unityにも同じPNG、法線、頂点色、UV、形状を渡します。岩はversion 5、乾いた土片3種はversion 1です。旧版の岩version 4も読み込めます。
+Webの共有素材を正本として、Unityにも同じPNG、法線、頂点色、UV、形状を渡します。岩はversion 6、乾いた土片3種はversion 1です。旧版の岩version 4・5も読み込めます。
 
 ## 使い方
 
@@ -20,6 +20,8 @@ Webの共有素材を正本として、Unityにも同じPNG、法線、頂点色
 
 ## 確認結果
 
-Unity 6000.5.9f1／URPの既存隔離プロジェクトで、実際のエディター書き出し（56資産・9画像）を取り込みました。岩1個・土片3個の配置、4種の形状・法線・頂点色・UV・三角形接続、PNGの完全一致、取り込み設定、旧版互換、shaderの描画を確認しました。19項目PASS。Unity起動は1回。Windows build・ゲーム本体Sceneへの配置は未実施。
+Unity 6000.5.9f1／URPの既存隔離プロジェクトで、実際のエディター書き出し（56資産・9画像）を取り込みました。岩1個・土片3個の配置、4種の形状・法線・頂点色・UV・三角形接続、PNGの完全一致、取り込み設定、旧版互換、shaderの描画を確認しました。20項目PASS。Unity起動は1回。Windows build・ゲーム本体Sceneへの配置は未実施。
 
 再確認用: `node tests/unity_surface_export.cjs <出力フォルダー>` で実書き出しを作り、既存の隔離Unityに `tests/unity/SurfaceSyncChecks.cs` を置き、`MapEditor.Tests.SurfaceSyncChecks.Run` を `-surface-output <出力フォルダー> -surface-export <出力フォルダー>/export` とともに実行します。Unityはプロジェクトの一個制御手順経由で起動してください。
+
+2026-10-24: 大岩の割れ面・欠けを持つv6を追加。旧v4/v5を読む確認も実行。詳細は [PLACED_ROCK_SURFACE.md](PLACED_ROCK_SURFACE.md)。
