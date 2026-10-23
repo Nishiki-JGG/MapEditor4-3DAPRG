@@ -1151,10 +1151,11 @@ function updateTouch(dt) {
 const cliffFits=new TDCliffFits.Store(PROP,sha256);
 function cliffInputSignature(heights=H,waterfalls=falls,water=state.water,size=SIZE){return sha256(new Uint8Array(heights.buffer))+'/'+sha256(new TextEncoder().encode(JSON.stringify([waterfalls,water,size])));}
 function effectiveGeometry(p){return cliffFits.effectiveGeometry(p);}
+function caveWallGeometry(g,type){return state.biome==='cave'&&TDCaveWall.enabled?TDCaveWall.geometry(g,PROP[type].id):g;}
 function refreshCliffFits(visualOnly=false){if(!visualOnly){const stale=cliffFits.synchronize(cliffInputSignature(),props);if(stale)toast('地形または岩を変更したため、密着加工を解除しました。岩を自動配置で更新できます。');}for(const c of cliffFits.cache.values())if(c.mesh)c.mesh.visible=false;}
 function cliffTintAt(x,z){const v=.86+.28*hash2(x*97|0,z*89|0);return[v*(.95+.1*hash2(x*13|0,7)),v,v*(.95+.1*hash2(3,z*17|0))];}
 function savedCliffTint(p){return cliffFits.valid(p)?cliffFits.records.get(p[8]).instanceTint:null;}
-function drawCliffFit(p,matrix,color,ghost){const c=cliffFits.get(p);if(!c)return false;const record=cliffFits.records.get(p[8]);if(record.affine){if(!c.affine)c.affine=new THREE.Matrix4().fromArray(record.affine);matrix.multiply(c.affine);return false;}if(!c.mesh){const g=c.geometry;g.setAttribute('cliffI',new THREE.InstancedBufferAttribute(new Float32Array([cliffIndexNear(p[1],p[2])]),1));const m=new THREE.InstancedMesh(g,propMeshes[p[0]].material,1);m.instanceColor=new THREE.InstancedBufferAttribute(new Float32Array(3),3);m.castShadow=m.receiveShadow=true;m.frustumCulled=false;c.mesh=m;scene.add(m);}const m=c.mesh;m.material=ghost?ghostMat:propMeshes[p[0]].material;m.renderOrder=ghost?8:0;m.visible=true;m.setMatrixAt(0,matrix);m.setColorAt(0,color);m.instanceMatrix.needsUpdate=m.instanceColor.needsUpdate=true;c.geometry.attributes.cliffI.array[0]=cliffIndexNear(p[1],p[2]);c.geometry.attributes.cliffI.needsUpdate=true;return true;}
+function drawCliffFit(p,matrix,color,ghost){const c=cliffFits.get(p);if(!c)return false;const record=cliffFits.records.get(p[8]);if(record.affine){if(!c.affine)c.affine=new THREE.Matrix4().fromArray(record.affine);matrix.multiply(c.affine);return false;}if(!c.mesh){const g=c.geometry;g.setAttribute('cliffI',new THREE.InstancedBufferAttribute(new Float32Array([cliffIndexNear(p[1],p[2])]),1));const m=new THREE.InstancedMesh(g,propMeshes[p[0]].material,1);m.instanceColor=new THREE.InstancedBufferAttribute(new Float32Array(3),3);m.castShadow=m.receiveShadow=true;m.frustumCulled=false;c.mesh=m;scene.add(m);}const m=c.mesh;m.geometry=caveWallGeometry(c.geometry,p[0]);m.material=ghost?ghostMat:propMeshes[p[0]].material;m.renderOrder=ghost?8:0;m.visible=true;m.setMatrixAt(0,matrix);m.setColorAt(0,color);m.instanceMatrix.needsUpdate=m.instanceColor.needsUpdate=true;c.geometry.attributes.cliffI.array[0]=cliffIndexNear(p[1],p[2]);c.geometry.attributes.cliffI.needsUpdate=true;return true;}
 function makeFittedFootprint(p,c){if(c.footprint)return c.footprint;const g=c.geometry.clone(),P=g.attributes.position;for(let i=0;i<P.count;i++){const w=TDCliffContact.world(p,[P.getX(i),P.getY(i),P.getZ(i)]);P.setXYZ(i,w[0]-p[1],w[1],w[2]-p[2]);}g.computeBoundingBox();const f=shapeFootprint({geo:g,sharedAsset:true});for(let j=0;j<f.nz;j++)for(let i=0;i<f.nx;i++){const k=j*f.nx+i;if(f.top[k]>-1e8)f.top[k]-=heightAt(p[1]+f.x0+i*SHAPE_CELL,p[2]+f.z0+j*SHAPE_CELL);}const box=g.boundingBox;f.R=Math.hypot(Math.max(Math.abs(box.min.x),Math.abs(box.max.x)),Math.max(Math.abs(box.min.z),Math.abs(box.max.z)));c.y0=box.min.y;c.y1=box.max.y;g.dispose();return c.footprint=f;}
 
 // A bounded local plane moves only the root collar. Recomputed on placement/terrain rebuild, never per vertex/frame.
@@ -1171,6 +1172,7 @@ function groundedMeshes(type,ghost,needed){
 }
 function rebuildProps(visualOnly = false) {
   refreshCliffFits(visualOnly);
+  const wallType=TYPE('cliff');if(wallType>=0){const g=caveWallGeometry(PROP[wallType].geo,wallType);propMeshes[wallType].geometry=ghostMeshes[wallType].geometry=g;}if(state.tool==='place')preview.geometry=caveWallGeometry(PROP[state.variant.place].geo,state.variant.place);
   glowTick = 0;
   const cnt = PROP.map(() => 0), gcnt = PROP.map(() => 0);
   touchIdx.clear(); touchProps = [];touchGrid.clear();
@@ -3826,6 +3828,8 @@ revision・書き出し日時・ファイルごとの SHA-256・contentHash は 
 - Prefab のローカル +Z = プレイヤーが入っていく向き、-Z = 近づいてくる側。回転は yawDeg + yawOffsetDeg。
 - 当たり判定（radius / offsets / solid）も同じローカル座標。エディター内部のローカル座標とは z の符号だけが違います。
 `;
+  const caveWallVisuals=state.biome==='cave'?TDCaveWall.exportData({props,types:PROP,fits:cliffFits,half:HALF,yZero:mn,baseY:propBaseY,tint:p=>savedCliffTint(p)||cliffTintAt(p[1],p[2])}):null;
+  if(caveWallVisuals?.instances.length)meta.caveWallVisuals={file:'cave_wall_visuals.json',formatVersion:1,optional:true,colliders:'unchanged'};
   const fittedExport=cliffFits.export(props,HALF,mn);for(const f of fittedExport.instances){const p=props.find(p=>p[8]===f.instanceId),v=.86+.28*hash2(p[1]*97|0,p[2]*89|0);f.instanceTint=f.instanceTint||[v*(.95+.1*hash2(p[1]*13|0,7)),v,v*(.95+.1*hash2(3,p[2]*17|0))];f.cliffStyleIndex=cliffIndexNear(p[1],p[2]);}if(fittedExport.instances.length){meta.requiredFeatures=[...(meta.requiredFeatures||[]),'cliffFitsMeshV1'];meta.cliffFits={file:'cliff_fits_mesh.json',instanceIds:fittedExport.instances.map(x=>x.instanceId),replacement:'Replace original renderer and collider per ID; unsupported readers must reject'};}
   const visualFile=terrain.geometry.userData.refinedCells?'terrain_visual_mesh.json':null;
   if(visualFile)meta.terrain.visualSurface={file:visualFile,requiredForVisualParity:true,replace:'terrain renderer only; retain heightmap collider',clipHoles:holesPng?'holes.png':null,stats:terrain.geometry.userData,note:'Apply with the same ground splats, cliff styles and continuous cliffCoverageSlope; do not overlay the old terrain renderer.'};
@@ -3853,6 +3857,7 @@ revision・書き出し日時・ファイルごとの SHA-256・contentHash は 
     { name: 'shared_props.json', data: TDSharedProps.exportJson() },
     { name: 'pine_wind.json', data: TDPineWind.exportJson() },
     {name:'root_grounding.json',data:JSON.stringify({version:1,axes:'Unity world XZ',paint:{file:'root_paint.png',resolution:N,sizeMetres:[SIZE,SIZE]},instances:props.filter(p=>PROP[p[0]].sharedAsset&&TDSharedProps.asset(PROP[p[0]].sharedAsset).rootGrounding).map(p=>{const v=rootSlopeAt(p);return{instanceId:p[8],slope:[v[0],-v[1]],terrain:rootTerrainAt(p)};})})},
+    ...(caveWallVisuals?.instances.length?[{name:'cave_wall_visuals.json',data:JSON.stringify(caveWallVisuals)}]:[]),
     { name: 'shared_ground.json', data: JSON.stringify(state.biome === 'cave' ? { ...TDGroundData, caveFloor: { ...TDCaveFloor.data, surfaceMaskFile:'cave_floor_mask.png', sizeMetres:SIZE, resolution:N } } : TDGroundData) },
     ...(state.biome === 'cave' ? [{name:'cave_floor_mask.png',data:await pngOf((i,j)=>[effectiveS[(j*N+i)*NS+3],Math.round(cliffParams(CLIFF_STYLES[cliffIndexAt(j*N+i)][2]).wet*255),0],N)}] : []),
     { name: 'meta.json', data: JSON.stringify(meta, null, 2) }, { name: 'validation.json', data: JSON.stringify(validation, null, 2) },
@@ -3991,7 +3996,7 @@ function useSlot(n) {
   if (sl.types) { state.types = new Set(sl.types.map(TYPE).filter(i => i >= 0)); syncTypesUI(); }
   if (sl.variant !== undefined) {
     state.variant[sl.tool] = sl.tool === 'place' ? Math.max(0, TYPE(sl.variant)) : sl.variant;
-    if (sl.tool === 'place') { preview.geometry = PROP[state.variant.place].geo; state.placeScale = sl.placeScale ?? 1; state.placeRot = sl.placeRot ?? 0; syncPlaceUI(); }
+    if (sl.tool === 'place') { preview.geometry = caveWallGeometry(PROP[state.variant.place].geo,state.variant.place); state.placeScale = sl.placeScale ?? 1; state.placeRot = sl.placeRot ?? 0; syncPlaceUI(); }
   }
   setTool(sl.tool); slotNow = n; renderSlots(); toast(`${n}：${slotLabel(sl)}`);
 }
@@ -4019,14 +4024,14 @@ function showVariants() {
   const opts = tool === 'marker' ? MARKER_KINDS : tool === 'link' ? LINK_KINDS : tool === 'cliffpaint' ? [[0, 'マップの既定'], ...CLIFF_STYLES.map((c, i) => [i + 1, c[1]])] : tool === 'bridge' ? BRIDGE_TYPES.filter(([v]) => inPalette(BRIDGE_TAGS[v]))
     : tool === 'stairs' ? STAIR_TYPES.filter(([v]) => inPalette(STAIR_TAGS[v]))
     : tool === 'place' ? PROP.map((t, i) => [i, t.name]).filter(([i]) => propVisible(i)) : null;
-  if (opts && opts.length && !opts.some(([v]) => v === state.variant[tool])) { state.variant[tool] = opts[0][0]; if (tool === 'place') preview.geometry = PROP[opts[0][0]].geo; }
+  if (opts && opts.length && !opts.some(([v]) => v === state.variant[tool])) { state.variant[tool] = opts[0][0]; if (tool === 'place') preview.geometry = caveWallGeometry(PROP[opts[0][0]].geo,opts[0][0]); }
   box.hidden = !opts; $('placeOpts').hidden = tool !== 'place';
   if (!opts) return;
   $('variantTitle').textContent = tool === 'marker' ? 'マーカーの種類' : tool === 'link' ? '階層移動の種類' : tool === 'cliffpaint' ? '岩壁の種類' : tool === 'bridge' ? '橋の種類' : tool === 'stairs' ? '階段の種類' : '置く物';
   list.innerHTML = '';
   const button = (v, name, box) => {
-    const b = document.createElement('button'); b.textContent = name; b.classList.toggle('on', state.variant[tool] === v);
-    b.onclick = () => { state.variant[tool] = v; showVariants(); if (tool === 'place') preview.geometry = PROP[v].geo; };
+    const b = document.createElement('button'); b.textContent = name; if(tool==='place')b.title=PROP[v].placementHint||''; b.classList.toggle('on', state.variant[tool] === v);
+    b.onclick = () => { state.variant[tool] = v; showVariants(); if (tool === 'place') preview.geometry = caveWallGeometry(PROP[v].geo,v); };
     box.appendChild(b);
   };
   if (tool !== 'place') { for (const [v, name] of opts) button(v, name, list); return; }
