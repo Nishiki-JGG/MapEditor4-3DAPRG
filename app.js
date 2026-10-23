@@ -2289,7 +2289,15 @@ function regenGroundProps() {
     const x = vx(i) + (h2 - .5) * .45, z = vx(j) + (hash2(i, j * 5) - .5) * .45;
     if (heightAt(x, z) < state.water - .45 || slopeAt(x, z) > 1.2) continue;
     if (rb >= .45) {
-      if (h1 < .13 * rb && free(x, z, .35)) add(TYPE('scree'), x, z, .7 + h2 * .65);
+      // 乾いた土片は地面が十分平らな乾燥面の中だけ。橋・階段・出入口・開始点を空ける。
+      const fx=x/3.4,fz=z/3.4,ix=Math.floor(fx),iz=Math.floor(fz),u=(fx-ix)**2*(3-2*(fx-ix)),v=(fz-iz)**2*(3-2*(fz-iz));
+      const patch=clamp((lerp(lerp(hash2(ix+121,iz+37),hash2(ix+122,iz+37),u),lerp(hash2(ix+121,iz+38),hash2(ix+122,iz+38),u),v)-.30)/.50,0,1);
+      const scale=.75+h2*.40,radius=.36*scale,base=heightAt(x,z);
+      const safe=rb>.85&&h1<(.025+.44*patch*patch)*Math.min(1,6400/(SIZE*SIZE))&&free(x,z,.38)&&base>state.water+.12&&slopeAt(x,z)<.16&&bridgeAt(x,z)===null&&stairsAt(x,z)===null&&Math.hypot(x-state.spawn.x,z-state.spawn.z)>1&&
+        !markers.some(m=>(m.kind==='port'||isLink(m.kind))&&Math.hypot(x-m.x,z-m.z)<Math.max(m.r||0,(m.w||2)/2)+radius+.35)&&
+        Array.from({length:8},(_,i)=>i*Math.PI/4).every(a=>{const px=x+Math.cos(a)*radius,pz=z+Math.sin(a)*radius;return splatAt(px,pz,3)>.75&&Math.abs(heightAt(px,pz)-base)<.045&&bridgeAt(px,pz)===null&&stairsAt(px,pz)===null;});
+      if(safe)add(TYPE(['drysoil_curl','drysoil_cup','drysoil_flake'][Math.floor(hash2(i*29+3,j*31+9)*3)]),x,z,scale);
+      else if (h1 < .09 * rb && free(x, z, .35)) add(TYPE('scree'), x, z, .7 + h2 * .65);
     }
     if (sw >= .45) {
       if (h1 < .045 * sw && free(x, z, .7)) add(TYPE('reed'), x, z, .8 + h2 * .5);
@@ -3755,7 +3763,7 @@ const placeOpen = new Set();   // groups of the 置く list the user opened
 const PROP_GROUPS = [
   ['木・倒木', ['pine', 'oak', 'scotspine', 'birch', 'willow', 'hazel', 'rowan', 'juniper', 'deadtree', 'twisttree', 'palm', 'banana', 'maple', 'cherry', 'zelkova', 'nara', 'sugi', 'hinoki', 'islandash', 'olive', 'eucalyptus', 'dragontree', 'elftree', 'worldtree', 'log', 'stump', 'rootfan', 'driftwood']],
   ['草花・低木', ['shortgrass', 'meadowgrass', 'groundlitter', 'grass', 'meadowwhite', 'meadowyellow', 'meadowpink', 'meadowred', 'meadowviolet', 'bush', 'fern', 'bramble', 'ivy', 'sedge', 'foxglove', 'horsetail', 'dock', 'clover', 'reed', 'flowers', 'mushroom', 'glowmush', 'shelfshroom', 'cactus', 'barrelcactus']],
-  ['岩・崖', ['scree', 'rock', 'mossrock', 'pebble', 'cliff', 'cliff_split', 'cliff_shoulder', 'cliff_joint', 'cliff_slab', 'cliff_talus', 'rubblepile', 'stalagmite', 'crystal', 'lavarock', 'obsidian', 'fumarole', 'iceblock', 'icespike']],
+  ['岩・崖', ['drysoil_curl','drysoil_cup','drysoil_flake','scree', 'rock', 'mossrock', 'pebble', 'cliff', 'cliff_split', 'cliff_shoulder', 'cliff_joint', 'cliff_slab', 'cliff_talus', 'rubblepile', 'stalagmite', 'crystal', 'lavarock', 'obsidian', 'fumarole', 'iceblock', 'icespike']],
   ['遺跡・墓', ['column', 'brokencol', 'ruinwall', 'archgate', 'statue', 'stele', 'obelisk', 'pyramid', 'gravestone', 'crossgrave', 'mausoleum', 'bones', 'bonepile', 'magiccircle', 'demonspire']],
   ['建物・道具', ['torch', 'lantern', 'banner', 'woodfence', 'ironfence', 'castlewall', 'tower', 'gatehouse', 'lighthouse', 'rowboat', 'haystack', 'shells', 'snowman', 'kamakura']],
 ];
@@ -3931,7 +3939,7 @@ $('placeRandom').onchange = e => { state.placeRandom = e.target.checked; };
 syncPlaceUI();
 // 自動下草を手直しした時だけ手置きへ切り替え、次回更新から保護する。
 let groundDetailId=null;
-const GROUND_DETAIL_IDS=new Set(['shortgrass','meadowgrass','groundlitter','grass','clover','meadowwhite','meadowyellow','meadowpink','meadowred','meadowviolet','pebble','fern','sedge','dock','flowers','mushroom']);
+const GROUND_DETAIL_IDS=new Set(['drysoil_curl','drysoil_cup','drysoil_flake','scree','shortgrass','meadowgrass','groundlitter','grass','clover','meadowwhite','meadowyellow','meadowpink','meadowred','meadowviolet','pebble','fern','sedge','dock','flowers','mushroom']);
 function selectedGroundDetail(){return props.find(p=>p[8]===groundDetailId)||null;}
 function pickGroundDetail(x,z){
  let best=null,distance=Infinity;
