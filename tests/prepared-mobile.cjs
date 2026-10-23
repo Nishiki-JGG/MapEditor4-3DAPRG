@@ -1,0 +1,13 @@
+// 同梱読込と並行追加されたスマホUIの統合。PCのChromeによるタッチエミュレーション。
+const assert=require('assert/strict'),path=require('path'),{pathToFileURL}=require('url'),{withPage}=require('./cdp');
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+withPage(pathToFileURL(path.resolve(__dirname,'../index.html')).href+'#size=64',async p=>{
+ for(let i=0;i<240;i++){if(await p.eval('!!window.__app&&!__app.preparation&&!!__app.preparationStats'))break;await sleep(300);}
+ const start=await p.eval(`({stats:__app.preparationStats,touch:__app.TOUCH,panel:__app.view.panel})`);assert(start.touch&&!start.panel);assert.equal(start.stats.preparedSource,'bundle');
+ await p.eval(`window.fitsBefore=JSON.stringify(__app.serialize().cliffFits);document.getElementById('modeBtn').click();true`);assert.equal(await p.eval('__app.state.mode'),'play');
+ async function stick(rotated){const c=await p.eval(`(()=>{const r=document.getElementById('joy').getBoundingClientRect();window.walkStart={...__app.player};return{x:r.x+r.width/2,y:r.y+r.height/2};})()`);await p.cdp('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{...c,id:0}]});await p.cdp('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:c.x+(rotated?60:0),y:c.y-(rotated?0:60),id:0}]});await sleep(600);await p.cdp('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});return p.eval(`({moved:Math.hypot(__app.player.x-walkStart.x,__app.player.z-walkStart.z),released:__app.joy.x===0&&__app.joy.y===0})`);}
+ const portrait=await stick(false);assert(portrait.moved>.2&&portrait.released);
+ const controls=await p.eval(`(()=>{document.getElementById('runBtn').dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,cancelable:true,pointerId:2,pointerType:'touch'}));const run=__app.joy.run;document.getElementById('runBtn').dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,cancelable:true,pointerId:2,pointerType:'touch'}));document.getElementById('menuBtn').click();const shown=__app.view.panel;document.getElementById('menuBtn').click();__app.setRotated(true);return{run,off:!__app.joy.run,shown,hidden:!__app.view.panel,aspect:__app.camera.aspect};})()`);assert(controls.run&&controls.off&&controls.shown&&controls.hidden);assert(Math.abs(controls.aspect-844/390)<.01);
+ const landscape=await stick(true);assert(landscape.moved>.2&&landscape.released);
+ const end=await p.eval(`({unchanged:fitsBefore===JSON.stringify(__app.serialize().cliffFits),gl:__app.renderer.getContext().getError()})`);assert(end.unchanged&&end.gl===0);assert.deepEqual(p.errors,[]);console.log(JSON.stringify({pass:true,start,portrait,controls,landscape,end}));
+},{hardware:true,fileAccess:false,mobile:true,hasTouch:true,exactViewport:true,w:390,h:844,wait:1000}).catch(e=>{console.error(e);process.exitCode=1;});

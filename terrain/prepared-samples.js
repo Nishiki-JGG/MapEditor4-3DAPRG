@@ -4,7 +4,7 @@ const recipeVersion='fixed-samples/1',requests=new Map();let manifestPromise;
 const canonical=v=>JSON.stringify(v,(_,x)=>x&&typeof x==='object'&&!Array.isArray(x)?Object.fromEntries(Object.keys(x).sort().map(k=>[k,x[k]])):x);
 const sha=async b=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',b)),v=>v.toString(16).padStart(2,'0')).join('');
 function script(url){return new Promise((resolve,reject)=>{const s=document.createElement('script');s.async=true;s.dataset.preparedSample='1';s.src=url;s.onload=()=>{s.remove();resolve();};s.onerror=()=>{s.remove();reject(Error('処理済みサンプルを読み込めません: '+url));};document.head.append(s);});}
-async function manifest(){return manifestPromise||=(async()=>{await script('prepared/manifest.js?v='+recipeVersion);const m=window.TDPreparedManifest;if(m?.version!==1||m.recipeVersion!==recipeVersion||!Array.isArray(m.entries))throw Error('処理済みサンプルの生成版が一致しません');return m;})();}
+async function manifest(key){return manifestPromise||=(async()=>{await script('prepared/manifest.js?v='+recipeVersion+'&key='+encodeURIComponent(key));const m=window.TDPreparedManifest;if(m?.version!==1||m.recipeVersion!==recipeVersion||!Array.isArray(m.entries))throw Error('処理済みサンプルの生成版が一致しません');return m;})();}
 function register(id,text){const r=requests.get(id);if(!r)return;r.text=text;}
 async function inflate(bytes,limit,job){
  if(typeof DecompressionStream!=='function')throw Error('このブラウザは完成サンプルの圧縮展開に対応していません');
@@ -14,7 +14,7 @@ async function inflate(bytes,limit,job){
 }
 async function load(q,job){
  const fixed=q.kind==='sample'&&q.seed===7&&q.size===64||q.kind==='sample2'&&q.seed===11&&q.size===48;if(!fixed)return null;
- job?.progress('処理済みサンプルの版を確認',0,0);const m=await manifest();TDPreparation.check(job);
+ job?.progress('処理済みサンプルの版を確認',0,0);const m=await manifest(q.key);TDPreparation.check(job);
  const e=m.entries.find(e=>e.kind===q.kind&&e.seed===q.seed&&e.size===q.size);if(!e)throw Error('この固定サンプルの完成品がありません');
  // 体格・biome・カタログなどを編集した派生条件だけは通常の生成へ戻す。
  if(canonical(e.profile)!==canonical(q.profile))return null;

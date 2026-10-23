@@ -7,7 +7,7 @@ function environment(change={}){
  const context={console,Uint8Array,Blob,Response,TextDecoder,DecompressionStream:change.noDecompression?undefined:DecompressionStream,crypto:crypto.webcrypto,performance,atob,TDPreparedCodec:codec,TDPreparation:{check:j=>{if(j&&!j.valid())throw Object.assign(Error('中止'),{name:'AbortError'});},pause:async()=>{}},document:{createElement:()=>({dataset:{},remove(){}}),head:{append(s){requested.push(s.src);queueMicrotask(()=>{if(s.src.startsWith('prepared/manifest.js'))context.TDPreparedManifest=manifest;else context.TDPreparedSamples.register(entry.file,change.text??packed.toString('base64'));s.onload();});}}}};context.window=context;vm.runInNewContext(source,context);return{api:context.TDPreparedSamples,requested};
 }
 (async()=>{
- let e=environment();const r=await e.api.load(q);assert.equal(r.value.key,key);assert.equal(e.requested.length,2);
+ let e=environment();const r=await e.api.load(q);assert.equal(r.value.key,key);assert.equal(e.requested.length,2);assert(e.requested[0].includes(encodeURIComponent(key)));
  e=environment();assert.equal(await e.api.load({...q,seed:8}),null);assert.equal(e.requested.length,0);
  e=environment();assert.equal(await e.api.load({...q,profile:{biome:'desert'}}),null);assert.equal(e.requested.length,1);
  for(const change of [{entry:{key:'sample:'+'b'.repeat(64)}},{entry:{file:'../app.js'}},{entry:{sha256:'0'.repeat(64)}},{entry:{rawBytes:12}},{manifest:{recipeVersion:'obsolete'}},{noDecompression:true},{text:'AA=='},{raw:Uint8Array.from([1,2,3,4])},{value:{...value,seed:8}},{value:{...value,collision:{}}}]){
