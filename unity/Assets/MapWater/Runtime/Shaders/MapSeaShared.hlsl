@@ -39,6 +39,16 @@ float seaH(float2 p, float s, float d, out float ph, out float brk){
   float hl=seaWaveH*(.75+.45*frac(sin(cl*12.9898)*43758.5453))*seaCrest(ul,1.)*exp(-max(-s,0.)/1.40)-.05;
   return lerp(hl,hw,smoothstep(0.,1.6,s));
 }
+// the sea surface at p: returns its slope; h = height above the still level, ph = phase, brk = breaking. Used per vertex
+// (to move the mesh) and again per pixel (so crests, shading, foam and the water's edge are smooth curves, not 0.5 m facets).
+// d0 = still depth, dir = toward the shore
+float2 seaWave(float2 p, float s, float d0, float2 dir, out float h, out float ph, out float brk){
+  float ph2, b2, dd=max(d0,0.);
+  float lace=(seaFbm(p*2.7+float2(seaTime*.21,-seaTime*.17))-.5)*.035*(1.-smoothstep(.3,2.,abs(s)));   // near the waterline only
+  h=seaH(p,s,dd,ph,brk)+lace;
+  float h2=seaH(p,s+.3,dd,ph2,b2)+lace;
+  return -dir*(h2-h)/.3;   // s grows away from the shore, so the slope points back out to sea
+}
 
 // tileable water caustics (two drifting layers so the tile does not show)
 float seaCausticL(float2 uv, float time){
@@ -53,10 +63,10 @@ float seaCaustic(float2 p, float t){
 // sand the run-up has just left: darker, with a thin sheen right behind the water's edge. d = depth now, d0 = still depth
 float4 wetSand(float2 p, float d, float d0, float4 sea){
   float e=-d0, run=sea.w*1.20;
-  float soaked=smoothstep(run+.05,run*.25,e), fresh=smoothstep(.22,0.,-d);
-  float wet=clamp(max(soaked*.6,fresh),0.,1.);
+  float soaked=smoothstep(run+.05,run*.25,e), fresh=smoothstep(.25,0.,-d)*smoothstep(0.,.06,-d);   // darkest a little behind the edge, rising gently from the water's edge tint
+  float wet=clamp(max(soaked*.6,fresh*.8),0.,1.);
   float sp=pow(max(dot(reflect(-seaSun,float3(0.,1.,0.)),seaView),0.),60.)*fresh;
-  return float4(float3(.04,.06,.07)+sp*.8, wet*.42+sp*.3);
+  return float4(float3(.04,.06,.07)+sp*.8, (wet*.24+sp*.3)*smoothstep(0.,.3,sea.x));   // gone before the sea's weight ends (no slivers where the sheet dips under the sand)
 }
 // colour and opacity of the sea at p. sea = (sea weight, breaking, distance to the still waterline, wave height);
 // ph = (cos, sin) of the wave phase; grad = slope of the wave surface; dir = toward the shore
@@ -95,7 +105,7 @@ float4 seaColor(float2 p, float d, float d0, float4 sea, float2 ph, float2 grad,
   float a=max(lerp(.34,.96,t),bed*.7);
   float ca=c; col=(col*a+float3(1.,1.,.9)*ca)/(a+ca+1e-4); a=a+ca*(1.-a);
   col=lerp(col,float3(.97,.99,1.),foam); a=max(a,foam*.96);
-  a*=smoothstep(0.,.025,d);   // the thin edge of the run-up fades onto the sand
+  float thin=smoothstep(0.,.03,d); col=lerp(float3(.04,.06,.07),col,thin); a=lerp(.14,a,thin);   // at the water's edge: the same tint and opacity as the soaked sand next to it (no seam)
   col+=glint*(1.-foam); a=max(a,clamp(glint,0.,1.)*.8);
   return float4(col,clamp(a,0.,1.));
 }

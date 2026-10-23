@@ -643,9 +643,29 @@ function computeShoreField() {
     }
     return d;
   };
-  const toLand = cham(k => !wet[k]), toWater = cham(k => wet[k]);
-  const sd = new Float32Array(NN);
-  for (let k = 0; k < NN; k++) sd[k] = clamp(wet[k] ? (toLand[k] - .5) * CELL : -(toWater[k] - .5) * CELL, -60, 60);
+  // exact Euclidean distance (cells) to the nearest cell where from(k) holds: squared distance transform along rows,
+  // then columns (Felzenszwalb & Huttenlocher). The chamfer above bends contours into polygons, which bent the crests.
+  const edt = from => {
+    const BIG = 1e12, g = new Float64Array(NN), f = new Float64Array(N), d = new Float64Array(N), v = new Int32Array(N), z = new Float64Array(N + 1);
+    for (let k = 0; k < NN; k++) g[k] = from(k) ? 0 : BIG;
+    const line = (at) => {
+      for (let q = 0; q < N; q++) f[q] = g[at(q)];
+      let k = 0; v[0] = 0; z[0] = -Infinity; z[1] = Infinity;
+      for (let q = 1; q < N; q++) {
+        let x = ((f[q] + q * q) - (f[v[k]] + v[k] * v[k])) / (2 * q - 2 * v[k]);
+        while (x <= z[k]) { k--; x = ((f[q] + q * q) - (f[v[k]] + v[k] * v[k])) / (2 * q - 2 * v[k]); }
+        k++; v[k] = q; z[k] = x; z[k + 1] = Infinity;
+      }
+      k = 0; for (let q = 0; q < N; q++) { while (z[k + 1] < q) k++; d[q] = (q - v[k]) * (q - v[k]) + f[v[k]]; }
+      for (let q = 0; q < N; q++) g[at(q)] = d[q];
+    };
+    for (let j = 0; j < N; j++) line(q => j * N + q);
+    for (let i = 0; i < N; i++) line(q => q * N + i);
+    const o = new Float32Array(NN); for (let k = 0; k < NN; k++) o[k] = Math.sqrt(g[k]); return o;
+  };
+  const toLand = edt(k => !wet[k]), toWater = edt(k => wet[k]);
+  const sd0 = new Float32Array(NN);
+  for (let k = 0; k < NN; k++) sd0[k] = clamp(wet[k] ? (toLand[k] - .5) * CELL : -(toWater[k] - .5) * CELL, -60, 60);
   // the sea: water reachable from the map edge
   const sea = new Uint8Array(NN), q = [];
   for (let t = 0; t < N; t++) for (const k of [t, (N - 1) * N + t, t * N, t * N + N - 1]) if (wet[k] && !sea[k]) { sea[k] = 1; q.push(k); }
@@ -657,6 +677,7 @@ function computeShoreField() {
     for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) { let v = 0, n = 0; for (let y = Math.max(0, j - r); y <= Math.min(N - 1, j + r); y++) { v += t[y * N + i]; n++; } o[j * N + i] = v / n; }
     return o;
   };
+  const sd = blur(sd0, 1);   // soften the grid's stair steps right at the waterline
   const sb = blur(blur(sd, 3), 3), sw = new Float32Array(NN);
   for (let k = 0; k < NN; k++) sw[k] = sea[k] ? 1 : wet[k] ? 0 : clamp(1 - (toSea[k] * CELL - 4) / 3, 0, 1);   // banks of the sea, up to ~4 m inland
   const swb = blur(sw, 2);
@@ -676,9 +697,8 @@ const waterMat = new THREE.ShaderMaterial({
     void main(){
       vec4 w0=modelMatrix*vec4(position,1.); float seaW=shore.w*uSea, h=0., ph=0., brk=0.; vec2 grad=vec2(0.);
       if(seaW>.001){
-        float ph2, b2; h=seaH(w0.xz,shore.x,max(depth,0.),ph,brk);
-        float h2=seaH(w0.xz,shore.x+.3,max(depth,0.),ph2,b2);
-        grad=-shore.yz*(h2-h)/.3*seaW; h*=seaW;   // s grows away from the shore, so the slope points back out to sea
+        grad=seaWave(w0.xz,shore.x,depth,shore.yz,h,ph,brk)*seaW; h*=seaW;
+        if(depth<0.) h=max(h,-depth+.02);   // on the beach the sheet lies just on the sand, so the wet sand it draws is never hidden under it
       }
       vec4 w=modelMatrix*vec4(position+vec3(0.,h,0.),1.);
       vD=depth+h; vD0=depth; vWPos=w.xyz; vSea=vec4(seaW,brk*seaW,shore.x,uWaveH); vPh=vec2(cos(ph),sin(ph)); vGrad=grad; vDir=shore.yz;
@@ -695,9 +715,15 @@ const waterMat = new THREE.ShaderMaterial({
       return pow(max(0.,a*b),5.)*.7;
     }
     void main(){
-      float seaW=vSea.x; bool dry=vD<=0.;
+      float seaW=vSea.x; vec2 p=vWPos.xz;
+      // the sea is worked out again per pixel (sea.js seaWave): its depth here decides the water's edge, so the edge,
+      // the crests and their foam follow smooth curves instead of the 0.5 m triangles
+      float hP=0., phP=0., brkP=0.; vec2 gP=vec2(0.);
+      if(seaW>.001){ gP=seaWave(p,vSea.z,vD0,vDir,hP,phP,brkP)*seaW; hP*=seaW; brkP*=seaW; }
+      float dP=seaW>.001?vD0+hP:vD;
+      bool dry=dP<=0.;
       if(dry&&seaW<.01) discard;
-      vec2 p=vWPos.xz; float d=vD;
+      float d=vD;
       float t=1.-exp(-d*1.1);
       vec3 col=mix(uShallow, uDeep, t);
       // 流れ（書き出しと同じ画像）：細波・光の網・泡の模様を、半周期ずらした2層で下流へ運ぶ
@@ -744,7 +770,7 @@ const waterMat = new THREE.ShaderMaterial({
       float alpha=max(mix(.42,.93,t),fz*.95);
       if(dry){ col=vec3(0.); alpha=0.; }
       // the sea: waves, surf, run-up, wet sand, clear water and the light network on the floor (sea.js)
-      if(seaW>.001){ vec4 sc=dry?wetSand(p,vD,vD0,vSea):seaColor(p,max(d,0.),vD0,vSea,vPh,vGrad,vDir); col=mix(col,sc.rgb,seaW); alpha=mix(alpha,sc.a,seaW); }
+      if(seaW>.001){ vec4 sv=vec4(seaW,brkP,vSea.z,vSea.w); vec4 sc=dry?wetSand(p,dP,vD0,sv):seaColor(p,max(dP,0.),vD0,sv,vec2(cos(phP),sin(phP)),gP,vDir); col=mix(col,sc.rgb,seaW); alpha=mix(alpha,sc.a,seaW); }
       if(uShow>.5){   // 水の表示：1 = 流れの矢印と速さの色、2 = 水際の帯（緑）と泡の帯（赤紫）
         vec3 ov=col;
         if(uShow<1.5){

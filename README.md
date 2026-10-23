@@ -99,7 +99,7 @@ hero/                   主人公の体（見た目だけ）。Remy のデータ
 water.js                水の流れ・泡の計算（画面に依存しない。node でも動く）
 three.min.js            three.js r160（MIT License）
 samples/                書き出しのサンプル（通常サンプル 64m / 隠し通路サンプル 48m）
-docs/                   修正報告（REVISION_3〜19）と画像
+docs/                   修正報告（REVISION_3〜20）と画像
 tests/                  受け入れテスト（Playwright、水は Chrome の CDP）と、その結果
 unity/Assets/MapWater/  Unity 側の水（書き出しから水面・滝・飛沫・波紋を作る。docs/REVISION_8_NOTES.md）。海は MapWater/Sea（エディターと同じ式。docs/REVISION_19_NOTES.md）
 ```
