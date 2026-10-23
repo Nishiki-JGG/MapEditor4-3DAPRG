@@ -101,7 +101,8 @@ sun.castShadow = true;
 sun.shadow.mapSize.set(2048, 2048);
 Object.assign(sun.shadow.camera, { left: -(SIZE / 2 + 16), right: SIZE / 2 + 16, top: SIZE / 2 + 16, bottom: -(SIZE / 2 + 16), near: 1, far: 220 + SIZE });
 const FOG_K = Math.max(1, SIZE / 64);   // keep distance fog off the far side of big maps
-sun.shadow.bias = -.0004; sun.shadow.normalBias = .04;
+// 深度範囲に比例して足元の影が離れないよう、補正を光源方向5mmに固定する。
+sun.shadow.bias = -.005 / (sun.shadow.camera.far - sun.shadow.camera.near); sun.shadow.normalBias = .005;
 scene.add(sun, sun.target);
 // without sunlight (caves): how much light the room still gets. dark = only the room's own lights (torches, crystals…)
 // and a faint sky; normal / bright add sky light and a soft shadowless light from above so the room reads clearly

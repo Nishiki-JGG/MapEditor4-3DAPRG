@@ -31,7 +31,7 @@
  const mainCount=a.positions.length/3;
  a.positions.push(...old.positions.slice(720));a.normals.push(...old.normals.slice(720));a.uv.push(...old.uv.slice(480));a.triangles.push(...old.triangles.slice(240).map(i=>i-240+mainCount));
  a.groundOffsets=[{firstVertex:0,count:mainCount,deltaY:0},{firstVertex:mainCount,count:60,deltaY:0},{firstVertex:mainCount+60,count:60,deltaY:0}];
- a.geometryRevision='angular-jointed-rock/1';
+ a.geometryRevision='angular-jointed-rock/2';
 
  // 位置が同じ頂点を照合し、緩い面同士だけ法線を平均する。大きな割れ面の稜線は保つ。
  const groups=new Map(),keys=[];for(let i=0;i<a.positions.length;i+=3){const k=a.positions.slice(i,i+3).map(x=>x.toFixed(5)).join('/');keys.push(k);if(!groups.has(k))groups.set(k,[]);groups.get(k).push(i);}
@@ -48,5 +48,8 @@
   im.data[p]=Math.round(value*255);im.data[p+1]=Math.round(value*.99*255);im.data[p+2]=Math.round(value*.965*255);im.data[p+3]=255;
  }ctx.putImageData(im,0,0);
  const id='placed-rock-mineral-v3';TDSharedData.textures.push({id,width:size,height:size,png:c.toDataURL('image/png').split(',')[1],colorSpace:'sRGB',wrap:'repeat',filter:'trilinear',mipmaps:true,anisotropy:4,appearanceVersion:3});
- a.material={...a.material,texture:id};a.version=6;a.appearance='灰褐色の鉱物粒、薄い層理、細い割れ目、上向き面の控えめな地衣。大塊は割れ面・斜めの節理・欠けを持つ。脇石・配置寸法・接地は維持。';
+ // 裾を地中に入れて接触面を広げる。共有メッシュなのでWeb/Unity/配置プレビューに同じ深さが適用される。
+ for(let i=0;i<a.positions.length/3;i++)a.positions[i*3+1]-=i<mainCount?.14:.08;
+ a.groundOffsets[0].deltaY=-.14;a.groundOffsets[1].deltaY=a.groundOffsets[2].deltaY=-.08;
+ a.material={...a.material,texture:id};a.version=6;a.appearance='灰褐色の鉱物粒、薄い層理、細い割れ目、上向き面の控えめな地衣。大塊は割れ面・斜めの節理・欠けを持つ。脇石形状とXZ寸法を維持し、大塊の裾を14cm、脇石を8cm埋め込む（倍率1）。';
 })();
