@@ -305,7 +305,7 @@ const LAVA_SURFACE_GLSL=`vec4 lavaSurface(vec2 p,float time){
 }`;
 const terrainMat = new THREE.MeshStandardMaterial({ roughness: .92, metalness: 0 });
 terrainMat.onBeforeCompile = (sh) => {
-  Object.assign(sh.uniforms, TDGround.uniforms); sh.uniforms.uGroundTrial = groundTrial;
+  Object.assign(sh.uniforms, TDGround.uniforms); sh.uniforms.uGroundTrial = groundTrial; sh.uniforms.uCaveFloor = TDCaveFloor.active;
   sh.uniforms.uWater = waterU; sh.uniforms.uDim = dimU; sh.uniforms.uTime = timeU; sh.uniforms.uStoneGrain=rockGrainU; sh.uniforms.uPavingMask=pavingMaskU; sh.uniforms.uPavingMap=pavingMapU; Object.assign(sh.uniforms, BU);
   sh.vertexShader = sh.vertexShader
     .replace('#include <common>', '#include <common>\nattribute float reliefSlope; varying float vReliefSlope; attribute vec4 splatA; attribute vec4 splatB; attribute float splatC; attribute vec3 cliffT; attribute vec4 cliffM; attribute vec2 cliffW; varying vec3 vCT; varying vec4 vCM; varying vec2 vCW; varying vec4 vSA; varying vec4 vSB; varying float vSC; varying vec3 vWPos; varying vec3 vWNor;')
@@ -316,6 +316,8 @@ varying float vReliefSlope; varying vec4 vSA; varying vec4 vSB; varying float vS
 uniform vec3 uG0; uniform vec3 uG1; uniform vec3 uGH; uniform vec3 uRockTint; uniform float uFlowers; uniform float uSnow; uniform float uSnowLine; uniform float uWet; uniform float uSea;
 varying vec3 vCT; varying vec4 vCM; varying vec2 vCW; uniform int uPitN; uniform vec4 uPitA[8]; uniform vec4 uPitB[8];
 ${TDGround.GLSL}
+${TDCaveFloor.GLSL}
+uniform float uCaveFloor;
 uniform float uGroundTrial;
 float gGloss=0.; float gSurfaceHeight=0.; vec3 gGlow=vec3(0.);
 ${GLSL_NOISE}
@@ -373,6 +375,12 @@ vec3 terrainColor(){
   // Dryland: dusty clay plates, narrow warped shrinkage cracks and buried mineral grit.
   float rbw=vSA.w;
   if(rbw>0.){
+    if(uCaveFloor>.5){
+      CaveFloorSample floorSample=sampleCaveFloor(p,vCW.x);
+      col+=floorSample.albedo*rbw;
+      gSurfaceHeight+=floorSample.relief*rbw;
+      gGloss=max(gGloss,floorSample.wet*rbw*.65);
+    }else{
     vec2 rp=p+vec2(fbm(p*1.3),fbm(p*1.3+17.))*.30+vec2(vn(p*13.),vn(p*13.+29.))*.028;
     vec4 plate=pavingCell(rp*2.65);
     float edge=plate.x*2.,width=.022+.024*vn(p*3.7+8.);
@@ -395,6 +403,7 @@ vec3 terrainColor(){
     vec3 mineral=mix(vec3(.46,.40,.32),vec3(.65,.59,.48),h21(cell+9.));
     col+=mix(dry,mineral,chip*.45)*rbw;
     gSurfaceHeight+=rbw*(rim*.0008-crack*.0015+chip*.001+(grain-.5)*.0004);
+    }
   }
   // swamp: mud, moss and murky puddles with rising bubbles
   float swW=vSB.x;
@@ -492,7 +501,7 @@ normal=surfaceNormal(-vViewPosition,normal,gSurfaceHeight);`)
     .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor=mix(roughnessFactor,.55,gGloss);')
     .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance+=pow(gGlow,vec3(2.2))*(1.-.6*uDim);');
 };
-terrainMat.customProgramCacheKey = () => 'terrain-dryland-v1';
+terrainMat.customProgramCacheKey = () => 'terrain-cave-floor-v1';
 
 function gridIndex() {
   const ix = new Uint32Array((N - 1) * (N - 1) * 6); let o = 0;
@@ -2290,7 +2299,7 @@ const TOOLS = [
   { id: 'detail', name: '地表小物を調整', key: ';', hint: '草・花・小石・落ち葉をクリックして選び、下の欄で位置・向き・大きさを調整。Shift＋クリックで選んだ小物を移動します。調整した物は自動更新でも残ります。' },
   { id: 'pick', name: '選んで消す', key: 'o', hint: 'カーソルを合わせると赤く囲まれた物（木・岩・橋・階段・滝など）を、クリックで1つ消します。' },
   { id: 'marker', name: 'マーカー', key: 't', hint: '出入口・敵の候補・宝箱の候補・戦闘/出現禁止範囲を置きます。出入口は、置く場所から部屋の内側へドラッグ（クリックだけなら中央向き）。幅＝半径の半分。禁止範囲の大きさ＝半径。Shift+クリックで近くのマーカーを消します。' },
-  { id: 'cliffpaint', name: '岩壁を塗る', key: '.', hint: '崖の面と岩・崖石の種類を、場所ごとに塗り分けます。「マップの既定」で塗ると、バイオーム欄の「岩壁」の設定に戻ります。平らな地面を塗っても見た目は変わりません（崖と岩にだけ効きます）。' },
+  { id: 'cliffpaint', name: '岩壁を塗る', key: '.', hint: '崖の面と岩・崖石の種類を、場所ごとに塗り分けます。「マップの既定」で塗ると、バイオーム欄の「岩壁」の設定に戻ります。平らな地面では、洞窟の床だけ「濡れた岩壁」で局所的な湿りを付けられます。' },
   { id: 'link', name: '階層移動', key: ',', hint: '魔法陣・上り階段・下り階段を置きます。置く場所から、プレイヤーが近づいてくる側へドラッグすると向きが決まります（クリックだけなら部屋の中央向き）。タグには行き先（例: B2, 上の階）を入れます。Shift+クリックで近くの物を消します。歩くモードで触れると表示が出ます。' },
   { id: 'spawn', name: '開始地点', key: 'Home', hint: 'クリックした場所を、歩くモードの開始地点にします。' },
   { id: 'walkOn', name: '通行可', key: 'g', hint: '塗った所を、自動判定に関係なく「通れる」にします（緑の斜線）。崖や水の上でも歩けます。' },
@@ -3844,7 +3853,8 @@ revision・書き出し日時・ファイルごとの SHA-256・contentHash は 
     { name: 'shared_props.json', data: TDSharedProps.exportJson() },
     { name: 'pine_wind.json', data: TDPineWind.exportJson() },
     {name:'root_grounding.json',data:JSON.stringify({version:1,axes:'Unity world XZ',paint:{file:'root_paint.png',resolution:N,sizeMetres:[SIZE,SIZE]},instances:props.filter(p=>PROP[p[0]].sharedAsset&&TDSharedProps.asset(PROP[p[0]].sharedAsset).rootGrounding).map(p=>{const v=rootSlopeAt(p);return{instanceId:p[8],slope:[v[0],-v[1]],terrain:rootTerrainAt(p)};})})},
-    { name: 'shared_ground.json', data: JSON.stringify(TDGroundData) },
+    { name: 'shared_ground.json', data: JSON.stringify(state.biome === 'cave' ? { ...TDGroundData, caveFloor: { ...TDCaveFloor.data, surfaceMaskFile:'cave_floor_mask.png', sizeMetres:SIZE, resolution:N } } : TDGroundData) },
+    ...(state.biome === 'cave' ? [{name:'cave_floor_mask.png',data:await pngOf((i,j)=>[effectiveS[(j*N+i)*NS+3],Math.round(cliffParams(CLIFF_STYLES[cliffIndexAt(j*N+i)][2]).wet*255),0],N)}] : []),
     { name: 'meta.json', data: JSON.stringify(meta, null, 2) }, { name: 'validation.json', data: JSON.stringify(validation, null, 2) },
     { name: 'map.json', data: mapJson }, { name: 'README.txt', data: readme },
   ];
@@ -4033,6 +4043,7 @@ function showVariants() {
 }
 function applyBiome(id) {
   state.biome = (BIOMES.find(b => b.id === id) || BIOMES[1]).id;
+  TDCaveFloor.active.value = state.biome === 'cave' ? 1 : 0;
   groundTrial.value = TDGroundData.biomes.includes(state.biome) && !location.hash.includes('ground=legacy') ? 1 : 0;
   const B = BIOME(), v3 = (u, c) => u.value.setRGB(c[0], c[1], c[2]);
   scene.background.setHex(B.bg); scene.fog.color.setHex(B.fog ?? B.bg); scene.fog.near = (B.fogNear ?? 140) * FOG_K; scene.fog.far = (B.fogFar ?? 280) * FOG_K;
