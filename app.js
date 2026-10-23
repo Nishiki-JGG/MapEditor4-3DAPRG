@@ -31,6 +31,11 @@ const state = {
   mode: 'edit', tool: 'plateau', radius: 4, strength: .6, density: .6, brushShape: 'circle',
   types: new Set([0, 1]), water: .8, spawn: { x: 0, z: 22 },
 };
+// how the page is shown (not map data): the left menu, and a page turned 90° on phones whose browser cannot lock the orientation
+const view = { panel: true, rotated: false };
+const TOUCH = matchMedia('(pointer: coarse)').matches || (navigator.maxTouchPoints > 0 && matchMedia('(hover: none)').matches);   // phones and tablets
+const viewW = () => view.rotated ? window.innerHeight : window.innerWidth, viewH = () => view.rotated ? window.innerWidth : window.innerHeight;
+const toLocal = (cx, cy) => view.rotated ? [cy, window.innerWidth - cx] : [cx, cy];   // a screen point → the page's own (unturned) point
 
 // ============================================================
 // Utilities
@@ -2177,10 +2182,10 @@ function placeCamera(c, target) {
   camera.lookAt(target);
 }
 function resize() {
-  const w = window.innerWidth, h = window.innerHeight;
+  const w = viewW(), h = viewH();   // the page's own size (turned 90° on some phones)
   renderer.setSize(w, h, false); camera.aspect = w / h;
   // keep the scene centred in the area not covered by the edit panel
-  if (state.mode === 'edit' && w > 700) camera.setViewOffset(w, h, -139, 0, w, h); else camera.clearViewOffset();
+  if (state.mode === 'edit' && w > 700 && view.panel) camera.setViewOffset(w, h, -139, 0, w, h); else camera.clearViewOffset();
   camera.updateProjectionMatrix();
 }
 window.addEventListener('resize', resize);
@@ -4091,6 +4096,7 @@ function setMode(m,prepared=false) {
   if(mapPreparation&&!prepared){mapPreparation.requestedMode=m;return;}
   state.mode = m; document.body.classList.toggle('play', m === 'play');
   $('modeEdit').classList.toggle('on', m === 'edit'); $('modePlay').classList.toggle('on', m === 'play');
+  $('modeBtn').textContent = m === 'play' ? '編集' : '歩く';
   hero.visible = m === 'play'; spawnMarker.visible = markerGroup.visible = m === 'edit'; preview.visible = false;
   if (m !== 'play' && ghosts.size) { ghosts = new Set(); rebuildProps(true); }
   heroStyle(false);
@@ -4182,8 +4188,8 @@ const keys = new Set();
 const mouse = new THREE.Vector2(); const ray = new THREE.Raycaster();
 let drag = null, lastXY = [0, 0], pointerIn = false;
 function pick(cx, cy) {
-  const r = canvas.getBoundingClientRect();
-  mouse.set((cx - r.left) / r.width * 2 - 1, -(cy - r.top) / r.height * 2 + 1);
+  const [x, y] = toLocal(cx, cy);   // the canvas fills the page from its corner, turned or not
+  mouse.set(x / canvas.clientWidth * 2 - 1, -(y / canvas.clientHeight) * 2 + 1);
   ray.setFromCamera(mouse, camera);
   const h = ray.intersectObject(terrain, false)[0];
   return h ? h.point : null;
@@ -4256,24 +4262,32 @@ function stampAt(p) {
   state.tool === 'scatter' ? scatterAt(p.x, p.z) : eraseAt(p.x, p.z);
 }
 canvas.addEventListener('contextmenu', e => e.preventDefault());
+// mouse and pen: left = edit (in both modes), right = turn the view, middle = pan. Touch: see touch gestures below.
+let lastClient = [0, 0];   // the pointer in screen coordinates (pick), lastXY in the page's own coordinates (drags)
 canvas.addEventListener('pointerdown', e => {
-  canvas.setPointerCapture(e.pointerId); canvas.focus(); lastXY = [e.clientX, e.clientY];
+  if (e.pointerType === 'touch') { touchDown(e); return; }
+  canvas.setPointerCapture(e.pointerId); canvas.focus(); lastXY = toLocal(e.clientX, e.clientY); lastClient = [e.clientX, e.clientY];
   if (e.button === 2) drag = 'orbit';
   else if (e.button === 1) { drag = 'pan'; e.preventDefault(); }
   else if (e.button === 0) { hit = pick(e.clientX, e.clientY); beginStroke(e); }   // the walk mode edits too
 });
-canvas.addEventListener('pointermove', e => {
-  pointerIn = true;
-  const dx = e.clientX - lastXY[0], dy = e.clientY - lastXY[1]; lastXY = [e.clientX, e.clientY];
+function dragView(dx, dy) {
   const c = state.mode === 'edit' ? cam : playCam;
   if (drag === 'orbit') { c.yaw -= dx * .006; if (state.mode === 'edit') c.pitch = clamp(c.pitch + dy * .005, .25, 1.45); }
-  else if (drag === 'pan' && state.mode === 'edit') {
-    const s = cam.dist * .0016, fx = -Math.sin(cam.yaw), fz = -Math.cos(cam.yaw);
-    cam.target.x += (-dx * Math.cos(cam.yaw) + dy * fx) * s * 1; cam.target.z += (dx * Math.sin(cam.yaw) + dy * fz) * s;
-  }
+  else if (drag === 'pan' && state.mode === 'edit') panView(dx, dy);
+}
+function panView(dx, dy) {
+  const s = cam.dist * .0016, fx = -Math.sin(cam.yaw), fz = -Math.cos(cam.yaw);
+  cam.target.x += (-dx * Math.cos(cam.yaw) + dy * fx) * s; cam.target.z += (dx * Math.sin(cam.yaw) + dy * fz) * s;
+}
+canvas.addEventListener('pointermove', e => {
+  if (e.pointerType === 'touch') { touchMove(e); return; }
+  pointerIn = true;
+  const p = toLocal(e.clientX, e.clientY), dx = p[0] - lastXY[0], dy = p[1] - lastXY[1]; lastXY = p; lastClient = [e.clientX, e.clientY];
+  dragView(dx, dy);
   hit = pick(e.clientX, e.clientY); if (stroke.active && hit && (state.tool === 'scatter' || state.tool === 'erase')) stampAt(hit);
 });
-canvas.addEventListener('pointerup', () => {
+function endStroke() {
   if (stroke.cliffChanged) { stroke.cliffChanged = false; rebuildProps(true); }
   if (stroke.active && markers.length && !['marker', 'link', 'spawn', 'pick', 'place'].includes(state.tool)) rebuildMarkers();   // rings follow edited ground
   if (stroke.groundChanged) { stroke.groundChanged = false; regenGroundProps(); }
@@ -4287,8 +4301,49 @@ canvas.addEventListener('pointerup', () => {
     else if (state.tool === 'link') { placeMarker(state.variant.link, a, c); toast(markerLabel(state.variant.link) + 'を置きました'); }
   }
   stroke.dragStart = null; drag = null; stroke.active = false;
-});
-canvas.addEventListener('pointerleave', () => { pointerIn = false; hit = null; });
+}
+canvas.addEventListener('pointerup', e => { if (e.pointerType === 'touch') { touchUp(e); return; } endStroke(); });
+canvas.addEventListener('pointercancel', e => { if (e.pointerType === 'touch') touchUp(e, true); else endStroke(); });
+canvas.addEventListener('pointerleave', e => { if (e.pointerType === 'touch') return; pointerIn = false; hit = null; });
+
+// ---- touch gestures. Walking: one finger turns the view, two fingers pinch to zoom. Editing: one finger edits (it starts
+// after a moment, so a second finger can join without editing), two fingers zoom, turn and pan the view.
+const touches = new Map(); let pinch = null, touchWait = null;
+const pinchOf = () => { const [a, b] = [...touches.values()]; return { d: Math.hypot(b[0] - a[0], b[1] - a[1]) || 1, ang: Math.atan2(b[1] - a[1], b[0] - a[0]), m: [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2] }; };
+function touchDown(e) {
+  canvas.setPointerCapture(e.pointerId); touches.set(e.pointerId, toLocal(e.clientX, e.clientY)); pointerIn = false;
+  if (touches.size === 1) {
+    lastXY = toLocal(e.clientX, e.clientY); lastClient = [e.clientX, e.clientY];
+    if (state.mode === 'play') { drag = 'orbit'; return; }
+    hit = pick(e.clientX, e.clientY);
+    touchWait = setTimeout(() => { touchWait = null; if (touches.size === 1 && hit) beginStroke({ shiftKey: false }); }, 120);
+  } else if (touches.size === 2) {
+    if (touchWait) { clearTimeout(touchWait); touchWait = null; }
+    if (stroke.active) endStroke();
+    drag = null; pinch = pinchOf();
+  }
+}
+function touchMove(e) {
+  if (!touches.has(e.pointerId)) return;
+  const p = toLocal(e.clientX, e.clientY); touches.set(e.pointerId, p);
+  if (touches.size >= 2 && pinch) {
+    const n = pinchOf(), c = state.mode === 'edit' ? cam : playCam;
+    c.dist = state.mode === 'edit' ? clamp(cam.dist * pinch.d / n.d, 6, Math.max(140, SIZE * 2.4)) : clamp(playCam.dist * pinch.d / n.d, 7, 40);
+    if (state.mode === 'edit') { cam.yaw -= Math.atan2(Math.sin(n.ang - pinch.ang), Math.cos(n.ang - pinch.ang)); panView(n.m[0] - pinch.m[0], n.m[1] - pinch.m[1]); }
+    pinch = n; return;
+  }
+  const dx = p[0] - lastXY[0], dy = p[1] - lastXY[1]; lastXY = p; lastClient = [e.clientX, e.clientY];
+  if (state.mode === 'play') { dragView(dx, dy); return; }
+  hit = pick(e.clientX, e.clientY); if (stroke.active && hit && (state.tool === 'scatter' || state.tool === 'erase')) stampAt(hit);
+}
+function touchUp(e, cancel) {
+  touches.delete(e.pointerId);
+  if (touches.size < 2) pinch = null;
+  if (touches.size === 1) { const [p] = touches.values(); lastXY = p; }   // the finger left over carries on without a jump
+  if (touches.size) return;
+  if (touchWait) { clearTimeout(touchWait); touchWait = null; if (!cancel && hit && state.mode === 'edit') beginStroke({ shiftKey: false }); }   // a quick tap still places / picks / paints once
+  drag = null; endStroke(); hit = null;
+}
 canvas.addEventListener('wheel', e => {
   e.preventDefault();
   if (state.mode === 'edit') cam.dist = clamp(cam.dist * Math.exp(e.deltaY * .0012), 6, Math.max(140, SIZE * 2.4));
@@ -4315,13 +4370,77 @@ window.addEventListener('keyup', e => keys.delete(e.code));
 window.addEventListener('blur', () => keys.clear());
 
 // ============================================================
+// Phones and tablets: the menu in and out, a stick and a run button for walking, portrait / landscape
+// ============================================================
+document.body.classList.toggle('touch', TOUCH);
+const PANEL_KEY = 'tdj-map-editor/panel';
+function setPanel(open) {
+  view.panel = open; document.body.classList.toggle('nopanel', !open); $('menuBtn').classList.toggle('on', open);
+  try { localStorage.setItem(PANEL_KEY, open ? '1' : '0'); } catch { }
+  resize();
+}
+$('menuBtn').onclick = () => setPanel(!view.panel);
+$('modeBtn').onclick = () => setMode((mapPreparation?.requestedMode || state.mode) === 'edit' ? 'play' : 'edit');
+{ let saved = null; try { saved = localStorage.getItem(PANEL_KEY); } catch { } setPanel(saved ? saved === '1' : !TOUCH); }   // phones start with the map uncovered
+// the stick: x = right, y = forward, each -1..1 (shorter than 1 walks slower)
+const joy = { x: 0, y: 0, id: null, run: false };
+const JOY_R = 50;
+function joyAt(e) {
+  const r = $('joy').getBoundingClientRect(), dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
+  let [x, y] = view.rotated ? [dy, -dx] : [dx, dy];   // the page is turned 90°: screen down is the page's right
+  const l = Math.hypot(x, y); if (l > JOY_R) { x *= JOY_R / l; y *= JOY_R / l; }
+  joy.x = x / JOY_R; joy.y = -y / JOY_R;
+  $('joyKnob').style.transform = `translate(${x}px,${y}px)`;
+}
+function joyEnd(e) {
+  if (e.pointerId !== joy.id) return;
+  joy.id = null; joy.x = joy.y = 0; $('joyKnob').style.transform = '';
+}
+$('joy').addEventListener('pointerdown', e => { e.preventDefault(); $('joy').setPointerCapture(e.pointerId); joy.id = e.pointerId; joyAt(e); });
+$('joy').addEventListener('pointermove', e => { if (e.pointerId === joy.id) joyAt(e); });
+$('joy').addEventListener('pointerup', joyEnd); $('joy').addEventListener('pointercancel', joyEnd);
+$('runBtn').addEventListener('pointerdown', e => { e.preventDefault(); joy.run = !joy.run; $('runBtn').classList.toggle('on', joy.run); });
+// portrait / landscape: lock the screen where the browser allows it (Android Chrome, in full screen); otherwise (iPhone
+// Safari) turn the page itself 90° and lay it out in the other orientation
+let orientLocked = false;
+function setRotated(on) {
+  view.rotated = on; document.body.classList.toggle('rot', on);
+  document.body.style.width = on ? innerHeight + 'px' : ''; document.body.style.height = on ? innerWidth + 'px' : '';
+  resize();
+}
+window.addEventListener('resize', () => { if (view.rotated) setRotated(true); });
+async function toggleOrientation() {
+  if (view.rotated) { setRotated(false); return; }
+  if (orientLocked) {
+    orientLocked = false; try { screen.orientation.unlock(); } catch { }
+    if (document.fullscreenElement) document.exitFullscreen().catch(() => { });
+    return;
+  }
+  const portrait = innerHeight > innerWidth;
+  try {
+    if (!screen.orientation?.lock || !document.documentElement.requestFullscreen) throw 0;
+    if (!document.fullscreenElement) await document.documentElement.requestFullscreen();
+    const want = portrait ? 'landscape' : 'portrait';
+    // some browsers never settle the promise, or settle it without turning: give up after a moment and turn the page
+    await Promise.race([screen.orientation.lock(want), new Promise((_, no) => setTimeout(no, 1500))]);
+    if (!screen.orientation.type.startsWith(want)) throw 0;
+    orientLocked = true;
+  } catch {
+    try { screen.orientation.unlock(); } catch { }
+    if (document.fullscreenElement) await document.exitFullscreen().catch(() => { });
+    setRotated(true);
+  }
+}
+$('rotBtn').onclick = toggleOrientation;
+
+// ============================================================
 // Loop
 // ============================================================
 // brush strokes and the brush outline, in the edit mode and while walking
 function editTick(dt) {
   // while walking the camera follows the hero, so the ground under a resting cursor changes: look again every frame
   if (state.mode === 'play' && pointerIn) {
-    hit = pick(lastXY[0], lastXY[1]);
+    hit = pick(lastClient[0], lastClient[1]);
     if (stroke.active && hit && (state.tool === 'scatter' || state.tool === 'erase')) stampAt(hit);
   }
   if (stroke.active && hit && !['scatter', 'erase', 'spawn', 'fall'].includes(state.tool)) {
@@ -4347,7 +4466,8 @@ function update(dt) {
   }
   const dimT = state.showWalk ? 1 : 0;
   if (dimU.value !== dimT) applyDim(Math.abs(dimT - dimU.value) < .02 ? dimT : lerp(dimU.value, dimT, Math.min(1, dt * 10)));
-  const ix = (keys.has('KeyD') ? 1 : 0) - (keys.has('KeyA') ? 1 : 0), iz = (keys.has('KeyW') ? 1 : 0) - (keys.has('KeyS') ? 1 : 0);
+  const kx = (keys.has('KeyD') ? 1 : 0) - (keys.has('KeyA') ? 1 : 0), kz = (keys.has('KeyW') ? 1 : 0) - (keys.has('KeyS') ? 1 : 0);
+  const ix = kx || joy.x, iz = kz || joy.y, amt = kx || kz ? 1 : Math.min(1, Math.hypot(joy.x, joy.y));   // the stick walks slower when pushed less
   if (state.mode === 'edit') {
     if (ix || iz) {
       const s = cam.dist * .9 * dt, fx = -Math.sin(cam.yaw), fz = -Math.cos(cam.yaw), rx = Math.cos(cam.yaw), rz = -Math.sin(cam.yaw);
@@ -4371,7 +4491,7 @@ function update(dt) {
     let gs = 1; if (!onStruct) for (let c = 2; c < NS; c++) gs = Math.min(gs, lerp(1, GROUND_SPEED[c], clamp(splatAt(player.x, player.z, c) * 1.6, 0, 1)));
     state.onPoison = !onStruct && splatAt(player.x, player.z, 5) > .5;
     state.onLink = markers.find(m => isLink(m.kind) && (() => { const T = linkTrigger(m); return Math.hypot(player.x - T.x, player.z - T.z) < m.r + state.agent.radius; })()) || null;
-    const sp = (keys.has('ShiftLeft') ? 8 : 5) * (depth > .15 && !onStruct ? .5 : 1) * gs * dt;
+    const sp = (keys.has('ShiftLeft') || joy.run ? 8 : 5) * amt * (depth > .15 && !onStruct ? .5 : 1) * gs * dt;
     player.moving = 0;
     if (mx || mz) {
       const nx = player.x + mx * sp, nz = player.z + mz * sp;
@@ -4412,8 +4532,8 @@ function update(dt) {
 function hud() {
   const n = props.length;
   $('hud').textContent = state.mode === 'edit'
-    ? `編集モード  小物 ${n}  ${fps} fps\nTab: 歩く`
-    : `歩くモード  WASD: 移動 / Shift: 走る / Q・E: 視点回転\nホイール: ズーム / Tab: 編集へ` + (state.onPoison ? '\n☠ 毒沼の上（ゲーム側でダメージ）' : '') + (state.onLink ? `\n${state.onLink.kind === 'down' ? '▼' : state.onLink.kind === 'up' ? '▲' : '✦'} ${markerLabel(state.onLink.kind)}${state.onLink.tag ? ' → ' + state.onLink.tag : ''}（ゲームでは階層移動）` : '');
+    ? (TOUCH ? `編集モード  小物 ${n}  ${fps} fps\n1本指: 編集 / 2本指: 視点（ズーム・回転・移動）` : `編集モード  小物 ${n}  ${fps} fps\nTab: 歩く`)
+    : (TOUCH ? `歩くモード  スティック: 移動 / 走る ボタン\n画面をなぞる: 視点 / 2本指: ズーム` : `歩くモード  WASD: 移動 / Shift: 走る / Q・E: 視点回転\nホイール: ズーム / Tab: 編集へ`) + (state.onPoison ? '\n☠ 毒沼の上（ゲーム側でダメージ）' : '') + (state.onLink ? `\n${state.onLink.kind === 'down' ? '▼' : state.onLink.kind === 'up' ? '▲' : '✦'} ${markerLabel(state.onLink.kind)}${state.onLink.tag ? ' → ' + state.onLink.tag : ''}（ゲームでは階層移動）` : '');
 }
 let last = performance.now();
 function frame(now) {
@@ -4576,5 +4696,6 @@ window.__app = { fillGroundAll,prepareMap,cancelMapPreparation,bootReady,get pre
   render() { renderer.render(scene, camera); },
   setTime(t) { timeU.value = t; }, get time() { return timeU.value; },
   serialize, deserialize, buildExport, makeZip, undo, redo, refreshWaterData, WATERU, get waterInfo() { return waterInfo; }, syncWaterShow,
+  TOUCH, view, joy, setPanel, setRotated, toLocal, get strokeActive() { return stroke.active; },
 };
 })();

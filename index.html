@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>マップエディター 試作</title>
 <style>
   :root{--bg:#0b0e12;--panel:rgba(18,22,28,.92);--line:#2c3440;--text:#dfe5ec;--muted:#8b97a6;--accent:#4aa3ff}
@@ -61,6 +61,25 @@
   .variants details.pg .row{padding:2px 0 4px}
   .pgl{display:grid;grid-template-columns:1fr 1fr;gap:1px 6px;padding:2px 0 4px 18px}
   .types .pgl label{margin:1px 0;font-size:12px}
+  /* menu in and out */
+  body.nopanel #panel, body.nopanel #brushSizePanel{display:none}
+  body.nopanel #topbar{left:10px}
+  #modeBtn, #joy, #runBtn, #rotBtn{display:none}
+  /* touch screens */
+  body.touch #modeBtn{display:inline-block}
+  body.touch #slots{display:none}
+  body.touch #view{touch-action:none}
+  body.touch.play #joy{display:block;position:fixed;left:22px;bottom:22px;width:132px;height:132px;border-radius:50%;background:rgba(18,22,28,.45);border:2px solid rgba(255,255,255,.28);touch-action:none;z-index:5}
+  #joyKnob{position:absolute;left:50%;top:50%;width:58px;height:58px;margin:-29px 0 0 -29px;border-radius:50%;background:rgba(255,255,255,.55);border:2px solid rgba(255,255,255,.8);pointer-events:none}
+  body.touch.play #runBtn{display:block;position:fixed;right:22px;bottom:96px;width:76px;height:76px;border-radius:50%;font-size:15px;background:rgba(18,22,28,.6);touch-action:none;z-index:5}
+  #runBtn.on{background:#1d4f86}
+  body.touch #rotBtn{display:block;position:fixed;right:10px;top:10px;z-index:6;padding:7px 10px;background:var(--panel)}
+  body.touch #topbar{left:10px;right:110px}
+  body.touch #brushSizePanel{top:52px}
+  body.touch #panel{top:164px}
+  body.touch.play #hud{bottom:auto;top:52px;right:10px}
+  /* turned 90° when the browser cannot lock the orientation (iPhone Safari): the page is laid out in the other orientation */
+  body.rot{position:fixed;left:0;top:0;transform-origin:0 0;transform:rotate(90deg) translateY(-100%)}
   #toast{position:fixed;left:50%;top:52px;transform:translateX(-50%);background:#1d4f86;border-radius:6px;padding:6px 12px;opacity:0;transition:opacity .3s;pointer-events:none}
   #toast.show{opacity:1}
   #err{position:fixed;inset:auto 12px 12px auto;color:#ff8a80}
@@ -70,6 +89,8 @@
 <canvas id="view" tabindex="0"></canvas>
 <!-- always on the map side: undo / redo, brush shape, and the 1-9 slots (click: use, Shift+click or Shift+number: register, right click: reset) -->
 <div id="topbar">
+  <button id="menuBtn" class="on" title="左のメニューを出す・しまう">☰</button><button id="modeBtn" title="歩く・編集を切り替え（Tab）">歩く</button>
+  <span class="sep"></span>
   <button id="undo" title="取り消し（Ctrl+Z）">↶</button><button id="redo" title="やり直し（Ctrl+Y）">↷</button>
   <span class="sep"></span>
   <button id="shapeCircle" class="on" title="ブラシの形：円">○</button><button id="shapeSquare" title="ブラシの形：四角">□</button>
@@ -180,6 +201,10 @@
 </div>
 <div id="vignette"></div>
 <div id="hud"></div>
+<!-- phones and tablets: a stick for walking, a run button, and portrait / landscape (shown only on touch screens) -->
+<div id="joy" aria-label="移動のスティック"><div id="joyKnob"></div></div>
+<button id="runBtn" title="走る">走る</button>
+<button id="rotBtn" title="縦・横を切り替え">⟲ 縦横</button>
 <div id="toast"></div>
 <script src="three.min.js"></script>
 <script src="water.js?v=r15c"></script>
@@ -307,6 +332,6 @@
 <script src="terrain/cliff-fits.js?v=layer12-startup1"></script>
 <script src="terrain/cliff-layering.js?v=layer12-startup1"></script>
 <script src="terrain/preparation.js?v=prepare1"></script>
-<script src="app.js?v=drysoil-relief1-sea3-startup1"></script>
+<script src="app.js?v=drysoil-relief1-sea3-startup1-mobile1"></script>
 </body>
 </html>
