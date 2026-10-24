@@ -1,0 +1,84 @@
+[
+  {
+    "mobile": false,
+    "paint": 245,
+    "touch": false,
+    "masks": [
+      0,
+      255,
+      0,
+      255
+    ],
+    "weights": [
+      0,
+      0,
+      255,
+      255
+    ],
+    "priorSave": true,
+    "exportTexture": true,
+    "requiresFeature": true,
+    "maskChannels": [
+      "ice",
+      "bedrock",
+      null
+    ],
+    "layerOrder": [
+      "grass",
+      "dirt",
+      "cobble",
+      "sand",
+      "rubble",
+      "swamp",
+      "poison",
+      "lava",
+      "snowfield",
+      "ice",
+      "cliff",
+      "bedrock"
+    ],
+    "gl": 0,
+    "errors": []
+  },
+  {
+    "mobile": true,
+    "paint": 245,
+    "touch": true,
+    "masks": [
+      0,
+      255,
+      0,
+      255
+    ],
+    "weights": [
+      0,
+      0,
+      255,
+      255
+    ],
+    "priorSave": true,
+    "exportTexture": true,
+    "requiresFeature": true,
+    "maskChannels": [
+      "ice",
+      "bedrock",
+      null
+    ],
+    "layerOrder": [
+      "grass",
+      "dirt",
+      "cobble",
+      "sand",
+      "rubble",
+      "swamp",
+      "poison",
+      "lava",
+      "snowfield",
+      "ice",
+      "cliff",
+      "bedrock"
+    ],
+    "gl": 0,
+    "errors": []
+  }
+]

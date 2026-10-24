@@ -39,7 +39,10 @@ function build(source,n,cell,options={}){
 }
 function exportMesh(g,half,yZero){
  const out=TDCliffRelief.exportMesh(g,half,yZero);out.format='tdj-terrain-visual-mesh';out.role='Replace terrain renderer only; retain heightmap collider and walking data';
- out.splatA=Array.from(g.attributes.splatA.array);out.splatB=Array.from(g.attributes.splatB.array);out.splatC=Array.from(g.attributes.splatC.array);out.cliffCoverageSlope=Array.from(g.attributes.reliefSlope.array);return out;
+ out.splatA=Array.from(g.attributes.splatA.array);out.splatB=Array.from(g.attributes.splatB.array);
+ const c=g.attributes.splatC;out.splatC=Array.from({length:c.count},(_,i)=>c.getX(i));
+ if(c.itemSize>1){const bedrock=Array.from({length:c.count},(_,i)=>c.getY(i));if(bedrock.some(v=>v>0))out.bedrock=bedrock;}
+ out.cliffCoverageSlope=Array.from(g.attributes.reliefSlope.array);return out;
 }
 window.TDCliffShoulder={build,exportMesh};
 })();

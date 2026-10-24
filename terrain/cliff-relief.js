@@ -18,7 +18,7 @@ function build(source,heightAt,half,mask) {
   const rimVertices=new Set();
   for(const [key,count]of edges)if(count===1)for(const id of key.split(':'))rimVertices.add(+id);
   const steps=Math.max(1,Math.min(4,Math.floor(Math.sqrt(64000/Math.max(1,faces.length)))));
-  const sizes={position:3,splatA:4,splatB:4,splatC:1,cliffT:3,cliffM:4,cliffW:2,reliefSlope:1};
+  const sizes={position:3,splatA:4,splatB:4,splatC:source.attributes.splatC.itemSize,cliffT:3,cliffM:4,cliffW:2,reliefSlope:1};
   const arrays=Object.fromEntries(Object.keys(sizes).map(k=>[k,[]])),triangles=[],sourceFaceIds=[],cache=new Map();let maxOffset=0;
   for(const f of faces){
     const ids=[],bound=[edges.get(edge(f[1],f[2]))===1,edges.get(edge(f[2],f[0]))===1,edges.get(edge(f[0],f[1]))===1];
