@@ -1,0 +1,126 @@
+{
+  "retain": {
+    "before": {
+      "painted": 145,
+      "all": false,
+      "hash": "fb5ad1e738fece71eee352e945c76fde7543d2c9c4a2c7fafcd01b8b7be76929",
+      "active": false,
+      "uploaded": false,
+      "gl": 0
+    },
+    "after": {
+      "painted": 145,
+      "all": false,
+      "hash": "fb5ad1e738fece71eee352e945c76fde7543d2c9c4a2c7fafcd01b8b7be76929",
+      "active": true,
+      "uploaded": true,
+      "gl": 0
+    },
+    "coldMonitor": {
+      "maxBeat": 40.099999994039536,
+      "maxRaf": 18.600000000000364,
+      "frames": 177
+    },
+    "s": {
+      "painted": 2401,
+      "all": true,
+      "hash": "f25510342ff18c597d0e4185345273f7e89d5e898a2e1ac89e6a78c9a167f09b",
+      "active": true,
+      "uploaded": true,
+      "gl": 0
+    },
+    "monitor": {
+      "maxBeat": 27.099999994039536,
+      "maxRaf": 18.5,
+      "frames": 23
+    },
+    "preparationElapsedMs": 2943.2999999821186,
+    "mapElapsedMs": 4294.699999988079
+  },
+  "undoCancel": {
+    "s": {
+      "painted": 0,
+      "all": false,
+      "hash": "893a32bd2ec5760380614a1349c57cff99c642e22e8164e81ec7f10cdf4cb03f",
+      "active": false,
+      "uploaded": true,
+      "gl": 0
+    },
+    "monitor": {
+      "maxBeat": 38.80000001192093,
+      "maxRaf": 18.600000000000364,
+      "frames": 184
+    },
+    "preparationElapsedMs": 2973.800000011921,
+    "mapElapsedMs": 4476.9000000059605
+  },
+  "fill": {
+    "s": {
+      "painted": 2401,
+      "all": true,
+      "hash": "f25510342ff18c597d0e4185345273f7e89d5e898a2e1ac89e6a78c9a167f09b",
+      "active": true,
+      "uploaded": true,
+      "gl": 0
+    },
+    "monitor": {
+      "maxBeat": 36.5,
+      "maxRaf": 18.699999999999818,
+      "frames": 186
+    },
+    "preparationElapsedMs": 2980.5,
+    "mapElapsedMs": 4404.0999999940395
+  },
+  "coldLoad": {
+    "s": {
+      "painted": 2401,
+      "all": true,
+      "hash": "f25510342ff18c597d0e4185345273f7e89d5e898a2e1ac89e6a78c9a167f09b",
+      "active": true,
+      "uploaded": true,
+      "gl": 0
+    },
+    "monitor": {
+      "maxBeat": 24.5,
+      "maxRaf": 18.5,
+      "frames": 184
+    },
+    "preparationElapsedMs": null,
+    "mapElapsedMs": 2927.399999976158
+  },
+  "cancelLoad": {
+    "s": {
+      "painted": 0,
+      "all": false,
+      "hash": "893a32bd2ec5760380614a1349c57cff99c642e22e8164e81ec7f10cdf4cb03f",
+      "active": false,
+      "uploaded": true,
+      "gl": 0
+    },
+    "monitor": {
+      "maxBeat": 27.5,
+      "maxRaf": 18.600000000000364,
+      "frames": 185
+    },
+    "preparationElapsedMs": null,
+    "mapElapsedMs": 26.299999982118607
+  },
+  "fillCancel": {
+    "s": {
+      "painted": 0,
+      "all": false,
+      "hash": "893a32bd2ec5760380614a1349c57cff99c642e22e8164e81ec7f10cdf4cb03f",
+      "active": false,
+      "uploaded": true,
+      "gl": 0
+    },
+    "monitor": {
+      "maxBeat": 34,
+      "maxRaf": 18.600000000000364,
+      "frames": 183
+    },
+    "preparationElapsedMs": null,
+    "mapElapsedMs": 4487.5
+  },
+  "pass": true
+}

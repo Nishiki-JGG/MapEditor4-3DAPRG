@@ -11,28 +11,30 @@ function findBrowser() {
 
 async function withPage(url, fn, opts = {}) {
   let port;const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tdwater-cdp-'));
-  const args = ['--headless=new', '--remote-debugging-port=0', `--user-data-dir=${dir}`, '--no-first-run', '--no-default-browser-check', ...(opts.hardware ? [] : ['--use-angle=swiftshader', '--enable-unsafe-swiftshader']), '--ignore-gpu-blocklist', ...(opts.fileAccess===false?[]:['--allow-file-access-from-files']), `--window-size=${opts.w || 1000},${opts.h || 700}`, 'about:blank'];
+  const args = ['--headless=new', '--remote-debugging-port=0', `--user-data-dir=${dir}`, '--no-first-run', '--no-default-browser-check', ...(opts.browserArgs||[]), ...(opts.hardware ? [] : ['--use-angle=swiftshader', '--enable-unsafe-swiftshader']), '--ignore-gpu-blocklist', ...(opts.fileAccess===false?[]:['--allow-file-access-from-files']), `--window-size=${opts.w || 1000},${opts.h || 700}`, 'about:blank'];
   const proc = spawn(findBrowser(), args, { stdio: 'ignore' });
   try {
     let targets = null;
     for (let i = 0; i < 80 && !targets; i++) { try { port=Number(fs.readFileSync(path.join(dir,'DevToolsActivePort'),'utf8').split(/\r?\n/)[0]);if(!port)throw Error('No private debug port');targets = await (await fetch(`http://127.0.0.1:${port}/json`)).json(); } catch { await new Promise(r => setTimeout(r, 250)); } }
     if (!targets) throw new Error('ブラウザに接続できません');
     const t = targets.find(x => x.type === 'page'), ws = new WebSocket(t.webSocketDebuggerUrl); await new Promise((res, rej) => { ws.onopen = res; ws.onerror = rej; });
-    let id = 0;const pending = new Map(), errors = [];const pathOf=u=>{const v=new URL(u);return v.origin+v.pathname;};let navigationError=null;ws.onclose=()=>{for(const p of pending.values())p.rej(new Error('Browser debugging connection closed'));pending.clear();};
+    let id = 0;const pending = new Map(), errors = [];const pathOf=u=>{const v=new URL(u);return v.origin+v.pathname;};let navigationError=null;const networkUrls=new Map(),networkErrors=[];ws.onclose=()=>{for(const p of pending.values())p.rej(new Error('Browser debugging connection closed'));pending.clear();};
     ws.onmessage = m => {
       const d = JSON.parse(m.data);
       if (d.id && pending.has(d.id)) { const { res, rej } = pending.get(d.id); pending.delete(d.id); d.error ? rej(new Error(d.error.message)) : res(d.result); }
       else if(d.method==='Page.frameNavigated'&&!d.params.frame.parentId&&pathOf(d.params.frame.url)!==pathOf(url)){navigationError=new Error('Unexpected test-page navigation: '+d.params.frame.url);for(const p of pending.values())p.rej(navigationError);pending.clear();}
+      else if(d.method==='Network.requestWillBeSent')networkUrls.set(d.params.requestId,d.params.request.url);
+      else if(d.method==='Network.loadingFailed'){const e={url:networkUrls.get(d.params.requestId),error:d.params.errorText,blocked:d.params.blockedReason};networkErrors.push(e);if(opts.networkDiagnostics)console.log('通信失敗',JSON.stringify(e));}
       else if (d.method === 'Runtime.exceptionThrown') errors.push(d.params.exceptionDetails.exception ? d.params.exceptionDetails.exception.description : d.params.exceptionDetails.text);
     };
     const send = (method, params = {}) => new Promise((res, rej) => { if(navigationError)return rej(navigationError);const i = ++id,timer=setTimeout(()=>{pending.delete(i);rej(new Error('CDP command timed out: '+method));},120000);pending.set(i, {res:v=>{clearTimeout(timer);res(v);},rej:e=>{clearTimeout(timer);rej(e);}}); ws.send(JSON.stringify({ id: i, method, params })); });
-    await send('Runtime.enable'); await send('Page.enable');
+    await send('Runtime.enable'); await send('Page.enable');if(opts.networkDiagnostics)await send('Network.enable');
     if(opts.hasTouch)await send('Emulation.setTouchEmulationEnabled',{enabled:true,maxTouchPoints:5});
     if(opts.exactViewport||opts.mobile)await send('Emulation.setDeviceMetricsOverride',{width:opts.w,height:opts.h,deviceScaleFactor:1,mobile:!!opts.mobile});
     if(opts.initScript)await send('Page.addScriptToEvaluateOnNewDocument',{source:opts.initScript});
     await send('Page.navigate', { url }); await new Promise(r => setTimeout(r, opts.wait || 4000));
     const page = {
-      cdp:send, errors,
+      cdp:send, errors, networkErrors,
       async eval(expr) {
         const r = await send('Runtime.evaluate', { expression: expr, awaitPromise: true, returnByValue: true, timeout: 120000 });
         if (r.exceptionDetails) throw new Error((r.exceptionDetails.exception && r.exceptionDetails.exception.description) || r.exceptionDetails.text);

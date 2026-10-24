@@ -1,0 +1,142 @@
+{
+  "commit": "5e7b486eecbbc0b38bf53d3cee99333707cc0cc4",
+  "url": "https://nishiki-jgg.github.io/MapEditor4-3DAPRG/",
+  "assets": [
+    {
+      "name": "index.html",
+      "status": 200,
+      "sha256": "65c6264734845e9366a58c98bb963851ccd6759239a3228ede93353dc13343e9",
+      "bytes": 26182
+    },
+    {
+      "name": "app.js",
+      "status": 200,
+      "sha256": "09d17414805e18770151615c9c0c1eb48ca4bc12547ee0da590fc8d7c93a143e",
+      "bytes": 452349
+    },
+    {
+      "name": "terrain/bedrock.js",
+      "status": 200,
+      "sha256": "f8c68d1050b67291fed5827949ba729b162782ed69d2195559bafa2e7b50e549",
+      "bytes": 1035
+    },
+    {
+      "name": "terrain/bedrock-data.js",
+      "status": 200,
+      "sha256": "19dbf6d0970941c2ee816a0886bc5f1211af57163274bac47bdf4a91fe4f0e7b",
+      "bytes": 1074327
+    },
+    {
+      "name": "terrain/bedrock.png",
+      "status": 200,
+      "sha256": "9afb85914b779f0ffd12da84dcbe611d08d57fc36b4da4f73e3dc8af392ae9c5",
+      "bytes": 805659
+    },
+    {
+      "name": "prepared/manifest.js",
+      "status": 200,
+      "sha256": "28d921212b9abf1defdb64701cb86ff2da13abd3d53e99d0ca90aaf58aa337fe",
+      "bytes": 3558
+    },
+    {
+      "name": "prepared/sample-64-7-d45226ab0add.js",
+      "status": 200,
+      "sha256": "0acb58b660f13925cb63faf3b41a5a864e1e9106f60603bc1952c8585a7420af",
+      "bytes": 7907598
+    },
+    {
+      "name": "prepared/sample2-48-11-fe7a91156d43.js",
+      "status": 200,
+      "sha256": "450971f4f548521967842631b40e9990550b7e7bc1cd7a67ac052a57a4bdc377",
+      "bytes": 3220124
+    }
+  ],
+  "forest": {
+    "stats": {
+      "kind": "sample",
+      "seed": 7,
+      "cacheHit": false,
+      "persistent": true,
+      "persistentStored": true,
+      "preparedSource": "bundle",
+      "bundleBytes": 5930650,
+      "walkReused": true,
+      "elapsedMs": 13539.5,
+      "firstRenderMs": 361.7000000178814,
+      "props": 5761,
+      "fits": 552,
+      "fitStats": null
+    },
+    "rockFitCalls": 0,
+    "requests": [
+      {
+        "kind": "sample",
+        "key": "sample:dc7f4ebc964e36b42e126967d2e21832d56d33660fa84abd7443f58c3bf09c19",
+        "manifestKey": "sample:dc7f4ebc964e36b42e126967d2e21832d56d33660fa84abd7443f58c3bf09c19",
+        "keyMatches": true,
+        "profileMatches": true,
+        "returned": true
+      }
+    ],
+    "tab": {
+      "roundtrip": true,
+      "rockRegeneration": 0
+    }
+  },
+  "material": {
+    "button": "岩盤j",
+    "fill": "岩盤",
+    "image": {
+      "width": 512,
+      "height": 512
+    }
+  },
+  "brush": {
+    "center": 12,
+    "paintedVertices": 89
+  },
+  "fill": true,
+  "save": {
+    "file": "BedrockPublicationCheck.json",
+    "sha256": "ceea0aaf74d633de3ca6fdfde926aac8fde0a80d38c99348d45d2afbffa8414b"
+  },
+  "load": {
+    "allBedrock": true,
+    "gl": 0,
+    "bedrockUniformCorrect": true
+  },
+  "ruins": {
+    "stats": {
+      "kind": "sample2",
+      "seed": 11,
+      "cacheHit": false,
+      "persistent": true,
+      "persistentStored": true,
+      "preparedSource": "bundle",
+      "bundleBytes": 2415044,
+      "walkReused": true,
+      "elapsedMs": 3403.0999999940395,
+      "firstRenderMs": 199.89999997615814,
+      "props": 536,
+      "fits": 226,
+      "fitStats": null
+    },
+    "rockFitCalls": 0,
+    "requests": [
+      {
+        "kind": "sample2",
+        "key": "sample:cc70fbb2dd2300a4e8dbe1be962c60e4531e2c0353ce2cdcf3ba27379f005b6c",
+        "manifestKey": "sample:cc70fbb2dd2300a4e8dbe1be962c60e4531e2c0353ce2cdcf3ba27379f005b6c",
+        "keyMatches": true,
+        "profileMatches": true,
+        "returned": true
+      }
+    ],
+    "tab": {
+      "roundtrip": true,
+      "rockRegeneration": 0
+    }
+  },
+  "errors": [],
+  "pass": true
+}

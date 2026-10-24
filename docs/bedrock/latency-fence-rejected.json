@@ -1,0 +1,321 @@
+{
+  "working": {
+    "direct": {
+      "kind": "direct",
+      "phases": [
+        {
+          "name": "selectToolCpu",
+          "ms": 0.30000001192092896,
+          "maxHeartbeatGapMs": 3049.9000000059605,
+          "glCalls": {
+            "compileShader": {
+              "count": 4,
+              "totalMs": 0,
+              "maxMs": 0
+            },
+            "linkProgram": {
+              "count": 2,
+              "totalMs": 0,
+              "maxMs": 0
+            },
+            "getParameter": {
+              "count": 1,
+              "totalMs": 0,
+              "maxMs": 0
+            },
+            "useProgram": {
+              "count": 3,
+              "totalMs": 3038.100000023842,
+              "maxMs": 3031.800000011921
+            },
+            "fenceSync": {
+              "count": 1,
+              "totalMs": 0.09999999403953552,
+              "maxMs": 0.09999999403953552
+            },
+            "flush": {
+              "count": 1,
+              "totalMs": 0,
+              "maxMs": 0
+            },
+            "clientWaitSync": {
+              "count": 1,
+              "totalMs": 0,
+              "maxMs": 0
+            }
+          }
+        },
+        {
+          "name": "firstPaintCpu",
+          "ms": 5.699999988079071,
+          "maxHeartbeatGapMs": 16,
+          "glCalls": {
+            "clientWaitSync": {
+              "count": 1,
+              "totalMs": 0.09999999403953552,
+              "maxMs": 0.09999999403953552
+            },
+            "texSubImage2D": {
+              "count": 1,
+              "totalMs": 2.5,
+              "maxMs": 2.5
+            },
+            "generateMipmap": {
+              "count": 1,
+              "totalMs": 0,
+              "maxMs": 0
+            }
+          }
+        },
+        {
+          "name": "firstRenderCpu",
+          "ms": 46.5,
+          "maxHeartbeatGapMs": 46.60000002384186,
+          "glCalls": {
+            "useProgram": {
+              "count": 199,
+              "totalMs": 0.10000002384185791,
+              "maxMs": 0.10000002384185791
+            },
+            "drawElements": {
+              "count": 5,
+              "totalMs": 0,
+              "maxMs": 0
+            },
+            "getProgramInfoLog": {
+              "count": 1,
+              "totalMs": 0.699999988079071,
+              "maxMs": 0.699999988079071
+            },
+            "getShaderInfoLog": {
+              "count": 2,
+              "totalMs": 0.20000001788139343,
+              "maxMs": 0.10000002384185791
+            },
+            "getProgramParameter": {
+              "count": 3,
+              "totalMs": 0,
+              "maxMs": 0
+            },
+            "getActiveUniform": {
+              "count": 84,
+              "totalMs": 0,
+              "maxMs": 0
+            },
+            "getUniformLocation": {
+              "count": 84,
+              "totalMs": 0,
+              "maxMs": 0
+            }
+          }
+        },
+        {
+          "name": "firstGpuFinish",
+          "ms": 0,
+          "maxHeartbeatGapMs": 16.099999994039536,
+          "glCalls": {
+            "finish": {
+              "count": 1,
+              "totalMs": 0,
+              "maxMs": 0
+            }
+          }
+        },
+        {
+          "name": "pendingPreparation",
+          "ms": 0,
+          "maxHeartbeatGapMs": 16.19999998807907,
+          "glCalls": {}
+        },
+        {
+          "name": "completedDraw",
+          "ms": 3,
+          "maxHeartbeatGapMs": 16.799999982118607,
+          "glCalls": {
+            "useProgram": {
+              "count": 199,
+              "totalMs": 0,
+              "maxMs": 0
+            },
+            "drawElements": {
+              "count": 5,
+              "totalMs": 0,
+              "maxMs": 0
+            },
+            "finish": {
+              "count": 1,
+              "totalMs": 0,
+              "maxMs": 0
+            }
+          }
+        },
+        {
+          "name": "warmPaintCpu",
+          "ms": 4.5,
+          "maxHeartbeatGapMs": 16.600000023841858,
+          "glCalls": {}
+        },
+        {
+          "name": "warmDraw",
+          "ms": 10.299999982118607,
+          "maxHeartbeatGapMs": 16.599999994039536,
+          "glCalls": {
+            "useProgram": {
+              "count": 199,
+              "totalMs": 0.20000001788139343,
+              "maxMs": 0.10000002384185791
+            },
+            "drawElements": {
+              "count": 5,
+              "totalMs": 0,
+              "maxMs": 0
+            },
+            "finish": {
+              "count": 1,
+              "totalMs": 0,
+              "maxMs": 0
+            }
+          }
+        },
+        {
+          "name": "fillGrassCpu",
+          "ms": 28.900000005960464,
+          "maxHeartbeatGapMs": 29,
+          "glCalls": {}
+        },
+        {
+          "name": "warmFillCpu",
+          "ms": 6.9000000059604645,
+          "maxHeartbeatGapMs": 16.099999994039536,
+          "glCalls": {}
+        },
+        {
+          "name": "fillDraw",
+          "ms": 9.299999982118607,
+          "maxHeartbeatGapMs": 16.5,
+          "glCalls": {
+            "useProgram": {
+              "count": 199,
+              "totalMs": 0.09999999403953552,
+              "maxMs": 0.09999999403953552
+            },
+            "drawElements": {
+              "count": 5,
+              "totalMs": 0,
+              "maxMs": 0
+            },
+            "finish": {
+              "count": 1,
+              "totalMs": 0,
+              "maxMs": 0
+            }
+          }
+        },
+        {
+          "name": "savedMapLoad",
+          "ms": 57.099999994039536,
+          "maxHeartbeatGapMs": 21.400000005960464,
+          "glCalls": {
+            "useProgram": {
+              "count": 200,
+              "totalMs": 0.09999999403953552,
+              "maxMs": 0.09999999403953552
+            },
+            "drawElements": {
+              "count": 5,
+              "totalMs": 0,
+              "maxMs": 0
+            },
+            "texSubImage2D": {
+              "count": 1,
+              "totalMs": 0,
+              "maxMs": 0
+            },
+            "getProgramInfoLog": {
+              "count": 1,
+              "totalMs": 0.29999998211860657,
+              "maxMs": 0.29999998211860657
+            },
+            "getShaderInfoLog": {
+              "count": 2,
+              "totalMs": 0.30000001192092896,
+              "maxMs": 0.20000001788139343
+            },
+            "getProgramParameter": {
+              "count": 3,
+              "totalMs": 0,
+              "maxMs": 0
+            },
+            "getActiveUniform": {
+              "count": 9,
+              "totalMs": 0,
+              "maxMs": 0
+            },
+            "getUniformLocation": {
+              "count": 9,
+              "totalMs": 0,
+              "maxMs": 0
+            }
+          }
+        },
+        {
+          "name": "loadDraw",
+          "ms": 2.9000000059604645,
+          "maxHeartbeatGapMs": 28.5,
+          "glCalls": {
+            "useProgram": {
+              "count": 200,
+              "totalMs": 0.20000001788139343,
+              "maxMs": 0.10000002384185791
+            },
+            "drawElements": {
+              "count": 5,
+              "totalMs": 0,
+              "maxMs": 0
+            },
+            "finish": {
+              "count": 1,
+              "totalMs": 0.09999999403953552,
+              "maxMs": 0.09999999403953552
+            }
+          }
+        },
+        {
+          "name": "rapidSwitch",
+          "ms": 127.90000000596046,
+          "maxHeartbeatGapMs": 128.30000001192093,
+          "glCalls": {
+            "useProgram": {
+              "count": 1200,
+              "totalMs": 0.20000001788139343,
+              "maxMs": 0.10000002384185791
+            },
+            "drawElements": {
+              "count": 30,
+              "totalMs": 0,
+              "maxMs": 0
+            },
+            "drawElementsInstanced": {
+              "count": 20,
+              "totalMs": 0,
+              "maxMs": 0
+            },
+            "finish": {
+              "count": 1,
+              "totalMs": 0,
+              "maxMs": 0
+            }
+          }
+        }
+      ],
+      "image": {
+        "ready": true,
+        "loadMs": 370.40000000596046
+      },
+      "parallel": false,
+      "programs": 73,
+      "gl": 0,
+      "uniformCorrect": true
+    }
+  }
+}

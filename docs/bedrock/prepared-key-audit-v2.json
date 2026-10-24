@@ -1,0 +1,34 @@
+{
+  "4973cac": [
+    {
+      "kind": "sample",
+      "manifest": "sample:dc7f4ebc964e36b42e126967d2e21832d56d33660fa84abd7443f58c3bf09c19",
+      "runtime": "sample:11f93fe85ba383e11bd61484ad096989950c83a0c936f0862e8637f866d1b935",
+      "keyMatches": false,
+      "profileMatches": true
+    },
+    {
+      "kind": "sample2",
+      "manifest": "sample:cc70fbb2dd2300a4e8dbe1be962c60e4531e2c0353ce2cdcf3ba27379f005b6c",
+      "runtime": "sample:c0bffd8db995f6a22483ae455f45b2ed0582446038c38ae95781726069162900",
+      "keyMatches": false,
+      "profileMatches": true
+    }
+  ],
+  "working": [
+    {
+      "kind": "sample",
+      "manifest": "sample:01d6b400e4fd76f73aaa18c6ea758ac4210d373ec3e1aabcbfc31d986a93ed91",
+      "runtime": "sample:01d6b400e4fd76f73aaa18c6ea758ac4210d373ec3e1aabcbfc31d986a93ed91",
+      "keyMatches": true,
+      "profileMatches": true
+    },
+    {
+      "kind": "sample2",
+      "manifest": "sample:384158f1a98943398ac73718f35f2c4770ed7a81b8e0dd6b6e6b2a332f3c84f6",
+      "runtime": "sample:384158f1a98943398ac73718f35f2c4770ed7a81b8e0dd6b6e6b2a332f3c84f6",
+      "keyMatches": true,
+      "profileMatches": true
+    }
+  ]
+}

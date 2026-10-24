@@ -1,0 +1,34 @@
+// 同じ地形・既存岩・照明・カメラで床だけを比較する。形状生成・接地方式は変更しない。
+const fs=require('fs'),path=require('path'),http=require('http'),cp=require('child_process'),assert=require('assert/strict'),{withPage}=require('./cdp');
+const root=path.resolve(__dirname,'..'),out=path.join(root,'output/playwright/bedrock-quality'),refs=process.argv.slice(2);if(!refs.length)refs.push('5e7b486','working');fs.mkdirSync(out,{recursive:true});
+const source=new Map();for(const ref of refs){const map=new Map();for(const n of ['app.js','index.html','terrain/bedrock.js','terrain/bedrock-data.js'])map.set(n,ref==='working'?fs.readFileSync(path.join(root,n)):cp.execFileSync('git',['show',ref+':'+n],{cwd:root,maxBuffer:6e6}));source.set(ref,map);}
+const server=http.createServer((q,r)=>{const parts=decodeURIComponent(new URL(q.url,'http://x').pathname).slice(1).split('/'),ref=parts.shift(),name=parts.join('/');if(!source.has(ref)||name.includes('..'))return r.writeHead(404).end();const b=source.get(ref).get(name);if(b)return r.writeHead(200,{'Content-Type':name.endsWith('.js')?'text/javascript':'text/html'}).end(b);const file=path.resolve(root,name);if(!file.startsWith(root+path.sep))return r.writeHead(403).end();fs.readFile(file,(e,b)=>r.writeHead(e?404:200,{'Content-Type':name.endsWith('.js')?'text/javascript':name.endsWith('.png')?'image/png':'application/octet-stream'}).end(e?'404':b));});
+function arrange(){
+ const A=__app,N=Math.sqrt(A.H.length),ns=A.S.length/A.H.length,half=A.SIZE/2,ease=(a,b,x)=>{const t=Math.max(0,Math.min(1,(x-a)/(b-a)));return t*t*(3-2*t);};
+ A.genFlat();A.S.fill(0);for(let j=0;j<N;j++)for(let i=0;i<N;i++){
+  const x=-half+i*.5,z=-half+j*.5,k=j*N+i;
+  // A low ramp on the right, and an existing terrain cliff at the rear left.
+  A.H[k]=3+1.4*ease(8,17,x)*(1-ease(9,17,Math.abs(z)))+2.2*ease(-13,-12,x)*(1-ease(-11,-10,x))*ease(6,6.8,z);
+  const edge=Math.max(Math.abs(x)-15,Math.abs(z)-15)+.35*Math.sin(z*.61)+.25*Math.sin(x*.43),rock=1-ease(-.7,.6,edge);
+  A.S[k*ns+9]=Math.round(rock*255);if(x>12&&z<3)A.S[k*ns]=255-A.S[k*ns+9];
+ }
+ A.updateTerrain();A.props.splice(0);
+ const layout=[['rock',-4,-2,.3,1],['rock',2,2,-.4,1.25],['rock',-1,-8,1.6,.75],['cliff_slab',-7,-7,.2,.8],['cliff_joint',7,-5,-.2,.75],['cliff_split',-6,7,.35,.7],['cliff_shoulder',4,7,-.6,.8],['pebble',-1,-2,.3,1],['mossrock',-8,1,.5,.9]];
+ for(const[id,x,z,yaw,scale]of layout){const t=A.PROP.findIndex(t=>t.id===id);if(t>=0)A.props.push([t,x,z,yaw,scale,0]);}
+ A.ensureIds();A.rebuildProps();A.rebuildCliffRelief();A.setMode('edit');A.setPanel(false);A.setTime(0);const toast=document.getElementById('toast');if(toast)toast.style.display='none';
+ A.terrain.parent.children.filter(o=>o.isLineLoop||o.isLine||o.geometry?.type==='ConeGeometry').forEach(o=>o.visible=false);
+ return{height:A.sha256(new Uint8Array(A.H.buffer)),paint:A.sha256(A.S),props:JSON.stringify(A.props),models:layout.map(([id])=>{const p=A.PROP.find(t=>t.id===id);p.geo.computeBoundingBox();return{id,r:p.r,height:p.height,bounds:[p.geo.boundingBox.min.toArray(),p.geo.boundingBox.max.toArray()]};})};
+}
+function view(x,y,z,tx=0,ty=3,tz=0){const A=__app;A.camera.position.set(x,y,z);A.camera.lookAt(tx,ty,tz);A.camera.updateMatrixWorld();A.setTime(0);A.render();}
+const views=[['normal',0,35,.001,0,3,0],['oblique',18,24,24,0,3,0],['contact',-4,11,3,-4,3,-2],['slope',18,13,10,12,4,1],['transition',18,17,-8,14,3,-8]];
+(async()=>{await new Promise(r=>server.listen(0,'127.0.0.1',r));const report={};try{for(const ref of refs){console.log('描画',ref);report[ref]=await withPage('http://127.0.0.1:'+server.address().port+'/'+ref+'/index.html#size=48',async p=>{
+ for(let k=0;k<600;k++){if(await p.eval('!!window.__app'))break;await new Promise(r=>setTimeout(r,100));}await p.eval('(async()=>{await __app.bootReady;window.requestAnimationFrame=()=>0;})()');await new Promise(r=>setTimeout(r,100));const scene=await p.eval('('+arrange+')()');const cold=await p.eval(`(async()=>{const A=__app,saved=new Uint8Array(A.S);for(let k=0;k<A.H.length;k++)A.S[k*10+9]=0;A.updateTerrain();(${view})(0,35,.001);A.renderer.getContext().finish();A.S.set(saved);A.updateTerrain();if(A.bedrockReady)await A.bedrockReady();const t=performance.now();(${view})(0,35,.001);A.renderer.getContext().finish();return performance.now()-t;})()`);
+ for(const[name,...args]of views){await p.eval('('+view+')('+args.join(',')+')');await p.screenshot(path.join(out,ref+'-'+name+'.png'));}
+ await p.eval("__app.S.fill(0);for(let k=0;k<__app.H.length;k++)__app.S[k*10+9]=255;__app.updateTerrain();");await p.eval('('+view+')(0,68,.001)');await p.screenshot(path.join(out,ref+'-wide.png'));
+ const perf=await p.eval(`(()=>{const A=__app,gl=A.renderer.getContext();for(let i=0;i<5;i++)A.render();const t=[];for(let i=0;i<25;i++){const s=performance.now();A.render();gl.finish();t.push(performance.now()-s);}t.sort((a,b)=>a-b);return{calls:A.renderer.info.render.calls,triangles:A.renderer.info.render.triangles,textures:A.renderer.info.memory.textures,medianMs:t[12],p95Ms:t[23],gl:gl.getError(),shaderErrors:A.renderer.info.programs.filter(p=>p.diagnostics?.runnable===false).length};})()`);
+ // Track fixed world points during a small camera translation (texture temporal stability).
+ const stability=await p.eval(`(()=>{const A=__app,gl=A.renderer.getContext(),points=[[-8,-10],[-4,-10],[0,-10],[4,-10],[8,-10],[-8,10],[0,10],[8,10]],samples=points.map(()=>[]);for(let f=0;f<12;f++){const d=f*.045;(${view})(d,35,.001,d,3,0);for(let k=0;k<points.length;k++){const[x,z]=points[k],p=new THREE.Vector3(x,A.heightAt(x,z),z).project(A.camera),sx=Math.round((p.x+1)*gl.drawingBufferWidth/2),sy=Math.round((p.y+1)*gl.drawingBufferHeight/2),data=new Uint8Array(3*3*4);gl.readPixels(sx-1,sy-1,3,3,gl.RGBA,gl.UNSIGNED_BYTE,data);samples[k].push([0,1,2].map(c=>data.reduce((s,v,i)=>s+(i%4===c?v:0),0)/9));}}return points.map((p,k)=>({point:p,maxRange:Math.max(...[0,1,2].map(c=>Math.max(...samples[k].map(v=>v[c]))-Math.min(...samples[k].map(v=>v[c]))))}));})()`);
+ assert.equal(perf.gl,0);assert.equal(perf.shaderErrors,0);assert.deepEqual(p.errors,[]);return{scene,firstDrawMs:cold,awaitedBedrockPreparation:await p.eval('typeof __app.bedrockReady===\"function\"'),perf,stability,errors:p.errors};
+ },{hardware:true,exactViewport:true,w:1280,h:900,wait:1000,initScript:"sessionStorage.setItem('me_pending','flat');"});fs.writeFileSync(path.join(out,'review.json'),JSON.stringify(report,null,2));console.log(JSON.stringify({ref,firstDrawMs:report[ref].firstDrawMs,perf:report[ref].perf,stability:report[ref].stability}));}
+ if(refs[0]!=='working'&&report[refs[0]]&&report.working){assert.deepEqual(report[refs[0]].scene,report.working.scene);assert.equal(report[refs[0]].perf.calls,report.working.perf.calls);assert.equal(report[refs[0]].perf.triangles,report.working.perf.triangles);}
+}finally{server.close();}})().catch(e=>{console.error(e);process.exitCode=1;});

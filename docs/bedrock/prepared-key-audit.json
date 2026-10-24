@@ -1,0 +1,34 @@
+{
+  "9d25b6f": [
+    {
+      "kind": "sample",
+      "manifest": "sample:5fc9613885f61717d7209c26b0e95fae90885398c5c7e545c0725bc9ff3dba74",
+      "runtime": "sample:5fc9613885f61717d7209c26b0e95fae90885398c5c7e545c0725bc9ff3dba74",
+      "keyMatches": true,
+      "profileMatches": true
+    },
+    {
+      "kind": "sample2",
+      "manifest": "sample:b68a0a50540ff34bb0a9c99cfa5a934ab6911f4bde7643d35f59c789730a6840",
+      "runtime": "sample:b68a0a50540ff34bb0a9c99cfa5a934ab6911f4bde7643d35f59c789730a6840",
+      "keyMatches": true,
+      "profileMatches": true
+    }
+  ],
+  "working": [
+    {
+      "kind": "sample",
+      "manifest": "sample:3c6c6b129be9cbc260f6c9dd0e0836a75c2e335e44af6b0ab29e11c49c2fd2bd",
+      "runtime": "sample:3c6c6b129be9cbc260f6c9dd0e0836a75c2e335e44af6b0ab29e11c49c2fd2bd",
+      "keyMatches": true,
+      "profileMatches": true
+    },
+    {
+      "kind": "sample2",
+      "manifest": "sample:2f88e0182832eb0ba02c4c6895c779262a445c4993116be483fa5cdc1d897e83",
+      "runtime": "sample:2f88e0182832eb0ba02c4c6895c779262a445c4993116be483fa5cdc1d897e83",
+      "keyMatches": true,
+      "profileMatches": true
+    }
+  ]
+}

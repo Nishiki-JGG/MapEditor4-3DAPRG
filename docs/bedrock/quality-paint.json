@@ -1,0 +1,68 @@
+{
+  "contract": {
+    "selected": true,
+    "brush": true,
+    "undo": true,
+    "redo": true,
+    "fill": true,
+    "noProps": true,
+    "load": true,
+    "roundtrip": true,
+    "noAutomatic": true,
+    "biomePreserves": true,
+    "erase": true,
+    "walk": true,
+    "channels": 10,
+    "texture": {
+      "width": 512,
+      "height": 512,
+      "format": 1023,
+      "type": 1009,
+      "mipmaps": true,
+      "bytesWithMips": 1398100
+    },
+    "info": {
+      "frame": 4,
+      "calls": 5,
+      "triangles": 9618,
+      "points": 0,
+      "lines": 72
+    },
+    "gl": 0,
+    "shaderErrors": 0
+  },
+  "performance": {
+    "bedrock": {
+      "calls": 3,
+      "triangles": 9600,
+      "geometries": 159,
+      "textures": 19,
+      "medianMs": 5.0999999940395355,
+      "p95Ms": 7.299999982118607
+    },
+    "grass": {
+      "calls": 3,
+      "triangles": 9600,
+      "geometries": 158,
+      "textures": 19,
+      "medianMs": 3.7000000178813934,
+      "p95Ms": 7.9000000059604645
+    },
+    "addedCalls": 0,
+    "addedTriangles": 0
+  },
+  "errors": [],
+  "baselineErrors": [],
+  "sample": {
+    "ok": true,
+    "ms": 6694.5,
+    "channels": 10,
+    "bedrockAbsent": true,
+    "props": 5761,
+    "tabPlay": true,
+    "paintInPlay": true,
+    "tabEdit": true,
+    "errors": []
+  },
+  "pass": true
+}

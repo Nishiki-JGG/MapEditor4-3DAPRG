@@ -1,0 +1,588 @@
+{
+  "5e7b486": {
+    "direct": {
+      "kind": "direct",
+      "phases": [
+        {
+          "name": "selectToolCpu",
+          "ms": 0.19999998807907104,
+          "maxHeartbeatGapMs": 16.599999994039536,
+          "glCalls": {}
+        },
+        {
+          "name": "firstPaintCpu",
+          "ms": 7.0999999940395355,
+          "maxHeartbeatGapMs": 16.80000001192093,
+          "glCalls": {}
+        },
+        {
+          "name": "firstDraw",
+          "ms": 2965.9000000059605,
+          "maxHeartbeatGapMs": 2966.300000011921,
+          "glCalls": {
+            "compileShader": {
+              "count": 2,
+              "totalMs": 0,
+              "maxMs": 0
+            },
+            "linkProgram": {
+              "count": 1,
+              "totalMs": 0,
+              "maxMs": 0
+            },
+            "getProgramParameter": {
+              "count": 3,
+              "totalMs": 0.4000000059604645,
+              "maxMs": 0.4000000059604645
+            },
+            "getActiveUniform": {
+              "count": 80,
+              "totalMs": 0.09999999403953552,
+              "maxMs": 0.09999999403953552
+            },
+            "getUniformLocation": {
+              "count": 80,
+              "totalMs": 0,
+              "maxMs": 0
+            },
+            "texSubImage2D": {
+              "count": 1,
+              "totalMs": 2.4000000059604645,
+              "maxMs": 2.4000000059604645
+            },
+            "generateMipmap": {
+              "count": 1,
+              "totalMs": 0,
+              "maxMs": 0
+            }
+          }
+        },
+        {
+          "name": "completedDraw",
+          "ms": 4.0999999940395355,
+          "maxHeartbeatGapMs": 17.099999994039536,
+          "glCalls": {}
+        },
+        {
+          "name": "warmPaintCpu",
+          "ms": 6.600000023841858,
+          "maxHeartbeatGapMs": 16,
+          "glCalls": {}
+        },
+        {
+          "name": "warmDraw",
+          "ms": 10.400000005960464,
+          "maxHeartbeatGapMs": 16.599999994039536,
+          "glCalls": {}
+        },
+        {
+          "name": "fillGrassCpu",
+          "ms": 30.5,
+          "maxHeartbeatGapMs": 30.5,
+          "glCalls": {}
+        },
+        {
+          "name": "warmFillCpu",
+          "ms": 6.5999999940395355,
+          "maxHeartbeatGapMs": 16,
+          "glCalls": {}
+        },
+        {
+          "name": "fillDraw",
+          "ms": 12.100000023841858,
+          "maxHeartbeatGapMs": 17.100000023841858,
+          "glCalls": {}
+        },
+        {
+          "name": "savedMapLoad",
+          "ms": 70.7000000178814,
+          "maxHeartbeatGapMs": 24,
+          "glCalls": {
+            "compileShader": {
+              "count": 2,
+              "totalMs": 0,
+              "maxMs": 0
+            },
+            "linkProgram": {
+              "count": 1,
+              "totalMs": 0,
+              "maxMs": 0
+            },
+            "getProgramParameter": {
+              "count": 7,
+              "totalMs": 0.10000002384185791,
+              "maxMs": 0.10000002384185791
+            },
+            "getActiveUniform": {
+              "count": 9,
+              "totalMs": 0,
+              "maxMs": 0
+            },
+            "getUniformLocation": {
+              "count": 9,
+              "totalMs": 0,
+              "maxMs": 0
+            }
+          }
+        },
+        {
+          "name": "loadDraw",
+          "ms": 4.5,
+          "maxHeartbeatGapMs": 37.099999994039536,
+          "glCalls": {}
+        },
+        {
+          "name": "rapidSwitch",
+          "ms": 171.7999999821186,
+          "maxHeartbeatGapMs": 172.5,
+          "glCalls": {}
+        }
+      ],
+      "image": {
+        "ready": true,
+        "loadMs": 420.7000000178814
+      },
+      "parallel": true,
+      "programs": 74,
+      "gl": 0,
+      "uniformCorrect": true
+    },
+    "async": {
+      "kind": "async",
+      "phases": [
+        {
+          "name": "textureUpload",
+          "ms": 2.9000000059604645,
+          "maxHeartbeatGapMs": 16.80000001192093,
+          "glCalls": {
+            "texSubImage2D": {
+              "count": 1,
+              "totalMs": 2.800000011920929,
+              "maxMs": 2.800000011920929
+            },
+            "generateMipmap": {
+              "count": 1,
+              "totalMs": 0,
+              "maxMs": 0
+            }
+          }
+        },
+        {
+          "name": "paintCpu",
+          "ms": 6.0999999940395355,
+          "maxHeartbeatGapMs": 16.400000005960464,
+          "glCalls": {}
+        },
+        {
+          "name": "compileAsync",
+          "ms": 2734,
+          "maxHeartbeatGapMs": 45.30000001192093,
+          "glCalls": {
+            "compileShader": {
+              "count": 4,
+              "totalMs": 0,
+              "maxMs": 0
+            },
+            "linkProgram": {
+              "count": 2,
+              "totalMs": 0,
+              "maxMs": 0
+            },
+            "getProgramParameter": {
+              "count": 495,
+              "totalMs": 1.300000011920929,
+              "maxMs": 0.10000002384185791
+            }
+          }
+        },
+        {
+          "name": "firstDrawAfterAsync",
+          "ms": 12.400000005960464,
+          "maxHeartbeatGapMs": 16.599999994039536,
+          "glCalls": {
+            "getProgramParameter": {
+              "count": 3,
+              "totalMs": 0,
+              "maxMs": 0
+            },
+            "getActiveUniform": {
+              "count": 80,
+              "totalMs": 0.09999999403953552,
+              "maxMs": 0.09999999403953552
+            },
+            "getUniformLocation": {
+              "count": 80,
+              "totalMs": 0,
+              "maxMs": 0
+            }
+          }
+        },
+        {
+          "name": "warmPaintCpu",
+          "ms": 4.700000017881393,
+          "maxHeartbeatGapMs": 16.100000023841858,
+          "glCalls": {}
+        },
+        {
+          "name": "warmDraw",
+          "ms": 10.199999988079071,
+          "maxHeartbeatGapMs": 16.80000001192093,
+          "glCalls": {}
+        },
+        {
+          "name": "fillGrassCpu",
+          "ms": 30.299999982118607,
+          "maxHeartbeatGapMs": 30.299999982118607,
+          "glCalls": {}
+        },
+        {
+          "name": "warmFillCpu",
+          "ms": 7,
+          "maxHeartbeatGapMs": 16.099999994039536,
+          "glCalls": {}
+        },
+        {
+          "name": "fillDraw",
+          "ms": 9.900000005960464,
+          "maxHeartbeatGapMs": 16.19999998807907,
+          "glCalls": {}
+        },
+        {
+          "name": "savedMapLoad",
+          "ms": 44,
+          "maxHeartbeatGapMs": 18,
+          "glCalls": {
+            "getProgramParameter": {
+              "count": 3,
+              "totalMs": 0,
+              "maxMs": 0
+            },
+            "getActiveUniform": {
+              "count": 9,
+              "totalMs": 0,
+              "maxMs": 0
+            },
+            "getUniformLocation": {
+              "count": 9,
+              "totalMs": 0,
+              "maxMs": 0
+            }
+          }
+        },
+        {
+          "name": "loadDraw",
+          "ms": 3.5,
+          "maxHeartbeatGapMs": 24.200000017881393,
+          "glCalls": {}
+        },
+        {
+          "name": "rapidSwitch",
+          "ms": 149.69999998807907,
+          "maxHeartbeatGapMs": 150.19999998807907,
+          "glCalls": {}
+        }
+      ],
+      "image": {
+        "ready": true,
+        "loadMs": 389.5
+      },
+      "parallel": true,
+      "programs": 74,
+      "gl": 0,
+      "uniformCorrect": true
+    }
+  },
+  "0602072": {
+    "direct": {
+      "kind": "direct",
+      "phases": [
+        {
+          "name": "selectToolCpu",
+          "ms": 0.09999999403953552,
+          "maxHeartbeatGapMs": 16.5,
+          "glCalls": {}
+        },
+        {
+          "name": "firstPaintCpu",
+          "ms": 6.699999988079071,
+          "maxHeartbeatGapMs": 16.69999998807907,
+          "glCalls": {}
+        },
+        {
+          "name": "firstDraw",
+          "ms": 2948.800000011921,
+          "maxHeartbeatGapMs": 2949.0999999940395,
+          "glCalls": {
+            "compileShader": {
+              "count": 2,
+              "totalMs": 0,
+              "maxMs": 0
+            },
+            "linkProgram": {
+              "count": 1,
+              "totalMs": 0,
+              "maxMs": 0
+            },
+            "getProgramParameter": {
+              "count": 3,
+              "totalMs": 0.20000001788139343,
+              "maxMs": 0.20000001788139343
+            },
+            "getActiveUniform": {
+              "count": 80,
+              "totalMs": 0,
+              "maxMs": 0
+            },
+            "getUniformLocation": {
+              "count": 80,
+              "totalMs": 0,
+              "maxMs": 0
+            },
+            "texSubImage2D": {
+              "count": 1,
+              "totalMs": 2.399999976158142,
+              "maxMs": 2.399999976158142
+            },
+            "generateMipmap": {
+              "count": 1,
+              "totalMs": 0,
+              "maxMs": 0
+            }
+          }
+        },
+        {
+          "name": "completedDraw",
+          "ms": 4.300000011920929,
+          "maxHeartbeatGapMs": 16.600000023841858,
+          "glCalls": {}
+        },
+        {
+          "name": "warmPaintCpu",
+          "ms": 4.5,
+          "maxHeartbeatGapMs": 17.19999998807907,
+          "glCalls": {}
+        },
+        {
+          "name": "warmDraw",
+          "ms": 10.400000005960464,
+          "maxHeartbeatGapMs": 16.900000005960464,
+          "glCalls": {}
+        },
+        {
+          "name": "fillGrassCpu",
+          "ms": 35.30000001192093,
+          "maxHeartbeatGapMs": 35.400000005960464,
+          "glCalls": {}
+        },
+        {
+          "name": "warmFillCpu",
+          "ms": 8.400000005960464,
+          "maxHeartbeatGapMs": 16.5,
+          "glCalls": {}
+        },
+        {
+          "name": "fillDraw",
+          "ms": 12.600000023841858,
+          "maxHeartbeatGapMs": 16.200000017881393,
+          "glCalls": {}
+        },
+        {
+          "name": "savedMapLoad",
+          "ms": 73.19999998807907,
+          "maxHeartbeatGapMs": 25.19999998807907,
+          "glCalls": {
+            "compileShader": {
+              "count": 2,
+              "totalMs": 0,
+              "maxMs": 0
+            },
+            "linkProgram": {
+              "count": 1,
+              "totalMs": 0,
+              "maxMs": 0
+            },
+            "getProgramParameter": {
+              "count": 7,
+              "totalMs": 0.09999999403953552,
+              "maxMs": 0.09999999403953552
+            },
+            "getActiveUniform": {
+              "count": 9,
+              "totalMs": 0,
+              "maxMs": 0
+            },
+            "getUniformLocation": {
+              "count": 9,
+              "totalMs": 0.09999999403953552,
+              "maxMs": 0.09999999403953552
+            }
+          }
+        },
+        {
+          "name": "loadDraw",
+          "ms": 4.5999999940395355,
+          "maxHeartbeatGapMs": 26.30000001192093,
+          "glCalls": {}
+        },
+        {
+          "name": "rapidSwitch",
+          "ms": 178.30000001192093,
+          "maxHeartbeatGapMs": 178.80000001192093,
+          "glCalls": {}
+        }
+      ],
+      "image": {
+        "ready": true,
+        "loadMs": 390.59999999403954
+      },
+      "parallel": true,
+      "programs": 74,
+      "gl": 0,
+      "uniformCorrect": true
+    },
+    "async": {
+      "kind": "async",
+      "phases": [
+        {
+          "name": "textureUpload",
+          "ms": 3.7000000178813934,
+          "maxHeartbeatGapMs": 15.5,
+          "glCalls": {
+            "texSubImage2D": {
+              "count": 1,
+              "totalMs": 3.5999999940395355,
+              "maxMs": 3.5999999940395355
+            },
+            "generateMipmap": {
+              "count": 1,
+              "totalMs": 0,
+              "maxMs": 0
+            }
+          }
+        },
+        {
+          "name": "paintCpu",
+          "ms": 6.300000011920929,
+          "maxHeartbeatGapMs": 16.399999976158142,
+          "glCalls": {}
+        },
+        {
+          "name": "compileAsync",
+          "ms": 3013.5,
+          "maxHeartbeatGapMs": 39.900000005960464,
+          "glCalls": {
+            "compileShader": {
+              "count": 4,
+              "totalMs": 0,
+              "maxMs": 0
+            },
+            "linkProgram": {
+              "count": 2,
+              "totalMs": 0,
+              "maxMs": 0
+            },
+            "getProgramParameter": {
+              "count": 549,
+              "totalMs": 1.8000000417232513,
+              "maxMs": 0.10000002384185791
+            }
+          }
+        },
+        {
+          "name": "firstDrawAfterAsync",
+          "ms": 12.600000023841858,
+          "maxHeartbeatGapMs": 16.19999998807907,
+          "glCalls": {
+            "getProgramParameter": {
+              "count": 3,
+              "totalMs": 0,
+              "maxMs": 0
+            },
+            "getActiveUniform": {
+              "count": 80,
+              "totalMs": 0.09999999403953552,
+              "maxMs": 0.09999999403953552
+            },
+            "getUniformLocation": {
+              "count": 80,
+              "totalMs": 0.09999999403953552,
+              "maxMs": 0.09999999403953552
+            }
+          }
+        },
+        {
+          "name": "warmPaintCpu",
+          "ms": 5,
+          "maxHeartbeatGapMs": 17.30000001192093,
+          "glCalls": {}
+        },
+        {
+          "name": "warmDraw",
+          "ms": 9.699999988079071,
+          "maxHeartbeatGapMs": 17,
+          "glCalls": {}
+        },
+        {
+          "name": "fillGrassCpu",
+          "ms": 29.099999994039536,
+          "maxHeartbeatGapMs": 29.099999994039536,
+          "glCalls": {}
+        },
+        {
+          "name": "warmFillCpu",
+          "ms": 6.700000017881393,
+          "maxHeartbeatGapMs": 16,
+          "glCalls": {}
+        },
+        {
+          "name": "fillDraw",
+          "ms": 12.300000011920929,
+          "maxHeartbeatGapMs": 17,
+          "glCalls": {}
+        },
+        {
+          "name": "savedMapLoad",
+          "ms": 47.099999994039536,
+          "maxHeartbeatGapMs": 21.69999998807907,
+          "glCalls": {
+            "getProgramParameter": {
+              "count": 3,
+              "totalMs": 0,
+              "maxMs": 0
+            },
+            "getActiveUniform": {
+              "count": 9,
+              "totalMs": 0,
+              "maxMs": 0
+            },
+            "getUniformLocation": {
+              "count": 9,
+              "totalMs": 0,
+              "maxMs": 0
+            }
+          }
+        },
+        {
+          "name": "loadDraw",
+          "ms": 4.5,
+          "maxHeartbeatGapMs": 24.099999994039536,
+          "glCalls": {}
+        },
+        {
+          "name": "rapidSwitch",
+          "ms": 159,
+          "maxHeartbeatGapMs": 159.60000002384186,
+          "glCalls": {}
+        }
+      ],
+      "image": {
+        "ready": true,
+        "loadMs": 372.09999999403954
+      },
+      "parallel": true,
+      "programs": 74,
+      "gl": 0,
+      "uniformCorrect": true
+    }
+  }
+}

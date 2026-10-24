@@ -3,13 +3,19 @@ import argparse
 import base64
 from pathlib import Path
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageFilter
 
 p=argparse.ArgumentParser()
 p.add_argument('source',type=Path,help='独自に生成した岩盤画像（参照写真は不可）')
 args=p.parse_args()
 im=Image.open(args.source).convert('RGB').resize((512,512),Image.Resampling.LANCZOS)
+# Keep narrow veins, but reduce photographic grain against the faceted rock props.
+soft=im.filter(ImageFilter.GaussianBlur(.85))
+im=Image.blend(im,soft,.45)
 rgb=np.asarray(im).astype(float)/255
+luma=rgb@np.array([.2126,.7152,.0722])
+rgb=(luma[:,:,None]+(rgb-luma[:,:,None])*.65)*.97
+im=Image.fromarray(np.uint8(np.clip(rgb,0,1)*255))
 luma=rgb@np.array([.2126,.7152,.0722])
 alpha=np.uint8(np.clip(.45+(luma-.45)*.6,0,1)*255)
 out=Image.merge('RGBA',(*im.split(),Image.fromarray(alpha)))

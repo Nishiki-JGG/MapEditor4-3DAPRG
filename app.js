@@ -322,8 +322,8 @@ const LAVA_SURFACE_GLSL=`vec4 lavaSurface(vec2 p,float time){
  return vec4(surface,heat);
 }`;
 const terrainMat = new THREE.MeshStandardMaterial({ roughness: .92, metalness: 0 });
-terrainMat.onBeforeCompile = (sh) => {
-  const useBedrock=!!terrainMat.defines?.BEDROCK_FLOOR;
+terrainMat.onBeforeCompile = function(sh) {
+  const useBedrock=!!this.defines?.BEDROCK_FLOOR;
   // Keep custom uniforms stable when Three reuses a cached shader variant.
   Object.assign(sh.uniforms, TDGround.uniforms, TDBedrock.uniforms); sh.uniforms.uGroundTrial = groundTrial;
   sh.uniforms.uCutA = cutU.a; sh.uniforms.uCutB = cutU.b; sh.uniforms.uTunHoles = tunnelHoleU; sh.uniforms.uTunOn = tunnelOnU;
@@ -536,7 +536,7 @@ normal=surfaceNormal(-vViewPosition,normal,gSurfaceHeight);`)
     sh.fragmentShader=sh.fragmentShader.replace('varying vec2 vSC;','varying float vSC;').replace('+vSC.x+vSC.y;','+vSC;').replaceAll('vSC.x','vSC');
   }
 };
-terrainMat.customProgramCacheKey = () => 'terrain-dryland-v1'+(terrainMat.defines?.BEDROCK_FLOOR?'-bedrock':'');
+terrainMat.customProgramCacheKey = function(){return 'terrain-dryland-v1'+(this.defines?.BEDROCK_FLOOR?'-bedrock':'');};
 
 function gridIndex() {
   const ix = new Uint32Array((N - 1) * (N - 1) * 6); let o = 0;
@@ -568,10 +568,41 @@ scene.add(terrain);
 
 // Rebuild the derived rock skin after a brush stroke, never the editable H grid.
 const reliefMat=terrainMat.clone();reliefMat.onBeforeCompile=terrainMat.onBeforeCompile;
-reliefMat.customProgramCacheKey=()=>terrainMat.customProgramCacheKey()+'-skin';
+reliefMat.customProgramCacheKey=function(){return terrainMat.customProgramCacheKey.call(this)+'-skin';};
 reliefMat.polygonOffset=true;reliefMat.polygonOffsetFactor=-1;reliefMat.polygonOffsetUnits=-1;
 const cliffRelief=new THREE.Mesh(new THREE.BufferGeometry(),reliefMat);
 cliffRelief.name='Derived cliff relief';cliffRelief.castShadow=cliffRelief.receiveShadow=true;scene.add(cliffRelief);
+// Prepare only on explicit bedrock use. Keep the visible scene on ready materials
+// while driver compilation runs; paint and undo data remain authoritative.
+let bedrockPainted=false,bedrockPrepared=false,bedrockPreparation=null;
+const bedrockWarmMaterials=[];
+function setBedrockVariant(enabled){
+ for(const material of [terrainMat,reliefMat])if(enabled!==!!material.defines?.BEDROCK_FLOOR){const defines={...material.defines};if(enabled)defines.BEDROCK_FLOOR=1;else delete defines.BEDROCK_FLOOR;material.defines=defines;material.needsUpdate=true;}
+}
+function bedrockHint(){if(state.tool==='bedrock')$('hint').textContent=bedrockPreparation&&!bedrockPrepared?'岩盤を準備中です。塗装操作は保持されます。':TOOLS.find(t=>t.id==='bedrock').hint;}
+function bedrockReady(){
+ if(bedrockPrepared)return Promise.resolve();
+ if(bedrockPreparation)return bedrockPreparation;
+ bedrockPreparation=(async()=>{
+  await new Promise(r=>setTimeout(r,0));
+  const probe=new THREE.Group();
+  for(const mesh of [terrain,cliffRelief]){
+   const copy=mesh.clone(false),material=mesh.material.clone();
+   material.onBeforeCompile=mesh.material.onBeforeCompile;material.customProgramCacheKey=mesh.material.customProgramCacheKey;
+   material.defines={...mesh.material.defines,BEDROCK_FLOOR:1};copy.material=material;probe.add(copy);bedrockWarmMaterials.push(material);
+  }
+  try{
+   await renderer.compileAsync(probe,camera,scene);
+   const image=TDBedrock.texture.image;if(image?.decode)await image.decode();
+   renderer.initTexture(TDBedrock.texture);
+   bedrockPrepared=true;setBedrockVariant(bedrockPainted);bedrockHint();if(bedrockPainted&&!mapPreparation)toast('岩盤の準備が完了しました');
+  }catch(error){
+   for(const material of bedrockWarmMaterials.splice(0))material.dispose();
+   bedrockPreparation=null;bedrockHint();toast('岩盤の準備に失敗しました。再度選択してください');throw error;
+  }finally{probe.clear();}
+ })();
+ bedrockHint();if(!mapPreparation)toast('岩盤を準備中です。塗装操作は保持されます');return bedrockPreparation;
+}
 let cliffReliefTimer=0;
 function rebuildCliffRelief(){
   clearTimeout(cliffReliefTimer);cliffReliefTimer=0;
@@ -1081,17 +1112,16 @@ function updateTerrain() {
   if (typeof linkGroup !== 'undefined') for (const g of linkGroup.children) g.position.y = heightAt(g.userData.m.x, g.userData.m.z);
   if (typeof updateAtmoHeights === 'function' && fogGroup) updateAtmoHeights();
   const pos = tGeo.attributes.position.array, sa = tGeo.attributes.splatA.array, sb = tGeo.attributes.splatB.array, sc = tGeo.attributes.splatC.array, dp = wGeo.attributes.depth.array;
-  let bedrockPainted=false;
+  let painted=false;
   for (let k = 0; k < N * N; k++) {
     if(pos[k*3+1]!==H[k])propGrounding.changed(k);
     pos[k * 3 + 1] = H[k]; dp[k] = state.water - H[k];
     for (let c = 0; c < 4; c++) sa[k * 4 + c] = effectiveS[k * NS + c] / 255;
     for (let c = 0; c < 4; c++) sb[k * 4 + c] = effectiveS[k * NS + 4 + c] / 255;
-    sc[k * 2] = effectiveS[k * NS + 8] / 255; sc[k * 2 + 1] = effectiveS[k * NS + 9] / 255; bedrockPainted ||= sc[k*2+1]>0;
+    sc[k * 2] = effectiveS[k * NS + 8] / 255; sc[k * 2 + 1] = effectiveS[k * NS + 9] / 255; painted ||= sc[k*2+1]>0;
   }
-  if(bedrockPainted!==!!terrainMat.defines?.BEDROCK_FLOOR){
-    for(const material of [terrainMat,reliefMat]){material.defines=bedrockPainted?{BEDROCK_FLOOR:1}:{};material.needsUpdate=true;}
-  }
+  bedrockPainted=painted;setBedrockVariant(painted&&bedrockPrepared);
+  if(painted&&!bedrockPrepared&&!bedrockPreparation)void bedrockReady().catch(()=>{});
   fillCliffAttrs();
   TDPavingMask.updateMask(pavingMask,effectiveS,NS);
   tGeo.attributes.position.needsUpdate = tGeo.attributes.splatA.needsUpdate = tGeo.attributes.splatB.needsUpdate = tGeo.attributes.splatC.needsUpdate = wGeo.attributes.depth.needsUpdate = true;
@@ -4487,7 +4517,7 @@ revision・書き出し日時・ファイルごとの SHA-256・contentHash は 
     const c=document.createElement('canvas');c.width=image.width;c.height=image.height;c.getContext('2d').drawImage(image,0,0);
     bedrockPng=new Uint8Array(await (await new Promise(r=>c.toBlob(r,'image/png'))).arrayBuffer());
     meta.requiredFeatures=[...(meta.requiredFeatures||[]),'bedrockFloorV1'];
-    meta.bedrockFloor={texture:'bedrock.png',channels:'RGB albedo (raw sRGB, one final decode), A shallow relief',tileMetres:4,reliefMetres:.018,sampling:'terrain/bedrock.js bedrockSurface; four feathered half-tile offsets and continuous domain warp',note:'対応する床シェーダーが必要です。この変更にはUnity側の実装を含みません。'};
+    meta.bedrockFloor={texture:'bedrock.png',channels:'RGB albedo (raw sRGB, one final decode), A shallow relief',sourceScaleMetres:6.428571,patchSpacingMetres:1.8,reliefMetres:.018,sampling:'terrain/bedrock.js bedrockSurface; four continuous interior patches, restrained rotation, explicit mip gradients',note:'対応する床シェーダーが必要です。この変更にはUnity側の実装を含みません。'};
   }
   const files = [
     ...(bedrockPng?[{name:'bedrock.png',data:bedrockPng}]:[]),
@@ -4544,6 +4574,7 @@ TOOLS.forEach(t => { const b = document.createElement('button'); b.dataset.tool 
 const fillGroundSel=$('fillGround');
 fillGroundSel.add(new Option('草原','grass'));
 for(const id of GROUND)fillGroundSel.add(new Option(TOOLS.find(t=>t.id===id).name,id));
+fillGroundSel.addEventListener('change',()=>{if(fillGroundSel.value==='bedrock')void bedrockReady().catch(()=>{});});
 function fillGroundAll(id){
  const channel=GROUND.indexOf(id);if(id!=='grass'&&channel<0)return false;
  pushUndo();S.fill(0);if(channel>=0)for(let k=0;k<N*N;k++)S[k*NS+channel]=255;
@@ -4741,6 +4772,7 @@ function setTool(id) {
   if ((id.startsWith('walk') || id === 'secret') && !state.showWalk) setWalkView(true);
   for (const b of toolsEl.children) b.classList.toggle('on', b.dataset.tool === id);
   $('hint').textContent = TOOLS.find(t => t.id === id).hint;
+  if(id==='bedrock'){void bedrockReady().catch(()=>{});bedrockHint();}
 }
 const wsf = $('waterShowFlow'), wsm = $('waterShowFoam');
 const syncWaterShow = which => { if (which === 'flow' && wsf.checked) wsm.checked = false; if (which === 'foam' && wsm.checked) wsf.checked = false; WATERU.uShow.value = wsf.checked ? 1 : wsm.checked ? 2 : 0; };
@@ -5477,6 +5509,7 @@ async function buildPreparedSample(kind,seed){
  return{key,kind,seed,size:SIZE,profile:value.profile,rawBytes:raw.length,gzipBase64:b64(packed),props:props.length,fits:cliffFits.records.size};
 }
 async function compilePreparedMap(job){
+ if(bedrockPainted){job.progress('岩盤を準備',0,0);await bedrockReady();TDPreparation.check(job);}
  // 風の値・カメラを確定してから初回プログラムを待つ。編集中の別ジョブは適用しない。
  for(;;){TDPreparation.check(job);const mode=job.requestedMode;setMode(mode,true);update(0);job.progress('初回の描画を準備',0,0);await renderer.compileAsync(scene,camera);await TDPreparation.pause(job);if(mode===job.requestedMode)break;}
 }
@@ -5575,7 +5608,7 @@ const bootReady=bootPending?.startsWith('prepared:')?prepareMap('pending',0,{tok
   prepareMap(bootPending==='sample2'&&SIZE===SAMPLE2_SIZE?'sample2':bootPending==='flat'||SIZE!==64?'flat':'sample',bootPending==='sample2'?11:7,{boot:true});
 
 // hooks for automated checks
-window.__app = { get tunnels() { return tunnels; }, set tunnels(v) { tunnels = v; }, get tunnelPrep() { return tunnelPrep; }, get tunnelLamps() { return tunnelLamps; }, placeTunnel, rebuildTunnels, tunnelGroup, tunnelHoleTex, cutU, refitFalls, placeFall, springFallGroup, fallGroup, get springs() { return springs; }, set springs(v) { springs = v; }, get pools() { return pools; }, get springRes() { return springRes; }, SC, placeSpring, placePool, applySprings, solveSprings, waterAt, springLevelAt, poolDist, poolWallAt, POOL_WALL, deckAt, fillGroundAll,buildPreparedSample,prepareMap,cancelMapPreparation,bootReady,get preparation(){return mapPreparation?{id:mapPreparation.id,phase:mapPreparation.phase,requestedMode:mapPreparation.requestedMode,elapsedMs:performance.now()-mapPreparation.start}:null;},get preparationStats(){return lastPreparedState;},
+window.__app = { bedrockReady,get tunnels() { return tunnels; }, set tunnels(v) { tunnels = v; }, get tunnelPrep() { return tunnelPrep; }, get tunnelLamps() { return tunnelLamps; }, placeTunnel, rebuildTunnels, tunnelGroup, tunnelHoleTex, cutU, refitFalls, placeFall, springFallGroup, fallGroup, get springs() { return springs; }, set springs(v) { springs = v; }, get pools() { return pools; }, get springRes() { return springRes; }, SC, placeSpring, placePool, applySprings, solveSprings, waterAt, springLevelAt, poolDist, poolWallAt, POOL_WALL, deckAt, fillGroundAll,buildPreparedSample,prepareMap,cancelMapPreparation,bootReady,get preparation(){return mapPreparation?{id:mapPreparation.id,phase:mapPreparation.phase,requestedMode:mapPreparation.requestedMode,elapsedMs:performance.now()-mapPreparation.start}:null;},get preparationStats(){return lastPreparedState;},
   propGrounding,groundedParts,groundedNormal,groundedGhost,groundPreview,setGroundPreview,propBaseY,get cliffContactProgress(){return cliffContactProgress;},cliffFits,effectiveGeometry,fitCliffContact,adoptCliffContact, cliffProtected,cliffProtectionReason,nearFeatureReason, get cliffContactStats(){return cliffContactStats;},
   pickGroundDetail,adjustGroundDetail,selectedGroundDetail,updateTouch,touchStats, pavingMask, cliffRelief, rebuildCliffRelief, groundTrial, groundTexture, terrainSource:tGeo, terrain, renderer, camera, SIZE, state, H, S, O, F, C, propMeshes, ghostMeshes, cliffIndexAt, BIOMES, CLIFF_STYLES, applyCliffStyle, deckAt, linkDeckAt, runValidation, genSample, genSample2, secretRegions, secretLineX, passageGeometry, terrainRes, TERRAIN_RES, snapshot, sha256, LINK_KINDS, normalizeCatalog, catalogExport, valueIssues, areaIssue, deckAt, getColliders, PROP, get colliderMaxR() { return colliderMaxR; }, rebuildMarkers, portLanding, linkTrigger, linkArrival, LINK_SPEC, get markers() { return markers; }, placeMarker, ensureIds, applyCatalog, ATMOS, WEATHER, applyAtmo, makeCoast, glowLights, applyBiome, applyPalette, propVisible, toolVisible, updateTerrain, rebuildProps, genFlat, floorAt, bridgeAt, stairsAt, placeSlope, placeStairs, placeBridge, pickTarget, regenGroundProps, rebuildBridges, get stairs() { return stairs; }, get bridges() { return bridges; }, get falls() { return falls; }, overrideAt, heroMat, hero, heroBody, get heroLook() { return heroLook; }, setHeroLook, heroStyle, heroGlow, get ghosts() { return ghosts; }, get props() { return props; }, cam, playCam, player, keys, setMode, setTool, update, heightAt, walkable, slope: slopeAt,
   stroke(x, z, frames = 20, opts = {}) {
