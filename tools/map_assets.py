@@ -72,11 +72,17 @@ def check_reference(ref):
     require(sha(digest.encode()) == ref['bundleHash'], '共通資産IDが一致しません。')
     return ref
 
-def resolve_shared(data, folder, shared_dir=None):
+def resolve_shared(data, folder, shared_dir=None, installed_parent=None):
     if 'shared_assets.json' not in data:
         return None, {}
     ref = check_reference(json.loads(data['shared_assets.json']))
     require(not (set(data) & {f['name'] for f in ref['files']}), '共通資産のローカル重複は受付できません。')
+    from asset_registry import read_set
+    roots = ([Path(installed_parent)] if installed_parent else []) + ([Path(shared_dir)] if shared_dir else []) + [Path(folder), Path(folder).parent]
+    for root in roots:
+        base=root/'_shared'
+        if (base/ref['bundleHash']/'shared_assets.json').is_file():
+            return ref, read_set(base,ref)
     filename = 'tdj-shared-'+ref['bundleHash']+'.zip'
     folders = [Path(shared_dir)] if shared_dir else [Path(folder), Path(folder).parent]
     source = next((p/filename for p in folders if (p/filename).is_file()), None)
@@ -87,26 +93,9 @@ def resolve_shared(data, folder, shared_dir=None):
     return ref, assets
 
 def install_shared(parent, ref, assets):
-    """部屋間で同じ共有展開先を再使用。既存内容の改変は拒否する。"""
-    base = Path(parent)/'_shared'
-    base.mkdir(exist_ok=True)
-    require(not base.is_symlink(), '共通保存先のリンクは使用できません。')
-    target = base/ref['bundleHash']
-    if target.exists():
-        require(target.is_dir() and not target.is_symlink(), '共通保存先が不正')
-        require(all(p.is_file() and not p.is_symlink() for p in target.iterdir()), '共通保存先に不正な項目')
-        existing = {p.name:p.read_bytes() for p in target.iterdir()}
-        require(json.loads(existing.pop('shared_assets.json')) == ref, '既存共通資産の版違い')
-        verify_listing(existing, ref['files'])
-        return target
-    temp = Path(tempfile.mkdtemp(prefix='.shared-', dir=base))
-    try:
-        for n,b in assets.items(): (temp/n).write_bytes(b)
-        (temp/'shared_assets.json').write_bytes(encode(ref))
-        temp.rename(target)
-    finally:
-        if temp.exists(): shutil.rmtree(temp)
-    return target
+    from asset_registry import install
+    return install(parent,ref,assets)
+
 
 def lightweight(data):
     old = check_export(data)

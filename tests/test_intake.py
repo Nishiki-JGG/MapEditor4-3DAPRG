@@ -28,7 +28,7 @@ class Intake(unittest.TestCase):
                 self.assertEqual(out['status'],'source_ready')
                 self.assertFalse((dest/id/'export/shared_props.json').exists())
                 self.assertEqual(json.loads(reconstruct(local,shared)['small_props.json']),json.loads(old['small_props.json']))
-            self.assertEqual(len(list((dest/'_shared').iterdir())),1)
+            self.assertEqual(len(list((dest/'_shared').glob('*/shared_assets.json'))),1)
             with self.assertRaisesRegex(ValueError,'既存'):r.receive(root/'a',dest/'a')
             oldfolder=root/'old';oldfolder.mkdir();old=legacy('old');(oldfolder/'map.json').write_bytes(old['map.json']);write_zip(oldfolder/'old.zip',old)
             self.assertEqual(r.receive(oldfolder)['status'],'source_ready')

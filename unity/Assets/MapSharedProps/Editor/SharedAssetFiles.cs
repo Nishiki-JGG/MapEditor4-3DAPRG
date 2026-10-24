@@ -18,6 +18,36 @@ namespace MapSharedProps.EditorTools
         static void Check(bool ok, string why) { if (!ok) throw new InvalidDataException("共通資産: " + why); }
         static bool Hex(string s) => s != null && s.Length == 64 && s.All(c => c >= '0' && c <= '9' || c >= 'a' && c <= 'f');
 
+        [Serializable] public class Part { public string text, sha256, id; public long bytes; }
+        [Serializable] public class Recipe { public string format, name, sha256; public int schemaVersion; public long bytes; public Part[] parts; }
+        public static string ReadText(string path)
+        {
+            if (!path.EndsWith(".recipe.json", StringComparison.Ordinal)) return File.ReadAllText(path);
+            Check(new FileInfo(path).Length <= 8L*1024*1024, "素材レシピが大きすぎます");
+            var r = JsonUtility.FromJson<Recipe>(File.ReadAllText(path));
+            Check(r != null && r.format == "tdj-source-recipe" && r.schemaVersion == 1 && Names.Contains(r.name)
+                && Hex(r.sha256) && r.bytes >= 0 && r.bytes <= 128L*1024*1024 && r.parts != null && r.parts.Length <= 8192, "素材レシピ形式");
+            string objects = Path.Combine(Directory.GetParent(path).Parent.FullName, "objects");
+            using (var output = new MemoryStream())
+            {
+                foreach (var p in r.parts)
+                {
+                    Check(p != null, "素材断片なし"); byte[] data;
+                    if (string.IsNullOrEmpty(p.sha256)) data = Encoding.UTF8.GetBytes(p.text ?? "");
+                    else
+                    {
+                        Check(Hex(p.sha256) && string.IsNullOrEmpty(p.text) && p.bytes >= 0 && p.bytes <= r.bytes, "素材IDが不正");
+                        string file = Path.Combine(objects, p.sha256 + ".json");
+                        Check(File.Exists(file) && new FileInfo(file).Length == p.bytes, "素材不足: " + p.id);
+                        data = File.ReadAllBytes(file); Check(Hash(data) == p.sha256, "素材の内容が違います: " + p.id);
+                    }
+                    Check(output.Length + data.Length <= r.bytes, "復元サイズ超過"); output.Write(data, 0, data.Length);
+                }
+                var all = output.ToArray(); Check(all.Length == r.bytes && Hash(all) == r.sha256, "素材復元の内容が違います");
+                return new UTF8Encoding(false, true).GetString(all);
+            }
+        }
+
         public static string Resolve(string directory, string name, bool optional = false)
         {
             Check(Names.Contains(name), "未対応の共通ファイル名");
@@ -44,6 +74,14 @@ namespace MapSharedProps.EditorTools
             {
                 if (root == null) continue;
                 string candidate = Path.Combine(root, "_shared", r.bundleHash, name);
+                string recipe = candidate + ".recipe.json";
+                Check(!(File.Exists(candidate) && File.Exists(recipe)), "旧素材とレシピが競合しています");
+                if (File.Exists(recipe))
+                {
+                    var raw = Encoding.UTF8.GetBytes(ReadText(recipe));
+                    Check(raw.LongLength == entry.bytes && Hash(raw) == entry.sha256, name + " の素材版が違います");
+                    return recipe;
+                }
                 if (!File.Exists(candidate)) continue;
                 Check(new FileInfo(candidate).Length == entry.bytes && Hash(File.ReadAllBytes(candidate)) == entry.sha256, name + " の内容が参照と一致しません");
                 return candidate;

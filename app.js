@@ -4313,7 +4313,8 @@ revision・書き出し日時・ファイルごとの SHA-256・contentHash は 
     { name: 'walkable.png', data: walkPng }, { name: 'cliff_style.png', data: cliffPng }, { name: 'props.csv', data: csv },
     { name: 'asset_catalog.json', data: JSON.stringify(catalogExport(), null, 2) },
     ...(groundedInstances.length?[{name:'grounded_props.json',data:JSON.stringify(groundedData)}]:[]),
-    { name: 'shared_props.json', data: TDSharedProps.exportJson() },
+    { name: 'shared_props.json', data: (()=>{const d=JSON.parse(TDSharedProps.exportJson());d.sourceLibraryVersion=d.libraryVersion;d.libraryVersion='shared-registry/1';return JSON.stringify(d);})() },
+    { name: 'asset_bindings.json', data: JSON.stringify({schemaVersion:1,bindings:Object.entries(catalogExport().types).filter(([,v])=>v.sharedModel).map(([id,v])=>({id,...v}))}) },
     {name:'small_props.json',data:JSON.stringify(TDSmallPropExport.build(PROP,groundedData,props.filter(p=>TDSmallPropExport.ids.includes(PROP[p[0]].id)).map(p=>{const v=.86+.28*hash2(p[1]*97|0,p[2]*89|0);return{instanceId:p[8],tint:[v*(.95+.1*hash2(p[1]*13|0,7)),v,v*(.95+.1*hash2(3,p[2]*17|0))]};})))},
     { name: 'pine_wind.json', data: TDPineWind.exportJson() },
     {name:'root_grounding.json',data:JSON.stringify({version:1,axes:'Unity world XZ',paint:{file:'root_paint.png',resolution:N,sizeMetres:[SIZE,SIZE]},instances:props.filter(p=>PROP[p[0]].sharedAsset&&TDSharedProps.asset(PROP[p[0]].sharedAsset).rootGrounding).map(p=>{const v=rootSlopeAt(p);return{instanceId:p[8],slope:[v[0],-v[1]],terrain:rootTerrainAt(p)};})})},
@@ -4649,6 +4650,21 @@ $('export').onclick = async () => {
     download(baseName() + '_export_unity.zip', await makeZip(files));
     toast('軽量ZIPを保存しました。初回・素材更新時は共通資産も保存してください');
   } catch(err) { toast('書き出し失敗: '+err.message); } finally {button.disabled=false;}
+};
+let gameFolderHandle=null, gameFolderBusy=false;
+$('saveGameFolder').onclick=async()=>{
+ if(gameFolderBusy||roomPackageBusy)return;
+ if(!window.showDirectoryPicker){toast('フォルダ保存にはPC版ChromeまたはEdgeを使ってください。部屋セットと共通資産ZIPでも保存できます。');return;}
+ gameFolderBusy=true;$('saveGameFolder').disabled=true;
+ try{
+  if(!gameFolderHandle)gameFolderHandle=await window.showDirectoryPicker({id:'totsudan-maps',mode:'readwrite'});
+  const before=TDMapPackage.authoringState(serialize()),result=await buildExport({sharedAssets:true});
+  if(TDMapPackage.authoringState(serialize())!==before)throw Error('書き出し中に地図が変わりました。もう一度保存してください。');
+  const saved=await TDAssetRegistry.save(gameFolderHandle,result,baseName(),makeZip,sha256);
+  showValidation(result.validation);$('sharedAssetsHint').textContent='保存先: '+gameFolderHandle.name+'/'+saved.folder+'。素材追加 '+saved.added+' 件、再利用 '+saved.reused+' 件。';
+  toast(result.validation.errors.length?'保存しました。取り込み前に検証エラーの修正が必要です。':'部屋と必要な共通素材を保存しました。凸ダンへの取り込み用データです。');
+ }catch(e){if(e.name!=='AbortError')toast('フォルダ保存失敗: '+e.message);if(e.name==='NotAllowedError')gameFolderHandle=null;}
+ finally{gameFolderBusy=false;$('saveGameFolder').disabled=false;}
 };
 $('saveSharedAssets').onclick = async () => {
   const button=$('saveSharedAssets');if(button.disabled)return;button.disabled=true;

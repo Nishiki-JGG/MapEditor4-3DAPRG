@@ -11,7 +11,7 @@ public static class MapSharedGroundBuilder {
  [Serializable] public class WavesDto { public float[] waveA,waveB; }
  public sealed class Result {public Material material;public Texture2D texture;public string folder;public GroundDto data;}
  public static Result Build(string jsonFile,Vector2 editorZero) {
-  string json=File.ReadAllText(jsonFile);var d=JsonUtility.FromJson<GroundDto>(json);var waves=JsonUtility.FromJson<WavesDto>(json);
+  string json=SharedAssetFiles.ReadText(jsonFile);var d=JsonUtility.FromJson<GroundDto>(json);var waves=JsonUtility.FromJson<WavesDto>(json);
   if(d==null||d.schemaVersion!=1||(d.materialVersion!=2&&d.materialVersion!=3)||d.width!=512||d.height!=512||d.mime!="image/jpeg"||d.encodedColorSpace!="sRGB"||d.tileMetres!=4||d.decodeExponent!=2.2f||!d.mipmaps||d.anisotropy!=2||d.rotationCS==null||d.rotationCS.Length!=2||d.secondOffset==null||d.secondOffset.Length!=2||waves.waveA==null||waves.waveA.Length!=3||waves.waveB==null||waves.waveB.Length!=3)throw new InvalidDataException("Unsupported shared grass contract");
   if(d.materialVersion==2)d.dirt=null; // JsonUtility may instantiate an empty nested DTO for an absent object.
   if(d.materialVersion==3&&(d.dirt==null||d.dirt.width!=256||d.dirt.height!=256||d.dirt.tileMetres!=2||d.dirt.mime!="image/jpeg"||d.dirt.encodedColorSpace!="sRGB"||!d.dirt.mipmaps||d.dirt.anisotropy!=2||d.dirt.rotationCS==null||d.dirt.rotationCS.Length!=2||d.dirt.secondOffset==null||d.dirt.secondOffset.Length!=2))throw new InvalidDataException("Unsupported shared soil contract");

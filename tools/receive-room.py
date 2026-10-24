@@ -20,7 +20,7 @@ def receive(folder, output=None, shared_dir=None):
     source=json.loads(maps[0].read_text(encoding='utf-8-sig'))
     require(source.get('format')=='map-editor-proto' and source.get('version')==2,'未対応の原稿形式です。')
     data=checked_zip(archives[0]);manifest=check_export(data)
-    ref,assets=resolve_shared(data,folder,shared_dir)
+    ref,assets=resolve_shared(data,folder,shared_dir,Path(output).absolute().parent if output else None)
     embedded=json.loads(data['map.json'])
     require(content(source)==content(embedded),'原稿JSONとUnity用ZIPの編集内容が異なります。部屋セットを書き出し直してください。')
     meta=json.loads(data['meta.json']);room_id=source.get('roomId')
