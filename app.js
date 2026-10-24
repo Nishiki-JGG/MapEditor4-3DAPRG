@@ -310,7 +310,8 @@ const LAVA_SURFACE_GLSL=`vec4 lavaSurface(vec2 p,float time){
 const terrainMat = new THREE.MeshStandardMaterial({ roughness: .92, metalness: 0 });
 terrainMat.onBeforeCompile = (sh) => {
   const useBedrock=!!terrainMat.defines?.BEDROCK_FLOOR;
-  Object.assign(sh.uniforms, TDGround.uniforms, useBedrock?TDBedrock.uniforms:{}); sh.uniforms.uGroundTrial = groundTrial;
+  // Keep custom uniforms stable when Three reuses a cached shader variant.
+  Object.assign(sh.uniforms, TDGround.uniforms, TDBedrock.uniforms); sh.uniforms.uGroundTrial = groundTrial;
   sh.uniforms.uWater = waterU; sh.uniforms.uDim = dimU; sh.uniforms.uTime = timeU; sh.uniforms.uStoneGrain=rockGrainU; sh.uniforms.uPavingMask=pavingMaskU; sh.uniforms.uPavingMap=pavingMapU; Object.assign(sh.uniforms, BU);
   sh.vertexShader = sh.vertexShader
     .replace('#include <common>', '#include <common>\nattribute float reliefSlope; varying float vReliefSlope; attribute float springLift; varying float vSpringHw; attribute vec4 splatA; attribute vec4 splatB; attribute vec2 splatC; attribute vec3 cliffT; attribute vec4 cliffM; attribute vec2 cliffW; varying vec3 vCT; varying vec4 vCM; varying vec2 vCW; varying vec4 vSA; varying vec4 vSB; varying vec2 vSC; varying vec3 vWPos; varying vec3 vWNor;')

@@ -1,0 +1,32 @@
+{
+  "initialUpload": false,
+  "first": {
+    "hash": "7f6cfe02734fca96703a5dd26bb8389c4f72cd19a21972f75376f14e5682ada9",
+    "uniformCorrect": true,
+    "active": true,
+    "gl": 0
+  },
+  "cases": [
+    {
+      "from": "grass",
+      "hash": "7f6cfe02734fca96703a5dd26bb8389c4f72cd19a21972f75376f14e5682ada9",
+      "uniformCorrect": true,
+      "active": true,
+      "gl": 0
+    },
+    {
+      "from": "ice",
+      "hash": "7f6cfe02734fca96703a5dd26bb8389c4f72cd19a21972f75376f14e5682ada9",
+      "uniformCorrect": true,
+      "active": true,
+      "gl": 0
+    },
+    {
+      "from": "grass",
+      "hash": "7f6cfe02734fca96703a5dd26bb8389c4f72cd19a21972f75376f14e5682ada9",
+      "uniformCorrect": true,
+      "active": true,
+      "gl": 0
+    }
+  ]
+}

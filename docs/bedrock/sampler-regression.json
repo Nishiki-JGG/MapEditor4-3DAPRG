@@ -1,0 +1,37 @@
+{
+  "commit": "97b0b8c1a67a49dc4d0c0afb06493a06cb2fe1dd",
+  "observed": {
+    "defines": {
+      "BEDROCK_FLOOR": 1
+    },
+    "sourceSplat": [
+      0,
+      1,
+      0,
+      1
+    ],
+    "splat": [
+      0,
+      1,
+      0,
+      1
+    ],
+    "hasBedrockShader": true,
+    "hasBedrockUniform": false,
+    "sampler": 2,
+    "uniformNames": [
+      "uGroundGrass",
+      "uGroundParams",
+      "uGroundOffset",
+      "uGroundWaveA",
+      "uGroundWaveB",
+      "uGroundDirt",
+      "uGroundTrial",
+      "uStoneGrain",
+      "uPavingMask",
+      "uPavingMap"
+    ]
+  },
+  "cause": "cached shader variant retained while the material uniform map omitted uBedrock",
+  "fix": "always register the custom uniform; omit only unused shader code and sampler activity"
+}
