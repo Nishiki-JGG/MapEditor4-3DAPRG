@@ -58,8 +58,7 @@ function heightAt(x, z) {
   return lerp(lerp(H[k], H[k + 1], u), lerp(H[k + N], H[k + N + 1], u), v);
 }
 function slopeAt(x, z) { const e = .35; return Math.hypot(heightAt(x + e, z) - heightAt(x - e, z), heightAt(x, z + e) - heightAt(x, z - e)) / (2 * e); }
-function baseGroundChannel(){return state.baseGround ?? TDTerrainPaint.baseChannel(state.biome);}
-function splatAt(x, z, ch) { const i = clamp(Math.round((x + HALF) * RES), 0, N - 1), j = clamp(Math.round((z + HALF) * RES), 0, N - 1); return TDTerrainPaint.weight(S,idx(i,j)*NS,NS,ch,baseGroundChannel()); }
+function splatAt(x, z, ch) { const i = clamp(Math.round((x + HALF) * RES), 0, N - 1), j = clamp(Math.round((z + HALF) * RES), 0, N - 1); return TDTerrainPaint.weight(S,idx(i,j)*NS,NS,ch); }
 function distToPolyline(x, z, pts) {
   let best = 1e9;
   for (let k = 0; k < pts.length - 1; k++) {
@@ -860,7 +859,7 @@ const water = new THREE.Mesh(wGeo, waterMat);
 water.renderOrder = 2;
 scene.add(water);
 
-function refreshGroundWeights(){TDTerrainPaint.resolve(S,effectiveS,NS,baseGroundChannel());}
+function refreshGroundWeights(){TDTerrainPaint.resolve(S,effectiveS,NS);}
 function updateTerrain() {
   refreshGroundWeights();
   walkDirty = true;
@@ -2341,7 +2340,7 @@ const TOOLS = [
   { id: 'lower', name: '下げる', key: '3', hint: 'なだらかに掘り下げます。水位より下は水になります。' },
   { id: 'flat', name: '平らに', key: '4', hint: 'ドラッグ開始地点の高さにそろえます。' },
   { id: 'smooth', name: 'なだらか', key: '5', hint: '段差や凸凹をならします。' },
-  { id: 'grass', name: '塗装を消す', key: '6', hint: '塗装を消し、未塗装の床に戻します。草原・森林は草地、新しい洞窟は土、砂漠・海岸は砂地、遺跡・古城は石畳です。読み込んだマップの床指定は保持します。' },
+  { id: 'grass', name: '草原', key: '6', hint: '土・石畳・砂・荒れ地などを消して草地へ戻します。バイオームを変えても、この塗装は変わりません。' },
   { id: 'dirt', name: '土', key: '7', hint: '土の道を塗ります。' },
   { id: 'cobble', name: '石畳', key: '8', hint: '石畳を塗ります。' },
   { id: 'sand', name: '砂地', key: 'z', hint: '風紋のある砂地を塗ります。歩くと少し遅くなります（×0.85）。' },
@@ -2371,8 +2370,8 @@ const TOOLS = [
   { id: 'walkAuto', name: '自動に戻す', key: 'j', hint: '塗った所の上書きを消し、自動判定に戻します。' },
 ];
 const undoStack = [], redoStack = [];
-const snapshot = () => ({ H: H.slice(), S: S.slice(), O: O.slice(), C: C.slice(), CF: cliffFits.save(), P: props.map(p => p.slice()), F: falls.map(f => ({ ...f })), B: bridges.map(b => ({ ...b })), T: stairs.map(st => ({ ...st })), W: state.water, sp: { ...state.spawn }, bi: state.biome, bg: GROUND[baseGroundChannel()] || 'grass', at: { ...state.atmo }, sea: state.sea, we: { ...state.weather }, sun: state.sunOn, dk: state.darkness, M: markers.map(m => ({ ...m })), nid: state.nextId, rid: state.roomId, cat: JSON.stringify(state.catalog), ag: { ...state.agent }, cs: state.cliffStyle });
-function restore(s,prepared,deferMarkers=false) { cliffFits.clear();H.set(s.H); S.set(s.S); O.set(s.O); if (s.C) C.set(s.C); else C.fill(0); walkDirty = true; props = s.P.map(p => p.slice()); falls = s.F.map(f => ({ ...f })); bridges = s.B.map(b => ({ ...b })); stairs = (s.T || []).map(st => ({ ...st })); state.water = s.W; state.spawn = { ...s.sp }; if (s.at) state.atmo = { ...s.at }; if (s.we) state.weather = { ...s.we }; state.sunOn = s.sun !== false; state.darkness = s.dk || 'dark'; markers = (s.M || []).map(m => ({ ...m })); state.nextId = s.nid || state.nextId; state.roomId = s.rid || state.roomId; if (s.cat) { state.catalog = JSON.parse(s.cat); applyCatalog(); } if (s.ag) { state.agent = { ...s.ag }; syncAgentUI(); colliders = null; } state.cliffStyle = s.cs || 'standard'; applyCliffStyle(); if ($('cliffStyle')) $('cliffStyle').value = state.cliffStyle; if(!deferMarkers)rebuildMarkers(); state.sea = !!s.sea; applyBiome(s.bi || state.biome,s.bg ?? (s.bi==='cave'?'rubble':GROUND[TDTerrainPaint.baseChannel(s.bi || state.biome)] || 'grass')); syncUI(); updateTerrain(); rebuildProps(); rebuildFalls(); rebuildBridges(); rebuildStairs();if(prepared)cliffFits.installPrepared(prepared,props,cliffInputSignature());else cliffFits.load(s.CF,props,cliffInputSignature());rebuildProps(); }
+const snapshot = () => ({ H: H.slice(), S: S.slice(), O: O.slice(), C: C.slice(), CF: cliffFits.save(), P: props.map(p => p.slice()), F: falls.map(f => ({ ...f })), B: bridges.map(b => ({ ...b })), T: stairs.map(st => ({ ...st })), W: state.water, sp: { ...state.spawn }, bi: state.biome, at: { ...state.atmo }, sea: state.sea, we: { ...state.weather }, sun: state.sunOn, dk: state.darkness, M: markers.map(m => ({ ...m })), nid: state.nextId, rid: state.roomId, cat: JSON.stringify(state.catalog), ag: { ...state.agent }, cs: state.cliffStyle });
+function restore(s,prepared,deferMarkers=false) { cliffFits.clear();H.set(s.H); S.set(s.S); O.set(s.O); if (s.C) C.set(s.C); else C.fill(0); walkDirty = true; props = s.P.map(p => p.slice()); falls = s.F.map(f => ({ ...f })); bridges = s.B.map(b => ({ ...b })); stairs = (s.T || []).map(st => ({ ...st })); state.water = s.W; state.spawn = { ...s.sp }; if (s.at) state.atmo = { ...s.at }; if (s.we) state.weather = { ...s.we }; state.sunOn = s.sun !== false; state.darkness = s.dk || 'dark'; markers = (s.M || []).map(m => ({ ...m })); state.nextId = s.nid || state.nextId; state.roomId = s.rid || state.roomId; if (s.cat) { state.catalog = JSON.parse(s.cat); applyCatalog(); } if (s.ag) { state.agent = { ...s.ag }; syncAgentUI(); colliders = null; } state.cliffStyle = s.cs || 'standard'; applyCliffStyle(); if ($('cliffStyle')) $('cliffStyle').value = state.cliffStyle; if(!deferMarkers)rebuildMarkers(); state.sea = !!s.sea; applyBiome(s.bi || state.biome); syncUI(); updateTerrain(); rebuildProps(); rebuildFalls(); rebuildBridges(); rebuildStairs();if(prepared)cliffFits.installPrepared(prepared,props,cliffInputSignature());else cliffFits.load(s.CF,props,cliffInputSignature());rebuildProps(); }
 function pushUndo() { undoStack.push(snapshot()); if (undoStack.length > 40) undoStack.shift(); redoStack.length = 0; }
 function undo() { if (!undoStack.length) return; redoStack.push(snapshot()); restore(undoStack.pop()); toast('取り消し'); }
 function redo() { if (!redoStack.length) return; undoStack.push(snapshot()); restore(redoStack.pop()); toast('やり直し'); }
@@ -2714,7 +2713,7 @@ function* sample2Steps(seed = 11) {
   C.fill(0);
   state.roomId = newRoomId(); state.nextId = 1; state.revision = 0; state.lastExportHash = ''; markers = [];
   state.sea = false; S.fill(0); O.fill(0); bridges = []; stairs = []; falls = []; props = [];
-  state.biome = 'ruins'; state.baseGround=TDTerrainPaint.baseChannel(state.biome); state.water = .4;
+  state.biome = 'ruins'; state.water = .4;
   const R = rng(seed);
   const dirt = [[[0, -24], [0, -12]], [[-24, -8], [-12, -10], [0, -12]], [[0, -12], [7, -8], [13, -4]], [[-6.2, 13], [-5, 14.5], [-3, 15.5]]];
   for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
@@ -2766,14 +2765,13 @@ function drainMapSteps(it){let r;do{r=it.next();}while(!r.done);return r.value;}
 function genSample(seed=7){cancelMapPreparation(false);return drainMapSteps(sampleSteps(seed));}
 function genSample2(seed=11){cancelMapPreparation(false);return drainMapSteps(sample2Steps(seed));}
 function autoRocks(seed=Date.now()){return drainMapSteps(autoRocksSteps(seed));}
-function genFlat() { cancelMapPreparation(false);state.baseGround=TDTerrainPaint.baseChannel(state.biome);cliffFits.clear();C.fill(0); state.roomId = newRoomId(); state.nextId = 1; state.revision = 0; state.lastExportHash = ''; markers = []; state.sea = false; H.fill(3); S.fill(0); O.fill(0); props = []; falls = []; bridges = []; stairs = []; state.water = .8; state.spawn = { x: 0, z: 0 }; }
+function genFlat() { cancelMapPreparation(false);cliffFits.clear();C.fill(0); state.roomId = newRoomId(); state.nextId = 1; state.revision = 0; state.lastExportHash = ''; markers = []; state.sea = false; H.fill(3); S.fill(0); O.fill(0); props = []; falls = []; bridges = []; stairs = []; state.water = .8; state.spawn = { x: 0, z: 0 }; }
 function pickFlora(R, list) {
   let tot = 0; for (const [, w] of list) tot += w;
   let r = R() * tot; for (const [id, w] of list) { r -= w; if (r <= 0) return TYPE(id); }
   return TYPE(list[0][0]);
 }
 function* sampleSteps(seed = 7) {
-  state.baseGround=TDTerrainPaint.baseChannel(state.biome);
   C.fill(0);
   state.roomId = newRoomId(); state.nextId = 1; state.revision = 0; state.lastExportHash = ''; markers = [];
   state.sea = false; S.fill(0);   // channels 2+ are only ever raised below, so start clean
@@ -3509,7 +3507,7 @@ function serialize() {
     format: 'map-editor-proto', version: 2, size: SIZE, resolution: RES, vertices: N,
     roomId: (ensureIds(), state.roomId), nextId: state.nextId, revision: state.revision, lastExportHash: state.lastExportHash, agent: { ...state.agent }, catalog: state.catalog,
     markers: markers.map(m => ({ ...m })),
-    waterLevel: state.water, spawn: state.spawn, biome: state.biome, ...((state.biome==='cave'||baseGroundChannel()!==TDTerrainPaint.baseChannel(state.biome))?{baseGround:GROUND[baseGroundChannel()] || 'grass'}:{}), cliffStyle: state.cliffStyle, sea: state.sea, atmosphere: { ...state.atmo }, weather: { ...state.weather }, sunlight: state.sunOn, darkness: state.darkness, name: state.mapName,
+    waterLevel: state.water, spawn: state.spawn, biome: state.biome, cliffStyle: state.cliffStyle, sea: state.sea, atmosphere: { ...state.atmo }, weather: { ...state.weather }, sunlight: state.sunOn, darkness: state.darkness, name: state.mapName,
     heightsF32: b64(new Uint8Array(H.slice().buffer)), splat: b64(S), walkOverride: b64(O), cliffMap: b64(C),   // exact heights: save → load → export reproduces the RAW
     propTypes: PROP.map(p => p.id),
     cliffFits: cliffFits.records.size?cliffFits.save():undefined,
@@ -3534,7 +3532,6 @@ function decodeMap(d,size=SIZE){
   d = remapPropTypes(d);
   // decode and check everything first; the current map is touched only after all checks pass
   const issues = valueIssues(d,size);
-  if(d.baseGround!=null&&d.baseGround!=='grass'&&!GROUND.includes(d.baseGround))issues.push('baseGround: 未対応の床ID');
   const dec = (name, s) => { if (typeof s !== 'string') { issues.push(`${name}: ありません`); return null; } try { return unb64(s); } catch (e) { issues.push(`${name}: base64 として読めません`); return null; } };
   let newH = null;
   if (d.heightsF32 !== undefined) {
@@ -3574,7 +3571,7 @@ function deserialize(d,prepared) {
   state.roomId = d.roomId || newRoomId(); state.nextId = d.nextId || 1; state.revision = d.revision || 0;
   state.agent = { ...state.agent, ...(d.agent || {}) }; state.catalog = normalizeCatalog(d.catalog); state.lastExportHash = d.lastExportHash || ''; applyCatalog(); syncAgentUI();
   markers = (d.markers || []).map(m => ({ ...m })); ensureIds();
-  applyBiome(d.biome || 'forest',d.baseGround ?? (d.biome==='cave'?'rubble':GROUND[TDTerrainPaint.baseChannel(d.biome || 'forest')] || 'grass'));
+  applyBiome(d.biome || 'forest');
   syncUI(); updateTerrain();if(prepared)cliffFits.installPrepared(prepared,props,cliffInputSignature());else cliffFits.load(d.cliffFits,props,cliffInputSignature()); rebuildProps(); rebuildMarkers();
 }
 function download(name, blob) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); }
@@ -3951,13 +3948,13 @@ function toast(msg) { toastEl.textContent = msg; toastEl.classList.add('show'); 
 const toolsEl = $('tools');
 TOOLS.forEach(t => { const b = document.createElement('button'); b.dataset.tool = t.id; b.innerHTML = `${t.name}<kbd>${t.key}</kbd>`; b.onclick = () => setTool(t.id); toolsEl.appendChild(b); });
 const fillGroundSel=$('fillGround');
-fillGroundSel.add(new Option('塗装を消す（未塗装の床に戻す）','grass'));
+fillGroundSel.add(new Option('草原','grass'));
 for(const id of GROUND)fillGroundSel.add(new Option(TOOLS.find(t=>t.id===id).name,id));
 function fillGroundAll(id){
  const channel=GROUND.indexOf(id);if(id!=='grass'&&channel<0)return false;
  pushUndo();S.fill(0);if(channel>=0)for(let k=0;k<N*N;k++)S[k*NS+channel]=255;
  updateTerrain();regenGroundProps();
- toast('床全体を「'+(channel<0?'未塗装の床':TOOLS.find(t=>t.id===id).name)+'」に変更しました（Ctrl+Zで戻せます）');return true;
+ toast('床全体を「'+(channel<0?'草原':TOOLS.find(t=>t.id===id).name)+'」に変更しました（Ctrl+Zで戻せます）');return true;
 }
 $('fillGroundAll').onclick=()=>fillGroundAll(fillGroundSel.value);
 const biomeSel = $('biome'), paletteSel = $('palette');
@@ -3967,7 +3964,7 @@ biomeSel.onchange = e => {
   pushUndo(); state.biome = e.target.value;
   state.sunOn = !BIOME().noSun; $('sunOn').checked = state.sunOn;
   const a = BIOME().atmo; state.atmo = { ...state.atmo, kind: a ? a[0] : 'none', amount: a ? a[1] : state.atmo.amount };
-  applyBiome(e.target.value,GROUND[TDTerrainPaint.baseChannel(e.target.value)] || 'grass'); updateTerrain(); regenGroundProps(); toast(`マップのバイオーム: ${BIOME().name}` + (a ? `（${ATMOS[a[0]].name}）` : ''));
+  applyBiome(e.target.value); updateTerrain(); regenGroundProps(); toast(`マップのバイオーム: ${BIOME().name}` + (a ? `（${ATMOS[a[0]].name}）` : ''));
 };
 $('sunOn').onchange = e => { pushUndo(); state.sunOn = e.target.checked; applyAtmo(); };
 for (const [v, d] of Object.entries(DARK_LEVELS)) $('darkness').add(new Option(d.name, v));
@@ -4113,10 +4110,8 @@ function showVariants() {
     list.appendChild(d);
   }
 }
-function applyBiome(id,baseGround) {
-  const previousBiome=state.biome;
+function applyBiome(id) {
   state.biome = (BIOMES.find(b => b.id === id) || BIOMES[1]).id;
-  state.baseGround=baseGround==='grass'?-1:GROUND.includes(baseGround)?GROUND.indexOf(baseGround):previousBiome===state.biome&&state.baseGround!==undefined?state.baseGround:TDTerrainPaint.baseChannel(state.biome);
   groundTrial.value = TDGroundData.biomes.includes(state.biome) && !location.hash.includes('ground=legacy') ? 1 : 0;
   const B = BIOME(), v3 = (u, c) => u.value.setRGB(c[0], c[1], c[2]);
   scene.background.setHex(B.bg); scene.fog.color.setHex(B.fog ?? B.bg); scene.fog.near = (B.fogNear ?? 140) * FOG_K; scene.fog.far = (B.fogFar ?? 280) * FOG_K;
@@ -4127,7 +4122,6 @@ function applyBiome(id,baseGround) {
   if (B.moss) v3(BU.uMoss, B.moss); BU.uMossAmt.value = B.moss ? 1 : 0;
   BU.uLava.value = B.lava ? 1 : 0; BU.uSea.value = state.sea || B.id === 'beach' ? 1 : 0; computeShoreField(); BU.uFlowers.value = B.flowers ?? 1; BU.uSnow.value = B.snow || 0; BU.uSnowLine.value = B.snowLine ?? -100;
   if ($('biome')) $('biome').value = B.id;
-  if($('baseGroundInfo'))$('baseGroundInfo').textContent='未塗装の床：'+(baseGroundChannel()<0?'草地':TOOLS.find(t=>t.id===GROUND[baseGroundChannel()]).name)+'（塗装済みの場所は保持）';
   walkDirty = true;
   applyAtmo();
 }
