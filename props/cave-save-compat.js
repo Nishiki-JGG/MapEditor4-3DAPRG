@@ -1,0 +1,3 @@
+// 103種類の既存順序を維持し、公開後の保存を壊さないための読込互換2 ID。
+TDProps.add({id:'flowstone',name:'旧保存互換：フローストーン',r:.65,min:2,sc:[.8,1.3],slope:.5,vis:1.5,anyGround:true,shape:true,legacyOnly:true,tags:[],height:1.6,material:'shared',sharedAsset:'flowstone',assetKey:'tdj/flowstone',groundSink:.025,build(){return TDSharedProps.geometry('flowstone');}});
+TDProps.add({id:'cavebreakdown',name:'旧保存互換：崩落片',r:.5,min:1.2,sc:[.7,1.4],slope:.6,vis:1,anyGround:true,shape:true,legacyOnly:true,tags:[],height:.4,material:'shared',sharedAsset:'cavebreakdown',assetKey:'tdj/cavebreakdown',groundSink:.025,build(){return TDSharedProps.geometry('cavebreakdown');}});

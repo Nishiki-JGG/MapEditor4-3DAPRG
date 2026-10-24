@@ -1,3 +1,0 @@
-// 既存ID順序を保つため、既存全種類の後に登録する。
-TDProps.add({id:'flowstone',name:'フローストーン（壁裾）',r:.65,min:2,sc:[.8,1.3],slope:.5,vis:1.5,anyGround:true,shape:true,tags:['cave'],height:1.6,material:'shared',sharedAsset:'flowstone',assetKey:'tdj/flowstone',groundSink:.025,build(){return TDSharedProps.geometry('flowstone');}});
-TDProps.add({id:'cavebreakdown',name:'石灰岩の崩落片',r:.5,min:1.2,sc:[.7,1.4],slope:.6,vis:1,anyGround:true,shape:true,tags:['cave','mountain'],height:.4,material:'shared',sharedAsset:'cavebreakdown',assetKey:'tdj/cavebreakdown',groundSink:.025,build(){return TDSharedProps.geometry('cavebreakdown');}});

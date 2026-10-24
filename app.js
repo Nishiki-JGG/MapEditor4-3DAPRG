@@ -305,7 +305,7 @@ const LAVA_SURFACE_GLSL=`vec4 lavaSurface(vec2 p,float time){
 }`;
 const terrainMat = new THREE.MeshStandardMaterial({ roughness: .92, metalness: 0 });
 terrainMat.onBeforeCompile = (sh) => {
-  Object.assign(sh.uniforms, TDGround.uniforms); sh.uniforms.uGroundTrial = groundTrial; sh.uniforms.uCaveFloor = TDCaveFloor.active;
+  Object.assign(sh.uniforms, TDGround.uniforms); sh.uniforms.uGroundTrial = groundTrial;
   sh.uniforms.uWater = waterU; sh.uniforms.uDim = dimU; sh.uniforms.uTime = timeU; sh.uniforms.uStoneGrain=rockGrainU; sh.uniforms.uPavingMask=pavingMaskU; sh.uniforms.uPavingMap=pavingMapU; Object.assign(sh.uniforms, BU);
   sh.vertexShader = sh.vertexShader
     .replace('#include <common>', '#include <common>\nattribute float reliefSlope; varying float vReliefSlope; attribute vec4 splatA; attribute vec4 splatB; attribute float splatC; attribute vec3 cliffT; attribute vec4 cliffM; attribute vec2 cliffW; varying vec3 vCT; varying vec4 vCM; varying vec2 vCW; varying vec4 vSA; varying vec4 vSB; varying float vSC; varying vec3 vWPos; varying vec3 vWNor;')
@@ -316,8 +316,6 @@ varying float vReliefSlope; varying vec4 vSA; varying vec4 vSB; varying float vS
 uniform vec3 uG0; uniform vec3 uG1; uniform vec3 uGH; uniform vec3 uRockTint; uniform float uFlowers; uniform float uSnow; uniform float uSnowLine; uniform float uWet; uniform float uSea;
 varying vec3 vCT; varying vec4 vCM; varying vec2 vCW; uniform int uPitN; uniform vec4 uPitA[8]; uniform vec4 uPitB[8];
 ${TDGround.GLSL}
-${TDCaveFloor.GLSL}
-uniform float uCaveFloor;
 uniform float uGroundTrial;
 float gGloss=0.; float gSurfaceHeight=0.; vec3 gGlow=vec3(0.);
 ${GLSL_NOISE}
@@ -375,12 +373,6 @@ vec3 terrainColor(){
   // Dryland: dusty clay plates, narrow warped shrinkage cracks and buried mineral grit.
   float rbw=vSA.w;
   if(rbw>0.){
-    if(uCaveFloor>.5){
-      CaveFloorSample floorSample=sampleCaveFloor(p,vCW.x);
-      col+=floorSample.albedo*rbw;
-      gSurfaceHeight+=floorSample.relief*rbw;
-      gGloss=max(gGloss,floorSample.wet*rbw*.65);
-    }else{
     vec2 rp=p+vec2(fbm(p*1.3),fbm(p*1.3+17.))*.30+vec2(vn(p*13.),vn(p*13.+29.))*.028;
     vec4 plate=pavingCell(rp*2.65);
     float edge=plate.x*2.,width=.022+.024*vn(p*3.7+8.);
@@ -403,7 +395,6 @@ vec3 terrainColor(){
     vec3 mineral=mix(vec3(.46,.40,.32),vec3(.65,.59,.48),h21(cell+9.));
     col+=mix(dry,mineral,chip*.45)*rbw;
     gSurfaceHeight+=rbw*(rim*.0008-crack*.0015+chip*.001+(grain-.5)*.0004);
-    }
   }
   // swamp: mud, moss and murky puddles with rising bubbles
   float swW=vSB.x;
@@ -501,7 +492,7 @@ normal=surfaceNormal(-vViewPosition,normal,gSurfaceHeight);`)
     .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor=mix(roughnessFactor,.55,gGloss);')
     .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance+=pow(gGlow,vec3(2.2))*(1.-.6*uDim);');
 };
-terrainMat.customProgramCacheKey = () => 'terrain-cave-floor-v1';
+terrainMat.customProgramCacheKey = () => 'terrain-dryland-v1';
 
 function gridIndex() {
   const ix = new Uint32Array((N - 1) * (N - 1) * 6); let o = 0;
@@ -1151,11 +1142,10 @@ function updateTouch(dt) {
 const cliffFits=new TDCliffFits.Store(PROP,sha256);
 function cliffInputSignature(heights=H,waterfalls=falls,water=state.water,size=SIZE){return sha256(new Uint8Array(heights.buffer))+'/'+sha256(new TextEncoder().encode(JSON.stringify([waterfalls,water,size])));}
 function effectiveGeometry(p){return cliffFits.effectiveGeometry(p);}
-function caveWallGeometry(g,type){return state.biome==='cave'&&TDCaveWall.enabled?TDCaveWall.geometry(g,PROP[type].id):g;}
 function refreshCliffFits(visualOnly=false){if(!visualOnly){const stale=cliffFits.synchronize(cliffInputSignature(),props);if(stale)toast('地形または岩を変更したため、密着加工を解除しました。岩を自動配置で更新できます。');}for(const c of cliffFits.cache.values())if(c.mesh)c.mesh.visible=false;}
 function cliffTintAt(x,z){const v=.86+.28*hash2(x*97|0,z*89|0);return[v*(.95+.1*hash2(x*13|0,7)),v,v*(.95+.1*hash2(3,z*17|0))];}
 function savedCliffTint(p){return cliffFits.valid(p)?cliffFits.records.get(p[8]).instanceTint:null;}
-function drawCliffFit(p,matrix,color,ghost){const c=cliffFits.get(p);if(!c)return false;const record=cliffFits.records.get(p[8]);if(record.affine){if(!c.affine)c.affine=new THREE.Matrix4().fromArray(record.affine);matrix.multiply(c.affine);return false;}if(!c.mesh){const g=c.geometry;g.setAttribute('cliffI',new THREE.InstancedBufferAttribute(new Float32Array([cliffIndexNear(p[1],p[2])]),1));const m=new THREE.InstancedMesh(g,propMeshes[p[0]].material,1);m.instanceColor=new THREE.InstancedBufferAttribute(new Float32Array(3),3);m.castShadow=m.receiveShadow=true;m.frustumCulled=false;c.mesh=m;scene.add(m);}const m=c.mesh;m.geometry=caveWallGeometry(c.geometry,p[0]);m.material=ghost?ghostMat:propMeshes[p[0]].material;m.renderOrder=ghost?8:0;m.visible=true;m.setMatrixAt(0,matrix);m.setColorAt(0,color);m.instanceMatrix.needsUpdate=m.instanceColor.needsUpdate=true;c.geometry.attributes.cliffI.array[0]=cliffIndexNear(p[1],p[2]);c.geometry.attributes.cliffI.needsUpdate=true;return true;}
+function drawCliffFit(p,matrix,color,ghost){const c=cliffFits.get(p);if(!c)return false;const record=cliffFits.records.get(p[8]);if(record.affine){if(!c.affine)c.affine=new THREE.Matrix4().fromArray(record.affine);matrix.multiply(c.affine);return false;}if(!c.mesh){const g=c.geometry;g.setAttribute('cliffI',new THREE.InstancedBufferAttribute(new Float32Array([cliffIndexNear(p[1],p[2])]),1));const m=new THREE.InstancedMesh(g,propMeshes[p[0]].material,1);m.instanceColor=new THREE.InstancedBufferAttribute(new Float32Array(3),3);m.castShadow=m.receiveShadow=true;m.frustumCulled=false;c.mesh=m;scene.add(m);}const m=c.mesh;m.material=ghost?ghostMat:propMeshes[p[0]].material;m.renderOrder=ghost?8:0;m.visible=true;m.setMatrixAt(0,matrix);m.setColorAt(0,color);m.instanceMatrix.needsUpdate=m.instanceColor.needsUpdate=true;c.geometry.attributes.cliffI.array[0]=cliffIndexNear(p[1],p[2]);c.geometry.attributes.cliffI.needsUpdate=true;return true;}
 function makeFittedFootprint(p,c){if(c.footprint)return c.footprint;const g=c.geometry.clone(),P=g.attributes.position;for(let i=0;i<P.count;i++){const w=TDCliffContact.world(p,[P.getX(i),P.getY(i),P.getZ(i)]);P.setXYZ(i,w[0]-p[1],w[1],w[2]-p[2]);}g.computeBoundingBox();const f=shapeFootprint({geo:g,sharedAsset:true});for(let j=0;j<f.nz;j++)for(let i=0;i<f.nx;i++){const k=j*f.nx+i;if(f.top[k]>-1e8)f.top[k]-=heightAt(p[1]+f.x0+i*SHAPE_CELL,p[2]+f.z0+j*SHAPE_CELL);}const box=g.boundingBox;f.R=Math.hypot(Math.max(Math.abs(box.min.x),Math.abs(box.max.x)),Math.max(Math.abs(box.min.z),Math.abs(box.max.z)));c.y0=box.min.y;c.y1=box.max.y;g.dispose();return c.footprint=f;}
 
 // A bounded local plane moves only the root collar. Recomputed on placement/terrain rebuild, never per vertex/frame.
@@ -1172,7 +1162,6 @@ function groundedMeshes(type,ghost,needed){
 }
 function rebuildProps(visualOnly = false) {
   refreshCliffFits(visualOnly);
-  const wallType=TYPE('cliff');if(wallType>=0){const g=caveWallGeometry(PROP[wallType].geo,wallType);propMeshes[wallType].geometry=ghostMeshes[wallType].geometry=g;}if(state.tool==='place')preview.geometry=caveWallGeometry(PROP[state.variant.place].geo,state.variant.place);
   glowTick = 0;
   const cnt = PROP.map(() => 0), gcnt = PROP.map(() => 0);
   touchIdx.clear(); touchProps = [];touchGrid.clear();
@@ -1660,7 +1649,7 @@ const GTOOL_TAGS = {
   lava: ['volcano', 'demon'], snowfield: ['snow', 'mountain'], ice: ['snow', 'mountain', 'cave'], coast: ['beach'],
 };
 const inPalette = tags => state.palette === 'all' || tags.includes('common') || tags.includes(state.palette);
-const propVisible = i => inPalette(PROP[i].tags);
+const propVisible = i => !PROP[i].legacyOnly && inPalette(PROP[i].tags);
 const toolVisible = id => !GTOOL_TAGS[id] || inPalette(GTOOL_TAGS[id]);
 function bridgeProfile(b) {
   const L = Math.hypot(b.x2 - b.x1, b.z2 - b.z1);
@@ -2020,8 +2009,7 @@ const player = { x: 0, z: 0, y: 0, face: 0, moving: 0, t: 0 };
 // cell, so a body of radius r is blocked where dist * scale < r.
 const SHAPE_CELL = .05, SHAPE_PAD = 1, SHAPE_MIN_H = .1;
 function shapeFootprint(t) {
-  const g = t.collisionBuild ? (t.collisionGeo ||= t.collisionBuild()) : t.geo; if(!g.boundingBox)g.computeBoundingBox();
-  const pos = g.attributes.position, ix = g.index, n = ix ? ix.count : pos.count, bb = g.boundingBox;
+  const g = t.geo, pos = g.attributes.position, ix = g.index, n = ix ? ix.count : pos.count, bb = g.boundingBox;
   const x0 = bb.min.x - SHAPE_PAD, z0 = bb.min.z - SHAPE_PAD, nx = Math.ceil((bb.max.x + SHAPE_PAD - x0) / SHAPE_CELL) + 1, nz = Math.ceil((bb.max.z + SHAPE_PAD - z0) / SHAPE_CELL) + 1;
   const top = new Float32Array(nx * nz).fill(-1e9), P = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
   for (let f = 0; f < n; f += 3) {
@@ -2039,7 +2027,7 @@ function shapeFootprint(t) {
   let R = 0;
   for (let j = 0; j < nz; j++) for (let i = 0; i < nx; i++) if (top[j * nx + i] > 0) R = Math.max(R, Math.hypot(x0 + i * SHAPE_CELL, z0 + j * SHAPE_CELL));
   // non-shared props sit .05 m into the ground (see rebuildProps)
-  return { x0, z0, nx, nz, top, R, sink: t.collisionSink ?? (t.sharedAsset ? 0 : .05), fields: new Map() };
+  return { x0, z0, nx, nz, top, R, sink: t.sharedAsset ? 0 : .05, fields: new Map() };
 }
 // distance field of a footprint for one scale (cached per 5 % step)
 function shapeField(f, s) {
@@ -2301,7 +2289,7 @@ const TOOLS = [
   { id: 'detail', name: '地表小物を調整', key: ';', hint: '草・花・小石・落ち葉をクリックして選び、下の欄で位置・向き・大きさを調整。Shift＋クリックで選んだ小物を移動します。調整した物は自動更新でも残ります。' },
   { id: 'pick', name: '選んで消す', key: 'o', hint: 'カーソルを合わせると赤く囲まれた物（木・岩・橋・階段・滝など）を、クリックで1つ消します。' },
   { id: 'marker', name: 'マーカー', key: 't', hint: '出入口・敵の候補・宝箱の候補・戦闘/出現禁止範囲を置きます。出入口は、置く場所から部屋の内側へドラッグ（クリックだけなら中央向き）。幅＝半径の半分。禁止範囲の大きさ＝半径。Shift+クリックで近くのマーカーを消します。' },
-  { id: 'cliffpaint', name: '岩壁を塗る', key: '.', hint: '崖の面と岩・崖石の種類を、場所ごとに塗り分けます。「マップの既定」で塗ると、バイオーム欄の「岩壁」の設定に戻ります。平らな地面では、洞窟の床だけ「濡れた岩壁」で局所的な湿りを付けられます。' },
+  { id: 'cliffpaint', name: '岩壁を塗る', key: '.', hint: '崖の面と岩・崖石の種類を、場所ごとに塗り分けます。「マップの既定」で塗ると、バイオーム欄の「岩壁」の設定に戻ります。平らな地面を塗っても見た目は変わりません（崖と岩にだけ効きます）。' },
   { id: 'link', name: '階層移動', key: ',', hint: '魔法陣・上り階段・下り階段を置きます。置く場所から、プレイヤーが近づいてくる側へドラッグすると向きが決まります（クリックだけなら部屋の中央向き）。タグには行き先（例: B2, 上の階）を入れます。Shift+クリックで近くの物を消します。歩くモードで触れると表示が出ます。' },
   { id: 'spawn', name: '開始地点', key: 'Home', hint: 'クリックした場所を、歩くモードの開始地点にします。' },
   { id: 'walkOn', name: '通行可', key: 'g', hint: '塗った所を、自動判定に関係なく「通れる」にします（緑の斜線）。崖や水の上でも歩けます。' },
@@ -3828,8 +3816,6 @@ revision・書き出し日時・ファイルごとの SHA-256・contentHash は 
 - Prefab のローカル +Z = プレイヤーが入っていく向き、-Z = 近づいてくる側。回転は yawDeg + yawOffsetDeg。
 - 当たり判定（radius / offsets / solid）も同じローカル座標。エディター内部のローカル座標とは z の符号だけが違います。
 `;
-  const caveWallVisuals=state.biome==='cave'?TDCaveWall.exportData({props,types:PROP,fits:cliffFits,half:HALF,yZero:mn,baseY:propBaseY,tint:p=>savedCliffTint(p)||cliffTintAt(p[1],p[2])}):null;
-  if(caveWallVisuals?.instances.length)meta.caveWallVisuals={file:'cave_wall_visuals.json',formatVersion:1,optional:true,colliders:'unchanged'};
   const fittedExport=cliffFits.export(props,HALF,mn);for(const f of fittedExport.instances){const p=props.find(p=>p[8]===f.instanceId),v=.86+.28*hash2(p[1]*97|0,p[2]*89|0);f.instanceTint=f.instanceTint||[v*(.95+.1*hash2(p[1]*13|0,7)),v,v*(.95+.1*hash2(3,p[2]*17|0))];f.cliffStyleIndex=cliffIndexNear(p[1],p[2]);}if(fittedExport.instances.length){meta.requiredFeatures=[...(meta.requiredFeatures||[]),'cliffFitsMeshV1'];meta.cliffFits={file:'cliff_fits_mesh.json',instanceIds:fittedExport.instances.map(x=>x.instanceId),replacement:'Replace original renderer and collider per ID; unsupported readers must reject'};}
   const visualFile=terrain.geometry.userData.refinedCells?'terrain_visual_mesh.json':null;
   if(visualFile)meta.terrain.visualSurface={file:visualFile,requiredForVisualParity:true,replace:'terrain renderer only; retain heightmap collider',clipHoles:holesPng?'holes.png':null,stats:terrain.geometry.userData,note:'Apply with the same ground splats, cliff styles and continuous cliffCoverageSlope; do not overlay the old terrain renderer.'};
@@ -3857,9 +3843,7 @@ revision・書き出し日時・ファイルごとの SHA-256・contentHash は 
     { name: 'shared_props.json', data: TDSharedProps.exportJson() },
     { name: 'pine_wind.json', data: TDPineWind.exportJson() },
     {name:'root_grounding.json',data:JSON.stringify({version:1,axes:'Unity world XZ',paint:{file:'root_paint.png',resolution:N,sizeMetres:[SIZE,SIZE]},instances:props.filter(p=>PROP[p[0]].sharedAsset&&TDSharedProps.asset(PROP[p[0]].sharedAsset).rootGrounding).map(p=>{const v=rootSlopeAt(p);return{instanceId:p[8],slope:[v[0],-v[1]],terrain:rootTerrainAt(p)};})})},
-    ...(caveWallVisuals?.instances.length?[{name:'cave_wall_visuals.json',data:JSON.stringify(caveWallVisuals)}]:[]),
-    { name: 'shared_ground.json', data: JSON.stringify(state.biome === 'cave' ? { ...TDGroundData, caveFloor: { ...TDCaveFloor.data, surfaceMaskFile:'cave_floor_mask.png', sizeMetres:SIZE, resolution:N } } : TDGroundData) },
-    ...(state.biome === 'cave' ? [{name:'cave_floor_mask.png',data:await pngOf((i,j)=>[effectiveS[(j*N+i)*NS+3],Math.round(cliffParams(CLIFF_STYLES[cliffIndexAt(j*N+i)][2]).wet*255),0],N)}] : []),
+    { name: 'shared_ground.json', data: JSON.stringify(TDGroundData) },
     { name: 'meta.json', data: JSON.stringify(meta, null, 2) }, { name: 'validation.json', data: JSON.stringify(validation, null, 2) },
     { name: 'map.json', data: mapJson }, { name: 'README.txt', data: readme },
   ];
@@ -3926,7 +3910,7 @@ const placeOpen = new Set();   // groups of the 置く list the user opened
 const PROP_GROUPS = [
   ['木・倒木', ['pine', 'oak', 'scotspine', 'birch', 'willow', 'hazel', 'rowan', 'juniper', 'deadtree', 'twisttree', 'palm', 'banana', 'maple', 'cherry', 'zelkova', 'nara', 'sugi', 'hinoki', 'islandash', 'olive', 'eucalyptus', 'dragontree', 'elftree', 'worldtree', 'log', 'stump', 'rootfan', 'driftwood']],
   ['草花・低木', ['shortgrass', 'meadowgrass', 'groundlitter', 'grass', 'meadowwhite', 'meadowyellow', 'meadowpink', 'meadowred', 'meadowviolet', 'bush', 'fern', 'bramble', 'ivy', 'sedge', 'foxglove', 'horsetail', 'dock', 'clover', 'reed', 'flowers', 'mushroom', 'glowmush', 'shelfshroom', 'cactus', 'barrelcactus']],
-  ['岩・崖', ['drysoil_curl','drysoil_cup','drysoil_flake','scree', 'rock', 'mossrock', 'pebble', 'cliff', 'cliff_split', 'cliff_shoulder', 'cliff_joint', 'cliff_slab', 'cliff_talus', 'rubblepile', 'stalagmite', 'flowstone', 'cavebreakdown', 'crystal', 'lavarock', 'obsidian', 'fumarole', 'iceblock', 'icespike']],
+  ['岩・崖', ['drysoil_curl','drysoil_cup','drysoil_flake','scree', 'rock', 'mossrock', 'pebble', 'cliff', 'cliff_split', 'cliff_shoulder', 'cliff_joint', 'cliff_slab', 'cliff_talus', 'rubblepile', 'stalagmite', 'crystal', 'lavarock', 'obsidian', 'fumarole', 'iceblock', 'icespike']],
   ['遺跡・墓', ['column', 'brokencol', 'ruinwall', 'archgate', 'statue', 'stele', 'obelisk', 'pyramid', 'gravestone', 'crossgrave', 'mausoleum', 'bones', 'bonepile', 'magiccircle', 'demonspire']],
   ['建物・道具', ['torch', 'lantern', 'banner', 'woodfence', 'ironfence', 'castlewall', 'tower', 'gatehouse', 'lighthouse', 'rowboat', 'haystack', 'shells', 'snowman', 'kamakura']],
 ];
@@ -3996,7 +3980,7 @@ function useSlot(n) {
   if (sl.types) { state.types = new Set(sl.types.map(TYPE).filter(i => i >= 0)); syncTypesUI(); }
   if (sl.variant !== undefined) {
     state.variant[sl.tool] = sl.tool === 'place' ? Math.max(0, TYPE(sl.variant)) : sl.variant;
-    if (sl.tool === 'place') { preview.geometry = caveWallGeometry(PROP[state.variant.place].geo,state.variant.place); state.placeScale = sl.placeScale ?? 1; state.placeRot = sl.placeRot ?? 0; syncPlaceUI(); }
+    if (sl.tool === 'place') { preview.geometry = PROP[state.variant.place].geo; state.placeScale = sl.placeScale ?? 1; state.placeRot = sl.placeRot ?? 0; syncPlaceUI(); }
   }
   setTool(sl.tool); slotNow = n; renderSlots(); toast(`${n}：${slotLabel(sl)}`);
 }
@@ -4024,14 +4008,14 @@ function showVariants() {
   const opts = tool === 'marker' ? MARKER_KINDS : tool === 'link' ? LINK_KINDS : tool === 'cliffpaint' ? [[0, 'マップの既定'], ...CLIFF_STYLES.map((c, i) => [i + 1, c[1]])] : tool === 'bridge' ? BRIDGE_TYPES.filter(([v]) => inPalette(BRIDGE_TAGS[v]))
     : tool === 'stairs' ? STAIR_TYPES.filter(([v]) => inPalette(STAIR_TAGS[v]))
     : tool === 'place' ? PROP.map((t, i) => [i, t.name]).filter(([i]) => propVisible(i)) : null;
-  if (opts && opts.length && !opts.some(([v]) => v === state.variant[tool])) { state.variant[tool] = opts[0][0]; if (tool === 'place') preview.geometry = caveWallGeometry(PROP[opts[0][0]].geo,opts[0][0]); }
+  if (opts && opts.length && !opts.some(([v]) => v === state.variant[tool])) { state.variant[tool] = opts[0][0]; if (tool === 'place') preview.geometry = PROP[opts[0][0]].geo; }
   box.hidden = !opts; $('placeOpts').hidden = tool !== 'place';
   if (!opts) return;
   $('variantTitle').textContent = tool === 'marker' ? 'マーカーの種類' : tool === 'link' ? '階層移動の種類' : tool === 'cliffpaint' ? '岩壁の種類' : tool === 'bridge' ? '橋の種類' : tool === 'stairs' ? '階段の種類' : '置く物';
   list.innerHTML = '';
   const button = (v, name, box) => {
-    const b = document.createElement('button'); b.textContent = name; if(tool==='place')b.title=PROP[v].placementHint||''; b.classList.toggle('on', state.variant[tool] === v);
-    b.onclick = () => { state.variant[tool] = v; showVariants(); if (tool === 'place') preview.geometry = caveWallGeometry(PROP[v].geo,v); };
+    const b = document.createElement('button'); b.textContent = name; b.classList.toggle('on', state.variant[tool] === v);
+    b.onclick = () => { state.variant[tool] = v; showVariants(); if (tool === 'place') preview.geometry = PROP[v].geo; };
     box.appendChild(b);
   };
   if (tool !== 'place') { for (const [v, name] of opts) button(v, name, list); return; }
@@ -4048,7 +4032,6 @@ function showVariants() {
 }
 function applyBiome(id) {
   state.biome = (BIOMES.find(b => b.id === id) || BIOMES[1]).id;
-  TDCaveFloor.active.value = state.biome === 'cave' ? 1 : 0;
   groundTrial.value = TDGroundData.biomes.includes(state.biome) && !location.hash.includes('ground=legacy') ? 1 : 0;
   const B = BIOME(), v3 = (u, c) => u.value.setRGB(c[0], c[1], c[2]);
   scene.background.setHex(B.bg); scene.fog.color.setHex(B.fog ?? B.bg); scene.fog.near = (B.fogNear ?? 140) * FOG_K; scene.fog.far = (B.fogFar ?? 280) * FOG_K;
