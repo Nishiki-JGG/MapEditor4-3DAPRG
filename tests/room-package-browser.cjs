@@ -29,11 +29,20 @@ const server = http.createServer((q, r) => {
       })()`);
       assert.equal(result.filename, '森の部屋_room.zip'); assert.equal(result.disabled, false);
       const buffer = Buffer.from(result.zip, 'base64');
-      function entries(b) { const out = {}; for (let offset = 0; b.readUInt32LE(offset) === 0x04034b50;) { const size = b.readUInt32LE(offset + 18), n = b.readUInt16LE(offset + 26), extra = b.readUInt16LE(offset + 28), start = offset + 30 + n + extra; out[b.subarray(offset + 30, offset + 30 + n).toString()] = b.subarray(start, start + size); offset = start + size; } return out; }
+      function entries(b) { const out = {}; for (let offset = 0; b.readUInt32LE(offset) === 0x04034b50;) { const size = b.readUInt32LE(offset + 18), n = b.readUInt16LE(offset + 26), extra = b.readUInt16LE(offset + 28), start = offset + 30 + n + extra; out[b.subarray(offset + 30, offset + 30 + n).toString()] = b.readUInt16LE(offset+8) === 8 ? require('node:zlib').inflateRawSync(b.subarray(start,start+size)) : b.subarray(start,start+size); offset = start + size; } return out; }
       const outer = entries(buffer), inner = entries(outer['森の部屋/森の部屋_export_unity.zip']);
       assert.deepEqual(outer['森の部屋/森の部屋.json'], inner['map.json']);
       const manifest = JSON.parse(inner['manifest.json']);
+      assert.equal(manifest.schemaVersion,4);assert(!inner['shared_props.json']);
+      const ref=JSON.parse(inner['shared_assets.json']);assert.equal(ref.format,'tdj-shared-assets');
       for (const file of manifest.files) assert.equal(require('crypto').createHash('sha256').update(inner[file.name]).digest('hex'), file.sha256);
+      const common = await page.eval(`(async()=>{let blob,name;const create=URL.createObjectURL,click=HTMLAnchorElement.prototype.click;
+        URL.createObjectURL=b=>{blob=b;return create(b);};HTMLAnchorElement.prototype.click=function(){name=this.download;};
+        try{await document.getElementById('saveSharedAssets').onclick();if(!blob)throw Error('共通資産のダウンロードなし');const b=new Uint8Array(await blob.arrayBuffer());let s='';for(let i=0;i<b.length;i+=16384)s+=String.fromCharCode(...b.subarray(i,i+16384));return{name,zip:btoa(s),disabled:document.getElementById('saveSharedAssets').disabled};}
+        finally{URL.createObjectURL=create;HTMLAnchorElement.prototype.click=click;}})()`);
+      assert.equal(common.name,'tdj-shared-'+ref.bundleHash+'.zip');assert.equal(common.disabled,false);
+      const shared=entries(Buffer.from(common.zip,'base64'));
+      for(const f of ref.files)assert.equal(require('crypto').createHash('sha256').update(shared[f.name]).digest('hex'),f.sha256);
       assert.deepEqual(page.errors, []);
       console.log(JSON.stringify({ pass: true, file: result.filename, entries: Object.keys(inner).length, bytes: buffer.length, sameSource: true, browserErrors: 0 }));
     }, { hardware: true, wait: 1000, w: 1000, h: 700, initScript: "sessionStorage.setItem('me_pending','flat');" });

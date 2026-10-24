@@ -3919,19 +3919,24 @@ function deserialize(d,prepared) {
 function download(name, blob) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); }
 const CRC = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
 function crc32(u) { let c = 0xFFFFFFFF; for (let i = 0; i < u.length; i++) c = CRC[(c ^ u[i]) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
-function makeZip(files) {
+async function makeZip(files) {
   const enc = new TextEncoder(), parts = [], central = []; let off = 0;
   for (const f of files) {
     const name = enc.encode(f.name), data = typeof f.data === 'string' ? enc.encode(f.data) : f.data, crc = crc32(data);
+    if (typeof CompressionStream === 'undefined') throw Error('ZIP圧縮に対応した最新のブラウザで保存してください');
+    const zlib = new Uint8Array(await new Response(new Blob([data]).stream().pipeThrough(new CompressionStream('deflate'))).arrayBuffer());
+    if(zlib.length<6 || (zlib[1]&32)) throw Error('ZIP圧縮形式が不正です');
+    const raw = zlib.subarray(2, zlib.length - 4), method = raw.length < data.length ? 8 : 0;
+    const packed = method ? raw : data;
     const lh = new DataView(new ArrayBuffer(30));
     lh.setUint32(0, 0x04034b50, true); lh.setUint16(4, 20, true); lh.setUint16(6, 0x0800, true); lh.setUint16(10, 0, true); lh.setUint16(12, 0x21, true);
-    lh.setUint32(14, crc, true); lh.setUint32(18, data.length, true); lh.setUint32(22, data.length, true); lh.setUint16(26, name.length, true);
-    parts.push(lh, name, data);
+    lh.setUint16(8, method, true); lh.setUint32(14, crc, true); lh.setUint32(18, packed.length, true); lh.setUint32(22, data.length, true); lh.setUint16(26, name.length, true);
+    parts.push(lh, name, packed);
     const ch = new DataView(new ArrayBuffer(46));
     ch.setUint32(0, 0x02014b50, true); ch.setUint16(4, 20, true); ch.setUint16(6, 20, true); ch.setUint16(8, 0x0800, true); ch.setUint16(14, 0x21, true);
-    ch.setUint32(16, crc, true); ch.setUint32(20, data.length, true); ch.setUint32(24, data.length, true); ch.setUint16(28, name.length, true); ch.setUint32(42, off, true);
+    ch.setUint16(10, method, true); ch.setUint32(16, crc, true); ch.setUint32(20, packed.length, true); ch.setUint32(24, data.length, true); ch.setUint16(28, name.length, true); ch.setUint32(42, off, true);
     central.push(ch, name);
-    off += 30 + name.length + data.length;
+    off += 30 + name.length + packed.length;
   }
   const csize = central.reduce((a, b) => a + b.byteLength, 0), end = new DataView(new ArrayBuffer(22));
   end.setUint32(0, 0x06054b50, true); end.setUint16(8, files.length, true); end.setUint16(10, files.length, true); end.setUint32(12, csize, true); end.setUint32(16, off, true);
@@ -3961,7 +3966,7 @@ function sha256(bytes) {
 }
 const GROUND_EFFECT = { sand: 'slow_light', rubble: 'slow_light', swamp: 'slow', poison: 'poison', lava: 'lava', snowfield: 'slow_light', ice: 'ice' };
 const WEIGHT_LAYERS = ['grass', 'dirt', 'cobble', 'sand', 'rubble', 'swamp', 'poison', 'lava', 'snowfield', 'ice', 'cliff', 'bedrock'];
-async function buildExport() {
+async function buildExport({sharedAssets = false} = {}) {
   refreshGroundWeights();
   if(mapPreparation||cliffContactDisabled)throw Error('崖の岩を調整中です。完了後に書き出してください');
   ensureIds(); applyCatalog(); if (walkDirty) computeWalk();
@@ -4263,6 +4268,7 @@ revision・書き出し日時・ファイルごとの SHA-256・contentHash は 
 - meta.json        : 座標仕様、開始地点、出入口・敵/宝箱候補・禁止範囲、階層移動（魔法陣・上り/下り階段 = floorLinks）、橋・階段・滝、水、天候、霧。
 - validation.json  : 書き出し時の検証結果（エラー ${validation.errors.length} / 警告 ${validation.warnings.length}）。
 - map.json         : エディター用の元データ（座標はエディター内部の中心基準。Unity では使いません）。
+- shared_assets.json : 共通資産の版とSHA。tdj-shared-<bundleHash>.zipを初回・更新時に保存してください。
 - manifest.json    : exporterVersion、revision、exportedAt、各ファイルの大きさと SHA-256、contentHash。
 
 ■ 変更の検出（manifest.json）
@@ -4315,17 +4321,19 @@ revision・書き出し日時・ファイルごとの SHA-256・contentHash は 
     { name: 'meta.json', data: JSON.stringify(meta, null, 2) }, { name: 'validation.json', data: JSON.stringify(validation, null, 2) },
     { name: 'map.json', data: mapJson }, { name: 'README.txt', data: readme },
   ];
+  const packedExport = sharedAssets ? TDMapStorage.partition(files, sha256) : {sharedFiles:[],sharedName:null};
+  if(sharedAssets)files.splice(0, files.length, ...packedExport.files);
   const enc = new TextEncoder(), bytesOf = d => typeof d === 'string' ? enc.encode(d) : d;
   const listing = files.map(f => { const b = bytesOf(f.data); return { name: f.name, bytes: b.length, sha256: sha256(b) }; });
   const contentHash = sha256(enc.encode([EXPORTER_VERSION, ...listing.map(l => `${l.name} ${l.sha256}`)].join('\n')));
   if (contentHash !== state.lastExportHash) { if (state.lastExportHash || !state.revision) state.revision++; state.lastExportHash = contentHash; }
   const manifest = {
-    format: 'tdj-map-export-manifest', schemaVersion: 3, exporterVersion: EXPORTER_VERSION, roomId: state.roomId, revision: state.revision, exportedAt: new Date().toISOString(),
+    format: 'tdj-map-export-manifest', schemaVersion: sharedAssets ? 4 : 3, exporterVersion: EXPORTER_VERSION, roomId: state.roomId, revision: state.revision, exportedAt: new Date().toISOString(),
     contentHash, contentHashDefinition: 'SHA-256 of the UTF-8 text: exporterVersion, then one line "<name> <sha256>" per entry of files in order, joined with \\n. manifest.json itself is not included; exportedAt and revision live only here.',
     files: listing,
   };
   files.push({ name: 'manifest.json', data: JSON.stringify(manifest, null, 2) });
-  return { validation, manifest, files };
+  return { validation, manifest, files, sharedFiles:packedExport.sharedFiles, sharedName:packedExport.sharedName };
 }
 
 // ============================================================
@@ -4636,9 +4644,17 @@ $('file').onchange = async e => {
   e.target.value = '';
 };
 $('export').onclick = async () => {
-  const { files, validation } = await buildExport(); showValidation(validation);
-  download(baseName() + '_export_unity.zip', makeZip(files));
-  toast(validation.errors.length ? `書き出しました（エラー ${validation.errors.length} 件。検証結果を確認してください）` : '書き出しました');
+  const button=$('export');if(button.disabled)return;button.disabled=true;
+  try { const { files, validation } = await buildExport({sharedAssets:true}); showValidation(validation);
+    download(baseName() + '_export_unity.zip', await makeZip(files));
+    toast('軽量ZIPを保存しました。初回・素材更新時は共通資産も保存してください');
+  } catch(err) { toast('書き出し失敗: '+err.message); } finally {button.disabled=false;}
+};
+$('saveSharedAssets').onclick = async () => {
+  const button=$('saveSharedAssets');if(button.disabled)return;button.disabled=true;
+  try {const result=await buildExport({sharedAssets:true});download(result.sharedName,await makeZip(result.sharedFiles));
+    $('sharedAssetsHint').textContent='共通資産 '+result.sharedName+' を保存。同名ファイルは1つだけ保管してください。';
+  } catch(err) {toast('共通資産の保存失敗: '+err.message);} finally {button.disabled=false;}
 };
 // ZIP内の原稿をそのまま併記し、別々の保存による版違いを防ぐ。
 let roomPackageBusy = false;
@@ -4648,7 +4664,7 @@ $('saveRoom').onclick = async () => {
   try {
     ensureIds(); applyCatalog();
     toast('部屋セットを書き出しています。保存が終わるまで編集をお待ちください');
-    const pack = await TDMapPackage.create({ name: baseName(), snapshot: serialize, buildExport, makeZip });
+    const pack = await TDMapPackage.create({ name: baseName(), snapshot: serialize, buildExport:()=>buildExport({sharedAssets:true}), makeZip });
     showValidation(pack.validation); download(pack.name, pack.blob);
     toast(pack.validation.errors.length ? '部屋セットを保存しました。検証エラーの修正が必要です' : '部屋セットを保存しました。ZIPを展開するとJSONとUnity用ZIPが同じフォルダに入ります');
   } catch (err) { toast('部屋セットを保存できませんでした: ' + err.message); }

@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 // 製品のZIP実装を使用し、外側と内側の双方を独立したZIP読取で確認する。
 const app = fs.readFileSync(require('node:path').join(__dirname, '../app.js'), 'utf8');
-const ctx = { Blob, TextEncoder, Uint8Array, Uint32Array, DataView, ArrayBuffer };
+const ctx = { Blob, TextEncoder, Uint8Array, Uint32Array, DataView, ArrayBuffer, Response, CompressionStream };
 vm.runInNewContext(app.slice(app.indexOf('const CRC ='), app.indexOf('// SHA-256')) + '\nthis.zip = makeZip;', ctx);
 function readZip(buffer) {
   const files = {};
@@ -12,7 +12,7 @@ function readZip(buffer) {
     const size = buffer.readUInt32LE(offset + 18), n = buffer.readUInt16LE(offset + 26), extra = buffer.readUInt16LE(offset + 28);
     const name = buffer.subarray(offset + 30, offset + 30 + n).toString();
     const start = offset + 30 + n + extra;
-    files[name] = buffer.subarray(start, start + size); offset = start + size;
+    files[name] = buffer.readUInt16LE(offset+8) === 8 ? require('node:zlib').inflateRawSync(buffer.subarray(start,start+size)) : buffer.subarray(start,start+size); offset = start + size;
   }
   return files;
 }

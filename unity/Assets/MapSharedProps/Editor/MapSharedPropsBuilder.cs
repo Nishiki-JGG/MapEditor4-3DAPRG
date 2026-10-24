@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -104,10 +105,10 @@ public static class MapSharedPropsBuilder {
   return rows;
  }
  public static Result Build(string exportDirectory, Transform parent = null) {
-  var lib = ReadLibrary(Path.Combine(exportDirectory, "shared_props.json"));
+  var lib = ReadLibrary(SharedAssetFiles.Resolve(exportDirectory, "shared_props.json"));
   var cat = JsonUtility.FromJson<CatalogDto>(File.ReadAllText(Path.Combine(exportDirectory, "asset_catalog.json")));
   Require(cat != null && cat.types != null, "missing asset catalog types");
-  string windFile=Path.Combine(exportDirectory,"pine_wind.json");PineWindDto wind=null;
+  string windFile=SharedAssetFiles.Resolve(exportDirectory,"pine_wind.json",true);PineWindDto wind=null;
   if(File.Exists(windFile)){wind=JsonUtility.FromJson<PineWindDto>(File.ReadAllText(windFile));Require(wind!=null&&(wind.version==1||wind.version==2)&&wind.id=="pine"&&wind.minY==2.15f&&wind.maxY==6.408f&&wind.maxDisplacementMetres==(wind.version==1?.12f:.16f)&&wind.waves!=null&&wind.waves.Length==4&&wind.phase!=null&&wind.phase.Length==2,"pine wind contract");}
   if(wind!=null&&wind.version==2)Require(wind.response!=null&&wind.response.version==1&&wind.response.linear==.25f&&wind.response.quadratic==.75f&&wind.response.mean==.65f&&wind.response.gust==.35f,"wind response contract");
   RootPaintDto rootPaint=null;var surfaces=new Dictionary<string,Vector4>();var rootPlanes=new Dictionary<string,Vector2>();string rootFile=Path.Combine(exportDirectory,"root_grounding.json");
@@ -120,19 +121,18 @@ public static class MapSharedPropsBuilder {
   r.assetDirectory = AssetDatabase.GenerateUniqueAssetPath(rootDir + "/Pilot");
   AssetDatabase.CreateFolder(rootDir, Path.GetFileName(r.assetDirectory));
   try {
-   if(Array.Exists(lib.assets,a=>a.rootSurface!=null)&&File.Exists(Path.Combine(exportDirectory,"shared_ground.json")))r.ground=MapSharedGroundBuilder.Build(Path.Combine(exportDirectory,"shared_ground.json"),GroundEditorZero(Path.Combine(exportDirectory,"meta.json")));
+   if(Array.Exists(lib.assets,a=>a.rootSurface!=null)&&SharedAssetFiles.Resolve(exportDirectory,"shared_ground.json",true)!=null)r.ground=MapSharedGroundBuilder.Build(SharedAssetFiles.Resolve(exportDirectory,"shared_ground.json"),GroundEditorZero(Path.Combine(exportDirectory,"meta.json")));
    if(rootPaint!=null){Require(rootPaint.file=="root_paint.png"&&rootPaint.resolution>=2&&rootPaint.resolution<=1025,"root paint filename/resolution");Floats(rootPaint.sizeMetres,2,"root paint size");Require(rootPaint.sizeMetres[0]>0&&rootPaint.sizeMetres[1]>0,"root paint extent");string path=r.assetDirectory+"/root_paint.png";File.Copy(Path.Combine(exportDirectory,rootPaint.file),path);AssetDatabase.ImportAsset(path,ImportAssetOptions.ForceSynchronousImport);var importer=(TextureImporter)AssetImporter.GetAtPath(path);importer.sRGBTexture=false;importer.mipmapEnabled=false;importer.textureCompression=TextureImporterCompression.Uncompressed;importer.wrapMode=TextureWrapMode.Clamp;importer.filterMode=FilterMode.Bilinear;importer.npotScale=TextureImporterNPOTScale.None;importer.maxTextureSize=2048;importer.SaveAndReimport();r.rootPaint=AssetDatabase.LoadAssetAtPath<Texture2D>(path);Require(r.rootPaint&&r.rootPaint.width==rootPaint.resolution&&r.rootPaint.height==rootPaint.resolution,"root paint dimensions");}
    var textures = new Dictionary<string, Texture2D>();
    foreach (var t in lib.textures) {
-    string dst = r.assetDirectory + "/" + t.id + ".png";
-    File.WriteAllBytes(dst, Convert.FromBase64String(t.png)); AssetDatabase.ImportAsset(dst, ImportAssetOptions.ForceSynchronousImport);
-    var imp = (TextureImporter)AssetImporter.GetAtPath(dst);
-    imp.sRGBTexture = true; imp.alphaSource = TextureImporterAlphaSource.FromInput; imp.alphaIsTransparency = false;
-    imp.textureCompression = TextureImporterCompression.Uncompressed; imp.mipmapEnabled = t.mipmaps; imp.npotScale = TextureImporterNPOTScale.None;
-    imp.wrapMode = t.wrap == "repeat" ? TextureWrapMode.Repeat : TextureWrapMode.Clamp; imp.filterMode = t.filter == "trilinear" ? FilterMode.Trilinear : FilterMode.Bilinear; imp.anisoLevel = Math.Max(1,t.anisotropy); imp.SaveAndReimport();
-    var tx = AssetDatabase.LoadAssetAtPath<Texture2D>(dst); Require(tx != null && tx.width == t.width && tx.height == t.height, "PNG dimensions"); textures.Add(t.id, tx);
+    // A room only needs textures for types actually placed here.
+    if(!lib.assets.Any(a=>rows.Exists(p=>p.type==a.id)&&a.material.texture==t.id))continue;
+    var tx=SharedImportCache.Image(Convert.FromBase64String(t.png),".png",true,t.mipmaps,
+      t.wrap=="repeat"?TextureWrapMode.Repeat:TextureWrapMode.Clamp,t.filter=="trilinear"?FilterMode.Trilinear:FilterMode.Bilinear,Math.Max(1,t.anisotropy),2048);
+    Require(tx.width==t.width&&tx.height==t.height,"PNG dimensions");textures.Add(t.id,tx);
    }
    foreach (var a in lib.assets) {
+    if (!rows.Exists(p => p.type == a.id)) continue;
     int n = a.positions.Length / 3;if(a.wind!=null)Require(Finite(a.wind.maxCombinedDisplacementMetres)&&a.wind.maxCombinedDisplacementMetres>=0&&a.wind.maxCombinedDisplacementMetres<=.3f&&(a.wind.maxCombinedDisplacementMetres==0||a.wind.maxCombinedDisplacementMetres>=a.wind.maxDisplacementMetres),"combined motion cap"); var vertices = new Vector3[n]; var normals = new Vector3[n]; var colors = new Color[n]; var uv = new Vector2[n];
     for (int i = 0; i < n; i++) {
      int k = i * 3; vertices[i] = new Vector3(a.positions[k], a.positions[k+1], a.positions[k+2]); normals[i] = new Vector3(a.normals[k], a.normals[k+1], a.normals[k+2]);
@@ -145,7 +145,7 @@ public static class MapSharedPropsBuilder {
      for(int k=0;k<a.triangles.Length;k+=3){int x=a.triangles[k],y=a.triangles[k+1],z=a.triangles[k+2];var d1=uv[y]-uv[x];var d2=uv[z]-uv[x];if(Mathf.Abs(d1.x*d2.y-d1.y*d2.x)>1e-8f)leaves[x]=leaves[y]=leaves[z]=Vector2.right;}
      mesh.SetUVs(4,leaves);
     }
-    if(a.motionWeights!=null){var mask=new Vector2[n];for(int i=0;i<n;i++)mask[i]=new Vector2(a.motionWeights[i*2],a.motionWeights[i*2+1]);mesh.uv2=mask;}if(a.glow!=null){var emission=new Vector2[n];for(int i=0;i<n;i++)emission[i]=new Vector2(a.glow[i],0);mesh.uv3=emission;}if(a.rootGrounding!=null){var roots=new Vector2[n];for(int i=0;i<n;i++)roots[i]=new Vector2(a.rootWeights[i],a.rootWood!=null?a.rootWood[i]:0);mesh.uv4=roots;}mesh.RecalculateBounds();if(a.rootGrounding!=null){var b=mesh.bounds;float radius=Mathf.Max(Mathf.Abs(b.min.x),Mathf.Abs(b.max.x))+Mathf.Max(Mathf.Abs(b.min.z),Mathf.Abs(b.max.z));b.Expand(new Vector3(0,radius*.3f,0));mesh.bounds=b;}if((a.wind!=null&&a.wind.maxDisplacementMetres>0)||(a.id=="pine"&&wind!=null)){var bounds=mesh.bounds;float pad=(a.wind!=null&&a.wind.maxDisplacementMetres>0?a.wind.maxDisplacementMetres:wind.maxDisplacementMetres)+(a.contact!=null?a.contact.maxDisplacementMetres:0);bounds.Expand(new Vector3(pad*2,0,pad*2));mesh.bounds=bounds;} AssetDatabase.CreateAsset(mesh, r.assetDirectory + "/" + a.id + ".asset");
+    if(a.motionWeights!=null){var mask=new Vector2[n];for(int i=0;i<n;i++)mask[i]=new Vector2(a.motionWeights[i*2],a.motionWeights[i*2+1]);mesh.uv2=mask;}if(a.glow!=null){var emission=new Vector2[n];for(int i=0;i<n;i++)emission[i]=new Vector2(a.glow[i],0);mesh.uv3=emission;}if(a.rootGrounding!=null){var roots=new Vector2[n];for(int i=0;i<n;i++)roots[i]=new Vector2(a.rootWeights[i],a.rootWood!=null?a.rootWood[i]:0);mesh.uv4=roots;}mesh.RecalculateBounds();if(a.rootGrounding!=null){var b=mesh.bounds;float radius=Mathf.Max(Mathf.Abs(b.min.x),Mathf.Abs(b.max.x))+Mathf.Max(Mathf.Abs(b.min.z),Mathf.Abs(b.max.z));b.Expand(new Vector3(0,radius*.3f,0));mesh.bounds=b;}if((a.wind!=null&&a.wind.maxDisplacementMetres>0)||(a.id=="pine"&&wind!=null)){var bounds=mesh.bounds;float pad=(a.wind!=null&&a.wind.maxDisplacementMetres>0?a.wind.maxDisplacementMetres:wind.maxDisplacementMetres)+(a.contact!=null?a.contact.maxDisplacementMetres:0);bounds.Expand(new Vector3(pad*2,0,pad*2));mesh.bounds=bounds;} mesh=SharedImportCache.StoreMesh(mesh,JsonUtility.ToJson(a)+"\n"+(wind==null?"":JsonUtility.ToJson(wind)));
     var d = a.material; var mat = new Material(shader) { name = a.id + "/v" + a.version };
     if(a.id=="bush"&&a.version==2)mat.EnableKeyword("SHARED_BUSH_LEAF");
     mat.SetTexture("_BaseMap", textures[d.texture]); mat.SetColor("_BaseColor", new Color(d.baseColor[0],d.baseColor[1],d.baseColor[2],d.baseColor[3]));
