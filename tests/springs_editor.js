@@ -58,7 +58,7 @@ const path = require('path');
     out.io = { saved: { springs: (d.springs || []).length, pools: (d.pools || []).length, carve: !!d.springCarve }, cleared, back: { springs: A.springs.length, pools: A.pools.length, wet: A.springRes && A.springRes.wetCount, wet0 } };
     // 6) export
     const { files } = await A.buildExport(), f = n => files.find(x => x.name === n), meta = JSON.parse(f('meta.json').data);
-    out.exp = { water: !!f('spring_water.png'), flow: !!f('spring_flow.png'), sources: meta.springs && meta.springs.sources.length, preset: meta.springs && meta.springs.sources.map(q => q.preset), pools: meta.pools && meta.pools.length,
+    out.exp = { water: !!f('spring_water.png'), flow: !!f('spring_flow.png'), mask: !!f('spring_mask.png'), sources: meta.springs && meta.springs.sources.length, preset: meta.springs && meta.springs.sources.map(q => q.preset), pools: meta.pools && meta.pools.length,
       poolLevel: meta.pools && +(meta.pools[0].rim - meta.pools[0].waterLevel).toFixed(3), encoding: !!(meta.springs && meta.springs.encoding.water), span: meta.springs && meta.springs.surfaceSpan };
     // the PNG holds the surface: decode one pool texel and compare
     const png = f('spring_water.png').data, img = await createImageBitmap(new Blob([png], { type: 'image/png' })), cv = document.createElement('canvas'); cv.width = img.width; cv.height = img.height;
@@ -88,7 +88,7 @@ const path = require('path');
     ['プール：縁は通れず、中の浅い水は歩ける', !o.pool.kerb.walk && o.pool.kerb.deck && o.pool.kerb.deck.kind === 'pool' && o.pool.inside.walk],
     ['プール：中に水源を置くと、あふれ口から小川が出る（小さすぎるプールは作らない）', o.pool.streamsAfter > o.pool.sBefore && o.pool.fromNotch && typeof o.pool.tooSmall === 'string'],
     ['保存・読み込みで水源・プール・溝が戻る', o.io.saved.springs === 1 && o.io.saved.pools === 1 && o.io.saved.carve && o.io.cleared.res === null && o.io.back.springs === 1 && o.io.back.pools === 1 && o.io.back.wet === o.io.back.wet0],
-    ['書き出し：spring_water.png・spring_flow.png・meta.springs・meta.pools', o.exp.water && o.exp.flow && o.exp.sources === 1 && o.exp.pools === 1 && Math.abs(o.exp.poolLevel - .1) < 1e-3 && o.exp.encoding],
+    ['書き出し：spring_water.png・spring_flow.png・spring_mask.png・meta.springs・meta.pools', o.exp.water && o.exp.flow && o.exp.mask && o.exp.sources === 1 && o.exp.pools === 1 && Math.abs(o.exp.poolLevel - .1) < 1e-3 && o.exp.encoding],
     ['書き出し：画像からプールの水面の高さが読める（1cm 以内）', o.exp.decoded.kind === 3 && o.exp.decoded.alpha === 255 && Math.abs(o.exp.decoded.y - o.exp.decoded.want) < .01],
     ['取り消し・やり直しで水源が消え、戻る', u.n1 === 1 && u.n2 === 0 && u.n3 === 1],
     ['ページのエラーなし', errs.length === 0],

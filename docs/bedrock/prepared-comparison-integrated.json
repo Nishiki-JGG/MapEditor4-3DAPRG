@@ -1,0 +1,418 @@
+{
+  "d44e62f": {
+    "forest": {
+      "bedrockShaderActive": false,
+      "bedrockTextureUploaded": false,
+      "stats": {
+        "kind": "sample",
+        "seed": 7,
+        "cacheHit": false,
+        "persistent": true,
+        "persistentStored": true,
+        "preparedSource": "bundle",
+        "bundleBytes": 5930514,
+        "walkReused": true,
+        "elapsedMs": 10691.600000023842,
+        "firstRenderMs": 379.19999998807907,
+        "props": 5761,
+        "fits": 552,
+        "fitStats": null
+      },
+      "ns": 9,
+      "rockFitCalls": 0,
+      "requests": [
+        {
+          "request": {
+            "kind": "sample",
+            "seed": 7,
+            "size": 64,
+            "key": "sample:2175d5b7d0f02b6132f7492ee30eac36945a4cca22ffb44582c62f954a7d6621",
+            "profile": {
+              "biome": "forest",
+              "agent": {
+                "radius": 0.3,
+                "height": 1.8,
+                "maxSlopeDeg": 51.3,
+                "maxWaterDepth": 0.9,
+                "maxStep": 0.5,
+                "arrivalClearance": 0.5
+              },
+              "cliffStyle": "standard",
+              "catalog": {
+                "types": {},
+                "floorLinks": {}
+              }
+            }
+          },
+          "keyMatches": true,
+          "profileMatches": true,
+          "returned": true
+        }
+      ],
+      "maxLongTaskMs": 379,
+      "maxHeartbeatGapMs": 472.69999998807907,
+      "mapHash": "7582d722fa8e16fed4cbb9936608e51e14a98be193e724ef2f84044e75c8975e",
+      "geometryHash": "12984511426f4916e751a230f058b2d902b4a3588d38d623531be2c9a1f60be8",
+      "propsHash": "cf772b7605d5c7660fcde2c3f30a07fab9afa764e19e2615f871c0bea4c4b90d",
+      "cliffFits": 552,
+      "gl": 0,
+      "tab": {
+        "latencyMs": 186,
+        "rockRegeneration": 0,
+        "roundtrip": true
+      },
+      "loadingTab": {
+        "active": true,
+        "play": "play",
+        "edit": "edit",
+        "latencyMs": 71
+      }
+    },
+    "forestWarm": {
+      "bedrockShaderActive": false,
+      "bedrockTextureUploaded": false,
+      "stats": {
+        "kind": "sample",
+        "seed": 7,
+        "cacheHit": true,
+        "persistent": false,
+        "persistentStored": false,
+        "preparedSource": "cache",
+        "bundleBytes": 0,
+        "walkReused": true,
+        "elapsedMs": 3533.7000000178814,
+        "firstRenderMs": 184.90000000596046,
+        "props": 5761,
+        "fits": 552,
+        "fitStats": null
+      },
+      "ns": 9,
+      "rockFitCalls": 0,
+      "requests": [],
+      "maxLongTaskMs": 330,
+      "maxHeartbeatGapMs": 353.59999999403954,
+      "mapHash": "7582d722fa8e16fed4cbb9936608e51e14a98be193e724ef2f84044e75c8975e",
+      "geometryHash": "12984511426f4916e751a230f058b2d902b4a3588d38d623531be2c9a1f60be8",
+      "propsHash": "cf772b7605d5c7660fcde2c3f30a07fab9afa764e19e2615f871c0bea4c4b90d",
+      "cliffFits": 552,
+      "gl": 0,
+      "tab": {
+        "latencyMs": 91,
+        "rockRegeneration": 0,
+        "roundtrip": true
+      }
+    },
+    "ruins": {
+      "bedrockShaderActive": false,
+      "bedrockTextureUploaded": false,
+      "stats": {
+        "kind": "sample2",
+        "seed": 11,
+        "cacheHit": false,
+        "persistent": true,
+        "persistentStored": true,
+        "preparedSource": "bundle",
+        "bundleBytes": 2414861,
+        "walkReused": true,
+        "elapsedMs": 2660.9000000059605,
+        "firstRenderMs": 172.40000000596046,
+        "props": 536,
+        "fits": 226,
+        "fitStats": null
+      },
+      "ns": 9,
+      "rockFitCalls": 0,
+      "requests": [
+        {
+          "request": {
+            "kind": "sample2",
+            "seed": 11,
+            "size": 48,
+            "key": "sample:84cec4430f4d27348089d59dc17092d7068880a7ed79e9979c6e6d64e2b171db",
+            "profile": {
+              "biome": "ruins",
+              "agent": {
+                "radius": 0.3,
+                "height": 1.8,
+                "maxSlopeDeg": 51.3,
+                "maxWaterDepth": 0.9,
+                "maxStep": 0.5,
+                "arrivalClearance": 0.5
+              },
+              "cliffStyle": "standard",
+              "catalog": {
+                "types": {},
+                "floorLinks": {}
+              }
+            }
+          },
+          "keyMatches": true,
+          "profileMatches": true,
+          "returned": true
+        }
+      ],
+      "maxLongTaskMs": 395,
+      "maxHeartbeatGapMs": 408.80000001192093,
+      "mapHash": "d5c92abc6c26f7062c883e1703ce19f58c685a8656803f2d80993549490dca4b",
+      "geometryHash": "2074af0956e9811d29908696c30171c3d64ff33a8be6c1a38af2d684eaa8adf6",
+      "propsHash": "6310e563bd30b7a1bfa16789ee11f15662e606e493bb9f0eb4c4062af01310ef",
+      "cliffFits": 226,
+      "gl": 0,
+      "tab": {
+        "latencyMs": 82,
+        "rockRegeneration": 0,
+        "roundtrip": true
+      },
+      "loadingTab": {
+        "active": true,
+        "play": "play",
+        "edit": "edit",
+        "latencyMs": 3
+      }
+    },
+    "ruinsWarm": {
+      "bedrockShaderActive": false,
+      "bedrockTextureUploaded": false,
+      "stats": {
+        "kind": "sample2",
+        "seed": 11,
+        "cacheHit": true,
+        "persistent": false,
+        "persistentStored": false,
+        "preparedSource": "cache",
+        "bundleBytes": 0,
+        "walkReused": true,
+        "elapsedMs": 1853.300000011921,
+        "firstRenderMs": 166.09999999403954,
+        "props": 536,
+        "fits": 226,
+        "fitStats": null
+      },
+      "ns": 9,
+      "rockFitCalls": 0,
+      "requests": [],
+      "maxLongTaskMs": 408,
+      "maxHeartbeatGapMs": 410.5,
+      "mapHash": "d5c92abc6c26f7062c883e1703ce19f58c685a8656803f2d80993549490dca4b",
+      "geometryHash": "2074af0956e9811d29908696c30171c3d64ff33a8be6c1a38af2d684eaa8adf6",
+      "propsHash": "6310e563bd30b7a1bfa16789ee11f15662e606e493bb9f0eb4c4062af01310ef",
+      "cliffFits": 226,
+      "gl": 0,
+      "tab": {
+        "latencyMs": 72,
+        "rockRegeneration": 0,
+        "roundtrip": true
+      }
+    },
+    "errors": []
+  },
+  "working": {
+    "forest": {
+      "bedrockShaderActive": false,
+      "bedrockTextureUploaded": false,
+      "stats": {
+        "kind": "sample",
+        "seed": 7,
+        "cacheHit": false,
+        "persistent": true,
+        "persistentStored": true,
+        "preparedSource": "bundle",
+        "bundleBytes": 5930647,
+        "walkReused": true,
+        "elapsedMs": 10124.799999982119,
+        "firstRenderMs": 329.40000000596046,
+        "props": 5761,
+        "fits": 552,
+        "fitStats": null
+      },
+      "ns": 10,
+      "rockFitCalls": 0,
+      "requests": [
+        {
+          "request": {
+            "kind": "sample",
+            "seed": 7,
+            "size": 64,
+            "key": "sample:9d12a71ea78538d01434ac48b2d2218e2437664d6d26ff28f374f25161e3cc78",
+            "profile": {
+              "splatChannels": 10,
+              "biome": "forest",
+              "agent": {
+                "radius": 0.3,
+                "height": 1.8,
+                "maxSlopeDeg": 51.3,
+                "maxWaterDepth": 0.9,
+                "maxStep": 0.5,
+                "arrivalClearance": 0.5
+              },
+              "cliffStyle": "standard",
+              "catalog": {
+                "types": {},
+                "floorLinks": {}
+              }
+            }
+          },
+          "keyMatches": true,
+          "profileMatches": true,
+          "returned": true
+        }
+      ],
+      "maxLongTaskMs": 427,
+      "maxHeartbeatGapMs": 600.9000000059605,
+      "mapHash": "7582d722fa8e16fed4cbb9936608e51e14a98be193e724ef2f84044e75c8975e",
+      "geometryHash": "12984511426f4916e751a230f058b2d902b4a3588d38d623531be2c9a1f60be8",
+      "propsHash": "cf772b7605d5c7660fcde2c3f30a07fab9afa764e19e2615f871c0bea4c4b90d",
+      "cliffFits": 552,
+      "gl": 0,
+      "tab": {
+        "latencyMs": 220,
+        "rockRegeneration": 0,
+        "roundtrip": true
+      },
+      "loadingTab": {
+        "active": true,
+        "play": "play",
+        "edit": "edit",
+        "latencyMs": 7
+      }
+    },
+    "forestWarm": {
+      "bedrockShaderActive": false,
+      "bedrockTextureUploaded": false,
+      "stats": {
+        "kind": "sample",
+        "seed": 7,
+        "cacheHit": true,
+        "persistent": false,
+        "persistentStored": false,
+        "preparedSource": "cache",
+        "bundleBytes": 0,
+        "walkReused": true,
+        "elapsedMs": 3605.899999976158,
+        "firstRenderMs": 188.5,
+        "props": 5761,
+        "fits": 552,
+        "fitStats": null
+      },
+      "ns": 10,
+      "rockFitCalls": 0,
+      "requests": [],
+      "maxLongTaskMs": 345,
+      "maxHeartbeatGapMs": 347.5,
+      "mapHash": "7582d722fa8e16fed4cbb9936608e51e14a98be193e724ef2f84044e75c8975e",
+      "geometryHash": "12984511426f4916e751a230f058b2d902b4a3588d38d623531be2c9a1f60be8",
+      "propsHash": "cf772b7605d5c7660fcde2c3f30a07fab9afa764e19e2615f871c0bea4c4b90d",
+      "cliffFits": 552,
+      "gl": 0,
+      "tab": {
+        "latencyMs": 78,
+        "rockRegeneration": 0,
+        "roundtrip": true
+      }
+    },
+    "ruins": {
+      "bedrockShaderActive": false,
+      "bedrockTextureUploaded": false,
+      "stats": {
+        "kind": "sample2",
+        "seed": 11,
+        "cacheHit": false,
+        "persistent": true,
+        "persistentStored": true,
+        "preparedSource": "bundle",
+        "bundleBytes": 2415045,
+        "walkReused": true,
+        "elapsedMs": 2818.5999999940395,
+        "firstRenderMs": 200.80000001192093,
+        "props": 536,
+        "fits": 226,
+        "fitStats": null
+      },
+      "ns": 10,
+      "rockFitCalls": 0,
+      "requests": [
+        {
+          "request": {
+            "kind": "sample2",
+            "seed": 11,
+            "size": 48,
+            "key": "sample:2c8d253f88053fe86616999c5abc8e56ee22ff0d0393199bf1afc8ccaf09afa1",
+            "profile": {
+              "splatChannels": 10,
+              "biome": "ruins",
+              "agent": {
+                "radius": 0.3,
+                "height": 1.8,
+                "maxSlopeDeg": 51.3,
+                "maxWaterDepth": 0.9,
+                "maxStep": 0.5,
+                "arrivalClearance": 0.5
+              },
+              "cliffStyle": "standard",
+              "catalog": {
+                "types": {},
+                "floorLinks": {}
+              }
+            }
+          },
+          "keyMatches": true,
+          "profileMatches": true,
+          "returned": true
+        }
+      ],
+      "maxLongTaskMs": 524,
+      "maxHeartbeatGapMs": 528.7000000178814,
+      "mapHash": "d5c92abc6c26f7062c883e1703ce19f58c685a8656803f2d80993549490dca4b",
+      "geometryHash": "2074af0956e9811d29908696c30171c3d64ff33a8be6c1a38af2d684eaa8adf6",
+      "propsHash": "6310e563bd30b7a1bfa16789ee11f15662e606e493bb9f0eb4c4062af01310ef",
+      "cliffFits": 226,
+      "gl": 0,
+      "tab": {
+        "latencyMs": 74,
+        "rockRegeneration": 0,
+        "roundtrip": true
+      },
+      "loadingTab": {
+        "active": true,
+        "play": "play",
+        "edit": "edit",
+        "latencyMs": 3
+      }
+    },
+    "ruinsWarm": {
+      "bedrockShaderActive": false,
+      "bedrockTextureUploaded": false,
+      "stats": {
+        "kind": "sample2",
+        "seed": 11,
+        "cacheHit": true,
+        "persistent": false,
+        "persistentStored": false,
+        "preparedSource": "cache",
+        "bundleBytes": 0,
+        "walkReused": true,
+        "elapsedMs": 1921.699999988079,
+        "firstRenderMs": 194.69999998807907,
+        "props": 536,
+        "fits": 226,
+        "fitStats": null
+      },
+      "ns": 10,
+      "rockFitCalls": 0,
+      "requests": [],
+      "maxLongTaskMs": 431,
+      "maxHeartbeatGapMs": 433.80000001192093,
+      "mapHash": "d5c92abc6c26f7062c883e1703ce19f58c685a8656803f2d80993549490dca4b",
+      "geometryHash": "2074af0956e9811d29908696c30171c3d64ff33a8be6c1a38af2d684eaa8adf6",
+      "propsHash": "6310e563bd30b7a1bfa16789ee11f15662e606e493bb9f0eb4c4062af01310ef",
+      "cliffFits": 226,
+      "gl": 0,
+      "tab": {
+        "latencyMs": 80,
+        "rockRegeneration": 0,
+        "roundtrip": true
+      }
+    },
+    "errors": []
+  }
+}

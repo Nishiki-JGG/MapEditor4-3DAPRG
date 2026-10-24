@@ -7,7 +7,8 @@ namespace MapWater.EditorTools {
 public static class MapWaterMeshes {
  static int Seed(string id) { unchecked { int h = 1210; foreach (char c in id ?? "") h = h * 31 + c; return h; } }
 
- public static Mesh FallSheet(MapWaterFallInfo f, string id) {
+ // lean：上端を上流側（+Z）へこれだけ（m）寄せる。崖の縁から弧を描いて滝つぼへ落ちる水源の滝用（0 = これまでの縦の幕）
+ public static Mesh FallSheet(MapWaterFallInfo f, string id, float lean = 0f) {
   const int cols = 13, rows = 28;
   float H = f.height, W = f.width;
   var verts = new List<Vector3>(); var uvs = new List<Vector2>(); var tris = new List<int>();
@@ -17,7 +18,7 @@ public static class MapWaterMeshes {
    for (int c = 0; c < cols; c++) {
     float u = c / (float)(cols - 1);
     float bulge = 0.24f * Mathf.Pow(Mathf.Sin(Mathf.PI * u), 0.8f) - 0.05f;   // 中央ほど手前（-Z＝下流側）へ張り出し、端は少し奥へ巻く
-    verts.Add(new Vector3((u - 0.5f) * W, y, -bulge * grow)); uvs.Add(new Vector2(u, -2 + 4 * t));
+    verts.Add(new Vector3((u - 0.5f) * W, y, -bulge * grow + lean * Mathf.Pow(1 - t, 2.5f))); uvs.Add(new Vector2(u, -2 + 4 * t));
    }
   }
   for (int r = 0; r < rows - 1; r++) for (int c = 0; c < cols - 1; c++) {
@@ -25,7 +26,7 @@ public static class MapWaterMeshes {
    tris.AddRange(new[] { a, d, b, b, d, e });
   }
   var m = new Mesh { name = "Fall_" + id }; m.SetVertices(verts); m.SetUVs(0, uvs); m.SetTriangles(tris, 0); m.RecalculateNormals();
-  m.bounds = new Bounds(new Vector3(0, H * 0.5f, -0.2f), new Vector3(W + 1f, H + 1f, 1.5f)); return m;
+  m.bounds = new Bounds(new Vector3(0, H * 0.5f, lean * 0.5f - 0.2f), new Vector3(W + 1f, H + 1f, 1.5f + lean)); return m;
  }
 
  public static Mesh Stream(MapWaterFallInfo f, float[] src, float[] pos, System.Func<float, float, float> height, float top) {
