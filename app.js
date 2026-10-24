@@ -21,6 +21,7 @@ const C = new Uint8Array(N * N);         // rock-wall style painted per vertex: 
 const A = new Uint8Array(N * N);         // auto walkability cache (1 = walkable)
 let props = [];                           // [type, x, z, rotY, scale, auto, scaleY?, baseY?]
 let falls = [];                           // {x, z, rot, w, top, bottom, sx?, sz?}  sx/sz = upstream source
+let tunnels = [];                         // tunnels: {id, style, w, h, pts: [{x, z, y}]}  (tunnels.js)
 let springs = [];                         // water sources: {id, x, z, preset}  preset = a key of TDSprings.PRESETS (springs.js)
 let pools = [];                           // stone-rimmed pools: {id, type: 'rect' | 'round', x1, z1, x2, z2, floor, rim, ox, oz}  (ox, oz) = the overflow notch's direction
 const SC = new Float32Array(N * N);       // how deep the springs' streams are carved into H (m): taken back out before they are carved again
@@ -31,7 +32,7 @@ const state = {
   roomId: '', nextId: 1, revision: 0, lastExportHash: '', catalog: { types: {}, floorLinks: {} },
   agent: { radius: .3, height: 1.8, maxSlopeDeg: 51.3, maxWaterDepth: .9, maxStep: .5, arrivalClearance: .5 },   // who the walkability is computed for
   biome: 'forest', palette: 'all', cliffStyle: 'standard', sunOn: true, darkness: 'dark', mapName: '', sea: false, weather: { kind: 'none', amount: .7 }, atmo: { kind: 'none', amount: .6, height: 3 },
-  variant: { bridge: 'wood', stairs: 'stone', place: 0, marker: 'port', link: 'warp', cliffpaint: 1, spring: 'brook', pool: 'rect' }, placeScale: 1, placeRot: 0, placeRandom: true,
+  variant: { bridge: 'wood', stairs: 'stone', place: 0, marker: 'port', link: 'warp', cliffpaint: 1, spring: 'brook', pool: 'rect', tunnel: 'rock' }, tunnelSize: 'normal', tunnelSlope: 'flat', placeScale: 1, placeRot: 0, placeRandom: true,
   mode: 'edit', tool: 'plateau', radius: 4, strength: .6, density: .6, brushShape: 'circle',
   types: new Set([0, 1]), water: .8, spawn: { x: 0, z: 22 },
 };
@@ -146,6 +147,19 @@ vec4 pavingCell(vec2 p){
 
 // ---------- terrain ----------
 const waterU = { value: state.water };
+// see-through cut (tunnels): a = (x, y, z) of the one inside a tunnel and the radius (0 = off), b = the camera. What lies
+// between them and above the head is not drawn (terrain, rock skin, the tunnel's roof), with a ragged edge
+const cutU = { a: { value: new THREE.Vector4(0, 0, 0, 0) }, b: { value: new THREE.Vector3() } };
+// Above the head only: over the tunnel itself (onTunnel: the terrain's footprint mask; the tunnel's own mesh is all over it)
+// within uCutA.w metres, and a narrow tube along the line of sight from the camera to the head (so ground beside the tunnel
+// cannot hide the hero when the camera looks from the side). Ground that is not over the tunnel is cut only in that tube,
+// which keeps the black of the hill's (undrawn) inside small.
+const CUT_GLSL = `uniform vec4 uCutA; uniform vec3 uCutB;
+bool cutAway(vec3 p, bool onTunnel){ if(uCutA.w<=0. || p.y<=uCutA.y+1.7) return false;
+  if(onTunnel && length(p.xz-uCutA.xz)<uCutA.w) return true;
+  vec3 a=uCutA.xyz+vec3(0.,1.,0.), ab=uCutB-a; float t=clamp(dot(p-a,ab)/max(dot(ab,ab),1e-4),0.,1.);
+  float n=fract(sin(dot(floor(p*6.),vec3(12.9898,78.233,37.719)))*43758.5453);
+  return length(p-(a+ab*t))<1.1*(1.+.4*t)-n*.25; }`;
 const dimU = { value: 0 };   // fades the scene while the walkability view is on
 const DIM_GLSL = 'vec3 dimc(vec3 c){ float l=dot(c,vec3(.3,.59,.11)); return mix(c,vec3(l),.6*uDim)*(1.-.3*uDim); }';
 const timeU = { value: 0 };
@@ -312,6 +326,7 @@ terrainMat.onBeforeCompile = (sh) => {
   const useBedrock=!!terrainMat.defines?.BEDROCK_FLOOR;
   // Keep custom uniforms stable when Three reuses a cached shader variant.
   Object.assign(sh.uniforms, TDGround.uniforms, TDBedrock.uniforms); sh.uniforms.uGroundTrial = groundTrial;
+  sh.uniforms.uCutA = cutU.a; sh.uniforms.uCutB = cutU.b; sh.uniforms.uTunHoles = tunnelHoleU; sh.uniforms.uTunOn = tunnelOnU;
   sh.uniforms.uWater = waterU; sh.uniforms.uDim = dimU; sh.uniforms.uTime = timeU; sh.uniforms.uStoneGrain=rockGrainU; sh.uniforms.uPavingMask=pavingMaskU; sh.uniforms.uPavingMap=pavingMapU; Object.assign(sh.uniforms, BU);
   sh.vertexShader = sh.vertexShader
     .replace('#include <common>', '#include <common>\nattribute float reliefSlope; varying float vReliefSlope; attribute float springLift; varying float vSpringHw; attribute vec4 splatA; attribute vec4 splatB; attribute vec2 splatC; attribute vec3 cliffT; attribute vec4 cliffM; attribute vec2 cliffW; varying vec3 vCT; varying vec4 vCM; varying vec2 vCW; varying vec4 vSA; varying vec4 vSB; varying vec2 vSC; varying vec3 vWPos; varying vec3 vWNor;')
@@ -321,6 +336,8 @@ terrainMat.onBeforeCompile = (sh) => {
 varying float vReliefSlope; varying float vSpringHw; varying vec4 vSA; varying vec4 vSB; varying vec2 vSC; varying vec3 vWPos; varying vec3 vWNor; uniform float uWater; uniform float uDim; uniform float uTime;
 uniform vec3 uG0; uniform vec3 uG1; uniform vec3 uGH; uniform vec3 uRockTint; uniform float uFlowers; uniform float uSnow; uniform float uSnowLine; uniform float uWet; uniform float uSea;
 varying vec3 vCT; varying vec4 vCM; varying vec2 vCW; uniform int uPitN; uniform vec4 uPitA[8]; uniform vec4 uPitB[8];
+uniform sampler2D uTunHoles; uniform float uTunOn;
+${CUT_GLSL}
 ${TDGround.GLSL}
 ${useBedrock?TDBedrock.GLSL:''}
 uniform float uGroundTrial;
@@ -499,7 +516,14 @@ ${useBedrock?`  // Manually painted continuous bedrock: packed colour and millim
   return pow(col,vec3(2.2));
 }`)
     .replace('#include <clipping_planes_fragment>', `#include <clipping_planes_fragment>
-for(int i=0;i<8;i++){ if(i>=uPitN) break; vec2 d=vWPos.xz-uPitA[i].xy; float lx=d.x*uPitA[i].z-d.y*uPitA[i].w, lz=d.x*uPitA[i].w+d.y*uPitA[i].z-uPitB[i].z; if(abs(lx)<uPitB[i].x && abs(lz)<uPitB[i].y) discard; }`)
+for(int i=0;i<8;i++){ if(i>=uPitN) break; vec2 d=vWPos.xz-uPitA[i].xy; float lx=d.x*uPitA[i].z-d.y*uPitA[i].w, lz=d.x*uPitA[i].w+d.y*uPitA[i].z-uPitB[i].z; if(abs(lx)<uPitB[i].x && abs(lz)<uPitB[i].y) discard; }
+// tunnels: their mouths and cuttings are holes in the ground (one texel per 0.5 m cell), and the roof over the one inside is cut away
+vec4 tunCell=vec4(0.);
+if(uTunOn>.5) tunCell=texture2D(uTunHoles,(floor((vWPos.xz+${HALF.toFixed(1)})*${RES}.)+.5)/${N - 1}.);
+#ifndef TUNNEL_CAP
+if(tunCell.r>.5) discard;
+#endif
+if(cutAway(vWPos,tunCell.g>.5)) discard;`)
     .replace('#include <color_fragment>', '#include <color_fragment>\ndiffuseColor.rgb=dimc(terrainColor());')
     .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
 // Shallow stone bevels affect lighting only; the walking floor is unchanged.
@@ -568,6 +592,7 @@ function shoulderMask(){
   const keep=(distance,radius)=>{m=Math.min(m,sstep(radius,radius+.4,distance));};
   for(const b of bridges)keep(distToPolyline(x,z,[[b.x1,b.z1],[b.x2,b.z2]]),b.w/2+.4);
   for(const st of stairs)keep(distToPolyline(x,z,[[st.x1,st.z1],[st.x2,st.z2]]),st.w/2+.4);
+  if(tunnelPrep.length)keep(tunnelBandDist(x,z),0);
   for(const f of fallBands()){const[ux,uz]=fallDir(f),lat=Math.abs((x-f.x)*uz-(z-f.z)*ux),along=Math.abs((x-f.x)*ux+(z-f.z)*uz);if(along<2)keep(lat,f.w/2+.4);}
   for(const q of markers)if(q.kind==='port'||isLink(q.kind))keep(Math.hypot(x-q.x,z-q.z),Math.max(q.r||0,(q.w||2)/2)+.5);
   rocks.query(x,z,4,p=>keep(Math.hypot(x-p[1],z-p[2]),Math.max(1.5,PROP[p[0]].r||0)*p[4]+.6));
@@ -618,6 +643,7 @@ function refreshWaterData() {
   const res = TDWater.analyze({ TN: N, TS: CELL, HALF, TH: H, level: state.water, falls: falls.map(f => ({ id: f.id, x: f.x, z: f.z, w: f.w })), sea: seaMaskFor(N, CELL) });
   const pk = TDWater.pack(res);
   WFLOW.set(pk.flow); WMASK.set(pk.mask);
+  if (tunnels.length) rebuildTunnels();   // the ground changed: the mouths, cuttings and roofs follow it
   solveSprings(); if (springRes) TDSprings.packInto(springRes, WFLOW, WMASK, res.options);   // the springs' streams and ponds flow in the same images WATERU.uFlow.value.needsUpdate = true; WATERU.uMask.value.needsUpdate = true;
   WATERU.uFlowMax.value = res.options.maxSpeed; WATERU.uBankRange.value = res.options.bankRange; WATERU.uTrailMax.value = res.options.trailMaxCover;
   let n = 0;
@@ -1281,9 +1307,11 @@ let glowTick = 0;
 function updateGlowLights(cx, cz) {
   const cand = [];
   for (const p of props) { const L = PROP[p[0]].light; if (!L) continue; const d = (p[1] - cx) ** 2 + (p[2] - cz) ** 2; if (d < 1600) cand.push([d, p]); }
+  for (const q of tunnelLamps) { const d = (q.x - cx) ** 2 + (q.z - cz) ** 2; if (d < 1600) cand.push([d, null, q]); }   // the tunnels' torches and lanterns
   cand.sort((a, b) => a[0] - b[0]);
   glowLights.forEach((l, k) => {
     const c = cand[k]; if (!c) { l.userData.base = 0; l.intensity = 0; return; }
+    if (!c[1]) { const q = c[2]; l.color.setHex(q.color); l.userData.base = 2.4; l.position.set(q.x, q.y, q.z); return; }
     const p = c[1], L = PROP[p[0]].light;
     l.color.setHex(L[0]); l.userData.base = L[1] * p[4]; l.position.set(p[1], heightAt(p[1], p[2]) + L[2] * p[4], p[2]);
   });
@@ -1741,6 +1769,7 @@ function fallReliefMask(x, z) {
     const [ux, uz] = fallDir(f), ax = x - f.x, az = z - f.z, along = ax * ux + az * uz, lat = Math.abs(ax * uz - az * ux), w = f.w * .6;
     k = Math.min(k, Math.max(sstep(w + .5, w + 1.5, lat), sstep(3, 4, along), sstep(-1.5, -2.5, along)));
   }
+  if (tunnelPrep.length) k = Math.min(k, sstep(0, 1, tunnelBandDist(x, z)));   // the rock around a tunnel's mouth stays smooth
   return k;
 }
 // where a spring's stream drops down a cliff (springs.js falls): the same falling sheet, foam and mist as a placed waterfall
@@ -2225,6 +2254,149 @@ function placePool(a, c, type) {
   pools.push(p); rebuildPools(); applySprings(); rebuildProps();
   return null;
 }
+// ---------- tunnels (tunnels.js): dug sideways into hills and cliffs. The terrain keeps its heights; a tunnel is its own
+// mesh (floor, walls, arched roof, the portal's face) and the terrain is left undrawn only at its mouths and cuttings.
+// Inside, the one walking stands on the tunnel's floor; above its roof the ground is used (walkRef = the walker's height).
+const TUNNEL_STYLES = Object.entries(TDTunnels.STYLES).map(([v, s]) => [v, s.name]);
+let tunnelPrep = [], tunnelLamps = [], walkRef = null;
+const tunnelGroup = new THREE.Group(); scene.add(tunnelGroup);
+const tunnelLineGroup = new THREE.Group(); scene.add(tunnelLineGroup);
+const tunnelHoleTex = (() => { const t = new THREE.DataTexture(new Uint8Array((N - 1) * (N - 1) * 4), N - 1, N - 1, THREE.RGBAFormat); t.magFilter = t.minFilter = THREE.NearestFilter; t.generateMipmaps = false; t.needsUpdate = true; return t; })();
+const tunnelHoleU = { value: tunnelHoleTex }, tunnelOnU = { value: 0 };
+const tunnelMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .92, metalness: 0, flatShading: true, side: THREE.DoubleSide });
+tunnelMat.onBeforeCompile = sh => {
+  sh.uniforms.uCutA = cutU.a; sh.uniforms.uCutB = cutU.b;
+  sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vTW;').replace('#include <begin_vertex>', '#include <begin_vertex>\nvTW=(modelMatrix*vec4(transformed,1.)).xyz;');
+  sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vTW;\n' + CUT_GLSL).replace('#include <clipping_planes_fragment>', '#include <clipping_planes_fragment>\nif(cutAway(vTW,true)) discard;');
+};
+tunnelMat.customProgramCacheKey = () => 'tunnel-v1';
+const tunnelLampMat = new THREE.MeshBasicMaterial({ vertexColors: true });
+// the cut faces: shown as the sides of the cut-away (only the line of sight through them is cut)
+const tunnelShaftMat = tunnelMat.clone(); tunnelShaftMat.onBeforeCompile = sh => { tunnelMat.onBeforeCompile(sh); sh.fragmentShader = sh.fragmentShader.replace('if(cutAway(vTW,true)) discard;', 'if(cutAway(vTW,false)) discard;'); };
+tunnelShaftMat.customProgramCacheKey = () => 'tunnel-shaft-v1';
+// the ground around a mouth, rebuilt finer with the opening left out (TDTunnels.cap): the terrain's own material, without its holes
+const tunnelCapMat = terrainMat.clone(); tunnelCapMat.onBeforeCompile = terrainMat.onBeforeCompile;
+tunnelCapMat.customProgramCacheKey = () => terrainMat.customProgramCacheKey() + '-tunnel-cap';
+function tunnelCapGeometry(c) {
+  const nq = c.quads.length / 2, f = c.size, names = Object.keys(tGeo.attributes).filter(n => n !== 'position' && n !== 'normal');
+  const P = new Float32Array(nq * 12), Nn = new Float32Array(nq * 12), At = names.map(n => new Float32Array(nq * 4 * tGeo.attributes[n].itemSize)), ix = new Uint32Array(nq * 6);
+  for (let q = 0; q < nq; q++) {
+    const x0 = c.quads[q * 2], z0 = c.quads[q * 2 + 1];
+    [[x0, z0], [x0 + f, z0], [x0, z0 + f], [x0 + f, z0 + f]].forEach(([x, z], v) => {
+      const o = q * 4 + v, y = heightAt(x, z), e = .15, gx = (heightAt(x + e, z) - heightAt(x - e, z)) / (2 * e), gz = (heightAt(x, z + e) - heightAt(x, z - e)) / (2 * e), l = Math.hypot(gx, 1, gz);
+      P.set([x, y, z], o * 3); Nn.set([-gx / l, 1 / l, -gz / l], o * 3);
+      // every other terrain attribute (paint, rock style, wetness…), bilinear on the grid like the terrain's own vertices
+      const fx = clamp((x + HALF) * RES, 0, N - 1), fz = clamp((z + HALF) * RES, 0, N - 1), i = Math.min(Math.floor(fx), N - 2), j = Math.min(Math.floor(fz), N - 2), u = fx - i, w = fz - j, k = idx(i, j);
+      names.forEach((n, a) => { const src = tGeo.attributes[n], s0 = src.itemSize; for (let ch = 0; ch < s0; ch++) { const g = (kk) => src.array[kk * s0 + ch]; At[a][o * s0 + ch] = (g(k) * (1 - u) + g(k + 1) * u) * (1 - w) + (g(k + N) * (1 - u) + g(k + N + 1) * u) * w; } });
+    });
+    ix.set([q * 4, q * 4 + 2, q * 4 + 1, q * 4 + 1, q * 4 + 2, q * 4 + 3], q * 6);
+  }
+  const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(P, 3)); geo.setAttribute('normal', new THREE.BufferAttribute(Nn, 3));
+  names.forEach((n, a) => geo.setAttribute(n, new THREE.BufferAttribute(At[a], tGeo.attributes[n].itemSize)));
+  geo.setIndex(new THREE.BufferAttribute(ix, 1)); return geo;
+}
+const tunnelLineMat = new THREE.LineDashedMaterial({ color: 0x8fe0ff, dashSize: .6, gapSize: .4, transparent: true, opacity: .85, depthTest: false });
+function rebuildTunnels() {
+  for (const c of [...tunnelGroup.children, ...tunnelLineGroup.children]) { c.geometry.dispose(); c.parent.remove(c); }
+  tunnelPrep = TDTunnels.prepare(tunnels, heightAt); tunnelLamps = [];
+  const hd = tunnelHoleTex.image.data; hd.fill(0);
+  if (tunnelPrep.length) {
+    const hl = TDTunnels.holes(tunnelPrep, heightAt, N, CELL, HALF); for (let k = 0; k < hl.length; k++) hd[k * 4] = hl[k] * 255;
+    // G: the cells over a tunnel (cut away above the head of the one inside)
+    for (let j = 0; j < N - 1; j++) for (let i = 0; i < N - 1; i++) { const q = TDTunnels.query(tunnelPrep, vx(i) + CELL / 2, vx(j) + CELL / 2, .15); if (q && q.cls) hd[(j * (N - 1) + i) * 4 + 1] = 255; }   // inside the walls only
+    const cp = TDTunnels.cap(tunnelPrep, heightAt, hl, N, CELL, HALF);
+    if (cp.quads.length) {
+      tunnelCapMat.defines = { ...(terrainMat.defines || {}), TUNNEL_CAP: '' }; tunnelCapMat.needsUpdate = true;
+      const m = new THREE.Mesh(tunnelCapGeometry(cp), tunnelCapMat); m.castShadow = m.receiveShadow = true; tunnelGroup.add(m);
+    }
+    const g = TDTunnels.build(tunnelPrep, heightAt), part = s => s === 5 ? 1 : s === 6 ? 2 : 0;   // 0 rock/stone/timber, 1 lamps, 2 the cut faces (shafts)
+    for (const which of [0, 1, 2]) {
+      const P = [], Cc = []; for (let t = 0; t < g.sub.length; t++) if (part(g.sub[t]) === which) { for (let q = 0; q < 9; q++) { P.push(g.pos[t * 9 + q]); Cc.push(g.col[t * 9 + q]); } }
+      if (!P.length) continue;
+      const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); geo.setAttribute('color', new THREE.Float32BufferAttribute(Cc, 3)); geo.computeVertexNormals();
+      const m = new THREE.Mesh(geo, [tunnelMat, tunnelLampMat, tunnelShaftMat][which]); m.castShadow = which === 0; m.receiveShadow = false; tunnelGroup.add(m);   // inside the hill: no sun shadow (the vertex colours darken it)
+    }
+    tunnelLamps = g.lamps;
+    // the route on the ground while editing: a dashed line over the stretches under the hill
+    for (const T of tunnelPrep) {
+      const pts = T.st.map(q => new THREE.Vector3(q.x, Math.max(q.g, q.y + T.t.h) + .2, q.z));
+      const geo = new THREE.BufferGeometry().setFromPoints(pts), l = new THREE.Line(geo, tunnelLineMat); l.computeLineDistances(); l.renderOrder = 7; tunnelLineGroup.add(l);
+    }
+  }
+  tunnelHoleTex.needsUpdate = true; tunnelOnU.value = tunnelPrep.length ? 1 : 0;
+  tunnelLineGroup.visible = state.mode === 'edit'; walkDirty = true;
+  if (typeof cliffRelief !== 'undefined') scheduleCliffRelief();
+}
+// how far (m) outside the band of a tunnel's mouth or cutting (0 inside): no rock relief or cliff stone there
+function tunnelBandDist(x, z) {
+  let best = Infinity;
+  for (const T of tunnelPrep) {
+    const q = TDTunnels.nearest(T, x, z); if (!q || q.end && q.d > .5) continue;
+    const S = T.st[q.k]; if (!S || S.cls === 0 || S.toOpen > 1.5) continue;
+    best = Math.min(best, Math.max(Math.abs(q.lat) - (T.t.w / 2 + TDTunnels.WALL + .6), 0));
+  }
+  return best;
+}
+// dig: from a (a tunnel's end: carry on; a point on a tunnel: branch off; else a new mouth on the ground there) towards c
+function placeTunnel(a, c) {
+  if (BIOME().lava) return '溶岩のバイオームではトンネルを掘れません';
+  const L = Math.hypot(c.x - a.x, c.z - a.z), sz = TDTunnels.SIZES[state.tunnelSize] || TDTunnels.SIZES.normal, slope = Math.tan((TDTunnels.SLOPES[state.tunnelSlope] || TDTunnels.SLOPES.flat).deg * Math.PI / 180);
+  if (L < 1) return '1m 以上ドラッグしてください';
+  if (Math.max(Math.abs(c.x), Math.abs(c.z), Math.abs(a.x), Math.abs(a.z)) > HALF - 1) return '地図の端から 1m 以上内側で掘ってください';
+  let t = null, y0;
+  for (const u of tunnels) {   // carry on from an end
+    const P = u.pts, e0 = P[0], e1 = P[P.length - 1];
+    if (Math.hypot(e1.x - a.x, e1.z - a.z) < Math.max(u.w / 2, 1)) { t = u; break; }
+    if (Math.hypot(e0.x - a.x, e0.z - a.z) < Math.max(u.w / 2, 1)) { P.reverse(); t = u; break; }
+  }
+  let start = null;
+  if (t) y0 = t.pts[t.pts.length - 1].y;
+  else {
+    const prep = TDTunnels.prepare(tunnels, heightAt);
+    for (const T of prep) { const q = TDTunnels.nearest(T, a.x, a.z); if (q && Math.abs(q.lat) < T.t.w / 2 && !q.end) { start = { x: a.x, z: a.z, y: q.y, on: T, q }; break; } }   // a branch: moved onto the centre line below
+    if (start) { const P = start.on.t.pts, q = start.q; let s0 = 0; for (let i = 0; i < P.length - 1; i++) { const L2 = Math.hypot(P[i + 1].x - P[i].x, P[i + 1].z - P[i].z); if (q.s <= s0 + L2 + 1e-9) { const u = (q.s - s0) / L2; start.x = P[i].x + (P[i + 1].x - P[i].x) * u; start.z = P[i].z + (P[i + 1].z - P[i].z) * u; break; } s0 += L2; } }
+    y0 = start ? start.y : heightAt(a.x, a.z);
+  }
+  const from = t ? t.pts[t.pts.length - 1] : start || { x: a.x, z: a.z }, L1 = Math.hypot(c.x - from.x, c.z - from.z);
+  let y1 = y0 + slope * L1;
+  // out on the other side (the ground there no higher than half the tunnel above its floor): the floor meets the ground
+  const w = t ? t.w : sz.w, h = t ? t.h : sz.h, gc = heightAt(c.x, c.z);
+  if (gc < y1 + h * .5) { if (Math.abs(gc - y0) > TDTunnels.MAX_SLOPE * L1 + 1e-6) return '出口の地面との高さの差が大きすぎます（勾配 15° まで）'; y1 = gc; }
+  if (Math.min(y0, y1) < state.water + .05) return '床が水位より低くなります';
+  const pt = { x: +c.x.toFixed(2), z: +c.z.toFixed(2), y: +y1.toFixed(3) };
+  if (t) t.pts.push(pt);
+  else tunnels.push(t = { id: newId('tunnel'), style: state.variant.tunnel || 'rock', w: sz.w, h: sz.h, pts: [{ x: +from.x.toFixed(2), z: +from.z.toFixed(2), y: +y0.toFixed(3) }, pt] });
+  rebuildTunnels(); clearTunnelProps(); rebuildProps();
+  return null;
+}
+// the tunnels' meshes for the export (Unity frame): one vertex list with colours, triangles per submesh. The Unity z axis is
+// the editor's mirrored, so every triangle is written in the reverse order to keep its front face
+function tunnelMeshJson(te, P3, mn) {
+  const g = te.mesh, V = [], Cc = [], subs = [...TDTunnels.SUBMESH, 'cap'], T = subs.map(() => []);
+  for (let t = 0; t < g.sub.length; t++) {
+    const b = V.length / 3;
+    for (let q = 0; q < 3; q++) { V.push(...P3(g.pos[t * 9 + q * 3], g.pos[t * 9 + q * 3 + 1], g.pos[t * 9 + q * 3 + 2])); Cc.push(...[0, 1, 2].map(c => +g.col[t * 9 + q * 3 + c].toFixed(3))); }
+    T[g.sub[t]].push(b, b + 2, b + 1);
+  }
+  // the rebuilt ground around the mouths, coloured by its steepness (rock on the face, grass on top) — or use the terrain's layers
+  const cp = te.cap, f = cp.size, ci = subs.length - 1;
+  for (let q = 0; q < cp.quads.length / 2; q++) {
+    const x0 = cp.quads[q * 2], z0 = cp.quads[q * 2 + 1], b = V.length / 3, pts = [[x0, z0], [x0 + f, z0], [x0, z0 + f], [x0 + f, z0 + f]];
+    const ys = pts.map(([x, z]) => te.thB(x, z)), steep = clamp((Math.max(...ys) - Math.min(...ys)) / f / 1.2, 0, 1), c = [lerp(.36, .52, steep), lerp(.46, .48, steep), lerp(.22, .42, steep)].map(v => +v.toFixed(3));
+    pts.forEach(([x, z], v) => { V.push(...P3(x, ys[v], z)); Cc.push(...c); });
+    T[ci].push(b, b + 1, b + 2, b + 1, b + 3, b + 2);
+  }
+  return { format: 'tdj-tunnel-mesh', version: 1, frame: 'Unity world, same as meta.json (m)', winding: 'clockwise front faces (Unity); the editor draws them double-sided',
+    note: 'floor / wall / ceiling / frame: vertex-coloured rock, stone and timber (lit); lamp: emissive (the light itself: meta.tunnels[].lamps); shaft: dark rock faces from the walls up to just under the ground, hidden in the hill until the roof is cut away (then cut only along the line of sight); cap: the ground around a mouth over the terrain holes (holes.png -2), shaped like the exported heightmap with the opening left out — render it like the terrain or with its vertex colours. Colliders: floor, wall, ceiling, cap.',
+    vertices: V, colors: Cc, submeshes: subs.map((name, i) => ({ name, triangles: T[i] })) };
+}
+// nothing stands in a mouth or a cutting; no boulder or cliff stone around a mouth (by position or by its outline)
+function clearTunnelProps() {
+  const inCut = (x, z) => { const q = TDTunnels.query(tunnelPrep, x, z, -TDTunnels.WALL - .3); return q && (q.cls === 1 || q.toOpen < .8); };
+  const n0 = props.length;
+  props = props.filter(p => !(inCut(p[1], p[2]) || (FALL_CLEARS.has(PROP[p[0]].id) && (tunnelBandDist(p[1], p[2]) === 0 || cliffWorldHull(p).some(([hx, hz]) => tunnelBandDist(hx, hz) === 0)))));
+  return props.length !== n0;
+}
 // ---------- slopes and stairs share a ramp carved into the terrain
 function shapeRamp(a, c, w, y1, y2, sink) {
   const L = Math.hypot(c.x - a.x, c.z - a.z), dx = (c.x - a.x) / L, dz = (c.z - a.z) / L;
@@ -2504,6 +2676,7 @@ function deckAt(x, z, margin) {
   if (bridges.length) { const y = bridgeAt(x, z, margin); if (y !== null) return { y, kind: 'bridge' }; }
   if (stairs.length) { const y = stairsAt(x, z, margin); if (y !== null) return { y, kind: 'stairs' }; }
   if (pools.length) { const y = poolWallAt(x, z, margin); if (y !== null) return { y, kind: 'pool' }; }
+  if (tunnelPrep.length) { const q = TDTunnels.query(tunnelPrep, x, z, margin); if (q && (walkRef === null || walkRef < q.y + q.h - .3)) return { y: q.y, kind: 'tunnel' }; }   // above its roof (walkRef) the ground
   if (markers.length) { const y = linkDeckAt(x, z, margin); if (y !== null) return { y, kind: 'stairs' }; }
   return null;
 }
@@ -2611,6 +2784,7 @@ function floorAt(x, z) {
   return lerp(lerp(v[0], v[1], u), lerp(v[2], v[3], u), w);
 }
 function computeWalk() {
+  const ref = walkRef; walkRef = null;   // the walk view and the export: inside a tunnel its floor wins
   const pos = wkGeo.attributes.position.array, wa = wkGeo.attributes.walk.array, fa = wkGeo.attributes.forced.array;
   for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
     const k = idx(i, j), x = vx(i), z = vx(j);
@@ -2625,7 +2799,7 @@ function computeWalk() {
   }
   for (const n of ['position', 'walk', 'forced', 'secret']) wkGeo.attributes[n].needsUpdate = true;
   wkGeo.computeBoundingSphere();
-  walkDirty = false;
+  walkDirty = false; walkRef = ref;
 }
 function applyDim(v) {
   dimU.value = v;
@@ -2689,6 +2863,7 @@ const TOOLS = [
   { id: 'bridge', name: '橋', key: 'b', hint: '岸から岸へドラッグすると橋を架けます（幅＝半径の半分、1.6〜4m）。種類は下の「種類」から。桟橋は、陸から水の上へドラッグします（先は水の上で終わります）。Shift+クリックで近くの橋を消します。' },
   { id: 'spring', name: '水源', key: '@', hint: 'クリックした所から水が湧きます。湧出量は下の「湧出量」から（しずく・小川・泉・大きな泉）。平らな所では湧出量に合った広さまで丸く広がり、坂では低い方へ小川になって流れます（川床の溝は自動で掘ります）。くぼみは池になり、満ちるといちばん低い縁からあふれて流れ続けます。水源をクリックすると湧出量を今の種類に変えます。Shift+クリックで近くの水源を消します。' },
   { id: 'pool', name: 'プール', key: ':', hint: '角から角へドラッグすると、石の縁で囲んだプールを地面の上に作ります（四角・丸は下の「プールの形」から、1.6〜16m）。中の床は平らにならして石畳にし、水は縁の 10cm 下まで張ります。中に水源を置くと、外の地面がいちばん低い側のあふれ口から小川が流れ出ます。Shift+クリックで近くのプールを消します。' },
+  { id: 'tunnel', name: 'トンネル', key: '^', hint: '崖や斜面の前の地面から、山の中へドラッグすると横に掘ります。床の高さは入口の地面と同じ。掘った先の端からまたドラッグすると続きを掘り（曲がり角になります）、トンネルの途中からドラッグすると枝分かれします。反対側の地面まで掘ると出口になり、床がその地面に合わせて上り下りします（15° まで）。見た目は下の「見た目」、幅と高さは「大きさ」、中の上り下りは「勾配」から。トンネルの上でカーソルを合わせると、屋根を透かして中が見えます。Shift+クリックで近くのトンネルを消します。' },
   { id: 'fall', name: '滝', key: '=', hint: '崖をクリックすると、縁から水面へ落ちる滝を置きます（幅＝半径の半分）。Shift+クリックで近くの滝を消します。' },
   { id: 'place', name: '置く', key: 'p', hint: '「種類」で選んだ物を、クリックした場所に1つ置きます。R キーで向きを45°回転。' },
   { id: 'detail', name: '地表小物を調整', key: ';', hint: '草・花・小石・落ち葉をクリックして選び、下の欄で位置・向き・大きさを調整。Shift＋クリックで選んだ小物を移動します。調整した物は自動更新でも残ります。' },
@@ -2703,8 +2878,8 @@ const TOOLS = [
   { id: 'walkAuto', name: '自動に戻す', key: 'j', hint: '塗った所の上書きを消し、自動判定に戻します。' },
 ];
 const undoStack = [], redoStack = [];
-const snapshot = () => ({ ...(springs.length ? { SP: springs.map(s => ({ ...s })) } : {}), ...(pools.length ? { PL: pools.map(p => ({ ...p })) } : {}), ...(SC.some(v => v) ? { SC: SC.slice() } : {}), H: H.slice(), S: S.slice(), O: O.slice(), C: C.slice(), CF: cliffFits.save(), P: props.map(p => p.slice()), F: falls.map(f => ({ ...f })), B: bridges.map(b => ({ ...b })), T: stairs.map(st => ({ ...st })), W: state.water, sp: { ...state.spawn }, bi: state.biome, at: { ...state.atmo }, sea: state.sea, we: { ...state.weather }, sun: state.sunOn, dk: state.darkness, M: markers.map(m => ({ ...m })), nid: state.nextId, rid: state.roomId, cat: JSON.stringify(state.catalog), ag: { ...state.agent }, cs: state.cliffStyle });
-function restore(s,prepared,deferMarkers=false) { cliffFits.clear();H.set(s.H); springs = (s.SP || []).map(q => ({ ...q })); pools = (s.PL || []).map(q => ({ ...q })); if (s.SC) SC.set(s.SC); else SC.fill(0); rebuildPools(); S.set(s.S); O.set(s.O); if (s.C) C.set(s.C); else C.fill(0); walkDirty = true; props = s.P.map(p => p.slice()); falls = s.F.map(f => ({ ...f })); bridges = s.B.map(b => ({ ...b })); stairs = (s.T || []).map(st => ({ ...st })); state.water = s.W; state.spawn = { ...s.sp }; if (s.at) state.atmo = { ...s.at }; if (s.we) state.weather = { ...s.we }; state.sunOn = s.sun !== false; state.darkness = s.dk || 'dark'; markers = (s.M || []).map(m => ({ ...m })); state.nextId = s.nid || state.nextId; state.roomId = s.rid || state.roomId; if (s.cat) { state.catalog = JSON.parse(s.cat); applyCatalog(); } if (s.ag) { state.agent = { ...s.ag }; syncAgentUI(); colliders = null; } state.cliffStyle = s.cs || 'standard'; applyCliffStyle(); if ($('cliffStyle')) $('cliffStyle').value = state.cliffStyle; if(!deferMarkers)rebuildMarkers(); state.sea = !!s.sea; applyBiome(s.bi || state.biome); syncUI(); updateTerrain(); solveSprings(); rebuildSpringMarks(); rebuildProps(); rebuildFalls(); rebuildBridges(); rebuildStairs();if(prepared)cliffFits.installPrepared(prepared,props,cliffInputSignature());else cliffFits.load(s.CF,props,cliffInputSignature());rebuildProps(); }
+const snapshot = () => ({ ...(tunnels.length ? { TU: JSON.parse(JSON.stringify(tunnels)) } : {}), ...(springs.length ? { SP: springs.map(s => ({ ...s })) } : {}), ...(pools.length ? { PL: pools.map(p => ({ ...p })) } : {}), ...(SC.some(v => v) ? { SC: SC.slice() } : {}), H: H.slice(), S: S.slice(), O: O.slice(), C: C.slice(), CF: cliffFits.save(), P: props.map(p => p.slice()), F: falls.map(f => ({ ...f })), B: bridges.map(b => ({ ...b })), T: stairs.map(st => ({ ...st })), W: state.water, sp: { ...state.spawn }, bi: state.biome, at: { ...state.atmo }, sea: state.sea, we: { ...state.weather }, sun: state.sunOn, dk: state.darkness, M: markers.map(m => ({ ...m })), nid: state.nextId, rid: state.roomId, cat: JSON.stringify(state.catalog), ag: { ...state.agent }, cs: state.cliffStyle });
+function restore(s,prepared,deferMarkers=false) { cliffFits.clear();H.set(s.H); tunnels = s.TU ? JSON.parse(JSON.stringify(s.TU)) : []; springs = (s.SP || []).map(q => ({ ...q })); pools = (s.PL || []).map(q => ({ ...q })); if (s.SC) SC.set(s.SC); else SC.fill(0); rebuildPools(); S.set(s.S); O.set(s.O); if (s.C) C.set(s.C); else C.fill(0); walkDirty = true; props = s.P.map(p => p.slice()); falls = s.F.map(f => ({ ...f })); bridges = s.B.map(b => ({ ...b })); stairs = (s.T || []).map(st => ({ ...st })); state.water = s.W; state.spawn = { ...s.sp }; if (s.at) state.atmo = { ...s.at }; if (s.we) state.weather = { ...s.we }; state.sunOn = s.sun !== false; state.darkness = s.dk || 'dark'; markers = (s.M || []).map(m => ({ ...m })); state.nextId = s.nid || state.nextId; state.roomId = s.rid || state.roomId; if (s.cat) { state.catalog = JSON.parse(s.cat); applyCatalog(); } if (s.ag) { state.agent = { ...s.ag }; syncAgentUI(); colliders = null; } state.cliffStyle = s.cs || 'standard'; applyCliffStyle(); if ($('cliffStyle')) $('cliffStyle').value = state.cliffStyle; if(!deferMarkers)rebuildMarkers(); state.sea = !!s.sea; applyBiome(s.bi || state.biome); syncUI(); updateTerrain(); rebuildTunnels(); solveSprings(); rebuildSpringMarks(); rebuildProps(); rebuildFalls(); rebuildBridges(); rebuildStairs();if(prepared)cliffFits.installPrepared(prepared,props,cliffInputSignature());else cliffFits.load(s.CF,props,cliffInputSignature());rebuildProps(); }
 function pushUndo() { undoStack.push(snapshot()); if (undoStack.length > 40) undoStack.shift(); redoStack.length = 0; }
 function undo() { if (!undoStack.length) return; redoStack.push(snapshot()); restore(undoStack.pop()); toast('取り消し'); }
 function redo() { if (!redoStack.length) return; undoStack.push(snapshot()); restore(redoStack.pop()); toast('やり直し'); }
@@ -3045,7 +3220,7 @@ const secretLineX = z => -7 + 1.3 * Math.sin((z - 2) / 9 * Math.PI);   // centre
 function* sample2Steps(seed = 11) {
   C.fill(0);
   state.roomId = newRoomId(); state.nextId = 1; state.revision = 0; state.lastExportHash = ''; markers = [];
-  state.sea = false; S.fill(0); O.fill(0); bridges = []; stairs = []; falls = []; props = []; springs = []; pools = []; SC.fill(0);
+  state.sea = false; S.fill(0); O.fill(0); bridges = []; stairs = []; falls = []; props = []; springs = []; pools = []; tunnels = []; SC.fill(0);
   state.biome = 'ruins'; state.water = .4;
   const R = rng(seed);
   const dirt = [[[0, -24], [0, -12]], [[-24, -8], [-12, -10], [0, -12]], [[0, -12], [7, -8], [13, -4]], [[-6.2, 13], [-5, 14.5], [-3, 15.5]]];
@@ -3098,7 +3273,7 @@ function drainMapSteps(it){let r;do{r=it.next();}while(!r.done);return r.value;}
 function genSample(seed=7){cancelMapPreparation(false);return drainMapSteps(sampleSteps(seed));}
 function genSample2(seed=11){cancelMapPreparation(false);return drainMapSteps(sample2Steps(seed));}
 function autoRocks(seed=Date.now()){return drainMapSteps(autoRocksSteps(seed));}
-function genFlat() { cancelMapPreparation(false);cliffFits.clear();C.fill(0); state.roomId = newRoomId(); state.nextId = 1; state.revision = 0; state.lastExportHash = ''; markers = []; state.sea = false; H.fill(3); S.fill(0); O.fill(0); props = []; falls = []; bridges = []; stairs = []; springs = []; pools = []; SC.fill(0); state.water = .8; state.spawn = { x: 0, z: 0 }; }
+function genFlat() { cancelMapPreparation(false);cliffFits.clear();C.fill(0); state.roomId = newRoomId(); state.nextId = 1; state.revision = 0; state.lastExportHash = ''; markers = []; state.sea = false; H.fill(3); S.fill(0); O.fill(0); props = []; falls = []; bridges = []; stairs = []; springs = []; pools = []; tunnels = []; SC.fill(0); state.water = .8; state.spawn = { x: 0, z: 0 }; }
 function pickFlora(R, list) {
   let tot = 0; for (const [, w] of list) tot += w;
   let r = R() * tot; for (const [id, w] of list) { r -= w; if (r <= 0) return TYPE(id); }
@@ -3108,7 +3283,7 @@ function* sampleSteps(seed = 7) {
   C.fill(0);
   state.roomId = newRoomId(); state.nextId = 1; state.revision = 0; state.lastExportHash = ''; markers = [];
   state.sea = false; S.fill(0);   // channels 2+ are only ever raised below, so start clean
-  O.fill(0); bridges = []; stairs = []; falls = []; props = []; springs = []; pools = []; SC.fill(0);   // nothing from the previous map may steer the generator
+  O.fill(0); bridges = []; stairs = []; falls = []; props = []; springs = []; pools = []; tunnels = []; SC.fill(0);   // nothing from the previous map may steer the generator
   const R = rng(seed), WL = .8;
   const river = [[20, -34], [17, -20], [12, -8], [9, 2], [11, 12], [17, 22], [22, 34]];
   const path1 = [[0, -34], [-1, -20], [-3, -8], [-2, 4], [1, 16], [0, 28]];
@@ -3212,6 +3387,7 @@ function ensureIds() {
   for (const st of stairs) if (!st.id) st.id = newId('stairs');
   for (const f of falls) if (!f.id) f.id = newId('fall');
   for (const q of springs) if (!q.id) q.id = newId('spring');
+  for (const q of tunnels) if (!q.id) q.id = newId('tunnel');
   for (const q of pools) if (!q.id) q.id = newId('pool');
   for (const m of markers) if (!m.id) m.id = newId(markerPrefix(m.kind));
   if (!state.spawn.id) state.spawn.id = 'spawn_main';
@@ -3730,6 +3906,7 @@ function runValidation() {
   for (const v of valueIssues({ agent: ag, waterLevel: state.water, spawn: state.spawn, props, bridges, stairs, falls, markers })) errors.push('不正な値 ' + v);
   const ids = [state.spawn.id, ...props.map(p => p[8]), ...bridges.map(b => b.id), ...stairs.map(st => st.id), ...falls.map(f => f.id), ...markers.map(m => m.id)], seen = new Set();
   for (const id of ids) { if (!id) errors.push('IDのない要素があります'); else if (seen.has(id)) errors.push(`IDが重複しています: ${id}`); seen.add(id); }
+  if (tunnels.length) for (const w of TDTunnels.check(TDTunnels.prepare(tunnels, heightAt), heightAt, { agent: ag, water: state.water })) warnings.push(w);
   // stand: the centre must hold the agent with a finite floor; area: the whole disc (see areaIssue)
   const stand = (label, x, z, r, list) => {
     if (!inBounds(x, z)) { errors.push(`${label} がマップの外です`); return false; }
@@ -3850,6 +4027,7 @@ function serialize() {
     props: props.map(p => p.map(v => v ?? null)),
     falls: falls.map(f => ({ ...f })), bridges: bridges.map(b => ({ ...b })), stairs: stairs.map(st => ({ ...st })),
     // water sources and pools (left out when there are none, so older maps save as before); springCarve = how deep their streams are carved
+    tunnels: tunnels.length ? JSON.parse(JSON.stringify(tunnels)) : undefined,
     springs: springs.length ? springs.map(q => ({ ...q })) : undefined, pools: pools.length ? pools.map(q => ({ ...q })) : undefined,
     springCarve: SC.some(v => v) ? b64(new Uint8Array(SC.slice().buffer)) : undefined,
   };
@@ -3891,7 +4069,8 @@ function decodeMap(d,size=SIZE){
   if (cm && cm.length !== count) issues.push(`cliffMap: ${cm.length} バイト（${count} バイトが必要）`);
   else if (cm && cm.some(v => v > CLIFF_STYLES.length)) issues.push(`cliffMap: 0〜${CLIFF_STYLES.length} 以外の値があります`);
   if (!Array.isArray(d.props)) issues.push('props: 配列ではありません');
-  for (const k of ['falls', 'bridges', 'stairs', 'markers', 'springs', 'pools']) if (d[k] !== undefined && !Array.isArray(d[k])) issues.push(`${k}: 配列ではありません`);
+  for (const [i, q] of (Array.isArray(d.tunnels) ? d.tunnels : []).entries()) if (!q || !(q.style in TDTunnels.STYLES) || !(q.w > 0) || !(q.h > 0) || !Array.isArray(q.pts) || q.pts.length < 2 || !q.pts.every(p => p && [p.x, p.z, p.y].every(Number.isFinite))) issues.push(`tunnels[${i}]: 形・大きさ・点が不正です`);
+  for (const k of ['falls', 'bridges', 'stairs', 'markers', 'springs', 'pools', 'tunnels']) if (d[k] !== undefined && !Array.isArray(d[k])) issues.push(`${k}: 配列ではありません`);
   let sc = null;
   if (d.springCarve !== undefined) { const u = dec('springCarve', d.springCarve); if (u && u.length !== count * 4) issues.push(`springCarve: ${u.length} バイト（${count * 4} バイトが必要）`); else if (u) sc = new Float32Array(u.buffer.slice(u.byteOffset, u.byteOffset + u.length)); }
   for (const [i, q] of (Array.isArray(d.springs) ? d.springs : []).entries()) if (!q || !Number.isFinite(q.x) || !Number.isFinite(q.z) || !(q.preset in TDSprings.PRESETS)) issues.push(`springs[${i}]: 位置か湧出量の種類が不正です`);
@@ -3909,12 +4088,12 @@ function deserialize(d,prepared) {
   if(!prepared){cliffFits.validate(d.cliffFits,d.props,cliffInputSignature(newH,d.falls||[],d.waterLevel));cancelMapPreparation(false);}
   cliffFits.clear();H.set(newH);
   if (spLayers === NS) S.set(sp); else { S.fill(0); for (let k = 0; k < N * N; k++) for (let c = 0; c < spLayers; c++) S[k * NS + c] = sp[k * spLayers + c]; }
-  O.set(wo); C.set(cm); walkDirty = true; springs = (d.springs || []).map(q => ({ ...q })); pools = (d.pools || []).map(q => ({ ...q })); if (sc) SC.set(sc); else SC.fill(0); rebuildPools(); props = d.props.map(p => p.slice()); falls = (d.falls || []).map(f => ({ ...f })); bridges = (d.bridges || []).map(b => ({ ...b })); stairs = (d.stairs || []).map(st => ({ ...st })); rebuildFalls(); rebuildBridges(); rebuildStairs(); state.water = d.waterLevel; state.spawn = d.spawn; state.sea = !!d.sea; state.weather = d.weather ? { ...d.weather } : { kind: 'none', amount: .7 }; state.sunOn = d.sunlight !== false; state.darkness = DARK_LEVELS[d.darkness] ? d.darkness : 'dark'; setMapName(typeof d.name === 'string' ? d.name : ''); state.cliffStyle = CLIFF_STYLES.some(c => c[0] === d.cliffStyle) ? d.cliffStyle : 'standard'; applyCliffStyle(); if ($('cliffStyle')) $('cliffStyle').value = state.cliffStyle; state.atmo = d.atmosphere ? { ...d.atmosphere } : { kind: 'none', amount: .6, height: 3 };
+  O.set(wo); C.set(cm); walkDirty = true; tunnels = d.tunnels ? JSON.parse(JSON.stringify(d.tunnels)) : []; springs = (d.springs || []).map(q => ({ ...q })); pools = (d.pools || []).map(q => ({ ...q })); if (sc) SC.set(sc); else SC.fill(0); rebuildPools(); props = d.props.map(p => p.slice()); falls = (d.falls || []).map(f => ({ ...f })); bridges = (d.bridges || []).map(b => ({ ...b })); stairs = (d.stairs || []).map(st => ({ ...st })); rebuildFalls(); rebuildBridges(); rebuildStairs(); state.water = d.waterLevel; state.spawn = d.spawn; state.sea = !!d.sea; state.weather = d.weather ? { ...d.weather } : { kind: 'none', amount: .7 }; state.sunOn = d.sunlight !== false; state.darkness = DARK_LEVELS[d.darkness] ? d.darkness : 'dark'; setMapName(typeof d.name === 'string' ? d.name : ''); state.cliffStyle = CLIFF_STYLES.some(c => c[0] === d.cliffStyle) ? d.cliffStyle : 'standard'; applyCliffStyle(); if ($('cliffStyle')) $('cliffStyle').value = state.cliffStyle; state.atmo = d.atmosphere ? { ...d.atmosphere } : { kind: 'none', amount: .6, height: 3 };
   state.roomId = d.roomId || newRoomId(); state.nextId = d.nextId || 1; state.revision = d.revision || 0;
   state.agent = { ...state.agent, ...(d.agent || {}) }; state.catalog = normalizeCatalog(d.catalog); state.lastExportHash = d.lastExportHash || ''; applyCatalog(); syncAgentUI();
   markers = (d.markers || []).map(m => ({ ...m })); ensureIds();
   applyBiome(d.biome || 'forest');
-  syncUI(); updateTerrain(); solveSprings(); rebuildSpringMarks();if(prepared)cliffFits.installPrepared(prepared,props,cliffInputSignature());else cliffFits.load(d.cliffFits,props,cliffInputSignature()); rebuildProps(); rebuildMarkers();
+  syncUI(); updateTerrain(); rebuildTunnels(); solveSprings(); rebuildSpringMarks();if(prepared)cliffFits.installPrepared(prepared,props,cliffInputSignature());else cliffFits.load(d.cliffFits,props,cliffInputSignature()); rebuildProps(); rebuildMarkers();
 }
 function download(name, blob) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); }
 const CRC = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
@@ -4007,6 +4186,14 @@ async function buildExport({sharedAssets = false} = {}) {
     }
     pitCells[m.id] = n;
   }
+  // tunnels (tunnels.js), worked out again on the export heightmap: their mouths and cuttings join the holes (value -2)
+  let tunnelExp = null;
+  if (tunnels.length) {
+    const thB = (x, z) => { const fx = clamp((x + HALF) / TS, 0, TN - 1), fz = clamp((z + HALF) / TS, 0, TN - 1), i = Math.min(Math.floor(fx), TN - 2), j = Math.min(Math.floor(fz), TN - 2), u = fx - i, w = fz - j; return lerp(lerp(TH[j * TN + i], TH[j * TN + i + 1], u), lerp(TH[(j + 1) * TN + i], TH[(j + 1) * TN + i + 1], u), w); };
+    const prepE = TDTunnels.prepare(tunnels, thB), th = TDTunnels.holes(prepE, thB, TN, TS, HALF);
+    for (let k = 0; k < th.length; k++) if (th[k] && !geo.holes[k]) geo.holes[k] = -2;
+    tunnelExp = { prepE, thB, holes: th, mesh: TDTunnels.build(prepE, thB), cap: TDTunnels.cap(prepE, thB, th, TN, TS, HALF, 4) };
+  }
   let holeCount = 0; for (const v of geo.holes) if (v) holeCount++;
   let holesPng = null;
   if (holeCount) {
@@ -4040,7 +4227,7 @@ async function buildExport({sharedAssets = false} = {}) {
   const cliffPng = await pngOf((i, j) => { const v = cliffIndexNear(tx(i), tx(j)); return [v, v, v]; });   // style index per export vertex (legend: meta.cliffStyles)
   const walkPng = await pngOf((i, j) => {
     const x = tx(i), z = tx(j), d = deckAt(x, z, 0), o = overrideAt(x, z), auto = autoWalkable(x, z);
-    return [walkable(x, z, auto) ? 255 : 0, d ? (d.kind === 'bridge' ? 32 : d.kind === 'pool' ? 40 : 48) : o === 1 ? 128 : o === 2 ? 255 : o === 3 ? 64 : 0, auto ? 255 : 0];
+    return [walkable(x, z, auto) ? 255 : 0, d ? (d.kind === 'bridge' ? 32 : d.kind === 'pool' ? 40 : d.kind === 'tunnel' ? 56 : 48) : o === 1 ? 128 : o === 2 ? 255 : o === 3 ? 64 : 0, auto ? 255 : 0];
   });
   const ROCKY = ['rock', 'cliff', 'pebble'];
   const csv = ['instanceId,type,assetKey,x,y,z,rotY_deg,scale,scaleY,auto,cliffStyle'].concat(props.map(p => { const t = PROP[p[0]]; return [p[8], t.id, t.assetKey, U.x(p[1]), U.y(t.geo.userData.groundParts?propBaseY(p):(p[7] ?? (heightAt(p[1], p[2]) - (t.groundSink || 0)))), U.z(p[2]), U.yaw(p[3]), p[4].toFixed(3), (p[4] * (p[6] ?? 1)).toFixed(3), p[5], ROCKY.includes(t.id) ? CLIFF_STYLES[cliffIndexNear(p[1], p[2])][0] : ''].join(','); })).join('\n');
@@ -4193,9 +4380,9 @@ async function buildExport({sharedAssets = false} = {}) {
       'mask_1.png': { usage: 'raw paint masks (game logic)', channels: ['sand', 'rubble', 'swamp'], sRGB: false, filter: 'point', mipmaps: false, compression: 'none' },
       'mask_2.png': { usage: 'raw paint masks (game logic)', channels: ['poison', 'lava', 'snowfield'], sRGB: false, filter: 'point', mipmaps: false, compression: 'none' },
       'mask_3.png': { usage: 'raw paint masks (game logic)', channels: ['ice', 'bedrock', null], sRGB: false, filter: 'point', mipmaps: false, compression: 'none' },
-      ...(holesPng ? { 'holes.png': { usage: 'terrain holes for secret passages: 0 = hole, 255 = keep the surface (TerrainData.SetHoles: true = surface). (heightmap-1)² cells, image row 0 = z max; cell (i, j) spans export vertices i..i+1, j..j+1. Every hole cell is covered by secret_passages_mesh.json (floor / walls / ceiling / cap)', sRGB: false, filter: 'point', mipmaps: false, compression: 'none' } } : {}),
+      ...(holesPng ? { 'holes.png': { usage: 'terrain holes for secret passages and tunnel mouths: 0 = hole, 255 = keep the surface (TerrainData.SetHoles: true = surface). (heightmap-1)² cells, image row 0 = z max; cell (i, j) spans export vertices i..i+1, j..j+1. Every hole cell is covered by secret_passages_mesh.json (floor / walls / ceiling / cap) or, at a tunnel, by tunnels_mesh.json (its cap, floor and walls)', sRGB: false, filter: 'point', mipmaps: false, compression: 'none' } } : {}),
       'cliff_style.png': { usage: 'rock-wall style index per export vertex (R; legend meta.cliffStyles)', sRGB: false, filter: 'point', mipmaps: false, compression: 'none' },
-      'walkable.png': { usage: 'walkability (discrete values, never interpolate)', channels: ['final 255=walkable', 'surface 0 ground/32 bridge deck/40 pool kerb/48 stairs/64 secret/128 forced on/255 forced off (forced off wins over decks)', 'auto 255=walkable'], sRGB: false, filter: 'point', mipmaps: false, compression: 'none' },
+      'walkable.png': { usage: 'walkability (discrete values, never interpolate)', channels: ['final 255=walkable', 'surface 0 ground/32 bridge deck/40 pool kerb/48 stairs/56 tunnel floor/64 secret/128 forced on/255 forced off (forced off wins over decks)', 'auto 255=walkable'], sRGB: false, filter: 'point', mipmaps: false, compression: 'none' },
     },
     groundBlend: { base: 'grass', layers: WEIGHT_LAYERS, rule: 'sequential: for each layer in order, m = smoothstep(lo, hi, mask); all weights *= (1 - m); weight[layer] += m. cliff comes from slope (1 - normal.y).', thresholds: { dirt: [.2, .55], cobble: [.3, .55], others: [.25, .6], cliff: [.24, .42] } },
     groundTypes: Object.fromEntries(GROUND.map((g, i) => [g, { maskFile: `mask_${[0, 0, 1, 1, 1, 2, 2, 2, 3, 3][i]}.png`, maskChannel: [0, 1, 0, 1, 2, 0, 1, 2, 0, 1][i], effectId: GROUND_EFFECT[g] || null, speedHint: GROUND_SPEED[i], ...(g === 'lava' ? { blocksWalk: true } : {}) }])),
@@ -4224,6 +4411,13 @@ async function buildExport({sharedAssets = false} = {}) {
     bridges: bridges.map(b => { const pr = bridgeProfile(b); return { id: b.id, type: b.type || 'wood', start: P3(b.x1, pr.y1, b.z1), end: P3(b.x2, pr.y2, b.z2), width: b.w, arch: +pr.arch.toFixed(3), ...(b.type === 'pier' ? { rampLength: +pr.ramp.toFixed(3), deckCurve: 'pier: from start.y (on the land) up to end.y over the first rampLength m (smoothstep), then level; the end stands over the water and has no landing' } : { deckCurve: 'y(t) = lerp(start.y, end.y, t) + arch * sin(pi t); negative arch = rope sag' }) }; }),
     stairs: stairs.map(st => ({ id: st.id, type: st.type, bottom: P3(st.x1, st.y1, st.z1), top: P3(st.x2, st.y2, st.z2), width: st.w, steps: stairSteps(st) })),
     ...(springsMeta ? { springs: springsMeta } : {}), ...(poolsMeta ? { pools: poolsMeta } : {}),
+    ...(tunnelExp ? { tunnels: tunnelExp.prepE.map(T => {
+      const st = T.st, t = T.t, mouths = [];
+      st.forEach((q, k) => { if (q.cls !== 2) return; for (const o of [-1, 1]) { const nb = st[k + o]; if (nb && nb.cls !== 2) mouths.push({ position: P3(q.x, q.y, q.z), outward: [+(q.tx * o).toFixed(4), +(-q.tz * o).toFixed(4)] }); } });
+      return { id: t.id, style: t.style, styleName: TDTunnels.STYLES[t.style].name, width: t.w, height: t.h, length: +T.len.toFixed(3), points: t.pts.map(p => P3(p.x, p.y, p.z)), mouths,
+        lamps: tunnelExp.mesh.lamps.filter(l => { const q = TDTunnels.nearest(T, l.x, l.z); return q && q.d < t.w; }).map(l => ({ position: P3(l.x, l.y, l.z), color: '#' + l.color.toString(16).padStart(6, '0') })),
+        note: 'points = the centre line of the floor (Unity). Stretches with ground over the roof are tunnel (floor, walls, arched roof), those with ground between the floor and the roof are open cuttings. Geometry: tunnels_mesh.json. walkable.png marks the floor 56; walk_floor_r16.raw holds the tunnel floor there (the ground over the roof is a second, upper floor that the images do not hold).' };
+    }), tunnelRules: { cutaway: { overTunnelMetres: 7, sightRadius: 1.1, aboveHead: 1.7, note: 'While the hero is under a roof, the editor stops drawing what is above head height over the tunnel within overTunnelMetres, and within sightRadius of the line from the camera to the head (MapTunnelCutaway does the same for the tunnel meshes in Unity; the terrain needs the same in its material).' } } } : {}),
     secretPassages: {
       present: secrets.length > 0, holes: holesPng ? 'holes.png' : null, mesh: geo.passages.length ? 'secret_passages_mesh.json' : null, clearanceHeight: +(state.agent.height + .6).toFixed(2),
       shapeRule: 'The passage shape is the union of 0.5 m squares centred on the passage vertices of the editor grid (outline = exact boundary loops below). holes.png = export cells overlapping the part of that shape that has rock above the floor (> 0.3 m). secret_passages_mesh.json is built from the same shape on a 0.125 m raster: floor over the shape, walls along its outline (none at entrances), ceiling at floor + clearanceHeight where rock is thicker, lintels over portals, and a cap at the terrain surface over every hole cell that is not an open cut.',
@@ -4255,7 +4449,8 @@ revision・書き出し日時・ファイルごとの SHA-256・contentHash は 
 - heightmap_r16.raw / walk_floor_r16.raw : 地形の高さ / 歩く床の高さ（橋・階段・隠し通路）。同じ倍率。
 - weights_0〜3.png : Terrain Layer の重み（草を含めて合計255）。順番は meta.json の groundBlend.layers。
 - mask_0〜3.png    : 塗りの元データ（毒沼・溶岩などのゲーム判定用）。効果は groundTypes の effectId。
-- holes.png        : 隠し通路がある場合だけ。地形の穴（0 = 穴、(解像度-1)² セル）。
+- tunnels_mesh.json: トンネルがある場合だけ。床・壁・天井・枠・灯り・口のまわりの地面（cap）の網（Unity の座標、頂点の色つき）。
+- holes.png        : 隠し通路・トンネルがある場合だけ。地形の穴（0 = 穴、(解像度-1)² セル）。
 - secret_passages_mesh.json : 隠し通路の床・壁・天井・ふた（穴と同じ形から作成。Unity 座標）。meta.secretPassages に輪郭・出入口・検査結果。route と width は目安。
 - sea_field.png / sea_field2.png : 海がある場合だけ。sea_field.png は波が進む向きの元（R,G = 水際までの距離、B = 岸への向き、A = 海の重み。海と、それにつながる川の境目は、この重みで混ぜます）。sea_field2.png は波の山の位置（R,G）と、河口から出る川の流れの強さ（B）。Unity の MapWater/Sea がエディターと同じ波・泡・光の網目を作ります（meta.sea）。
 - water_flow.png / water_mask.png : 水の流れ（RG=流れ、B=流れ関数、A=岸からの距離）と、滝から流れの筋にそった泡の帯（R）。水の無い部屋・溶岩、海だけの部屋では出ません（海につながる川・池があれば出ます。海の所は sea_field.png の A で見分けます）。読み方は meta.waterSim.encoding。水深は heightmap_r16.raw と水位から Unity 側で作ります。
@@ -4303,6 +4498,7 @@ revision・書き出し日時・ファイルごとの SHA-256・contentHash は 
     { name: 'heightmap_r16.raw', data: heightRaw }, { name: 'walk_floor_r16.raw', data: floorRaw },
     ...weightPngs.map((d, i) => ({ name: `weights_${i}.png`, data: d })), ...maskPngs.map((d, i) => ({ name: `mask_${i}.png`, data: d })),
     ...(holesPng ? [{ name: 'holes.png', data: holesPng }] : []),
+    ...(tunnelExp ? [{ name: 'tunnels_mesh.json', data: JSON.stringify(tunnelMeshJson(tunnelExp, P3, mn)) }] : []),
     ...(geo.passages.length ? [{ name: 'secret_passages_mesh.json', data: JSON.stringify({
       format: 'tdj-secret-passage-mesh', frame: 'Unity world, same as meta.json (m)', winding: 'clockwise front faces (Unity)', ceilingHeight: +(state.agent.height + .6).toFixed(2),
       submeshes: ['floor', 'wall', 'ceiling', 'cap'], note: 'cap = terrain surface over hole cells (follows the exported heightmap, bilinear inside each cell; Unity splits a terrain cell into two triangles, so the cap edge can differ from the terrain by the cell\'s bilinear-vs-triangle error).',
@@ -4475,22 +4671,27 @@ function renderSlots() {
   }
 }
 renderSlots();
-const DRAG_TOOLS = ['bridge', 'slope', 'stairs', 'coast', 'pool'];
-const dragWidth = tool => tool === 'link' ? 2.2 : tool === 'marker' ? clamp(state.radius * .5, 1.5, 6) : tool === 'coast' ? 1 : tool === 'slope' ? clamp(state.radius, 2, 12) : tool === 'stairs' ? clamp(state.radius * .5, 1.2, 4) : clamp(state.radius * .5, 1.6, 4);
+const DRAG_TOOLS = ['bridge', 'slope', 'stairs', 'coast', 'pool', 'tunnel'];
+const dragWidth = tool => tool === 'tunnel' ? (TDTunnels.SIZES[state.tunnelSize] || TDTunnels.SIZES.normal).w : tool === 'link' ? 2.2 : tool === 'marker' ? clamp(state.radius * .5, 1.5, 6) : tool === 'coast' ? 1 : tool === 'slope' ? clamp(state.radius, 2, 12) : tool === 'stairs' ? clamp(state.radius * .5, 1.2, 4) : clamp(state.radius * .5, 1.6, 4);
 function showVariants() {
   const tool = state.tool, box = $('variantBox'), list = $('variants');
   $('groundDetailOpts').hidden = tool !== 'detail';
   if(tool==='detail')syncGroundDetailUI();
   $('markerOpts').hidden = tool !== 'marker' && tool !== 'link';
+  $('tunnelOpts').hidden = tool !== 'tunnel';
+  if (tool === 'tunnel') for (const [boxId, list, key] of [['tunnelSizes', TDTunnels.SIZES, 'tunnelSize'], ['tunnelSlopes', TDTunnels.SLOPES, 'tunnelSlope']]) {
+    const el = $(boxId); el.innerHTML = '';
+    for (const [v, q] of Object.entries(list)) { const b = document.createElement('button'); b.textContent = q.w ? `${q.name} ${q.w}×${q.h}m` : q.name; b.classList.toggle('on', state[key] === v); b.onclick = () => { state[key] = v; showVariants(); }; el.appendChild(b); }
+  }
   $('markerTag').placeholder = tool === 'link' ? '行き先 例: B2, 上の階' : '例: field, boss, north';
   const opts = tool === 'marker' ? MARKER_KINDS : tool === 'link' ? LINK_KINDS : tool === 'cliffpaint' ? [[0, 'マップの既定'], ...CLIFF_STYLES.map((c, i) => [i + 1, c[1]])] : tool === 'bridge' ? BRIDGE_TYPES.filter(([v]) => inPalette(BRIDGE_TAGS[v]))
     : tool === 'stairs' ? STAIR_TYPES.filter(([v]) => inPalette(STAIR_TAGS[v]))
-    : tool === 'spring' ? Object.entries(TDSprings.PRESETS).map(([v, q]) => [v, q.name]) : tool === 'pool' ? POOL_TYPES
+    : tool === 'spring' ? Object.entries(TDSprings.PRESETS).map(([v, q]) => [v, q.name]) : tool === 'pool' ? POOL_TYPES : tool === 'tunnel' ? TUNNEL_STYLES
     : tool === 'place' ? PROP.map((t, i) => [i, t.name]).filter(([i]) => propVisible(i)) : null;
   if (opts && opts.length && !opts.some(([v]) => v === state.variant[tool])) { state.variant[tool] = opts[0][0]; if (tool === 'place') preview.geometry = PROP[opts[0][0]].geo; }
   box.hidden = !opts; $('placeOpts').hidden = tool !== 'place';
   if (!opts) return;
-  $('variantTitle').textContent = tool === 'marker' ? 'マーカーの種類' : tool === 'link' ? '階層移動の種類' : tool === 'cliffpaint' ? '岩壁の種類' : tool === 'bridge' ? '橋の種類' : tool === 'stairs' ? '階段の種類' : tool === 'spring' ? '湧出量' : tool === 'pool' ? 'プールの形' : '置く物';
+  $('variantTitle').textContent = tool === 'marker' ? 'マーカーの種類' : tool === 'link' ? '階層移動の種類' : tool === 'cliffpaint' ? '岩壁の種類' : tool === 'bridge' ? '橋の種類' : tool === 'stairs' ? '階段の種類' : tool === 'spring' ? '湧出量' : tool === 'pool' ? 'プールの形' : tool === 'tunnel' ? '見た目' : '置く物';
   list.innerHTML = '';
   const button = (v, name, box) => {
     const b = document.createElement('button'); b.textContent = name; b.classList.toggle('on', state.variant[tool] === v);
@@ -4703,7 +4904,7 @@ function setMode(m,prepared=false) {
   state.mode = m; document.body.classList.toggle('play', m === 'play');
   $('modeEdit').classList.toggle('on', m === 'edit'); $('modePlay').classList.toggle('on', m === 'play');
   $('modeBtn').textContent = m === 'play' ? '編集' : '歩く';
-  hero.visible = m === 'play'; spawnMarker.visible = markerGroup.visible = springMarkGroup.visible = m === 'edit'; preview.visible = false;
+  hero.visible = m === 'play'; spawnMarker.visible = markerGroup.visible = springMarkGroup.visible = tunnelLineGroup.visible = m === 'edit'; if (m === 'edit') cutU.a.value.w = 0; preview.visible = false;
   if (m !== 'play' && ghosts.size) { ghosts = new Set(); rebuildProps(true); }
   heroStyle(false);if(typeof groundPreview!=='undefined')groundPreview.visible=false;
   if (m === 'play') {
@@ -4769,7 +4970,7 @@ function updateRing() {
       a[k * 3] = x; a[k * 3 + 1] = Math.max(heightAt(x, z), state.water) + .5; a[k * 3 + 2] = z;
     }
     const dh = Math.abs(heightAt(hit.x, hit.z) - heightAt(s0.x, s0.z));
-    const ok = state.tool === 'marker' || state.tool === 'link' ? true : state.tool === 'coast' ? L >= 2 : state.tool === 'bridge' ? L >= 2 && L <= 26 : state.tool === 'slope' ? L >= 2 && dh / L <= .75 : L >= 1.2 && dh >= .3 && dh / L <= 1.25;
+    const ok = state.tool === 'marker' || state.tool === 'link' ? true : state.tool === 'tunnel' ? L >= 1 : state.tool === 'coast' ? L >= 2 : state.tool === 'bridge' ? L >= 2 && L <= 26 : state.tool === 'slope' ? L >= 2 && dh / L <= .75 : L >= 1.2 && dh >= .3 && dh / L <= 1.25;
     ring.geometry.attributes.position.needsUpdate = true; ring.material.color.set(ok ? 0xffd27a : 0xff7a6a);
     return;
   }
@@ -4855,7 +5056,11 @@ function beginStroke(e) {
     rebuildStairs(); toast(n0 !== stairs.length ? '階段を消しました' : '近くに階段がありません');
     return;
   }
-  if (state.tool === 'slope' || state.tool === 'stairs' || state.tool === 'coast') { stroke.dragStart = { x: hit.x, z: hit.z }; return; }
+  if (state.tool === 'tunnel' && e.shiftKey) {
+    stroke.active = false; const n0 = tunnels.length; tunnels = tunnels.filter(t => { const T = TDTunnels.prepare([t], heightAt)[0], q = T && TDTunnels.nearest(T, hit.x, hit.z); return !(q && q.d < Math.max(t.w / 2 + .5, state.radius * .5)); });
+    if (n0 !== tunnels.length) rebuildTunnels(); else undoStack.pop(); toast(n0 !== tunnels.length ? 'トンネルを消しました' : '近くにトンネルがありません'); return;
+  }
+  if (state.tool === 'slope' || state.tool === 'stairs' || state.tool === 'coast' || state.tool === 'pool' || state.tool === 'tunnel') { stroke.dragStart = { x: hit.x, z: hit.z }; return; }
   if (state.tool === 'bridge') {
     if (e.shiftKey) {
       stroke.active = false; const n0 = bridges.length;
@@ -4925,6 +5130,7 @@ function endStroke() {
     else if (state.tool === 'stairs') { const err = placeStairs(a, c, w, state.variant.stairs); toast(err || '階段を作りました'); }
     else if (state.tool === 'coast') toast(makeCoast(a, c) ? '海岸を作りました' : '2m以上ドラッグしてください');
     else if (state.tool === 'pool') { const err = placePool(a, c, state.variant.pool); toast(err || 'プールを作りました'); }
+    else if (state.tool === 'tunnel') { const err = placeTunnel(a, c); toast(err || 'トンネルを掘りました'); }
     else if (state.tool === 'marker') { placeMarker('port', a, c); toast('出入口を置きました'); }
     else if (state.tool === 'link') { placeMarker(state.variant.link, a, c); toast(markerLabel(state.variant.link) + 'を置きました'); }
   }
@@ -5109,6 +5315,9 @@ function update(dt) {
     if (state.showWalk && walkDirty) computeWalk();
     editTick(dt);
     placeCamera(cam, cam.target);
+    // the tunnel tool: over a tunnel, its roof is cut away around the cursor, to see inside
+    const tq = state.tool === 'tunnel' && hit && tunnelPrep.length ? TDTunnels.query(tunnelPrep, hit.x, hit.z) : null;
+    cutU.a.value.set(hit ? hit.x : 0, tq ? tq.y : 0, hit ? hit.z : 0, tq && tq.cls === 2 ? 6 : 0); cutU.b.value.copy(camera.position);
     spawnMarker.position.set(state.spawn.x, heightAt(state.spawn.x, state.spawn.z) + 1.4 + Math.sin(timeU.value * 3) * .15, state.spawn.z);
   } else {
     editTick(dt);
@@ -5118,8 +5327,10 @@ function update(dt) {
       const fx = -Math.sin(playCam.yaw), fz = -Math.cos(playCam.yaw), rx = Math.cos(playCam.yaw), rz = -Math.sin(playCam.yaw);
       mx = fx * iz + rx * ix; mz = fz * iz + rz * ix; const l = Math.hypot(mx, mz); mx /= l; mz /= l;
     }
+    walkRef = player.y;   // a tunnel's floor while in it, the ground while above its roof
     const depth = waterAt(player.x, player.z) - floorAt(player.x, player.z);
-    const onStruct = (bridges.length && bridgeAt(player.x, player.z) !== null) || (stairs.length && stairsAt(player.x, player.z) !== null);
+    const inTun = tunnelPrep.length ? TDTunnels.query(tunnelPrep, player.x, player.z) : null, tunHere = inTun && player.y < inTun.y + inTun.h - .3;
+    const onStruct = (bridges.length && bridgeAt(player.x, player.z) !== null) || (stairs.length && stairsAt(player.x, player.z) !== null) || !!tunHere;
     let gs = 1; if (!onStruct) for (let c = 2; c < NS; c++) gs = Math.min(gs, lerp(1, GROUND_SPEED[c], clamp(splatAt(player.x, player.z, c) * 1.6, 0, 1)));
     state.onPoison = !onStruct && splatAt(player.x, player.z, 5) > .5;
     state.onLink = markers.find(m => isLink(m.kind) && (() => { const T = linkTrigger(m); return Math.hypot(player.x - T.x, player.z - T.z) < m.r + state.agent.radius; })()) || null;
@@ -5137,12 +5348,16 @@ function update(dt) {
     }
     player.t += dt * (player.moving ? 1 : 0);
     const gy = floorAt(player.x, player.z);
-    player.y = lerp(player.y, gy, Math.min(1, dt * 18));
+    player.y = lerp(player.y, gy, Math.min(1, dt * 18)); walkRef = null;
+    // under a tunnel's roof (ground over the head): cut away what lies between the camera and the hero
+    const roofed = tunHere && heightAt(player.x, player.z) > player.y + 1.6;
+    cutU.a.value.set(player.x, player.y, player.z, roofed ? 7 : 0);
     // inside a secret passage: fade what we overlap and keep the hero visible through rock
     const inSecret = overrideAt(player.x, player.z) === 3;
     const g = new Set();
     if (inSecret) for (const p of props) { if (PROP[p[0]].touch&&!PROP[p[0]].tree) continue;   // low plants bend out of the way instead of fading
       const r = VIS_R[p[0]] * p[4] + .35; if (Math.abs(p[1] - player.x) < r && Math.abs(p[2] - player.z) < r && Math.hypot(p[1] - player.x, p[2] - player.z) < r) g.add(p); }
+    if (roofed) for (const p of props) { const dx = p[1] - player.x, dz = p[2] - player.z, r = 2.5 + VIS_R[p[0]] * p[4]; if (dx * dx + dz * dz < r * r && heightAt(p[1], p[2]) > player.y + 1.6) g.add(p); }   // what grows on the hill over the tunnel
     if (g.size !== ghosts.size || [...g].some(p => !ghosts.has(p))) { ghosts = g; rebuildProps(true); }
     const buried = inSecret && heightAt(player.x, player.z) > player.y + 1.2;
     if (heroMat.depthTest === buried) {
@@ -5157,6 +5372,7 @@ function update(dt) {
     hero.rotation.y = player.face;
     _tgt.set(player.x, player.y + 1, player.z);
     placeCamera(playCam, _tgt);
+    cutU.b.value.copy(camera.position);
   }
   updateTouch(dt);
   sun.target.position.set(0, 0, 0);
@@ -5359,7 +5575,7 @@ const bootReady=bootPending?.startsWith('prepared:')?prepareMap('pending',0,{tok
   prepareMap(bootPending==='sample2'&&SIZE===SAMPLE2_SIZE?'sample2':bootPending==='flat'||SIZE!==64?'flat':'sample',bootPending==='sample2'?11:7,{boot:true});
 
 // hooks for automated checks
-window.__app = { refitFalls, placeFall, springFallGroup, fallGroup, get springs() { return springs; }, set springs(v) { springs = v; }, get pools() { return pools; }, get springRes() { return springRes; }, SC, placeSpring, placePool, applySprings, solveSprings, waterAt, springLevelAt, poolDist, poolWallAt, POOL_WALL, deckAt, fillGroundAll,buildPreparedSample,prepareMap,cancelMapPreparation,bootReady,get preparation(){return mapPreparation?{id:mapPreparation.id,phase:mapPreparation.phase,requestedMode:mapPreparation.requestedMode,elapsedMs:performance.now()-mapPreparation.start}:null;},get preparationStats(){return lastPreparedState;},
+window.__app = { get tunnels() { return tunnels; }, set tunnels(v) { tunnels = v; }, get tunnelPrep() { return tunnelPrep; }, get tunnelLamps() { return tunnelLamps; }, placeTunnel, rebuildTunnels, tunnelGroup, tunnelHoleTex, cutU, refitFalls, placeFall, springFallGroup, fallGroup, get springs() { return springs; }, set springs(v) { springs = v; }, get pools() { return pools; }, get springRes() { return springRes; }, SC, placeSpring, placePool, applySprings, solveSprings, waterAt, springLevelAt, poolDist, poolWallAt, POOL_WALL, deckAt, fillGroundAll,buildPreparedSample,prepareMap,cancelMapPreparation,bootReady,get preparation(){return mapPreparation?{id:mapPreparation.id,phase:mapPreparation.phase,requestedMode:mapPreparation.requestedMode,elapsedMs:performance.now()-mapPreparation.start}:null;},get preparationStats(){return lastPreparedState;},
   propGrounding,groundedParts,groundedNormal,groundedGhost,groundPreview,setGroundPreview,propBaseY,get cliffContactProgress(){return cliffContactProgress;},cliffFits,effectiveGeometry,fitCliffContact,adoptCliffContact, cliffProtected,cliffProtectionReason,nearFeatureReason, get cliffContactStats(){return cliffContactStats;},
   pickGroundDetail,adjustGroundDetail,selectedGroundDetail,updateTouch,touchStats, pavingMask, cliffRelief, rebuildCliffRelief, groundTrial, groundTexture, terrainSource:tGeo, terrain, renderer, camera, SIZE, state, H, S, O, F, C, propMeshes, ghostMeshes, cliffIndexAt, BIOMES, CLIFF_STYLES, applyCliffStyle, deckAt, linkDeckAt, runValidation, genSample, genSample2, secretRegions, secretLineX, passageGeometry, terrainRes, TERRAIN_RES, snapshot, sha256, LINK_KINDS, normalizeCatalog, catalogExport, valueIssues, areaIssue, deckAt, getColliders, PROP, get colliderMaxR() { return colliderMaxR; }, rebuildMarkers, portLanding, linkTrigger, linkArrival, LINK_SPEC, get markers() { return markers; }, placeMarker, ensureIds, applyCatalog, ATMOS, WEATHER, applyAtmo, makeCoast, glowLights, applyBiome, applyPalette, propVisible, toolVisible, updateTerrain, rebuildProps, genFlat, floorAt, bridgeAt, stairsAt, placeSlope, placeStairs, placeBridge, pickTarget, regenGroundProps, rebuildBridges, get stairs() { return stairs; }, get bridges() { return bridges; }, get falls() { return falls; }, overrideAt, heroMat, hero, heroBody, get heroLook() { return heroLook; }, setHeroLook, heroStyle, heroGlow, get ghosts() { return ghosts; }, get props() { return props; }, cam, playCam, player, keys, setMode, setTool, update, heightAt, walkable, slope: slopeAt,
   stroke(x, z, frames = 20, opts = {}) {
