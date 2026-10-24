@@ -1634,13 +1634,16 @@ function mat4o(px, py, pz, sx, sy, sz, ry, rx) {   // yaw then pitch, for pieces
   return new THREE.Matrix4().compose(new THREE.Vector3(px, py, pz), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, 0, 'YXZ')), new THREE.Vector3(sx, sy, sz));
 }
 // deck curve per type: [rise per metre of span, max]; negative = sagging rope bridge
-const BRIDGE_ARCH = { wood: [.06, .7], log: [0, 0], stone: [.03, .45], arch: [.2, 2.4], straight: [0, 0], vine: [-.09, 1.8], sus: [-.05, 1.0] };
-const BRIDGE_TYPES = [['wood', '木の橋'], ['log', '割った丸太'], ['stone', '石の橋'], ['arch', 'アーチ橋'], ['straight', 'まっすぐな橋'], ['vine', 'ツタのつり橋'], ['sus', '丈夫なつり橋']];
+const BRIDGE_ARCH = { wood: [.06, .7], log: [0, 0], stone: [.03, .45], arch: [.2, 2.4], straight: [0, 0], vine: [-.09, 1.8], sus: [-.05, 1.0], pier: [0, 0] };
+// a pier (桟橋) runs from the land out over the water and ends there: its deck climbs over the first PIER_RAMP m to PIER_DECK m
+// above the still water (clear of the surf) and stays level to its end, which needs no landing
+const PIER_DECK = .9, PIER_RAMP = 2;
+const BRIDGE_TYPES = [['wood', '木の橋'], ['log', '割った丸太'], ['stone', '石の橋'], ['arch', 'アーチ橋'], ['straight', 'まっすぐな橋'], ['vine', 'ツタのつり橋'], ['sus', '丈夫なつり橋'], ['pier', '桟橋']];
 const STAIR_TYPES = [['dirt', '土の階段'], ['stone', '石の階段'], ['wood', '木の階段'], ['built', '人工物の階段']];
 const BRIDGE_TAGS = {
   wood: ['grassland', 'forest', 'canyon', 'mountain', 'beach'], log: ['forest', 'jungle'],
   stone: ['mountain', 'canyon', 'ruins', 'castle', 'desert', 'volcano', 'cave', 'demon', 'graveyard'], arch: ['castle', 'ruins', 'grassland', 'demon'],
-  straight: ['castle', 'cave'], vine: ['jungle', 'canyon'], sus: ['canyon', 'mountain', 'snow'],
+  straight: ['castle', 'cave'], vine: ['jungle', 'canyon'], sus: ['canyon', 'mountain', 'snow'], pier: ['beach', 'grassland', 'forest', 'jungle', 'mountain', 'snow'],
 };
 const STAIR_TAGS = { dirt: ['grassland', 'forest', 'jungle', 'canyon', 'mountain', 'beach'], stone: ['common'], wood: ['forest', 'cave', 'beach', 'snow', 'jungle'], built: ['ruins', 'castle', 'desert', 'demon', 'graveyard'] };
 // ground paint tools; tools not listed here (terrain, structures, walkability) are always shown
@@ -1654,6 +1657,11 @@ const propVisible = i => !PROP[i].legacyOnly && inPalette(PROP[i].tags);
 const toolVisible = id => !GTOOL_TAGS[id] || inPalette(GTOOL_TAGS[id]);
 function bridgeProfile(b) {
   const L = Math.hypot(b.x2 - b.x1, b.z2 - b.z1);
+  if (b.type === 'pier') {   // starts on the land (x1, z1), climbs over the ramp, level out over the water
+    const y1 = Math.max(heightAt(b.x1, b.z1), state.water) + .12, y2 = Math.max(y1, state.water + PIER_DECK), tr = Math.min(.5, PIER_RAMP / Math.max(L, 1e-3));
+    const y = t => t >= tr ? y2 : lerp(y1, y2, sstep(0, tr, t)), e = 1e-3;
+    return { L, y1, y2, arch: 0, ramp: tr * L, y, dy: t => (y(Math.min(1, t + e)) - y(Math.max(0, t - e))) / (Math.min(1, t + e) - Math.max(0, t - e)) };
+  }
   const y1 = Math.max(heightAt(b.x1, b.z1), state.water) + .12, y2 = Math.max(heightAt(b.x2, b.z2), state.water) + .12;
   const [ak, amax] = BRIDGE_ARCH[b.type || 'wood'], arch = Math.sign(ak) * Math.min(amax, Math.abs(ak) * L);
   return { L, y1, y2, arch, y: t => lerp(y1, y2, t) + arch * Math.sin(Math.PI * t), dy: t => (y2 - y1) + arch * Math.PI * Math.cos(Math.PI * t) };
@@ -1723,6 +1731,51 @@ function geoBridgeWood(b) {
   bridgeWoodUV(parts, wood, dark);
   return makeGeo(parts, 31, { uv: TDGeo.ATLAS2.white });
 }
+// 桟橋：横に並べた板の床、その下に縦の桁、約 1.8m ごとに 2 本の杭（上に梁、間に筋交い）。杭は水の中が藻で暗く、
+// 水際がフジツボで白く、上は風雨で灰色がかった木。先端に係留柱とロープ、片側に水へ下りるはしご。陸の端は石の土台。
+function geoBridgePier(b) {
+  const K = bridgeKit(b), { L, at, pitch, pr } = K, w = b.w, W = state.water, R = rng(((b.x1 * 97 + b.z1 * 31) * 100) | 0), parts = [];
+  const wood = (y, ny, Rr, p2) => mixc(col(0x7b6853), col(0xb5a48c), clamp(p2 * .7 + (ny > .7 ? .25 : 0) + (Rr() - .5) * .2, 0, 1));
+  const dark = (y, ny, Rr) => mixc(col(0x463a2d), col(0x6a5844), Rr() * .6 + (ny > .7 ? .3 : 0));
+  const pile = (y, ny, Rr) => y < W - .06 ? mixc(col(0x26321f), col(0x45512f), Rr()) : y < W + .28 ? mixc(col(0x75776b), col(0xb9b5a3), Rr()) : mixc(col(0x54473a), col(0x7a6853), Rr());
+  // deck planks across, with small gaps, and three stringers under them following the deck
+  const n = Math.max(6, Math.round(L / .3));
+  for (let k = 0; k < n; k++) {
+    const t = (k + .5) / n, [x, y, z] = at(t, (R() - .5) * .04, 0);
+    parts.push({ g: new THREE.BoxGeometry(w * (.97 + R() * .06), .07, L / n * .86), m: mat4o(x, y, z, 1, 1, 1, K.ry + (R() - .5) * .025, pitch(t)), cfn: wood, j: .07 });
+  }
+  const segs = Math.max(4, Math.ceil(L / .8));
+  for (const lat of [-(w / 2 - .14), 0, w / 2 - .14]) for (let k = 0; k < segs; k++) beam(parts, at(k / segs, lat, -.13), at((k + 1) / segs, lat, -.13), .12, .17, dark, .05);
+  // bents: two piles each, a cap beam on them, cross braces between them where they stand tall
+  const t0 = Math.max(.06, Math.min(.5, (pr.ramp || 0) / L)), m = Math.max(1, Math.round((1 - t0) * L / 1.8));
+  for (let k = 0; k <= m; k++) {
+    const t = t0 + (1 - t0) * k / m, deck = pr.y(t), end = k === m, feet = [];
+    for (const sd of [-1, 1]) {
+      const [x, , z] = at(t, sd * (w / 2 + .04), 0), bed = heightAt(x, z) - .35, top = end ? deck + .62 : deck - .05, h = top - bed;
+      if (h < .25) continue;
+      parts.push({ g: new THREE.CylinderGeometry(.11, .12, h, 8, Math.max(3, Math.round(h / .2))), m: mat4(x, bed + h / 2, z, 1, 1, 1), cfn: pile, j: .08 });
+      feet.push([x, bed, z]);
+      if (end) parts.push({ g: new THREE.CylinderGeometry(.13, .13, .05, 8), m: mat4(x, top + .02, z, 1, 1, 1), cfn: dark, j: .05 });   // a cap on the mooring post
+    }
+    beam(parts, at(t, -(w / 2 + .16), -.3), at(t, w / 2 + .16, -.3), .18, .16, dark, .05);
+    if (feet.length === 2 && deck - Math.max(feet[0][1], feet[1][1]) > 1.1) {
+      const lo = Math.max(W - .25, Math.max(feet[0][1], feet[1][1]) + .3), hi = deck - .42;
+      if (hi - lo > .3) { beam(parts, [feet[0][0], hi, feet[0][2]], [feet[1][0], lo, feet[1][2]], .08, .1, dark, .05); beam(parts, [feet[0][0], lo, feet[0][2]], [feet[1][0], hi, feet[1][2]], .08, .1, dark, .05); }
+    }
+  }
+  // a mooring rope wound round one end post
+  { const [x, y, z] = at(1, -(w / 2 + .04), .4); parts.push({ g: new THREE.TorusGeometry(.14, .035, 5, 14), m: mat4(x, y, z, 1, 1, 1, 0, Math.PI / 2), cfn: C_ROPE, j: .08 }); }
+  // a ladder down into the water on the far right corner
+  {
+    const [x, y, z] = at(1, w / 2 + .1, 0), bot = Math.max(heightAt(x, z) + .1, W - .6), top = y + .35, side = [K.dx * .2, K.dz * .2];
+    for (const s of [-1, 1]) beam(parts, [x + side[0] * s - K.dx * .3, bot, z + side[1] * s - K.dz * .3], [x + side[0] * s - K.dx * .3, top, z + side[1] * s - K.dz * .3], .05, .05, dark, .04);
+    for (let yy = bot + .2; yy < top - .1; yy += .3) beam(parts, [x - side[0] - K.dx * .3, yy, z - side[1] - K.dz * .3], [x + side[0] - K.dx * .3, yy, z + side[1] - K.dz * .3], .04, .04, dark, .04);
+  }
+  // the stone footing the deck starts from on the land
+  { const [x, y, z] = at(0, 0, -.3); parts.push({ g: displace(new THREE.BoxGeometry(w + .5, .5, .9, 2, 1, 1), .08, x + z), m: mat4(x, y, z, 1, 1, 1, K.ry), cfn: C_STONE, j: .08 }); }
+  bridgeWoodUV(parts, wood, dark);
+  return makeGeo(parts, 33, { uv: TDGeo.ATLAS2.white });
+}
 // --- shared helpers for structures that follow a deck curve
 function bridgeKit(b) {
   const pr = bridgeProfile(b), L = pr.L, dx = (b.x2 - b.x1) / L, dz = (b.z2 - b.z1) / L;
@@ -1744,6 +1797,7 @@ const C_METAL = (y, ny, R) => mixc(col(0x3c4046), col(0x6a7078), R());
 function geoBridge(b) {
   const type = b.type || 'wood';
   if (type === 'wood') return geoBridgeWood(b);
+  if (type === 'pier') return geoBridgePier(b);
   const K = bridgeKit(b), { L, at, pitch } = K, w = b.w, R = rng(((b.x1 * 97 + b.z1 * 31) * 100) | 0), parts = [];
   const ground = (x, z) => heightAt(x, z);
   if (type === 'log') {
@@ -1825,13 +1879,14 @@ function geoBridge(b) {
 }
 function rebuildBridges() {
   for (const c of [...bridgeGroup.children]) { c.geometry.dispose(); bridgeGroup.remove(c); }
-  for (const b of bridges) { const m = new THREE.Mesh(geoBridge(b), (b.type || 'wood') === 'wood' ? structWoodMat : structMat); m.castShadow = m.receiveShadow = true; bridgeGroup.add(m); }
+  for (const b of bridges) { const m = new THREE.Mesh(geoBridge(b), ['wood', 'pier'].includes(b.type || 'wood') ? structWoodMat : structMat); m.castShadow = m.receiveShadow = true; bridgeGroup.add(m); }
   walkDirty = true;
 }
 function placeBridge(a, c, w, type = 'wood') {
   if (type === 'log') w = Math.min(w, 1.1); else if (type === 'vine') w = Math.min(w, 1.8);
   const L = Math.hypot(c.x - a.x, c.z - a.z);
   if (L < 2 || L > 26) return false;
+  if (type === 'pier' && heightAt(c.x, c.z) > heightAt(a.x, a.z)) [a, c] = [c, a];   // a pier starts on the higher (land) end
   const b = { x1: a.x, z1: a.z, x2: c.x, z2: c.z, w, type };
   // clear anything standing on the deck
   props = props.filter(p => { const d = distToPolyline(p[1], p[2], [[b.x1, b.z1], [b.x2, b.z2]]); return d > w / 2 + .3 + (p[0] === 4 ? .6 : PROP[p[0]].r * p[4]); });
@@ -1867,7 +1922,7 @@ function makeCoast(a, c) {
     }
   }
   state.sea = true;
-  props = props.filter(p => heightAt(p[1], p[2]) > W + .15 || PROP[p[0]].id === 'reed' || p[0] === TYPE('rock'));
+  props = props.filter(p => heightAt(p[1], p[2]) > W + .15 || PROP[p[0]].id === 'reed' || PROP[p[0]].water || p[0] === TYPE('rock'));
   props = props.filter(p => !(PROP[p[0]].tree && splatAt(p[1], p[2], 2) > .5));
   applyBiome(state.biome); updateTerrain(); rebuildProps(); rebuildFalls(); rebuildBridges(); rebuildStairs();
   return true;
@@ -2284,7 +2339,7 @@ const TOOLS = [
   { id: 'erase', name: '小物を消す', key: '0', hint: 'チェックした種類だけを消します。' },
   { id: 'slope', name: '坂', key: 'n', hint: '下から上へドラッグすると、歩いて上り下りできるゆるやかな坂を作ります（幅＝半径）。急すぎる場合は作りません。' },
   { id: 'stairs', name: '階段', key: 'm', hint: '段差をまたいでドラッグすると階段を作ります（幅＝半径の半分）。種類は下の「種類」から選びます。' },
-  { id: 'bridge', name: '橋', key: 'b', hint: '岸から岸へドラッグすると橋を架けます（幅＝半径の半分、1.6〜4m）。種類は下の「種類」から。Shift+クリックで近くの橋を消します。' },
+  { id: 'bridge', name: '橋', key: 'b', hint: '岸から岸へドラッグすると橋を架けます（幅＝半径の半分、1.6〜4m）。種類は下の「種類」から。桟橋は、陸から水の上へドラッグします（先は水の上で終わります）。Shift+クリックで近くの橋を消します。' },
   { id: 'fall', name: '滝', key: '=', hint: '崖をクリックすると、縁から水面へ落ちる滝を置きます（幅＝半径の半分）。Shift+クリックで近くの滝を消します。' },
   { id: 'place', name: '置く', key: 'p', hint: '「種類」で選んだ物を、クリックした場所に1つ置きます。R キーで向きを45°回転。' },
   { id: 'detail', name: '地表小物を調整', key: ';', hint: '草・花・小石・落ち葉をクリックして選び、下の欄で位置・向き・大きさを調整。Shift＋クリックで選んだ小物を移動します。調整した物は自動更新でも残ります。' },
@@ -2357,7 +2412,8 @@ function applyBrush(x, z, dt) {
 function buildPropHash() { const h = new SpatialHash(4); for (const p of props) h.add(p, p[1], p[2]); return h; }
 function canPlace(t, x, z, hash) {
   if (Math.abs(x) > HALF - 1.2 || Math.abs(z) > HALF - 1.2) return false;
-  if (heightAt(x, z) < state.water + (PROP[t].id === 'reed' ? -.45 : .3)) return false;
+  const wd = PROP[t].water;   // [min, max] still depth (m): props that grow under water (corals)
+  if (wd ? !(state.water - heightAt(x, z) >= wd[0] && state.water - heightAt(x, z) <= wd[1]) : heightAt(x, z) < state.water + (PROP[t].id === 'reed' ? -.45 : .3)) return false;
   if (slopeAt(x, z) > PROP[t].slope) return false;
   if (!PROP[t].anyGround && (splatAt(x, z, 0) > .45 || splatAt(x, z, 1) > .4)) return false;
   if (PROP[t].tree && (splatAt(x, z, 2) + splatAt(x, z, 4) + splatAt(x, z, 5) > .45)) return false;
@@ -2373,7 +2429,11 @@ function scatterAt(x, z, R = Math.random) {
     const a = R() * Math.PI * 2, d = Math.sqrt(R()) * r, t = types[(R() * types.length) | 0];
     const px = sq ? x + (a / Math.PI - 1) * r : x + Math.cos(a) * d, pz = sq ? z + (R() * 2 - 1) * r : z + Math.sin(a) * d;   // square: uniform over the square
     if (!canPlace(t, px, pz, hash)) continue;
-    const s = lerp(PROP[t].sc[0], PROP[t].sc[1], R());
+    let s = lerp(PROP[t].sc[0], PROP[t].sc[1], R());
+    if (PROP[t].water) {   // under water things stay under it: smaller in the shallows, none where even a small one would show
+      const fit = (state.water - heightAt(px, pz)) * .9 / PROP[t].height;
+      if (fit < PROP[t].sc[0] * .5) continue; s = Math.min(s, fit);
+    }
     const p = [t, px, pz, R() * Math.PI * 2, s, 0]; props.push(p); hash.add(p, px, pz);
   }
   rebuildProps();
@@ -3389,6 +3449,7 @@ function runValidation() {
   for (const b of bridges) {
     const pr = bridgeProfile(b), L = pr.L, dx = (b.x2 - b.x1) / L, dz = (b.z2 - b.z1) / L;
     for (const [t, sx, sz, sy] of [[0, b.x1 - dx * .6, b.z1 - dz * .6, pr.y1], [1, b.x2 + dx * .6, b.z2 + dz * .6, pr.y2]]) {
+      if (t === 1 && b.type === 'pier') continue;   // a pier ends over the water
       const step = Math.abs(sy - heightAt(sx, sz)); if (step > ag.maxStep) warnings.push(`橋 ${b.id} の${t ? '終点' : '始点'}に${step.toFixed(2)}mの段差があります`);
     }
   }
@@ -3763,7 +3824,7 @@ async function buildExport() {
     floorLinksNote: 'magicCircle / stairsUp / stairsDown。tag は行き先（例: B2）。trigger に入ったら階層移動、この階へ来たときは arrival に立たせる。forward はプレイヤーが近づいてくる向き（= Prefab ローカル -Z を yawDeg で回したもの）。colliders は asset_catalog.json の solid をワールドに置いたもの。見た目と当たり判定は assetKey の Prefab で再現。',
     propCatalog: 'asset_catalog.json', props: 'props.csv',
     waterfalls: falls.map(f => { const [ux, uz] = fallDir(f); return { id: f.id, position: P3(f.x, f.bottom, f.z), yawDeg: U.yaw(f.rot), upstream: [+ux.toFixed(4), +(-uz).toFixed(4)], width: f.w, top: U.y(f.top), bottom: U.y(f.bottom), ...(f.sx !== undefined ? { source: [U.x(f.sx), U.z(f.sz)] } : {}) }; }),
-    bridges: bridges.map(b => { const pr = bridgeProfile(b); return { id: b.id, type: b.type || 'wood', start: P3(b.x1, pr.y1, b.z1), end: P3(b.x2, pr.y2, b.z2), width: b.w, arch: +pr.arch.toFixed(3), deckCurve: 'y(t) = lerp(start.y, end.y, t) + arch * sin(pi t); negative arch = rope sag' }; }),
+    bridges: bridges.map(b => { const pr = bridgeProfile(b); return { id: b.id, type: b.type || 'wood', start: P3(b.x1, pr.y1, b.z1), end: P3(b.x2, pr.y2, b.z2), width: b.w, arch: +pr.arch.toFixed(3), ...(b.type === 'pier' ? { rampLength: +pr.ramp.toFixed(3), deckCurve: 'pier: from start.y (on the land) up to end.y over the first rampLength m (smoothstep), then level; the end stands over the water and has no landing' } : { deckCurve: 'y(t) = lerp(start.y, end.y, t) + arch * sin(pi t); negative arch = rope sag' }) }; }),
     stairs: stairs.map(st => ({ id: st.id, type: st.type, bottom: P3(st.x1, st.y1, st.z1), top: P3(st.x2, st.y2, st.z2), width: st.w, steps: stairSteps(st) })),
     secretPassages: {
       present: secrets.length > 0, holes: holesPng ? 'holes.png' : null, mesh: geo.passages.length ? 'secret_passages_mesh.json' : null, clearanceHeight: +(state.agent.height + .6).toFixed(2),
@@ -3915,6 +3976,7 @@ const PROP_GROUPS = [
   ['草花・低木', ['shortgrass', 'meadowgrass', 'groundlitter', 'grass', 'meadowwhite', 'meadowyellow', 'meadowpink', 'meadowred', 'meadowviolet', 'bush', 'fern', 'bramble', 'ivy', 'sedge', 'foxglove', 'horsetail', 'dock', 'clover', 'reed', 'flowers', 'mushroom', 'glowmush', 'shelfshroom', 'cactus', 'barrelcactus']],
   ['岩・崖', ['drysoil_curl','drysoil_cup','drysoil_flake','scree', 'rock', 'mossrock', 'pebble', 'cliff', 'cliff_split', 'cliff_shoulder', 'cliff_joint', 'cliff_slab', 'cliff_talus', 'rubblepile', 'stalagmite', 'crystal', 'lavarock', 'obsidian', 'fumarole', 'iceblock', 'icespike']],
   ['遺跡・墓', ['column', 'brokencol', 'ruinwall', 'archgate', 'statue', 'statue_seated', 'statue_damaged', 'stele', 'obelisk', 'pyramid', 'gravestone', 'crossgrave', 'mausoleum', 'bones', 'bonepile', 'skullpile', 'magiccircle', 'demonspire']],
+  ['海の生き物', ['braincoral', 'staghorn', 'pillarcoral', 'seafan', 'tablecoral', 'roundcoral']],
   ['建物・道具', ['torch', 'lantern', 'banner', 'woodfence', 'ironfence', 'castlewall', 'tower', 'gatehouse', 'lighthouse', 'rowboat', 'haystack', 'miningtools', 'supplycrate', 'smallbarrel', 'tiedsack', 'coiledrope', 'storagepot', 'brokenpot', 'shells', 'snowman', 'kamakura']],
 ];
 // [group name, type indices]; types not in PROP_GROUPS (added later) land in "その他"
