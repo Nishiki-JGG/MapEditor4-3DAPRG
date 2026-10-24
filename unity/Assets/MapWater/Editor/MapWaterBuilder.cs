@@ -12,6 +12,8 @@ namespace MapWater.EditorTools {
 // 海（meta.sea がある書き出し）：エディターと同じ波・泡・光の網目を描く MapWater/Sea の海を作る（BuildSea）。
 //   海につながる川・池があれば（waterSim が available）、ふつうの水面も海の下に "Rivers" として作る。その水面は sea_field.png の
 //   海の重みで消えるので、海と重ならず、河口では海へ受け渡す。
+// 水源とプール（meta.springs がある書き出し）：水源の小川・池・プールの水面を "Springs" として作る（BuildSprings）。水位の水が無くても作る。
+//   水面の高さは spring_water.png、流れは spring_flow.png。プールの縁石は橋と同じく meta.pools の形からゲーム側で作る（ここでは水面だけ）。
 public static class MapWaterBuilder {
  public const string RuntimeDir = "Assets/MapWater/Runtime", GeneratedDir = "Assets/MapWaterGenerated";
 
@@ -23,7 +25,9 @@ public static class MapWaterBuilder {
  [Serializable] class SeaWavesDto { public float wavelength, period, height, steepenFromDepth, runupHeight, runupReach; public float[] breakDepth; }
  [Serializable] class SeaColorsDto { public float[] shallow, deep; }
  [Serializable] class SeaDto { public int version, resolution; public string field, field2; public float cellSize; public SeaWavesDto waves; public SeaColorsDto colors; public float[] sunDirection; }
- [Serializable] class MetaDto { public TerrainDto terrain; public WaterDto[] water; public WaterSimDto waterSim; public FallDto[] waterfalls; public SeaDto sea; }
+ [Serializable] class SpringsDto { public int version, resolution; public string water, flow; public float maxSpeed, bankRange, surfaceMin, surfaceSpan; }
+ [Serializable] class PoolDto { public string id, type; public float[] center, size; public float wall, floor, rim, waterLevel; }
+ [Serializable] class MetaDto { public TerrainDto terrain; public WaterDto[] water; public WaterSimDto waterSim; public FallDto[] waterfalls; public SeaDto sea; public SpringsDto springs; public PoolDto[] pools; }
 
  public sealed class Result {
   public bool built; public string message; public GameObject root; public MapWaterController controller;
@@ -31,13 +35,22 @@ public static class MapWaterBuilder {
  }
 
  public static Result Build(string exportDir, Transform parent = null, Vector3? origin = null, string assetName = null) {
-  var res = new Result();
+  var res = BuildMain(exportDir, parent, origin, assetName, out var meta);
+  if (meta == null || meta.springs == null || meta.springs.version < 1) return res;
+  var sp = BuildSprings(exportDir, meta, res.built ? res.root.transform : parent, res.built ? (Vector3?)null : origin, assetName, res.built);
+  if (!sp.built) { res.message += "（水源：" + sp.message + "）"; return res; }
+  if (!res.built) { sp.message = res.message + " ／ " + sp.message; return sp; }
+  res.gameObjects += sp.gameObjects; res.materials += sp.materials; res.textures += sp.textures; res.meshes += sp.meshes;
+  res.message += " ／ " + sp.message; return res;
+ }
+
+ static Result BuildMain(string exportDir, Transform parent, Vector3? origin, string assetName, out MetaDto meta) {
+  var res = new Result(); meta = null;
   Result Fail(string why) { res.message = "MapWater: 水は作りません — " + why; Debug.Log(res.message); return res; }
   try {
    if (string.IsNullOrEmpty(exportDir) || !Directory.Exists(exportDir)) return Fail("書き出しのフォルダがありません: " + exportDir);
    string metaPath = Path.Combine(exportDir, "meta.json");
    if (!File.Exists(metaPath)) return Fail("meta.json がありません");
-   MetaDto meta;
    try { meta = JsonUtility.FromJson<MetaDto>(File.ReadAllText(metaPath)); } catch (Exception e) { return Fail("meta.json を読めません: " + e.Message); }
    if (meta == null || meta.terrain == null || meta.terrain.size == null || meta.terrain.size.Length < 3 || meta.terrain.heightmapResolution < 3) return Fail("meta.json に terrain がありません");
    // JsonUtility は "sea": null でも空の物を作るので、version で見分ける
@@ -79,14 +92,7 @@ public static class MapWaterBuilder {
    Directory.CreateDirectory(dir); AssetDatabase.Refresh();
 
    // ---- 画像：流れ・泡の帯は書き出しの PNG をそのまま取り込む（sRGB オフ・非圧縮・ミップなし・クランプ）
-   Texture2D Import(string src, string fileName) {
-    string dst = dir + "/" + fileName; File.Copy(src, dst, true); AssetDatabase.ImportAsset(dst, ImportAssetOptions.ForceSynchronousImport);
-    var imp = (TextureImporter)AssetImporter.GetAtPath(dst);
-    imp.sRGBTexture = false; imp.mipmapEnabled = false; imp.wrapMode = TextureWrapMode.Clamp; imp.filterMode = FilterMode.Bilinear;
-    imp.textureCompression = TextureImporterCompression.Uncompressed; imp.isReadable = false; imp.alphaSource = TextureImporterAlphaSource.FromInput; imp.alphaIsTransparency = false;
-    imp.npotScale = TextureImporterNPOTScale.None; imp.SaveAndReimport();
-    return AssetDatabase.LoadAssetAtPath<Texture2D>(dst);
-   }
+   Texture2D Import(string src, string fileName) => ImportData(src, dir, fileName);
    var flowTex = Import(flowPath, "water_flow.png"); var maskTex = Import(maskPath, "water_mask.png");
    if (flowTex == null || maskTex == null) return Fail("流れの画像を取り込めませんでした");
    Texture2D seaTex = null;
@@ -169,6 +175,107 @@ public static class MapWaterBuilder {
    AssetDatabase.SaveAssets();
    res.built = true; res.root = root; res.controller = ctl;
    res.message = $"MapWater: 作りました — {root.name}（GameObject {res.gameObjects}、材質 {res.materials}、画像 {res.textures}、メッシュ {res.meshes}、滝 {ctl.falls.Count}、水深 最大 {maxD:F2}m、水面の範囲 x {x0:F1}〜{x1:F1} z {z0:F1}〜{z1:F1}）";
+   Debug.Log(res.message);
+   return res;
+  } catch (Exception e) {
+   res.message = "MapWater: 例外 — " + e; Debug.LogError(res.message); return res;
+  }
+ }
+
+ // 書き出しの画像（流れ・泡の帯など、データの画像）を取り込む：sRGB オフ・非圧縮・ミップなし・クランプ
+ static Texture2D ImportData(string src, string dir, string fileName) {
+  string dst = dir + "/" + fileName; File.Copy(src, dst, true); AssetDatabase.ImportAsset(dst, ImportAssetOptions.ForceSynchronousImport);
+  var imp = (TextureImporter)AssetImporter.GetAtPath(dst);
+  imp.sRGBTexture = false; imp.mipmapEnabled = false; imp.wrapMode = TextureWrapMode.Clamp; imp.filterMode = FilterMode.Bilinear;
+  imp.textureCompression = TextureImporterCompression.Uncompressed; imp.isReadable = false; imp.alphaSource = TextureImporterAlphaSource.FromInput; imp.alphaIsTransparency = false;
+  imp.npotScale = TextureImporterNPOTScale.None; imp.SaveAndReimport();
+  return AssetDatabase.LoadAssetAtPath<Texture2D>(dst);
+ }
+
+ // ---- 水源とプール：spring_water.png（水面の高さ・種類）と heightmap から、水のある所だけの格子のメッシュを作り、MapWater/Water を付ける。
+ // 水深の画像（水面 − 地形）は SpringDepth として作り、水の材質の _DepthTex に渡す（ふつうの水面と同じ絵になる）。プールは内側の平らな水面。
+ static Result BuildSprings(string exportDir, MetaDto meta, Transform parent, Vector3? origin, string assetName, bool underMain) {
+  var res = new Result();
+  Result Fail(string why) { res.message = "MapWater: 水源の水は作りません — " + why; Debug.Log(res.message); return res; }
+  try {
+   var sp = meta.springs; int TN = meta.terrain.heightmapResolution;
+   if (sp.resolution != TN) return Fail($"spring_water.png の解像度 {sp.resolution} が heightmap {TN} と違います");
+   string rawName = string.IsNullOrEmpty(meta.terrain.heightmap) ? "heightmap_r16.raw" : meta.terrain.heightmap;
+   string rawPath = Path.Combine(exportDir, rawName), waterPath = Path.Combine(exportDir, sp.water ?? ""), flowPath = Path.Combine(exportDir, sp.flow ?? "");
+   foreach (var p in new[] { rawPath, waterPath, flowPath }) if (!File.Exists(p)) return Fail("ファイルがありません: " + Path.GetFileName(p));
+   var raw = File.ReadAllBytes(rawPath);
+   if (raw.Length != TN * TN * 2) return Fail($"{rawName} の大きさが合いません（{raw.Length} バイト、期待 {TN * TN * 2}）");
+   var wtex = new Texture2D(2, 2, TextureFormat.RGBA32, false, true);
+   if (!wtex.LoadImage(File.ReadAllBytes(waterPath)) || wtex.width != TN || wtex.height != TN) { UnityEngine.Object.DestroyImmediate(wtex); return Fail(sp.water + " を読めないか、大きさが違います"); }
+   var px = wtex.GetPixels32(); UnityEngine.Object.DestroyImmediate(wtex);   // 行0 = 画像の一番下 = Unity z 0（heightmap の行と同じ並び）
+   var detail = AssetDatabase.LoadAssetAtPath<Texture2D>(RuntimeDir + "/Textures/MapWaterDetail256.png");
+   var shW = Shader.Find("MapWater/Water");
+   if (detail == null || shW == null) return Fail("MapWater の shader または共有画像が見つかりません（Assets/MapWater/Runtime）");
+
+   float size = meta.terrain.size[0], sizeZ = meta.terrain.size[2], rangeY = meta.terrain.heightRange, cell = size / (TN - 1);
+   float span = sp.surfaceSpan > 0 ? sp.surfaceSpan : rangeY + 4f, lo = sp.surfaceSpan > 0 ? sp.surfaceMin : -2f;
+   bool Valid(int k) => px[k].a > 0;
+   int Kind(int k) => Mathf.RoundToInt(px[k].b / 80f);
+   float Surf(int k) => (px[k].r * 256 + px[k].g) / 65535f * span + lo;   // meta.springs.encoding.water
+   float Hgt(int k) => (raw[k * 2] | (raw[k * 2 + 1] << 8)) / 65535f * rangeY;
+   var half = new ushort[TN * TN]; float maxD = 0;
+   for (int k = 0; k < TN * TN; k++) { float d = Valid(k) ? Mathf.Clamp(Surf(k) - Hgt(k), -2f, 12f) : -2f; half[k] = Mathf.FloatToHalf(d); if (Kind(k) > 0 && d > maxD) maxD = d; }
+
+   var vid = new int[TN * TN]; for (int k = 0; k < vid.Length; k++) vid[k] = -1;
+   var pos = new List<Vector3>(); var tri = new List<int>();
+   int Vert(int i, int j) { int k = j * TN + i; if (vid[k] >= 0) return vid[k]; vid[k] = pos.Count; pos.Add(new Vector3(i * cell, Surf(k), j * cell * sizeZ / size)); return vid[k]; }
+   bool Open(int k) { int q = Kind(k); return q == 1 || q == 2; }
+   for (int j = 0; j < TN - 1; j++) for (int i = 0; i < TN - 1; i++) {
+    int a = j * TN + i, b = a + 1, c = a + TN, d = c + 1;
+    if (!Valid(a) || !Valid(b) || !Valid(c) || !Valid(d) || !(Open(a) || Open(b) || Open(c) || Open(d))) continue;
+    int va = Vert(i, j), vb = Vert(i + 1, j), vc = Vert(i, j + 1), vd = Vert(i + 1, j + 1);
+    tri.Add(va); tri.Add(vc); tri.Add(vb); tri.Add(vb); tri.Add(vc); tri.Add(vd);
+   }
+   // プールの水面：内側（縁石の内面より少し外まで）の平らな面。中心と輪の扇
+   int pools = 0;
+   if (meta.pools != null) foreach (var pl in meta.pools) {
+    if (pl == null || pl.center == null || pl.center.Length < 3 || pl.size == null || pl.size.Length < 2) continue;
+    float a = pl.size[0] / 2 - pl.wall + .06f, b = pl.size[1] / 2 - pl.wall + .06f; var c0 = new Vector3(pl.center[0], pl.waterLevel, pl.center[2]);
+    int n0 = pos.Count; pos.Add(c0); var ring = new List<Vector2>();
+    if (pl.type == "round") { int n = Mathf.Max(24, Mathf.CeilToInt(Mathf.PI * (a + b) / .5f)); for (int q = 0; q < n; q++) { float t = q * Mathf.PI * 2 / n; ring.Add(new Vector2(Mathf.Cos(t) * a, Mathf.Sin(t) * b)); } }
+    else { ring.Add(new Vector2(-a, -b)); ring.Add(new Vector2(a, -b)); ring.Add(new Vector2(a, b)); ring.Add(new Vector2(-a, b)); }
+    foreach (var r in ring) pos.Add(c0 + new Vector3(r.x, 0, r.y));
+    for (int q = 0; q < ring.Count; q++) { tri.Add(n0); tri.Add(n0 + 1 + q); tri.Add(n0 + 1 + (q + 1) % ring.Count); }
+    pools++;
+   }
+   if (tri.Count == 0) return Fail("spring_water.png に水の所がありません");
+
+   string name = assetName ?? new DirectoryInfo(exportDir).Name; string dir = GeneratedDir + "/" + name;
+   Directory.CreateDirectory(dir); AssetDatabase.Refresh();
+   var flowTex = ImportData(flowPath, dir, "spring_flow.png"); if (flowTex == null) return Fail("spring_flow.png を取り込めませんでした");
+   var depthTex = new Texture2D(TN, TN, TextureFormat.RHalf, false, true) { name = "SpringDepth", wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Bilinear };
+   depthTex.SetPixelData(half, 0); depthTex.Apply(false, false);
+   string depthPath = dir + "/SpringDepth.asset"; AssetDatabase.DeleteAsset(depthPath); AssetDatabase.CreateAsset(depthTex, depthPath); depthTex = AssetDatabase.LoadAssetAtPath<Texture2D>(depthPath);
+   var mesh = new Mesh { name = "SpringWater", indexFormat = UnityEngine.Rendering.IndexFormat.UInt32 };
+   mesh.SetVertices(pos); mesh.SetTriangles(tri, 0); mesh.RecalculateNormals(); mesh.RecalculateBounds();
+   string meshPath = dir + "/SpringWater.mesh.asset"; AssetDatabase.DeleteAsset(meshPath); AssetDatabase.CreateAsset(mesh, meshPath); mesh = AssetDatabase.LoadAssetAtPath<Mesh>(meshPath);
+   string matPath = dir + "/SpringWater.mat"; AssetDatabase.DeleteAsset(matPath); var mat = new Material(shW) { name = "SpringWater" }; AssetDatabase.CreateAsset(mat, matPath); mat = AssetDatabase.LoadAssetAtPath<Material>(matPath);
+   mat.SetTexture("_DetailTex", detail); mat.SetTexture("_FlowTex", flowTex); mat.SetTexture("_DepthTex", depthTex);
+   mat.SetVector("_MapRect", new Vector4(0, 0, 1f / size, 1f / size));
+   if (sp.maxSpeed > 0) mat.SetFloat("_FlowMax", sp.maxSpeed);
+   if (sp.bankRange > 0) mat.SetFloat("_BankRange", sp.bankRange);
+   EditorUtility.SetDirty(mat);
+
+   GameObject root;
+   if (underMain) { root = parent.gameObject; }
+   else {
+    root = new GameObject("MapWater_" + name); if (parent != null) root.transform.SetParent(parent, false);
+    root.transform.position = origin ?? (parent != null ? parent.position : Vector3.zero); root.transform.rotation = Quaternion.identity; root.transform.localScale = Vector3.one;
+    res.gameObjects++;
+   }
+   var go = new GameObject("Springs"); go.transform.SetParent(root.transform, false); res.gameObjects++;
+   go.AddComponent<MeshFilter>().sharedMesh = mesh; var r0 = go.AddComponent<MeshRenderer>(); r0.sharedMaterial = mat;
+   r0.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off; r0.receiveShadows = false;
+   // 時刻を進めるだけの制御（波紋なし）。地図の原点は root と同じなので、この物の位置（= root の原点）を使う
+   var ctl = go.AddComponent<MapWaterController>(); ctl.surface = r0; ctl.rippleEnabled = false; ctl.depthTexture = depthTex; ctl.mapSize = new Vector2(size, sizeZ);
+   AssetDatabase.SaveAssets();
+   res.built = true; res.root = root; res.controller = ctl; res.materials = 1; res.textures = 2; res.meshes = 1;
+   res.message = $"MapWater: 水源の水を作りました — Springs（頂点 {pos.Count}、三角形 {tri.Count / 3}、プール {pools}、水深 最大 {maxD:F2}m）";
    Debug.Log(res.message);
    return res;
   } catch (Exception e) {

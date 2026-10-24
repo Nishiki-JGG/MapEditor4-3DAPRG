@@ -21,6 +21,9 @@ const C = new Uint8Array(N * N);         // rock-wall style painted per vertex: 
 const A = new Uint8Array(N * N);         // auto walkability cache (1 = walkable)
 let props = [];                           // [type, x, z, rotY, scale, auto, scaleY?, baseY?]
 let falls = [];                           // {x, z, rot, w, top, bottom, sx?, sz?}  sx/sz = upstream source
+let springs = [];                         // water sources: {id, x, z, preset}  preset = a key of TDSprings.PRESETS (springs.js)
+let pools = [];                           // stone-rimmed pools: {id, type: 'rect' | 'round', x1, z1, x2, z2, floor, rim, ox, oz}  (ox, oz) = the overflow notch's direction
+const SC = new Float32Array(N * N);       // how deep the springs' streams are carved into H (m): taken back out before they are carved again
 let bridges = [];                         // {x1, z1, x2, z2, w, type}
 let stairs = [];
 let markers = [];                         // game markers: {id, kind, x, z, rot, w, r, tag}                          // {x1, z1, x2, z2, w, type, y1, y2}  (x1,z1) is the bottom
@@ -28,7 +31,7 @@ const state = {
   roomId: '', nextId: 1, revision: 0, lastExportHash: '', catalog: { types: {}, floorLinks: {} },
   agent: { radius: .3, height: 1.8, maxSlopeDeg: 51.3, maxWaterDepth: .9, maxStep: .5, arrivalClearance: .5 },   // who the walkability is computed for
   biome: 'forest', palette: 'all', cliffStyle: 'standard', sunOn: true, darkness: 'dark', mapName: '', sea: false, weather: { kind: 'none', amount: .7 }, atmo: { kind: 'none', amount: .6, height: 3 },
-  variant: { bridge: 'wood', stairs: 'stone', place: 0, marker: 'port', link: 'warp', cliffpaint: 1 }, placeScale: 1, placeRot: 0, placeRandom: true,
+  variant: { bridge: 'wood', stairs: 'stone', place: 0, marker: 'port', link: 'warp', cliffpaint: 1, spring: 'brook', pool: 'rect' }, placeScale: 1, placeRot: 0, placeRandom: true,
   mode: 'edit', tool: 'plateau', radius: 4, strength: .6, density: .6, brushShape: 'circle',
   types: new Set([0, 1]), water: .8, spawn: { x: 0, z: 22 },
 };
@@ -308,11 +311,11 @@ terrainMat.onBeforeCompile = (sh) => {
   Object.assign(sh.uniforms, TDGround.uniforms); sh.uniforms.uGroundTrial = groundTrial;
   sh.uniforms.uWater = waterU; sh.uniforms.uDim = dimU; sh.uniforms.uTime = timeU; sh.uniforms.uStoneGrain=rockGrainU; sh.uniforms.uPavingMask=pavingMaskU; sh.uniforms.uPavingMap=pavingMapU; Object.assign(sh.uniforms, BU);
   sh.vertexShader = sh.vertexShader
-    .replace('#include <common>', '#include <common>\nattribute float reliefSlope; varying float vReliefSlope; attribute vec4 splatA; attribute vec4 splatB; attribute float splatC; attribute vec3 cliffT; attribute vec4 cliffM; attribute vec2 cliffW; varying vec3 vCT; varying vec4 vCM; varying vec2 vCW; varying vec4 vSA; varying vec4 vSB; varying float vSC; varying vec3 vWPos; varying vec3 vWNor;')
-    .replace('#include <begin_vertex>', '#include <begin_vertex>\nvReliefSlope=reliefSlope; vSA=splatA; vSB=splatB; vSC=splatC; vCT=cliffT; vCM=cliffM; vCW=cliffW; vWPos=(modelMatrix*vec4(position,1.)).xyz; vWNor=normalize(mat3(modelMatrix)*normal);');
+    .replace('#include <common>', '#include <common>\nattribute float reliefSlope; varying float vReliefSlope; attribute float springLift; varying float vSpringHw; attribute vec4 splatA; attribute vec4 splatB; attribute float splatC; attribute vec3 cliffT; attribute vec4 cliffM; attribute vec2 cliffW; varying vec3 vCT; varying vec4 vCM; varying vec2 vCW; varying vec4 vSA; varying vec4 vSB; varying float vSC; varying vec3 vWPos; varying vec3 vWNor;')
+    .replace('#include <begin_vertex>', '#include <begin_vertex>\nvReliefSlope=reliefSlope; vSpringHw=10.-springLift; vSA=splatA; vSB=splatB; vSC=splatC; vCT=cliffT; vCM=cliffM; vCW=cliffW; vWPos=(modelMatrix*vec4(position,1.)).xyz; vWNor=normalize(mat3(modelMatrix)*normal);');
   sh.fragmentShader = sh.fragmentShader
     .replace('#include <common>', `#include <common>
-varying float vReliefSlope; varying vec4 vSA; varying vec4 vSB; varying float vSC; varying vec3 vWPos; varying vec3 vWNor; uniform float uWater; uniform float uDim; uniform float uTime;
+varying float vReliefSlope; varying float vSpringHw; varying vec4 vSA; varying vec4 vSB; varying float vSC; varying vec3 vWPos; varying vec3 vWNor; uniform float uWater; uniform float uDim; uniform float uTime;
 uniform vec3 uG0; uniform vec3 uG1; uniform vec3 uGH; uniform vec3 uRockTint; uniform float uFlowers; uniform float uSnow; uniform float uSnowLine; uniform float uWet; uniform float uSea;
 varying vec3 vCT; varying vec4 vCM; varying vec2 vCW; uniform int uPitN; uniform vec4 uPitA[8]; uniform vec4 uPitB[8];
 ${TDGround.GLSL}
@@ -464,7 +467,7 @@ vec3 terrainColor(){
   col=mix(col,rock,rockW);
   gGloss=max(gGloss,vCW.x*.8*rockW);
   // underwater bed
-  float dpt=uWater-wp.y;
+  float dpt=max(uWater-wp.y,-vSpringHw);   // under the map's water, or a spring's stream or pond
   if(dpt>0.){
     float bedNoise=fbm(p*2.6+13.),sandGrain=vn(p*42.);
     float ripple=sin(p.x*8.+p.y*3.+fbm(p*.7)*5.);
@@ -477,6 +480,7 @@ vec3 terrainColor(){
   col=mix(col, mix(vec3(.80,.86,.95),vec3(.97,.98,1.),b)*(.93+.1*c), snW);
   // wet sand at the water's edge (up to the run-up's reach at the sea), going on darkening under the water: no step at the still level
   col*=mix(1.,.74,smoothstep(mix(.18,.5,uSea),-.04,hw+(a-.5)*.08));
+  col*=mix(1.,.78,smoothstep(.14,-.03,vSpringHw+(a-.5)*.06));   // the banks of the springs' water: damp
   col*=1.-.3*uWet*(1.-snW);
   gGloss=max(gGloss,uWet*.6*(1.-snW));
   float otherPaint=max(vSA.z,max(vSB.x,max(vSB.y,max(vSB.z,max(vSB.w,vSC)))));
@@ -509,6 +513,7 @@ const tGeo = new THREE.BufferGeometry();
   tGeo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
   tGeo.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(N * N * 3), 3));
   tGeo.setAttribute('reliefSlope', new THREE.BufferAttribute(new Float32Array(N * N), 1));
+  tGeo.setAttribute('springLift', new THREE.BufferAttribute(new Float32Array(N * N), 1));   // 10 - height above a spring's stream or pond (m): 0 = none near (also what a mesh without it reads)
   tGeo.setAttribute('splatA', new THREE.BufferAttribute(new Float32Array(N * N * 4), 4));
   tGeo.setAttribute('splatB', new THREE.BufferAttribute(new Float32Array(N * N * 4), 4));
   tGeo.setAttribute('splatC', new THREE.BufferAttribute(new Float32Array(N * N), 1));
@@ -589,13 +594,15 @@ const mkWaterTex = data => { const tx = new THREE.DataTexture(data, N, N, THREE.
 const WATERU = {
   uFlow: { value: mkWaterTex(WFLOW) }, uMask: { value: mkWaterTex(WMASK) }, uFlowMax: { value: 2 }, uBankRange: { value: 1.5 }, uTrailMax: { value: .65 }, uShow: { value: 0 }, uMapSize: { value: SIZE },
   uFalls: { value: Array.from({ length: 8 }, () => new THREE.Vector4()) }, uFallCount: { value: 0 },
+  uSprings: { value: Array.from({ length: 8 }, () => new THREE.Vector4()) }, uSpringCount: { value: 0 },   // springs that well up into water: x, z, size, phase
 };
 let waterTimer = 0, waterInfo = null;
 function refreshWaterData() {
   waterTimer = 0;
   const res = TDWater.analyze({ TN: N, TS: CELL, HALF, TH: H, level: state.water, falls: falls.map(f => ({ id: f.id, x: f.x, z: f.z, w: f.w })), sea: seaMaskFor(N, CELL) });
   const pk = TDWater.pack(res);
-  WFLOW.set(pk.flow); WMASK.set(pk.mask); WATERU.uFlow.value.needsUpdate = true; WATERU.uMask.value.needsUpdate = true;
+  WFLOW.set(pk.flow); WMASK.set(pk.mask);
+  solveSprings(); if (springRes) TDSprings.packInto(springRes, WFLOW, WMASK, res.options);   // the springs' streams and ponds flow in the same images WATERU.uFlow.value.needsUpdate = true; WATERU.uMask.value.needsUpdate = true;
   WATERU.uFlowMax.value = res.options.maxSpeed; WATERU.uBankRange.value = res.options.bankRange; WATERU.uTrailMax.value = res.options.trailMaxCover;
   let n = 0;
   for (let i = 0; i < falls.length && n < 8; i++) {
@@ -615,15 +622,23 @@ function scheduleWater() { clearTimeout(waterTimer); waterTimer = setTimeout(ref
 function showWaterInfo() {
   const el = typeof document !== 'undefined' && document.getElementById('waterInfo'); if (!el || !waterInfo) return;
   const r = waterInfo, s = r.stats, lines = [];
-  if (!r.wetCount) lines.push('水位より低い所がありません（水は出ません）');
+  if (!r.wetCount) { lines.push('水位より低い所がありません（水は出ません）'); springInfo(lines); }
   else {
     lines.push(`水の所 ${(s.wetFraction * 100).toFixed(1)}%、最大の水深 ${s.maxDepth.toFixed(1)}m` + (r.hasFlow ? `、流れ 速さの上位5% ${s.speedP95.toFixed(2)}m/s` : '、流れなし'));
     lines.push(`滝 ${r.falls.length}個（着水できる ${r.falls.filter(f => !f.dry).length}個）、地図の端から端へ流れる川 ${(r.inflows || []).length}本`);
     for (const w of r.warnings) lines.push('⚠ ' + w);
+    springInfo(lines);
     if (BIOME().lava) lines.push('溶岩: Unity の水は未対応（書き出しは waterSim.available=false）');
     else if (state.sea) lines.push('海: Unity の水は未対応（書き出しは waterSim.available=false）');
   }
   el.textContent = lines.join('\n');
+}
+function springInfo(lines) {
+  const s = springRes; if (!s) return;
+  const END = { edge: '地図の端へ', water: '水へ流れ込む', dry: '地面に浸み込んで消える', pool: 'プールの中', full: '満ちて止まる', loop: '合流', open: '流れ中' };
+  if (s.springs.length) lines.push(`水源 ${s.springs.length}個：小川 ${s.streams.length}本、池 ${s.ponds.length}個、滝 ${s.falls.length}か所（` + s.springs.map(q => `${TDSprings.PRESETS[q.preset].name}→${END[q.end] || q.end}`).join('、') + '）');
+  if (s.pools.length) lines.push(`プール ${s.pools.length}個`);
+  for (const w of s.warnings) lines.push('⚠ ' + w);
 }
 // ---------- sea: the surf's shader code is in sea.js (shared with Unity) ----------
 const wGeo = new THREE.BufferGeometry();
@@ -765,7 +780,7 @@ const waterMat = new THREE.ShaderMaterial({
       vD=depth+h; vD0=depth; vWPos=w.xyz; vSea=vec4(seaW,brk*seaW,shore.x,uWaveH); vPh=vec2(cos(ph),sin(ph)); vGrad=grad; vDir=shore.yz; vRiv=shore2;
       gl_Position=projectionMatrix*viewMatrix*w;
     }`,
-  fragmentShader: `uniform float uTime; uniform float uDim; uniform vec3 uSun; uniform vec3 uShallow; uniform vec3 uDeep; uniform float uLava; uniform float uSea; uniform sampler2D uFlow; uniform sampler2D uMask; uniform float uFlowMax; uniform float uBankRange; uniform float uTrailMax; uniform float uShow; uniform float uMapSize; uniform vec4 uFalls[8]; uniform float uFallCount; uniform float uWaveH; varying float vD; varying float vD0; varying vec3 vWPos; varying vec4 vSea; varying vec2 vPh; varying vec2 vGrad; varying vec2 vDir; varying vec2 vRiv;
+  fragmentShader: `uniform float uTime; uniform float uDim; uniform vec3 uSun; uniform vec3 uShallow; uniform vec3 uDeep; uniform float uLava; uniform float uSea; uniform sampler2D uFlow; uniform sampler2D uMask; uniform float uFlowMax; uniform float uBankRange; uniform float uTrailMax; uniform float uShow; uniform float uMapSize; uniform vec4 uFalls[8]; uniform float uFallCount; uniform vec4 uSprings[8]; uniform float uSpringCount; uniform float uWaveH; varying float vD; varying float vD0; varying vec3 vWPos; varying vec4 vSea; varying vec2 vPh; varying vec2 vGrad; varying vec2 vDir; varying vec2 vRiv;
     ${DIM_GLSL}
     ${GLSL_NOISE}
     ${LAVA_SURFACE_GLSL}
@@ -804,7 +819,12 @@ const waterMat = new THREE.ShaderMaterial({
       float spec=pow(max(dot(reflect(-uSun,nr),V),0.),140.)*.35;
       float fres=pow(1.-max(V.y,0.),3.)*.35;
       col+=spec+fres*vec3(.6,.75,.85);
-      float fz=smoothstep(.17,.0,d+(fbm(p*3.+uTime*.3)-.5)*.16);
+      #ifdef SPRING
+      const float SK=.3;   // a spring's streams and ponds are only a few cm deep: a thin foam line, not a white sheet
+      #else
+      const float SK=1.;
+      #endif
+      float fz=smoothstep(.17*SK,.0,d+(fbm(p*3.+uTime*.3)-.5)*.16*SK)*mix(.3,1.,SK);
       col=mix(col,vec3(.96,1.,1.),fz*.9);
       // 泡の模様（流れに乗る）。覆う割合 cover は Unity の水と同じ式：lace = saturate((pattern-(1-cover))*4)
       float patA=clamp((mix(fbm(pb*2.3+vec2(uTime*.03,0.)),fbm(pa*2.3+vec2(uTime*.03,0.)),w0)-.5)*2.6+.5,0.,1.);
@@ -814,9 +834,9 @@ const waterMat = new THREE.ShaderMaterial({
       float lace=clamp((pat-(1.-.58*rapids))*4.,0.,1.)*step(.001,rapids);
       float trail=mk.r*uTrailMax; float trailLace=clamp((patA-(1.-trail))*4.,0.,1.)*step(.001,trail);
       float bankDist=fl.a*uBankRange; float bankNear=(1.-smoothstep(.15,.6,bankDist))*step(.04,bankDist);
-      float shoreBand=max(smoothstep(.10,.025,d)*smoothstep(0.,.012,d), bankNear*step(.02,d));
+      float shoreBand=max(smoothstep(.10*SK,.025*SK,d)*smoothstep(0.,.012*SK,d), bankNear*step(.02*SK,d));
       float lap=.5+.5*sin(uTime*1.25+fl.b*9.+(p.x+p.y)*.7);
-      float shore=shoreBand*clamp((pat-(1.-(.58+.06*lap)))*4.,0.,1.)*(.7+.3*clamp(speed,0.,1.))*.9;
+      float shore=shoreBand*clamp((pat-(1.-(.58+.06*lap)))*4.,0.,1.)*(.7+.3*clamp(speed,0.,1.))*.9*mix(.5,1.,SK);
       // 滝の着水：中心が明るく外へ広がって薄れる輪（Unity の飛沫・波紋と同じ向きの動き）
       float ringF=0.;
       for(int i=0;i<8;i++){ if(float(i)>=uFallCount) break; vec2 rel=p-uFalls[i].xy; float r=length(rel);
@@ -824,11 +844,22 @@ const waterMat = new THREE.ShaderMaterial({
         for(int k=0;k<3;k++){ float ph=fract(uTime*.5+float(k)/3.+uFalls[i].z); float R=.3+ph*(2.4+uFalls[i].w*.5);
           float arc=smoothstep(.30,.75,vn(vec2(atan(rel.y,rel.x)*2.2+float(k)*7.3+uFalls[i].z*5.,uTime*.25)));
           ringF+=exp(-pow((r-R)/.26,2.))*(1.-ph)*(1.-ph)*arc*.9; } }
+      #ifdef SPRING
+      // the springs: water boiling up in the middle, and small rings running out from it
+      for(int i=0;i<8;i++){ if(float(i)>=uSpringCount) break; vec2 rel=p-uSprings[i].xy; float r=length(rel), sz=uSprings[i].z;
+        ringF+=exp(-r*r/(.03+.06*sz))*(.45+.55*vn(rel*10.+vec2(uTime*2.3,-uTime*1.7)))*.9;
+        for(int k=0;k<3;k++){ float ph=fract(uTime*.55+float(k)/3.+uSprings[i].w); float R=.08+ph*(.45+.7*sz);
+          ringF+=exp(-pow((r-R)/.06,2.))*(1.-ph)*(1.-ph)*.55; } }
+      #endif
       ringF=clamp(ringF,0.,1.);
       float foamAdd=max(max(lace*.92,trailLace*.85),max(shore*.8,ringF*.8));
       col=mix(col,vec3(.96,1.,1.),foamAdd*(1.-uLava));
       fz=max(fz,foamAdd);
+      #ifdef SPRING
+      float alpha=max(mix(.16,.85,t)+spec*.5,fz*.9);   // a few cm of clear water: the stream bed shows through
+      #else
       float alpha=max(mix(.42,.93,t),fz*.95);
+      #endif
       if(dry){ col=vec3(0.); alpha=0.; }
       // the sea: waves, surf, run-up, wet sand, clear water and the light network on the floor (sea.js)
       if(seaW>.001){ vec4 sv=vec4(seaW,brkP,vSea.z,vSea.w); vec4 sc=dry?wetSand(p,dP,vD0,sv):seaColor(p,max(dP,0.),vD0,sv,vec2(cos(phP),sin(phP)),gP,vDir,vRiv); col=mix(col,sc.rgb,seaW); alpha=mix(alpha,sc.a,seaW); }
@@ -858,6 +889,143 @@ const waterMat = new THREE.ShaderMaterial({
 const water = new THREE.Mesh(wGeo, waterMat);
 water.renderOrder = 2;
 scene.add(water);
+
+// ---------- water sources (springs.js): streams and ponds above the water level, and the water in the pools
+// The water is worked out once (no simulation): each spring's flow is an area it can keep wet; it runs down the steepest way,
+// fills hollows to their brim and spills on. springRes holds the result on the editor grid; the walk check and the water mesh use it.
+let springRes = null;
+const POOL_WALL = .35, POOL_H = .45, POOL_FREE = .1;   // a pool's wall: thickness, height above its floor; its water stays this far below the rim (m)
+const poolLevel = p => p.rim - POOL_FREE;
+// signed distance (m) to a pool's outer edge, negative inside. Rect: the larger of the two axis distances; round: along the ellipse's radius
+function poolDist(p, x, z) {
+  const a = Math.abs(p.x2 - p.x1) / 2, b = Math.abs(p.z2 - p.z1) / 2, dx = x - (p.x1 + p.x2) / 2, dz = z - (p.z1 + p.z2) / 2;
+  if (p.type === 'round') return (Math.hypot(dx / a, dz / b) - 1) * Math.min(a, b);
+  return Math.max(Math.abs(dx) - a, Math.abs(dz) - b);
+}
+// a pool as springs.js sees it on a TN×TN grid: its water cells, the water's height and the cell just outside its notch
+function poolInput(p, TN, TS) {
+  const cells = [], at = v => clamp(Math.round((v + HALF) / TS), 0, TN - 1);
+  for (let j = at(Math.min(p.z1, p.z2)); j <= at(Math.max(p.z1, p.z2)); j++) for (let i = at(Math.min(p.x1, p.x2)); i <= at(Math.max(p.x1, p.x2)); i++)
+    if (poolDist(p, -HALF + i * TS, -HALF + j * TS) < -POOL_WALL + .05) cells.push(j * TN + i);
+  const cx = (p.x1 + p.x2) / 2, cz = (p.z1 + p.z2) / 2; let t = 0; while (poolDist(p, cx + p.ox * t, cz + p.oz * t) < .45 && t < 20) t += .05;
+  const ox = cx + p.ox * t, oz = cz + p.oz * t, out = Math.abs(ox) < HALF && Math.abs(oz) < HALF ? at(oz) * TN + at(ox) : -1;
+  return { id: p.id, cells, level: poolLevel(p), outlet: out };
+}
+const springInput = (TN, TS, TH) => ({ TN, TS, HALF, TH, level: state.water, springs: springs.map(q => ({ id: q.id, x: q.x, z: q.z, preset: q.preset })), pools: pools.map(p => poolInput(p, TN, TS)) });
+function solveSprings() {
+  springRes = (springs.length || pools.length) && !BIOME().lava ? TDSprings.solve(springInput(N, CELL, H)) : null;
+  if (poolGroup.children.length !== pools.length) rebuildPools();   // a new map (genFlat…) clears the list without the meshes
+  rebuildSpringWater(); rebuildSpringMarks(); walkDirty = true;
+  let n = 0;
+  if (springRes) for (const q of springRes.springs) if (q.wet && n < 8) WATERU.uSprings.value[n++].set(q.x, q.z, Math.sqrt(TDSprings.PRESETS[q.preset].area / 260), (Math.abs(Math.sin(q.x * 12.9898 + q.z * 78.233)) * 43758.5453) % 1);
+  WATERU.uSpringCount.value = n;
+}
+// the springs' water surface at (x, z) (-Infinity where they have none): bilinear over the grid, with the dry cells next to
+// the water held just under their ground, so the shore runs between the vertices like the mesh's does
+function springLevelAt(x, z) {
+  if (!springRes) return -Infinity;
+  const e = springRes.edge, fx = (x + HALF) * RES, fz = (z + HALF) * RES, i = clamp(Math.floor(fx), 0, N - 2), j = clamp(Math.floor(fz), 0, N - 2), k = idx(i, j);
+  const a = e[k], b = e[k + 1], c = e[k + N], d = e[k + N + 1];
+  if (a !== a || b !== b || c !== c || d !== d) return -Infinity;
+  const u = clamp(fx - i, 0, 1), v = clamp(fz - j, 0, 1);
+  return lerp(lerp(a, b, u), lerp(c, d, u), v);
+}
+const waterAt = (x, z) => Math.max(state.water, springLevelAt(x, z));   // the water's surface here: the map's level, or a spring's stream, pond or pool above it
+// springs changed: give back the old channels, work the water out on that ground, then carve the new channels into it
+function applySprings() {
+  const base = H.map((h, k) => h + SC[k]);
+  const res = springs.length && !BIOME().lava ? TDSprings.solve(springInput(N, CELL, base)) : null, cv = res ? TDSprings.carve(res, base) : new Float32Array(N * N);
+  for (let k = 0; k < N * N; k++) H[k] = base[k] - cv[k];
+  SC.set(cv); updateTerrain(); refreshWaterData();
+  // nothing stands in the new water but water plants
+  const n0 = props.length; props = props.filter(p => PROP[p[0]].water || PROP[p[0]].id === 'reed' || springLevelAt(p[1], p[2]) - heightAt(p[1], p[2]) < .03);
+  if (props.length !== n0) rebuildProps();
+  rebuildSpringMarks();
+}
+const spGeo = new THREE.BufferGeometry();
+spGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(N * N * 3), 3));
+spGeo.setAttribute('depth', new THREE.BufferAttribute(new Float32Array(N * N), 1));
+spGeo.setAttribute('shore', new THREE.BufferAttribute(new Float32Array(N * N * 4), 4));   // no sea here: all zero
+spGeo.setAttribute('shore2', new THREE.BufferAttribute(new Float32Array(N * N * 2), 2));
+spGeo.setIndex(new THREE.BufferAttribute(new Uint32Array(0), 1));
+// the same water shader (flow images, ripples, foam), with a thinner foam line for shallow streams and the boil over each spring
+const springMat = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: 0, polygonOffsetUnits: -2,
+  uniforms: waterMat.uniforms, vertexShader: waterMat.vertexShader, fragmentShader: waterMat.fragmentShader, defines: { SPRING: '' } });
+const springWater = new THREE.Mesh(spGeo, springMat);
+springWater.renderOrder = 2; springWater.visible = false; scene.add(springWater);
+// one sheet over the springs' water: vertices at the water's surface (the dry ones next to it just under their ground), and only
+// the cells that touch a stream or a pond (the pools have their own sheets)
+let springLiftOn = false;
+function rebuildSpringWater() {
+  const r = springRes, pos = spGeo.attributes.position.array, dp = spGeo.attributes.depth.array, ix = [];
+  if (r) {
+    for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
+      const k = idx(i, j), y = r.edge[k] === r.edge[k] ? r.edge[k] : H[k] - 1;
+      pos[k * 3] = vx(i); pos[k * 3 + 1] = y; pos[k * 3 + 2] = vx(j); dp[k] = y - H[k];
+    }
+    // the shore: where the ground is flat the waterline would follow the 0.5 m grid's steps. Blur "is this vertex under water"
+    // over about a metre and put the shallow vertices' depth on that, so the waterline rounds off (deep water and the positions
+    // stay as they are; a vertex well above the water stays dry)
+    let wet = new Float32Array(N * N); for (let k = 0; k < N * N; k++) wet[k] = r.kind[k] === 2 && dp[k] > 0 ? 1 : 0;   // ponds only: a narrow stream would be blurred away
+    for (let it = 0; it < 2; it++) {
+      const t = new Float32Array(N * N), o = new Float32Array(N * N);
+      for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) { let v = 0; for (let a = -2; a <= 2; a++) v += wet[j * N + clamp(i + a, 0, N - 1)]; t[j * N + i] = v / 5; }
+      for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) { let v = 0; for (let b = -2; b <= 2; b++) v += t[clamp(j + b, 0, N - 1) * N + i]; o[j * N + i] = v / 5; }
+      wet = o;
+    }
+    const nearStream = k => { const i = k % N, j = (k / N) | 0; for (let b = Math.max(0, j - 1); b <= Math.min(N - 1, j + 1); b++) for (let a = Math.max(0, i - 1); a <= Math.min(N - 1, i + 1); a++) if (r.kind[b * N + a] === 1) return true; return false; };
+    for (let k = 0; k < N * N; k++) if (r.edge[k] === r.edge[k] && (r.kind[k] === 2 || r.kind[k] === 0) && dp[k] < .1 && !nearStream(k)) dp[k] = Math.min((wet[k] - .5) * .2, dp[k] + .05);
+    const e = r.edge, kd = r.kind, open = k => kd[k] === 1 || kd[k] === 2;
+    for (let j = 0; j < N - 1; j++) for (let i = 0; i < N - 1; i++) {
+      const a = idx(i, j), b = a + 1, c = a + N, d = c + 1;
+      if (e[a] !== e[a] || e[b] !== e[b] || e[c] !== e[c] || e[d] !== e[d] || !(open(a) || open(b) || open(c) || open(d))) continue;
+      ix.push(a, c, b, b, c, d);
+    }
+  }
+  spGeo.setIndex(new THREE.BufferAttribute(new Uint32Array(ix), 1));
+  spGeo.attributes.position.needsUpdate = spGeo.attributes.depth.needsUpdate = true; spGeo.computeBoundingSphere();
+  springWater.visible = ix.length > 0;
+  // the ground under and beside it: its height above the water (terrain shader: stream bed, damp banks)
+  const sw = tGeo.attributes.springLift.array, had = springLiftOn; springLiftOn = !!r;
+  if (r || had) sw.fill(0);
+  if (r) {
+    // the nearest stream or pond within 3 cells: its surface, raised 0.12 m a cell away from it, so the damp fades out over the bank
+    const kd = r.kind, R3 = 3;
+    for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
+      const k = idx(i, j); let hw = 10;
+      for (let b = Math.max(0, j - R3); b <= Math.min(N - 1, j + R3); b++) for (let a = Math.max(0, i - R3); a <= Math.min(N - 1, i + R3); a++) {
+        const m = b * N + a; if (kd[m] !== 1 && kd[m] !== 2) continue;
+        hw = Math.min(hw, (kd[k] === 1 || kd[k] === 2 ? H[k] - r.surf[m] : Math.max(H[k] - r.surf[m], 0)) + .12 * Math.hypot(a - i, b - j));
+      }
+      if (kd[k] === 1 || kd[k] === 2) hw = H[k] - r.surf[k];   // only its own water makes a stream bed; dry ground below a stream up a cliff is just damp, fading with the distance
+      if (hw < 10) sw[k] = 10 - clamp(hw, -10, 10);
+    }
+  }
+  if (r || had) { tGeo.attributes.springLift.needsUpdate = true; if (terrain.geometry !== tGeo) scheduleCliffRelief(); }   // the shoulder mesh copies it from tGeo
+  if (typeof rebuildPoolWater === 'function') rebuildPoolWater();
+  rebuildSpringFalls();
+}
+// where the springs are, while editing: a ring and a drop
+const springMarkGroup = new THREE.Group(); scene.add(springMarkGroup);
+const springMarkMat = new THREE.MeshBasicMaterial({ color: 0x6fe3ff, transparent: true, opacity: .85, depthTest: false });
+function rebuildSpringMarks() {
+  for (const c of [...springMarkGroup.children]) { c.geometry.dispose(); springMarkGroup.remove(c); }
+  for (const q of springs) {
+    const y = Math.max(waterAt(q.x, q.z), heightAt(q.x, q.z)), s = .35 + .25 * Math.sqrt(TDSprings.PRESETS[q.preset].area / 260);
+    const ringM = new THREE.Mesh(new THREE.TorusGeometry(s, .04, 6, 32), springMarkMat); ringM.rotation.x = Math.PI / 2; ringM.position.set(q.x, y + .08, q.z);
+    const drop = new THREE.Mesh(new THREE.ConeGeometry(.14, .3, 10), springMarkMat); drop.rotation.x = Math.PI; drop.position.set(q.x, y + .75, q.z);
+    const ball = new THREE.Mesh(new THREE.SphereGeometry(.14, 10, 8), springMarkMat); ball.position.set(q.x, y + .55, q.z);
+    for (const m of [ringM, drop, ball]) { m.renderOrder = 7; springMarkGroup.add(m); }
+  }
+  springMarkGroup.visible = state.mode === 'edit';
+}
+function placeSpring(x, z, preset) {
+  if (BIOME().lava) return '溶岩のバイオームでは水源を置けません';
+  if (heightAt(x, z) < state.water) return '水位より低い所（水の中）には置けません';
+  const near = springs.find(q => Math.hypot(q.x - x, q.z - z) < 1);
+  if (near) { if (near.preset === preset) return '同じ湧出量の水源がもうあります'; near.preset = preset; applySprings(); return null; }
+  springs.push({ id: newId('spring'), x: +x.toFixed(2), z: +z.toFixed(2), preset }); applySprings(); return null;
+}
 
 function refreshGroundWeights(){TDTerrainPaint.resolve(S,effectiveS,NS);}
 function updateTerrain() {
@@ -1545,6 +1713,21 @@ function fallReliefMask(x, z) {
   }
   return k;
 }
+// where a spring's stream drops down a cliff (springs.js falls): the same falling sheet, foam and mist as a placed waterfall
+const springFallGroup = new THREE.Group(); scene.add(springFallGroup);
+function rebuildSpringFalls() {
+  for (const c of [...springFallGroup.children]) { if (c.geometry) c.geometry.dispose(); if (c.isSprite) c.material.dispose(); springFallGroup.remove(c); }
+  if (!springRes) return;
+  for (const f of springRes.falls) {
+    const hgt = f.top - f.bottom, w = Math.max(f.width, .5), rot = Math.atan2(f.dir[0], f.dir[1]), x = f.x + f.dir[0] * .45, z = f.z + f.dir[1] * .45;
+    if (hgt < .6) continue;
+    const m = new THREE.Mesh(fallGeometry(w, hgt + .1, .35), fallMat); m.position.set(x, f.bottom, z); m.rotation.y = rot; m.renderOrder = 3; springFallGroup.add(m);
+    const foam = new THREE.Mesh(new THREE.PlaneGeometry(w * 2, w * 1.5), foamMat);
+    foam.rotation.set(-Math.PI / 2, 0, rot); foam.position.set(x + f.dir[0] * .4, f.bottom + .03, z + f.dir[1] * .4); foam.renderOrder = 4; springFallGroup.add(foam);
+    const mist = new THREE.Sprite(new THREE.SpriteMaterial({ map: mistTex, transparent: true, depthWrite: false, opacity: .3 }));
+    mist.position.set(x + f.dir[0] * .4, f.bottom + w * .4, z + f.dir[1] * .4); mist.scale.setScalar(w * 2); mist.renderOrder = 5; springFallGroup.add(mist);
+  }
+}
 function rebuildFalls() {
   scheduleWater(); if (typeof cliffRelief !== 'undefined') scheduleCliffRelief();
   for (const c of [...fallGroup.children]) { if (c.geometry) c.geometry.dispose(); fallGroup.remove(c); }
@@ -1894,6 +2077,105 @@ function placeBridge(a, c, w, type = 'wood') {
   bridges.push(b); rebuildBridges(); rebuildProps();
   return true;
 }
+// ---------- pools: a kerb of dressed stone standing on the ground and holding water above it (the floor inside is levelled
+// and paved). Their water is a fixed pond for springs.js: a spring inside makes it overflow through the notch in its kerb.
+const POOL_TYPES = [['rect', '四角いプール'], ['round', '丸いプール']];
+const poolGroup = new THREE.Group(); scene.add(poolGroup);
+const poolWaterGroup = new THREE.Group(); scene.add(poolWaterGroup);
+// matching points along a pool's outline, d metres in from its outer edge (negative: out from it); blocks of about seg metres
+function poolRing(p, d, seg) {
+  const cx = (p.x1 + p.x2) / 2, cz = (p.z1 + p.z2) / 2, a = Math.abs(p.x2 - p.x1) / 2, b = Math.abs(p.z2 - p.z1) / 2, pts = [];
+  if (p.type === 'round') {
+    const n = Math.max(20, Math.ceil(Math.PI * (a + b) / seg));
+    for (let k = 0; k < n; k++) { const t = k / n * Math.PI * 2; pts.push([cx + Math.cos(t) * (a - d), cz + Math.sin(t) * (b - d)]); }
+    return pts;
+  }
+  const C = [[-1, -1], [1, -1], [1, 1], [-1, 1]];
+  for (let s = 0; s < 4; s++) {
+    const [u0, v0] = C[s], [u1, v1] = C[(s + 1) % 4], len = s % 2 ? 2 * b : 2 * a, n = Math.max(1, Math.round(len / seg));
+    for (let k = 0; k < n; k++) { const t = k / n, u = u0 + (u1 - u0) * t, v = v0 + (v1 - v0) * t; pts.push([cx + u * (a - d), cz + v * (b - d)]); }
+  }
+  return pts;
+}
+// a solid block between two edges of the kerb (outer a→b, inner c←d), from y0 to y1, faces turned outward
+function kerbBlock(o0, o1, i1, i0, y0, y1) {
+  const q = [o0, o1, i1, i0], P = [], mx = (o0[0] + o1[0] + i0[0] + i1[0]) / 4, mz = (o0[1] + o1[1] + i0[1] + i1[1]) / 4, my = (y0 + y1) / 2;
+  const tri = (A, B, Cc) => {
+    const ux = B[0] - A[0], uy = B[1] - A[1], uz = B[2] - A[2], vx_ = Cc[0] - A[0], vy = Cc[1] - A[1], vz = Cc[2] - A[2];
+    const nx = uy * vz - uz * vy, ny = uz * vx_ - ux * vz, nz = ux * vy - uy * vx_, fx = (A[0] + B[0] + Cc[0]) / 3 - mx, fy = (A[1] + B[1] + Cc[1]) / 3 - my, fz = (A[2] + B[2] + Cc[2]) / 3 - mz;
+    if (nx * fx + ny * fy + nz * fz < 0) P.push(...A, ...Cc, ...B); else P.push(...A, ...B, ...Cc);
+  };
+  const T = q.map(([x, z]) => [x, y1, z]), B = q.map(([x, z]) => [x, y0, z]);
+  tri(T[0], T[1], T[2]); tri(T[0], T[2], T[3]); tri(B[0], B[2], B[1]); tri(B[0], B[3], B[2]);
+  for (let s = 0; s < 4; s++) { const e = (s + 1) % 4; tri(B[s], B[e], T[e]); tri(B[s], T[e], T[s]); }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); return g;
+}
+function poolNotch(p) { const cx = (p.x1 + p.x2) / 2, cz = (p.z1 + p.z2) / 2; let t = 0; while (poolDist(p, cx + p.ox * t, cz + p.oz * t) < 0 && t < 20) t += .02; return [cx + p.ox * t, cz + p.oz * t]; }
+function geoPool(p) {
+  const R = rng(((p.x1 * 97 + p.z1 * 31) * 100) | 0), parts = [], lv = poolLevel(p), [nx, nz] = poolNotch(p);
+  const O = poolRing(p, 0, .7), I = poolRing(p, POOL_WALL, .7), CO = poolRing(p, -.04, .7), CI = poolRing(p, POOL_WALL + .03, .7), n = O.length;
+  const stone = () => { const v = R(); return mixc(col(0x7f7a70), col(0xb2aa9a), v); };
+  for (let k = 0; k < n; k++) {
+    const e = (k + 1) % n, mx = (O[k][0] + O[e][0]) / 2, mz = (O[k][1] + O[e][1]) / 2, notch = Math.hypot(mx - nx, mz - nz) < .45;
+    const top = notch ? lv - .1 : p.rim - .07, c1 = stone(), c2 = mixc(col(0xc4bcab), col(0xd9d1bf), R());
+    // the wall reaches 0.35 m into the ground, so it meets uneven ground outside without a gap
+    parts.push({ g: kerbBlock(O[k], O[e], I[e], I[k], p.floor - .35, top), m: new THREE.Matrix4(), c: c1, j: .06 });
+    parts.push({ g: kerbBlock(CO[k], CO[e], CI[e], CI[k], top, notch ? lv - .02 : p.rim), m: new THREE.Matrix4(), c: c2, j: .05 });   // coping stones, a little proud of the wall
+  }
+  return makeGeo(parts, 131);
+}
+// the water inside: one flat sheet a little under the kerb all round
+function poolWaterGeo(p) {
+  const pts = poolRing(p, POOL_WALL - .06, .5), lv = poolLevel(p), cx = (p.x1 + p.x2) / 2, cz = (p.z1 + p.z2) / 2, P = [cx, lv, cz], ix = [];
+  for (const [x, z] of pts) P.push(x, lv, z);
+  for (let k = 0; k < pts.length; k++) ix.push(0, 1 + (k + 1) % pts.length, 1 + k);
+  const g = new THREE.BufferGeometry(), n = pts.length + 1;
+  g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3));
+  g.setAttribute('depth', new THREE.Float32BufferAttribute(new Float32Array(n).fill(lv - p.floor), 1));
+  g.setAttribute('shore', new THREE.Float32BufferAttribute(new Float32Array(n * 4), 4)); g.setAttribute('shore2', new THREE.Float32BufferAttribute(new Float32Array(n * 2), 2));
+  g.setIndex(ix); return g;
+}
+function rebuildPoolWater() {
+  for (const c of [...poolWaterGroup.children]) { c.geometry.dispose(); poolWaterGroup.remove(c); }
+  if (BIOME().lava) return;
+  for (const p of pools) { const m = new THREE.Mesh(poolWaterGeo(p), springMat); m.renderOrder = 2; poolWaterGroup.add(m); }
+}
+function rebuildPools() {
+  for (const c of [...poolGroup.children]) { c.geometry.dispose(); poolGroup.remove(c); }
+  for (const p of pools) { const m = new THREE.Mesh(geoPool(p), structMat); m.castShadow = m.receiveShadow = true; poolGroup.add(m); }
+  rebuildPoolWater(); walkDirty = true;
+}
+// footing on a pool's kerb: its top, where the body (margin = its radius) fits on it — the kerb is narrower than the hero, so it blocks
+function poolWallAt(x, z, margin = 0) {
+  for (const p of pools) { const d = poolDist(p, x, z); if (d <= -margin && d >= -POOL_WALL + margin) return p.rim; }
+  return null;
+}
+function placePool(a, c, type) {
+  const p = { id: newId('pool'), type: type === 'round' ? 'round' : 'rect', x1: +Math.min(a.x, c.x).toFixed(2), z1: +Math.min(a.z, c.z).toFixed(2), x2: +Math.max(a.x, c.x).toFixed(2), z2: +Math.max(a.z, c.z).toFixed(2) };
+  const w = p.x2 - p.x1, l = p.z2 - p.z1;
+  if (w < 1.6 || l < 1.6) return '角から角へ、1.6m 以上の大きさにドラッグしてください';
+  if (w > 16 || l > 16) return '一辺 16m までにしてください';
+  if (BIOME().lava) return '溶岩のバイオームではプールを作れません';
+  if (Math.min(p.x1, p.z1) < -HALF + 1 || Math.max(p.x2, p.z2) > HALF - 1) return '地図の端から 1m 以上内側に作ってください';
+  if (pools.some(q => q.x1 < p.x2 + .3 && p.x1 < q.x2 + .3 && q.z1 < p.z2 + .3 && p.z1 < q.z2 + .3)) return 'ほかのプールと重なっています';
+  let floor = Infinity;
+  for (let z = p.z1; z <= p.z2 + 1e-6; z += .25) for (let x = p.x1; x <= p.x2 + 1e-6; x += .25) if (poolDist(p, x, z) <= 0) floor = Math.min(floor, heightAt(x, z));
+  if (floor < state.water + .05) return '水の中には作れません（水位より上の地面に作ってください）';
+  p.floor = +floor.toFixed(3); p.rim = +(floor + POOL_H).toFixed(3);
+  // the notch faces the lowest ground just outside the kerb (the overflow runs off that way)
+  const cx = (p.x1 + p.x2) / 2, cz = (p.z1 + p.z2) / 2, dirs = p.type === 'round' ? Array.from({ length: 8 }, (_, k) => [Math.cos(k * Math.PI / 4), Math.sin(k * Math.PI / 4)]) : [[1, 0], [-1, 0], [0, 1], [0, -1]];
+  let best = Infinity;
+  for (const [ux, uz] of dirs) { let t = 0; while (poolDist(p, cx + ux * t, cz + uz * t) < .6 && t < 20) t += .05; const h = heightAt(cx + ux * t, cz + uz * t); if (h < best - 1e-6) { best = h; p.ox = +ux.toFixed(4); p.oz = +uz.toFixed(4); } }
+  // level the floor (and the ground under the kerb), and pave it
+  for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
+    const k = idx(i, j), d = poolDist(p, vx(i), vx(j)); if (d > .25) continue;
+    H[k] = p.floor; SC[k] = 0;
+    if (d <= 0) { for (let ch = 0; ch < NS; ch++) S[k * NS + ch] = 0; S[k * NS + 1] = 255; }
+  }
+  props = props.filter(q => poolDist(p, q[1], q[2]) > .3 + PROP[q[0]].r * q[4]);
+  pools.push(p); rebuildPools(); applySprings(); rebuildProps();
+  return null;
+}
 // ---------- slopes and stairs share a ramp carved into the terrain
 function shapeRamp(a, c, w, y1, y2, sink) {
   const L = Math.hypot(c.x - a.x, c.z - a.z), dx = (c.x - a.x) / L, dz = (c.z - a.z) / L;
@@ -2172,6 +2454,7 @@ function linkDeckAt(x, z, margin) {
 function deckAt(x, z, margin) {
   if (bridges.length) { const y = bridgeAt(x, z, margin); if (y !== null) return { y, kind: 'bridge' }; }
   if (stairs.length) { const y = stairsAt(x, z, margin); if (y !== null) return { y, kind: 'stairs' }; }
+  if (pools.length) { const y = poolWallAt(x, z, margin); if (y !== null) return { y, kind: 'pool' }; }
   if (markers.length) { const y = linkDeckAt(x, z, margin); if (y !== null) return { y, kind: 'stairs' }; }
   return null;
 }
@@ -2197,7 +2480,7 @@ function walkable(x, z, autoCached) {
 }
 function autoWalkable(x, z) {
   if (!inBounds(x, z)) return false;
-  if (state.water - heightAt(x, z) > state.agent.maxWaterDepth) return false;
+  if (waterAt(x, z) - heightAt(x, z) > state.agent.maxWaterDepth) return false;   // the map's water, or a spring's pond or pool
   if (BIOME().lava && heightAt(x, z) < state.water + .05) return false;
   if (splatAt(x, z, 6) > .5) return false;
   if (slopeAt(x, z) > Math.tan(state.agent.maxSlopeDeg * Math.PI / 180)) return false;
@@ -2354,6 +2637,8 @@ const TOOLS = [
   { id: 'slope', name: '坂', key: 'n', hint: '下から上へドラッグすると、歩いて上り下りできるゆるやかな坂を作ります（幅＝半径）。急すぎる場合は作りません。' },
   { id: 'stairs', name: '階段', key: 'm', hint: '段差をまたいでドラッグすると階段を作ります（幅＝半径の半分）。種類は下の「種類」から選びます。' },
   { id: 'bridge', name: '橋', key: 'b', hint: '岸から岸へドラッグすると橋を架けます（幅＝半径の半分、1.6〜4m）。種類は下の「種類」から。桟橋は、陸から水の上へドラッグします（先は水の上で終わります）。Shift+クリックで近くの橋を消します。' },
+  { id: 'spring', name: '水源', key: '@', hint: 'クリックした所から水が湧きます。湧出量は下の「湧出量」から（しずく・小川・泉・大きな泉）。平らな所では湧出量に合った広さまで丸く広がり、坂では低い方へ小川になって流れます（川床の溝は自動で掘ります）。くぼみは池になり、満ちるといちばん低い縁からあふれて流れ続けます。水源をクリックすると湧出量を今の種類に変えます。Shift+クリックで近くの水源を消します。' },
+  { id: 'pool', name: 'プール', key: ':', hint: '角から角へドラッグすると、石の縁で囲んだプールを地面の上に作ります（四角・丸は下の「プールの形」から、1.6〜16m）。中の床は平らにならして石畳にし、水は縁の 10cm 下まで張ります。中に水源を置くと、外の地面がいちばん低い側のあふれ口から小川が流れ出ます。Shift+クリックで近くのプールを消します。' },
   { id: 'fall', name: '滝', key: '=', hint: '崖をクリックすると、縁から水面へ落ちる滝を置きます（幅＝半径の半分）。Shift+クリックで近くの滝を消します。' },
   { id: 'place', name: '置く', key: 'p', hint: '「種類」で選んだ物を、クリックした場所に1つ置きます。R キーで向きを45°回転。' },
   { id: 'detail', name: '地表小物を調整', key: ';', hint: '草・花・小石・落ち葉をクリックして選び、下の欄で位置・向き・大きさを調整。Shift＋クリックで選んだ小物を移動します。調整した物は自動更新でも残ります。' },
@@ -2368,8 +2653,8 @@ const TOOLS = [
   { id: 'walkAuto', name: '自動に戻す', key: 'j', hint: '塗った所の上書きを消し、自動判定に戻します。' },
 ];
 const undoStack = [], redoStack = [];
-const snapshot = () => ({ H: H.slice(), S: S.slice(), O: O.slice(), C: C.slice(), CF: cliffFits.save(), P: props.map(p => p.slice()), F: falls.map(f => ({ ...f })), B: bridges.map(b => ({ ...b })), T: stairs.map(st => ({ ...st })), W: state.water, sp: { ...state.spawn }, bi: state.biome, at: { ...state.atmo }, sea: state.sea, we: { ...state.weather }, sun: state.sunOn, dk: state.darkness, M: markers.map(m => ({ ...m })), nid: state.nextId, rid: state.roomId, cat: JSON.stringify(state.catalog), ag: { ...state.agent }, cs: state.cliffStyle });
-function restore(s,prepared,deferMarkers=false) { cliffFits.clear();H.set(s.H); S.set(s.S); O.set(s.O); if (s.C) C.set(s.C); else C.fill(0); walkDirty = true; props = s.P.map(p => p.slice()); falls = s.F.map(f => ({ ...f })); bridges = s.B.map(b => ({ ...b })); stairs = (s.T || []).map(st => ({ ...st })); state.water = s.W; state.spawn = { ...s.sp }; if (s.at) state.atmo = { ...s.at }; if (s.we) state.weather = { ...s.we }; state.sunOn = s.sun !== false; state.darkness = s.dk || 'dark'; markers = (s.M || []).map(m => ({ ...m })); state.nextId = s.nid || state.nextId; state.roomId = s.rid || state.roomId; if (s.cat) { state.catalog = JSON.parse(s.cat); applyCatalog(); } if (s.ag) { state.agent = { ...s.ag }; syncAgentUI(); colliders = null; } state.cliffStyle = s.cs || 'standard'; applyCliffStyle(); if ($('cliffStyle')) $('cliffStyle').value = state.cliffStyle; if(!deferMarkers)rebuildMarkers(); state.sea = !!s.sea; applyBiome(s.bi || state.biome); syncUI(); updateTerrain(); rebuildProps(); rebuildFalls(); rebuildBridges(); rebuildStairs();if(prepared)cliffFits.installPrepared(prepared,props,cliffInputSignature());else cliffFits.load(s.CF,props,cliffInputSignature());rebuildProps(); }
+const snapshot = () => ({ ...(springs.length ? { SP: springs.map(s => ({ ...s })) } : {}), ...(pools.length ? { PL: pools.map(p => ({ ...p })) } : {}), ...(SC.some(v => v) ? { SC: SC.slice() } : {}), H: H.slice(), S: S.slice(), O: O.slice(), C: C.slice(), CF: cliffFits.save(), P: props.map(p => p.slice()), F: falls.map(f => ({ ...f })), B: bridges.map(b => ({ ...b })), T: stairs.map(st => ({ ...st })), W: state.water, sp: { ...state.spawn }, bi: state.biome, at: { ...state.atmo }, sea: state.sea, we: { ...state.weather }, sun: state.sunOn, dk: state.darkness, M: markers.map(m => ({ ...m })), nid: state.nextId, rid: state.roomId, cat: JSON.stringify(state.catalog), ag: { ...state.agent }, cs: state.cliffStyle });
+function restore(s,prepared,deferMarkers=false) { cliffFits.clear();H.set(s.H); springs = (s.SP || []).map(q => ({ ...q })); pools = (s.PL || []).map(q => ({ ...q })); if (s.SC) SC.set(s.SC); else SC.fill(0); rebuildPools(); S.set(s.S); O.set(s.O); if (s.C) C.set(s.C); else C.fill(0); walkDirty = true; props = s.P.map(p => p.slice()); falls = s.F.map(f => ({ ...f })); bridges = s.B.map(b => ({ ...b })); stairs = (s.T || []).map(st => ({ ...st })); state.water = s.W; state.spawn = { ...s.sp }; if (s.at) state.atmo = { ...s.at }; if (s.we) state.weather = { ...s.we }; state.sunOn = s.sun !== false; state.darkness = s.dk || 'dark'; markers = (s.M || []).map(m => ({ ...m })); state.nextId = s.nid || state.nextId; state.roomId = s.rid || state.roomId; if (s.cat) { state.catalog = JSON.parse(s.cat); applyCatalog(); } if (s.ag) { state.agent = { ...s.ag }; syncAgentUI(); colliders = null; } state.cliffStyle = s.cs || 'standard'; applyCliffStyle(); if ($('cliffStyle')) $('cliffStyle').value = state.cliffStyle; if(!deferMarkers)rebuildMarkers(); state.sea = !!s.sea; applyBiome(s.bi || state.biome); syncUI(); updateTerrain(); solveSprings(); rebuildSpringMarks(); rebuildProps(); rebuildFalls(); rebuildBridges(); rebuildStairs();if(prepared)cliffFits.installPrepared(prepared,props,cliffInputSignature());else cliffFits.load(s.CF,props,cliffInputSignature());rebuildProps(); }
 function pushUndo() { undoStack.push(snapshot()); if (undoStack.length > 40) undoStack.shift(); redoStack.length = 0; }
 function undo() { if (!undoStack.length) return; redoStack.push(snapshot()); restore(undoStack.pop()); toast('取り消し'); }
 function redo() { if (!redoStack.length) return; undoStack.push(snapshot()); restore(redoStack.pop()); toast('やり直し'); }
@@ -2428,7 +2713,7 @@ function canPlace(t, x, z, hash) {
   if (Math.abs(x) > HALF - 1.2 || Math.abs(z) > HALF - 1.2) return false;
   const wd = PROP[t].water;   // [min, max] still depth (m): props that grow under water (corals)
   const sh = PROP[t].shore;   // [min, max] height above the still water (m): things the waves leave at the water's edge (shells, wrack)
-  if (sh ? !(heightAt(x, z) - state.water >= sh[0] && heightAt(x, z) - state.water <= sh[1]) : wd ? !(state.water - heightAt(x, z) >= wd[0] && state.water - heightAt(x, z) <= wd[1]) : heightAt(x, z) < state.water + (PROP[t].id === 'reed' ? -.45 : .3)) return false;
+  if (sh ? !(heightAt(x, z) - state.water >= sh[0] && heightAt(x, z) - state.water <= sh[1]) : wd ? !(state.water - heightAt(x, z) >= wd[0] && state.water - heightAt(x, z) <= wd[1]) : heightAt(x, z) < waterAt(x, z) + (PROP[t].id === 'reed' ? -.45 : .3)) return false;
   if (slopeAt(x, z) > PROP[t].slope) return false;
   if (!PROP[t].anyGround && (splatAt(x, z, 0) > .45 || splatAt(x, z, 1) > .4)) return false;
   if (PROP[t].tree && (splatAt(x, z, 2) + splatAt(x, z, 4) + splatAt(x, z, 5) > .45)) return false;
@@ -2710,7 +2995,7 @@ const secretLineX = z => -7 + 1.3 * Math.sin((z - 2) / 9 * Math.PI);   // centre
 function* sample2Steps(seed = 11) {
   C.fill(0);
   state.roomId = newRoomId(); state.nextId = 1; state.revision = 0; state.lastExportHash = ''; markers = [];
-  state.sea = false; S.fill(0); O.fill(0); bridges = []; stairs = []; falls = []; props = [];
+  state.sea = false; S.fill(0); O.fill(0); bridges = []; stairs = []; falls = []; props = []; springs = []; pools = []; SC.fill(0);
   state.biome = 'ruins'; state.water = .4;
   const R = rng(seed);
   const dirt = [[[0, -24], [0, -12]], [[-24, -8], [-12, -10], [0, -12]], [[0, -12], [7, -8], [13, -4]], [[-6.2, 13], [-5, 14.5], [-3, 15.5]]];
@@ -2763,7 +3048,7 @@ function drainMapSteps(it){let r;do{r=it.next();}while(!r.done);return r.value;}
 function genSample(seed=7){cancelMapPreparation(false);return drainMapSteps(sampleSteps(seed));}
 function genSample2(seed=11){cancelMapPreparation(false);return drainMapSteps(sample2Steps(seed));}
 function autoRocks(seed=Date.now()){return drainMapSteps(autoRocksSteps(seed));}
-function genFlat() { cancelMapPreparation(false);cliffFits.clear();C.fill(0); state.roomId = newRoomId(); state.nextId = 1; state.revision = 0; state.lastExportHash = ''; markers = []; state.sea = false; H.fill(3); S.fill(0); O.fill(0); props = []; falls = []; bridges = []; stairs = []; state.water = .8; state.spawn = { x: 0, z: 0 }; }
+function genFlat() { cancelMapPreparation(false);cliffFits.clear();C.fill(0); state.roomId = newRoomId(); state.nextId = 1; state.revision = 0; state.lastExportHash = ''; markers = []; state.sea = false; H.fill(3); S.fill(0); O.fill(0); props = []; falls = []; bridges = []; stairs = []; springs = []; pools = []; SC.fill(0); state.water = .8; state.spawn = { x: 0, z: 0 }; }
 function pickFlora(R, list) {
   let tot = 0; for (const [, w] of list) tot += w;
   let r = R() * tot; for (const [id, w] of list) { r -= w; if (r <= 0) return TYPE(id); }
@@ -2773,7 +3058,7 @@ function* sampleSteps(seed = 7) {
   C.fill(0);
   state.roomId = newRoomId(); state.nextId = 1; state.revision = 0; state.lastExportHash = ''; markers = [];
   state.sea = false; S.fill(0);   // channels 2+ are only ever raised below, so start clean
-  O.fill(0); bridges = []; stairs = []; falls = []; props = [];   // nothing from the previous map may steer the generator
+  O.fill(0); bridges = []; stairs = []; falls = []; props = []; springs = []; pools = []; SC.fill(0);   // nothing from the previous map may steer the generator
   const R = rng(seed), WL = .8;
   const river = [[20, -34], [17, -20], [12, -8], [9, 2], [11, 12], [17, 22], [22, 34]];
   const path1 = [[0, -34], [-1, -20], [-3, -8], [-2, 4], [1, 16], [0, 28]];
@@ -2876,6 +3161,8 @@ function ensureIds() {
   for (const b of bridges) if (!b.id) b.id = newId('bridge');
   for (const st of stairs) if (!st.id) st.id = newId('stairs');
   for (const f of falls) if (!f.id) f.id = newId('fall');
+  for (const q of springs) if (!q.id) q.id = newId('spring');
+  for (const q of pools) if (!q.id) q.id = newId('pool');
   for (const m of markers) if (!m.id) m.id = newId(markerPrefix(m.kind));
   if (!state.spawn.id) state.spawn.id = 'spawn_main';
 }
@@ -3512,6 +3799,9 @@ function serialize() {
     // full precision (JSON keeps doubles exactly), so a reloaded map exports byte-identical files
     props: props.map(p => p.map(v => v ?? null)),
     falls: falls.map(f => ({ ...f })), bridges: bridges.map(b => ({ ...b })), stairs: stairs.map(st => ({ ...st })),
+    // water sources and pools (left out when there are none, so older maps save as before); springCarve = how deep their streams are carved
+    springs: springs.length ? springs.map(q => ({ ...q })) : undefined, pools: pools.length ? pools.map(q => ({ ...q })) : undefined,
+    springCarve: SC.some(v => v) ? b64(new Uint8Array(SC.slice().buffer)) : undefined,
   };
 }
 // props hold a type index. A saved map also lists its type ids (propTypes), so map them onto this editor's order:
@@ -3551,9 +3841,13 @@ function decodeMap(d,size=SIZE){
   if (cm && cm.length !== count) issues.push(`cliffMap: ${cm.length} バイト（${count} バイトが必要）`);
   else if (cm && cm.some(v => v > CLIFF_STYLES.length)) issues.push(`cliffMap: 0〜${CLIFF_STYLES.length} 以外の値があります`);
   if (!Array.isArray(d.props)) issues.push('props: 配列ではありません');
-  for (const k of ['falls', 'bridges', 'stairs', 'markers']) if (d[k] !== undefined && !Array.isArray(d[k])) issues.push(`${k}: 配列ではありません`);
+  for (const k of ['falls', 'bridges', 'stairs', 'markers', 'springs', 'pools']) if (d[k] !== undefined && !Array.isArray(d[k])) issues.push(`${k}: 配列ではありません`);
+  let sc = null;
+  if (d.springCarve !== undefined) { const u = dec('springCarve', d.springCarve); if (u && u.length !== count * 4) issues.push(`springCarve: ${u.length} バイト（${count * 4} バイトが必要）`); else if (u) sc = new Float32Array(u.buffer.slice(u.byteOffset, u.byteOffset + u.length)); }
+  for (const [i, q] of (Array.isArray(d.springs) ? d.springs : []).entries()) if (!q || !Number.isFinite(q.x) || !Number.isFinite(q.z) || !(q.preset in TDSprings.PRESETS)) issues.push(`springs[${i}]: 位置か湧出量の種類が不正です`);
+  for (const [i, q] of (Array.isArray(d.pools) ? d.pools : []).entries()) if (!q || !['rect', 'round'].includes(q.type) || ![q.x1, q.z1, q.x2, q.z2, q.floor, q.rim].every(Number.isFinite)) issues.push(`pools[${i}]: 形か大きさが不正です`);
   if (issues.length) throw new Error(`不正な値が ${issues.length} 件あります: ` + issues.slice(0, 3).join(' / ') + (issues.length > 3 ? ' …' : ''));
-  return{data:d,newH,sp,spLayers,wo,cm};
+  return{data:d,newH,sp,spLayers,wo,cm,sc};
 }
 function deserialize(d,prepared) {
   if (d.format !== 'map-editor-proto') throw new Error('形式が違います');
@@ -3561,16 +3855,16 @@ function deserialize(d,prepared) {
     if (d.resolution === RES && MAP_SIZES.includes(d.size)) return prepareMap('load',0,{data:d});
     throw new Error('サイズが違います');
   }
-  const {data,newH,sp,spLayers,wo,cm}=decodeMap(d);d=data;
+  const {data,newH,sp,spLayers,wo,cm,sc}=decodeMap(d);d=data;
   if(!prepared){cliffFits.validate(d.cliffFits,d.props,cliffInputSignature(newH,d.falls||[],d.waterLevel));cancelMapPreparation(false);}
   cliffFits.clear();H.set(newH);
   if (spLayers === NS) S.set(sp); else { S.fill(0); for (let k = 0; k < N * N; k++) for (let c = 0; c < spLayers; c++) S[k * NS + c] = sp[k * spLayers + c]; }
-  O.set(wo); C.set(cm); walkDirty = true; props = d.props.map(p => p.slice()); falls = (d.falls || []).map(f => ({ ...f })); bridges = (d.bridges || []).map(b => ({ ...b })); stairs = (d.stairs || []).map(st => ({ ...st })); rebuildFalls(); rebuildBridges(); rebuildStairs(); state.water = d.waterLevel; state.spawn = d.spawn; state.sea = !!d.sea; state.weather = d.weather ? { ...d.weather } : { kind: 'none', amount: .7 }; state.sunOn = d.sunlight !== false; state.darkness = DARK_LEVELS[d.darkness] ? d.darkness : 'dark'; setMapName(typeof d.name === 'string' ? d.name : ''); state.cliffStyle = CLIFF_STYLES.some(c => c[0] === d.cliffStyle) ? d.cliffStyle : 'standard'; applyCliffStyle(); if ($('cliffStyle')) $('cliffStyle').value = state.cliffStyle; state.atmo = d.atmosphere ? { ...d.atmosphere } : { kind: 'none', amount: .6, height: 3 };
+  O.set(wo); C.set(cm); walkDirty = true; springs = (d.springs || []).map(q => ({ ...q })); pools = (d.pools || []).map(q => ({ ...q })); if (sc) SC.set(sc); else SC.fill(0); rebuildPools(); props = d.props.map(p => p.slice()); falls = (d.falls || []).map(f => ({ ...f })); bridges = (d.bridges || []).map(b => ({ ...b })); stairs = (d.stairs || []).map(st => ({ ...st })); rebuildFalls(); rebuildBridges(); rebuildStairs(); state.water = d.waterLevel; state.spawn = d.spawn; state.sea = !!d.sea; state.weather = d.weather ? { ...d.weather } : { kind: 'none', amount: .7 }; state.sunOn = d.sunlight !== false; state.darkness = DARK_LEVELS[d.darkness] ? d.darkness : 'dark'; setMapName(typeof d.name === 'string' ? d.name : ''); state.cliffStyle = CLIFF_STYLES.some(c => c[0] === d.cliffStyle) ? d.cliffStyle : 'standard'; applyCliffStyle(); if ($('cliffStyle')) $('cliffStyle').value = state.cliffStyle; state.atmo = d.atmosphere ? { ...d.atmosphere } : { kind: 'none', amount: .6, height: 3 };
   state.roomId = d.roomId || newRoomId(); state.nextId = d.nextId || 1; state.revision = d.revision || 0;
   state.agent = { ...state.agent, ...(d.agent || {}) }; state.catalog = normalizeCatalog(d.catalog); state.lastExportHash = d.lastExportHash || ''; applyCatalog(); syncAgentUI();
   markers = (d.markers || []).map(m => ({ ...m })); ensureIds();
   applyBiome(d.biome || 'forest');
-  syncUI(); updateTerrain();if(prepared)cliffFits.installPrepared(prepared,props,cliffInputSignature());else cliffFits.load(d.cliffFits,props,cliffInputSignature()); rebuildProps(); rebuildMarkers();
+  syncUI(); updateTerrain(); solveSprings(); rebuildSpringMarks();if(prepared)cliffFits.installPrepared(prepared,props,cliffInputSignature());else cliffFits.load(d.cliffFits,props,cliffInputSignature()); rebuildProps(); rebuildMarkers();
 }
 function download(name, blob) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); }
 const CRC = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
@@ -3691,7 +3985,7 @@ async function buildExport() {
   const cliffPng = await pngOf((i, j) => { const v = cliffIndexNear(tx(i), tx(j)); return [v, v, v]; });   // style index per export vertex (legend: meta.cliffStyles)
   const walkPng = await pngOf((i, j) => {
     const x = tx(i), z = tx(j), d = deckAt(x, z, 0), o = overrideAt(x, z), auto = autoWalkable(x, z);
-    return [walkable(x, z, auto) ? 255 : 0, d ? (d.kind === 'bridge' ? 32 : 48) : o === 1 ? 128 : o === 2 ? 255 : o === 3 ? 64 : 0, auto ? 255 : 0];
+    return [walkable(x, z, auto) ? 255 : 0, d ? (d.kind === 'bridge' ? 32 : d.kind === 'pool' ? 40 : 48) : o === 1 ? 128 : o === 2 ? 255 : o === 3 ? 64 : 0, auto ? 255 : 0];
   });
   const ROCKY = ['rock', 'cliff', 'pebble'];
   const csv = ['instanceId,type,assetKey,x,y,z,rotY_deg,scale,scaleY,auto,cliffStyle'].concat(props.map(p => { const t = PROP[p[0]]; return [p[8], t.id, t.assetKey, U.x(p[1]), U.y(t.geo.userData.groundParts?propBaseY(p):(p[7] ?? (heightAt(p[1], p[2]) - (t.groundSink || 0)))), U.z(p[2]), U.yaw(p[3]), p[4].toFixed(3), (p[4] * (p[6] ?? 1)).toFixed(3), p[5], ROCKY.includes(t.id) ? CLIFF_STYLES[cliffIndexNear(p[1], p[2])][0] : ''].join(','); })).join('\n');
@@ -3783,6 +4077,39 @@ async function buildExport() {
     warnings: waterRes.warnings,
     unsupported: ['contact foam and colour absorption of objects standing in the water (bridge piers, rocks, characters)', 'refraction of the bed', 'reflections of bridges / props', 'sea surf and lava surface'],
   };
+  // ---- water sources and pools (springs.js), worked out again on the export grid
+  const springExp = (springs.length || pools.length) && !BIOME().lava ? TDSprings.solve(springInput(TN, TS, TH)) : null;
+  let springPngs = [], springsMeta = undefined, poolsMeta = undefined;
+  if (springExp) {
+    for (const w of springExp.warnings) validation.warnings.push('水源: ' + w);
+    const SW = new Uint8Array(TN * TN * 4), SF = new Uint8Array(TN * TN * 4), lo = -2, span = range + 4;
+    for (let k = 0; k < TN * TN; k++) {
+      SF[k * 4] = SF[k * 4 + 1] = 128;
+      const e = springExp.edge[k]; if (e !== e) continue;
+      const v = Math.round(clamp((e - mn - lo) / span, 0, 1) * 65535);
+      SW[k * 4] = v >> 8; SW[k * 4 + 1] = v & 255; SW[k * 4 + 2] = springExp.kind[k] * 80; SW[k * 4 + 3] = 255;
+    }
+    TDSprings.packInto(springExp, SF, null, { maxSpeed: wo.maxSpeed, bankRange: wo.bankRange });
+    springPngs = [{ name: 'spring_water.png', data: TDWater.encodePngRGBA(TN, TN, SW) }, { name: 'spring_flow.png', data: TDWater.encodePngRGBA(TN, TN, SF) }];
+    const Ux = p => [U.x(p[0]), U.y(p[2]), U.z(p[1])];
+    springsMeta = {
+      version: 1, water: 'spring_water.png', flow: 'spring_flow.png', resolution: TN, cellSize: +TS.toFixed(6), maxSpeed: wo.maxSpeed, bankRange: wo.bankRange, surfaceMin: lo, surfaceSpan: +span.toFixed(6),
+      encoding: {
+        water: `RGBA8, same grid and rows as water_flow.png (PNG row 0 = Unity z max). R*256+G = surface y (Unity) = value/65535*surfaceSpan + surfaceMin. B = kind*80 (0 dry, 1 stream, 2 pond, 3 pool). A = 255 where the water mesh has a vertex: water, and the dry vertices next to it held just under their ground (so the shore falls between vertices); 0 elsewhere.`,
+        flow: 'RGBA8, the same encoding as water_flow.png (R,G flow, B 0.5, A distance to the bank / bankRange), for the springs\' water only.',
+        mesh: 'Build quads whose four corners have A = 255 and at least one corner of kind 1 or 2; pools (kind 3) get their own flat sheets (see pools). Signed depth = surface - height.',
+      },
+      model: 'Baked, no simulation: each spring keeps an area wet (preset); the water runs down the steepest way, fills hollows to their brim and spills on (fill-spill-merge, Barnes et al. 2021). Stream channels are already carved into the heightmap.',
+      sources: springExp.springs.map(q => ({ id: q.id, preset: q.preset, name: TDSprings.PRESETS[q.preset].name, flowLps: q.q, wetArea: q.area, position: P3(q.x, heightAt(q.x, q.z), q.z), end: q.end, wet: q.wet })),
+      ponds: springExp.ponds.map(p => ({ level: U.y(p.level), area: p.area, maxDepth: p.maxDepth, springs: p.springs })),
+      streams: springExp.streams.map(st => ({ end: st.end, springs: st.springs, points: st.points.map(q => [...Ux(q), q[3], q[4]]), pointFormat: '[x, surface y, z, width, depth] (Unity, m)' })),
+      falls: springExp.falls.map(f => ({ position: P3(f.x, f.top, f.z), direction: [f.dir[0], -f.dir[1]], width: f.width, top: U.y(f.top), bottom: U.y(f.bottom) })),
+    };
+  }
+  if (pools.length) poolsMeta = pools.map(p => ({ id: p.id, type: p.type, center: P3((p.x1 + p.x2) / 2, p.floor, (p.z1 + p.z2) / 2), size: [+(p.x2 - p.x1).toFixed(3), +(p.z2 - p.z1).toFixed(3)],
+    wall: POOL_WALL, floor: U.y(p.floor), rim: U.y(p.rim), waterLevel: U.y(poolLevel(p)), notch: [p.ox, -p.oz],
+    shape: p.type === 'round' ? 'ellipse inscribed in size (x, z), the kerb wall is `wall` m thick inside that outline' : 'axis-aligned rectangle of size (x, z), the kerb wall is `wall` m thick inside it',
+    note: 'kerb of dressed stone from floor - 0.35 m (into the ground) to rim; the floor inside is levelled to floor and paved (cobble paint). The notch (about 0.7-0.9 m wide, top just under waterLevel) faces the lowest ground outside: overflow leaves there when a spring is inside. walkable.png marks the kerb top 40; the water inside is walkable when no deeper than agentProfile.maxWaterDepth.' }));
   const meta = {
     format: 'tdj-map-export', schemaVersion: 3, exporterVersion: EXPORTER_VERSION, roomId: state.roomId, manifest: 'manifest.json',
     coordinateSystem: {
@@ -3811,7 +4138,7 @@ async function buildExport() {
       'mask_3.png': { usage: 'raw paint masks (game logic)', channels: ['ice', null, null], sRGB: false, filter: 'point', mipmaps: false, compression: 'none' },
       ...(holesPng ? { 'holes.png': { usage: 'terrain holes for secret passages: 0 = hole, 255 = keep the surface (TerrainData.SetHoles: true = surface). (heightmap-1)² cells, image row 0 = z max; cell (i, j) spans export vertices i..i+1, j..j+1. Every hole cell is covered by secret_passages_mesh.json (floor / walls / ceiling / cap)', sRGB: false, filter: 'point', mipmaps: false, compression: 'none' } } : {}),
       'cliff_style.png': { usage: 'rock-wall style index per export vertex (R; legend meta.cliffStyles)', sRGB: false, filter: 'point', mipmaps: false, compression: 'none' },
-      'walkable.png': { usage: 'walkability (discrete values, never interpolate)', channels: ['final 255=walkable', 'surface 0 ground/32 bridge deck/48 stairs/64 secret/128 forced on/255 forced off (forced off wins over decks)', 'auto 255=walkable'], sRGB: false, filter: 'point', mipmaps: false, compression: 'none' },
+      'walkable.png': { usage: 'walkability (discrete values, never interpolate)', channels: ['final 255=walkable', 'surface 0 ground/32 bridge deck/40 pool kerb/48 stairs/64 secret/128 forced on/255 forced off (forced off wins over decks)', 'auto 255=walkable'], sRGB: false, filter: 'point', mipmaps: false, compression: 'none' },
     },
     groundBlend: { base: 'grass', layers: WEIGHT_LAYERS, rule: 'sequential: for each layer in order, m = smoothstep(lo, hi, mask); all weights *= (1 - m); weight[layer] += m. cliff comes from slope (1 - normal.y).', thresholds: { dirt: [.2, .55], cobble: [.3, .55], others: [.25, .6], cliff: [.24, .42] } },
     groundTypes: Object.fromEntries(GROUND.map((g, i) => [g, { maskFile: `mask_${[0, 0, 1, 1, 1, 2, 2, 2, 3][i]}.png`, maskChannel: [0, 1, 0, 1, 2, 0, 1, 2, 0][i], effectId: GROUND_EFFECT[g] || null, speedHint: GROUND_SPEED[i], ...(g === 'lava' ? { blocksWalk: true } : {}) }])),
@@ -3839,6 +4166,7 @@ async function buildExport() {
     waterfalls: falls.map(f => { const [ux, uz] = fallDir(f); return { id: f.id, position: P3(f.x, f.bottom, f.z), yawDeg: U.yaw(f.rot), upstream: [+ux.toFixed(4), +(-uz).toFixed(4)], width: f.w, top: U.y(f.top), bottom: U.y(f.bottom), ...(f.sx !== undefined ? { source: [U.x(f.sx), U.z(f.sz)] } : {}) }; }),
     bridges: bridges.map(b => { const pr = bridgeProfile(b); return { id: b.id, type: b.type || 'wood', start: P3(b.x1, pr.y1, b.z1), end: P3(b.x2, pr.y2, b.z2), width: b.w, arch: +pr.arch.toFixed(3), ...(b.type === 'pier' ? { rampLength: +pr.ramp.toFixed(3), deckCurve: 'pier: from start.y (on the land) up to end.y over the first rampLength m (smoothstep), then level; the end stands over the water and has no landing' } : { deckCurve: 'y(t) = lerp(start.y, end.y, t) + arch * sin(pi t); negative arch = rope sag' }) }; }),
     stairs: stairs.map(st => ({ id: st.id, type: st.type, bottom: P3(st.x1, st.y1, st.z1), top: P3(st.x2, st.y2, st.z2), width: st.w, steps: stairSteps(st) })),
+    ...(springsMeta ? { springs: springsMeta } : {}), ...(poolsMeta ? { pools: poolsMeta } : {}),
     secretPassages: {
       present: secrets.length > 0, holes: holesPng ? 'holes.png' : null, mesh: geo.passages.length ? 'secret_passages_mesh.json' : null, clearanceHeight: +(state.agent.height + .6).toFixed(2),
       shapeRule: 'The passage shape is the union of 0.5 m squares centred on the passage vertices of the editor grid (outline = exact boundary loops below). holes.png = export cells overlapping the part of that shape that has rock above the floor (> 0.3 m). secret_passages_mesh.json is built from the same shape on a 0.125 m raster: floor over the shape, walls along its outline (none at entrances), ceiling at floor + clearanceHeight where rock is thicker, lintels over portals, and a cap at the terrain surface over every hole cell that is not an open cut.',
@@ -3877,6 +4205,7 @@ revision・書き出し日時・ファイルごとの SHA-256・contentHash は 
 - cliff_relief_mesh.json : 急斜面がある場合だけ。岩面の実形状（Unity座標・頂点法線・三角形・岩色/苔/濡れ/雪の属性）。meta.terrain.cliffRelief が参照します。表示用の追加メッシュで、歩行用高さ/通行判定は変更しません。Unity側では別途読み込みと材質の割当が必要です。
 - cliff_style.png  : 岩壁の種類（場所ごと。R = meta.cliffStyles の番号）。岩・崖石・小石は props.csv の cliffStyle 列。
 - walkable.png     : 通行判定（離散値。補間しないでください）。meta.json の agentProfile の体格で計算。
+- spring_water.png / spring_flow.png : 水源の小川・池・プールの水面の高さと流れ（水源かプールがあるときだけ）。符号は meta.json の springs.encoding。
 - props.csv        : 小物の配置。instanceId は再書き出しでも変わりません。assetKey は asset_catalog.json の対応表。
 - asset_catalog.json : 種類ごとの assetKey と、エディターが使う代理の当たり判定。編集してエディターに読み込めます。
 - meta.json        : 座標仕様、開始地点、出入口・敵/宝箱候補・禁止範囲、階層移動（魔法陣・上り/下り階段 = floorLinks）、橋・階段・滝、水、天候、霧。
@@ -3912,7 +4241,7 @@ revision・書き出し日時・ファイルごとの SHA-256・contentHash は 
       submeshes: ['floor', 'wall', 'ceiling', 'cap'], note: 'cap = terrain surface over hole cells (follows the exported heightmap, bilinear inside each cell; Unity splits a terrain cell into two triangles, so the cap edge can differ from the terrain by the cell\'s bilinear-vs-triangle error).',
       passages: geo.passages.map(g => ({ id: g.id, vertices: g.verts.flatMap(([x, y, z]) => P3(x, y, z)), triangles: g.sub })),
     }) }] : []),
-    ...waterPngs,
+    ...waterPngs, ...springPngs,
     ...(seaPng ? [{ name: 'sea_field.png', data: seaPng }, { name: 'sea_field2.png', data: sea2Png }] : []),
     { name: 'walkable.png', data: walkPng }, { name: 'cliff_style.png', data: cliffPng }, { name: 'props.csv', data: csv },
     { name: 'asset_catalog.json', data: JSON.stringify(catalogExport(), null, 2) },
@@ -4076,7 +4405,7 @@ function renderSlots() {
   }
 }
 renderSlots();
-const DRAG_TOOLS = ['bridge', 'slope', 'stairs', 'coast'];
+const DRAG_TOOLS = ['bridge', 'slope', 'stairs', 'coast', 'pool'];
 const dragWidth = tool => tool === 'link' ? 2.2 : tool === 'marker' ? clamp(state.radius * .5, 1.5, 6) : tool === 'coast' ? 1 : tool === 'slope' ? clamp(state.radius, 2, 12) : tool === 'stairs' ? clamp(state.radius * .5, 1.2, 4) : clamp(state.radius * .5, 1.6, 4);
 function showVariants() {
   const tool = state.tool, box = $('variantBox'), list = $('variants');
@@ -4086,11 +4415,12 @@ function showVariants() {
   $('markerTag').placeholder = tool === 'link' ? '行き先 例: B2, 上の階' : '例: field, boss, north';
   const opts = tool === 'marker' ? MARKER_KINDS : tool === 'link' ? LINK_KINDS : tool === 'cliffpaint' ? [[0, 'マップの既定'], ...CLIFF_STYLES.map((c, i) => [i + 1, c[1]])] : tool === 'bridge' ? BRIDGE_TYPES.filter(([v]) => inPalette(BRIDGE_TAGS[v]))
     : tool === 'stairs' ? STAIR_TYPES.filter(([v]) => inPalette(STAIR_TAGS[v]))
+    : tool === 'spring' ? Object.entries(TDSprings.PRESETS).map(([v, q]) => [v, q.name]) : tool === 'pool' ? POOL_TYPES
     : tool === 'place' ? PROP.map((t, i) => [i, t.name]).filter(([i]) => propVisible(i)) : null;
   if (opts && opts.length && !opts.some(([v]) => v === state.variant[tool])) { state.variant[tool] = opts[0][0]; if (tool === 'place') preview.geometry = PROP[opts[0][0]].geo; }
   box.hidden = !opts; $('placeOpts').hidden = tool !== 'place';
   if (!opts) return;
-  $('variantTitle').textContent = tool === 'marker' ? 'マーカーの種類' : tool === 'link' ? '階層移動の種類' : tool === 'cliffpaint' ? '岩壁の種類' : tool === 'bridge' ? '橋の種類' : tool === 'stairs' ? '階段の種類' : '置く物';
+  $('variantTitle').textContent = tool === 'marker' ? 'マーカーの種類' : tool === 'link' ? '階層移動の種類' : tool === 'cliffpaint' ? '岩壁の種類' : tool === 'bridge' ? '橋の種類' : tool === 'stairs' ? '階段の種類' : tool === 'spring' ? '湧出量' : tool === 'pool' ? 'プールの形' : '置く物';
   list.innerHTML = '';
   const button = (v, name, box) => {
     const b = document.createElement('button'); b.textContent = name; b.classList.toggle('on', state.variant[tool] === v);
@@ -4280,7 +4610,7 @@ function setMode(m,prepared=false) {
   state.mode = m; document.body.classList.toggle('play', m === 'play');
   $('modeEdit').classList.toggle('on', m === 'edit'); $('modePlay').classList.toggle('on', m === 'play');
   $('modeBtn').textContent = m === 'play' ? '編集' : '歩く';
-  hero.visible = m === 'play'; spawnMarker.visible = markerGroup.visible = m === 'edit'; preview.visible = false;
+  hero.visible = m === 'play'; spawnMarker.visible = markerGroup.visible = springMarkGroup.visible = m === 'edit'; preview.visible = false;
   if (m !== 'play' && ghosts.size) { ghosts = new Set(); rebuildProps(true); }
   heroStyle(false);if(typeof groundPreview!=='undefined')groundPreview.visible=false;
   if (m === 'play') {
@@ -4331,6 +4661,11 @@ function updateRing() {
     const t = state.variant.place, s0 = (PROP[t].sc[0] + PROP[t].sc[1]) / 2 * state.placeScale;
     if(PROP[t].geo.userData.groundParts){setGroundPreview(t,hit.x,hit.z,state.placeRot*Math.PI/180,s0);preview.visible=false;}else{preview.visible = true; preview.position.set(hit.x, heightAt(hit.x, hit.z), hit.z); preview.rotation.y = state.placeRot * Math.PI / 180; preview.scale.setScalar(s0);}
     outline(circle(hit.x, hit.z, VIS_R[t] * s0 * .75 + .15), 0x9cff8a, .15);
+    return;
+  }
+  if (state.tool === 'pool' && stroke.active && stroke.dragStart) {
+    const s0 = stroke.dragStart, p = { type: state.variant.pool, x1: Math.min(s0.x, hit.x), z1: Math.min(s0.z, hit.z), x2: Math.max(s0.x, hit.x), z2: Math.max(s0.z, hit.z) }, w = p.x2 - p.x1, l = p.z2 - p.z1;
+    outline(w > .1 && l > .1 ? poolRing(p, 0, .4) : circle(hit.x, hit.z, .3), w >= 1.6 && l >= 1.6 && w <= 16 && l <= 16 ? 0xffd27a : 0xff7a6a, .3);
     return;
   }
   if ((DRAG_TOOLS.includes(state.tool) || state.tool === 'marker' || state.tool === 'link') && stroke.active && stroke.dragStart) {
@@ -4436,6 +4771,16 @@ function beginStroke(e) {
     } else stroke.dragStart = { x: hit.x, z: hit.z };
     return;
   }
+  if (state.tool === 'spring') {
+    stroke.active = false;
+    if (e.shiftKey) { const n0 = springs.length; springs = springs.filter(q => Math.hypot(q.x - hit.x, q.z - hit.z) > Math.max(state.radius, 1)); if (n0 !== springs.length) applySprings(); else undoStack.pop(); toast(n0 !== springs.length ? '水源を消しました' : '近くに水源がありません'); }
+    else { const err = placeSpring(hit.x, hit.z, state.variant.spring); if (err) undoStack.pop(); toast(err || `水源（${TDSprings.PRESETS[state.variant.spring].name}）を置きました`); }
+    return;
+  }
+  if (state.tool === 'pool' && e.shiftKey) {
+    stroke.active = false; const n0 = pools.length; pools = pools.filter(p => poolDist(p, hit.x, hit.z) > Math.max(state.radius * .5, 1));
+    if (n0 !== pools.length) { rebuildPools(); applySprings(); } else undoStack.pop(); toast(n0 !== pools.length ? 'プールを消しました' : '近くにプールがありません'); return;
+  }
   if (state.tool === 'fall') {
     stroke.active = false;
     if (e.shiftKey) { const n0 = falls.length; falls = falls.filter(f => Math.hypot(f.x - hit.x, f.z - hit.z) > state.radius); rebuildFalls(); toast(n0 !== falls.length ? '滝を消しました' : '近くに滝がありません'); }
@@ -4486,9 +4831,13 @@ function endStroke() {
     else if (state.tool === 'slope') { const err = placeSlope(a, c, w); toast(err || '坂を作りました'); }
     else if (state.tool === 'stairs') { const err = placeStairs(a, c, w, state.variant.stairs); toast(err || '階段を作りました'); }
     else if (state.tool === 'coast') toast(makeCoast(a, c) ? '海岸を作りました' : '2m以上ドラッグしてください');
+    else if (state.tool === 'pool') { const err = placePool(a, c, state.variant.pool); toast(err || 'プールを作りました'); }
     else if (state.tool === 'marker') { placeMarker('port', a, c); toast('出入口を置きました'); }
     else if (state.tool === 'link') { placeMarker(state.variant.link, a, c); toast(markerLabel(state.variant.link) + 'を置きました'); }
   }
+  // ground the stroke reshaped is the user's now: the springs' carving there is no longer given back when they carve again
+  const s0 = undoStack[undoStack.length - 1];
+  if (stroke.active && s0 && s0.SC && !['spring', 'pool'].includes(state.tool)) for (let k = 0; k < N * N; k++) if (H[k] !== s0.H[k]) SC[k] = 0;
   stroke.dragStart = null; drag = null; stroke.active = false;
 }
 canvas.addEventListener('pointerup', e => { if (e.pointerType === 'touch') { touchUp(e); return; } endStroke(); });
@@ -4675,7 +5024,7 @@ function update(dt) {
       const fx = -Math.sin(playCam.yaw), fz = -Math.cos(playCam.yaw), rx = Math.cos(playCam.yaw), rz = -Math.sin(playCam.yaw);
       mx = fx * iz + rx * ix; mz = fz * iz + rz * ix; const l = Math.hypot(mx, mz); mx /= l; mz /= l;
     }
-    const depth = state.water - floorAt(player.x, player.z);
+    const depth = waterAt(player.x, player.z) - floorAt(player.x, player.z);
     const onStruct = (bridges.length && bridgeAt(player.x, player.z) !== null) || (stairs.length && stairsAt(player.x, player.z) !== null);
     let gs = 1; if (!onStruct) for (let c = 2; c < NS; c++) gs = Math.min(gs, lerp(1, GROUND_SPEED[c], clamp(splatAt(player.x, player.z, c) * 1.6, 0, 1)));
     state.onPoison = !onStruct && splatAt(player.x, player.z, 5) > .5;
@@ -4916,7 +5265,7 @@ const bootReady=bootPending?.startsWith('prepared:')?prepareMap('pending',0,{tok
   prepareMap(bootPending==='sample2'&&SIZE===SAMPLE2_SIZE?'sample2':bootPending==='flat'||SIZE!==64?'flat':'sample',bootPending==='sample2'?11:7,{boot:true});
 
 // hooks for automated checks
-window.__app = { fillGroundAll,buildPreparedSample,prepareMap,cancelMapPreparation,bootReady,get preparation(){return mapPreparation?{id:mapPreparation.id,phase:mapPreparation.phase,requestedMode:mapPreparation.requestedMode,elapsedMs:performance.now()-mapPreparation.start}:null;},get preparationStats(){return lastPreparedState;},
+window.__app = { get springs() { return springs; }, set springs(v) { springs = v; }, get pools() { return pools; }, get springRes() { return springRes; }, SC, placeSpring, placePool, applySprings, solveSprings, waterAt, springLevelAt, poolDist, poolWallAt, POOL_WALL, deckAt, fillGroundAll,buildPreparedSample,prepareMap,cancelMapPreparation,bootReady,get preparation(){return mapPreparation?{id:mapPreparation.id,phase:mapPreparation.phase,requestedMode:mapPreparation.requestedMode,elapsedMs:performance.now()-mapPreparation.start}:null;},get preparationStats(){return lastPreparedState;},
   propGrounding,groundedParts,groundedNormal,groundedGhost,groundPreview,setGroundPreview,propBaseY,get cliffContactProgress(){return cliffContactProgress;},cliffFits,effectiveGeometry,fitCliffContact,adoptCliffContact, cliffProtected,cliffProtectionReason,nearFeatureReason, get cliffContactStats(){return cliffContactStats;},
   pickGroundDetail,adjustGroundDetail,selectedGroundDetail,updateTouch,touchStats, pavingMask, cliffRelief, rebuildCliffRelief, groundTrial, groundTexture, terrainSource:tGeo, terrain, renderer, camera, SIZE, state, H, S, O, F, C, propMeshes, ghostMeshes, cliffIndexAt, BIOMES, CLIFF_STYLES, applyCliffStyle, deckAt, linkDeckAt, runValidation, genSample, genSample2, secretRegions, secretLineX, passageGeometry, terrainRes, TERRAIN_RES, snapshot, sha256, LINK_KINDS, normalizeCatalog, catalogExport, valueIssues, areaIssue, deckAt, getColliders, PROP, get colliderMaxR() { return colliderMaxR; }, rebuildMarkers, portLanding, linkTrigger, linkArrival, LINK_SPEC, get markers() { return markers; }, placeMarker, ensureIds, applyCatalog, ATMOS, WEATHER, applyAtmo, makeCoast, glowLights, applyBiome, applyPalette, propVisible, toolVisible, updateTerrain, rebuildProps, genFlat, floorAt, bridgeAt, stairsAt, placeSlope, placeStairs, placeBridge, pickTarget, regenGroundProps, rebuildBridges, get stairs() { return stairs; }, get bridges() { return bridges; }, get falls() { return falls; }, overrideAt, heroMat, hero, heroBody, get heroLook() { return heroLook; }, setHeroLook, heroStyle, heroGlow, get ghosts() { return ghosts; }, get props() { return props; }, cam, playCam, player, keys, setMode, setTool, update, heightAt, walkable, slope: slopeAt,
   stroke(x, z, frames = 20, opts = {}) {
