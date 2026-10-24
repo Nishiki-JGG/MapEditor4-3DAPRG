@@ -189,6 +189,8 @@
   <div class="row"><button id="newSample">サンプル</button><button id="newSample2">サンプル2（隠し通路）</button><button id="newFlat">平らな新規</button></div>
   <div class="hint">大きさを選んで「平らな新規」で作ります。サイズが変わるとページを読み直すため、取り消し履歴は消えます。サンプルは 64m、サンプル2（遺跡・隠し通路）は 48m です。</div>
   <div class="row" style="margin-top:6px"><button id="save" title="Ctrl+S。名前を付けて保存したファイルがあれば、そこへ上書き">保存 (JSON)</button><button id="saveAs" title="保存先とファイル名を選んで保存">名前を付けて保存</button><button id="load">読み込み</button><button id="export">Unity用書き出し (zip)</button></div>
+  <button id="saveRoom" style="width:100%;margin-top:6px">部屋セットを保存 (JSON＋ZIP)</button>
+  <div class="hint">部屋セットのZIPを展開し、部屋ごとのフォルダで保管してください。</div>
   <div class="hint" id="saveTarget"></div>
   <div class="row" style="margin-top:6px"><button id="validate">検証</button><button id="loadCatalog">資産対応表を読み込み</button></div>
   <input id="catalogFile" type="file" accept=".json,application/json" hidden>
@@ -361,6 +363,7 @@
 <script src="terrain/preparation.js?v=prepare2"></script>
 <script src="terrain/prepared-codec.js?v=prepared1"></script>
 <script src="terrain/prepared-samples.js?v=prepared1"></script>
-<script src="app.js?v=explicit-materials1-drysoil-relief1-sea6-prepared1-mobile1-river2-ground2-contact1-rollback1-cavesoil1-variants1-practical1-pier1-strand1"></script>
+<script src="map-package.js?v=room1"></script>
+<script src="app.js?v=explicit-materials1-drysoil-relief1-sea6-prepared1-mobile1-river2-ground2-contact1-rollback1-cavesoil1-variants1-practical1-pier1-strand1-room1"></script>
 </body>
 </html>

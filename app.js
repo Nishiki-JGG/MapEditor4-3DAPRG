@@ -4250,6 +4250,20 @@ $('export').onclick = async () => {
   download(baseName() + '_export_unity.zip', makeZip(files));
   toast(validation.errors.length ? `書き出しました（エラー ${validation.errors.length} 件。検証結果を確認してください）` : '書き出しました');
 };
+// ZIP内の原稿をそのまま併記し、別々の保存による版違いを防ぐ。
+let roomPackageBusy = false;
+$('saveRoom').onclick = async () => {
+  if (roomPackageBusy) return;
+  roomPackageBusy = true; $('saveRoom').disabled = true;
+  try {
+    ensureIds(); applyCatalog();
+    toast('部屋セットを書き出しています。保存が終わるまで編集をお待ちください');
+    const pack = await TDMapPackage.create({ name: baseName(), snapshot: serialize, buildExport, makeZip });
+    showValidation(pack.validation); download(pack.name, pack.blob);
+    toast(pack.validation.errors.length ? '部屋セットを保存しました。検証エラーの修正が必要です' : '部屋セットを保存しました。ZIPを展開するとJSONとUnity用ZIPが同じフォルダに入ります');
+  } catch (err) { toast('部屋セットを保存できませんでした: ' + err.message); }
+  finally { roomPackageBusy = false; $('saveRoom').disabled = false; }
+};
 $('validate').onclick = () => showValidation(runValidation());
 $('loadCatalog').onclick = () => $('catalogFile').click();
 $('catalogFile').onchange = async e => {
