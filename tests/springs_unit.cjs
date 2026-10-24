@@ -76,6 +76,18 @@ const ok = (name, v) => checks.push([name, !!v]);
   const r2 = run(TH, [{ id: 'w', x: -10, z: 0, preset: 'brook' }], { level: 0 });
   ok('水際: 水の中の水源は警告して何も作らない', r2.wetCount === 0 && r2.warnings.length === 1);
 }
+// 6b. 滝: 段差（2.5m の崖）を越える小川は滝になる。崖の面には水面を置かず（幕だけ）、落ちた所に滝つぼを掘り、下流に泡の帯
+{
+  const TH = terrain((x, z) => 3 + x * .03 + 2.5 / (1 + Math.exp(-(x - 4) * 8))), r = run(TH, [{ id: 's', x: 14, z: 0, preset: 'spring' }]);
+  const f = r.falls[0]; let onFace = 0;
+  for (let k = 0; k < n; k++) { const x = X(k % TN), z = X((k / TN) | 0); if (r.kind[k] === 1 && Math.abs(z) < 1.2 && TH[k] < f.top - .2 && TH[k] > f.bottom + .2) onFace++; }
+  const cv = S.carve(r, TH), ki = (x, z) => Math.round((z + HALF) / TS) * TN + Math.round((x + HALF) / TS), plunge = f ? cv[ki(f.foot[0], f.foot[1])] : 0;
+  let trailFoot = 0, trailFar = 0; for (let k = 0; k < n; k++) { const d = Math.hypot(X(k % TN) - (f ? f.foot[0] : 0), X((k / TN) | 0) - (f ? f.foot[1] : 0)); if (d < 1) trailFoot = Math.max(trailFoot, r.trail[k]); if (d > 12) trailFar = Math.max(trailFar, r.trail[k]); }
+  info.fall = f && { top: f.top, bottom: f.bottom, foot: f.foot, lean: f.lean, dir: f.dir, onFace, plunge: +plunge.toFixed(3), trailFoot: +trailFoot.toFixed(2), trailFar: +trailFar.toFixed(2) };
+  ok('滝: 崖を越える所が 1 つの滝になり、縁より下の滝つぼの位置と向き（低い方）を持つ', r.falls.length === 1 && f.top - f.bottom > 2 && f.foot[0] < f.x && f.dir[0] < -.9 && f.lean > 0);
+  ok('滝: 崖の面には小川の水面を置かない', onFace === 0);
+  ok('滝: 滝つぼを掘り（0.25m 以上）、そのまわりに泡の帯、遠くには無い', plunge >= .25 && trailFoot > .3 && trailFar === 0);
+}
 // 7. プール: 水源の入ったプールはあふれ口から小川が出る。出口が無ければプールの中で終わる
 {
   const TH = terrain(x => 3 + x * .05), cells = []; for (let j = 60; j <= 68; j++) for (let i = 60; i <= 68; i++) cells.push(j * TN + i);

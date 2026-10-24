@@ -25,7 +25,8 @@ public static class MapWaterBuilder {
  [Serializable] class SeaWavesDto { public float wavelength, period, height, steepenFromDepth, runupHeight, runupReach; public float[] breakDepth; }
  [Serializable] class SeaColorsDto { public float[] shallow, deep; }
  [Serializable] class SeaDto { public int version, resolution; public string field, field2; public float cellSize; public SeaWavesDto waves; public SeaColorsDto colors; public float[] sunDirection; }
- [Serializable] class SpringsDto { public int version, resolution; public string water, flow; public float maxSpeed, bankRange, surfaceMin, surfaceSpan; }
+ [Serializable] class SpringFallDto { public string id; public float[] foot, direction; public float width, top, bottom, lean; }
+ [Serializable] class SpringsDto { public int version, resolution; public string water, flow, mask; public float maxSpeed, bankRange, surfaceMin, surfaceSpan, trailMaxCover; public SpringFallDto[] falls; }
  [Serializable] class PoolDto { public string id, type; public float[] center, size; public float wall, floor, rim, waterLevel; }
  [Serializable] class MetaDto { public TerrainDto terrain; public WaterDto[] water; public WaterSimDto waterSim; public FallDto[] waterfalls; public SeaDto sea; public SpringsDto springs; public PoolDto[] pools; }
 
@@ -248,6 +249,9 @@ public static class MapWaterBuilder {
    string name = assetName ?? new DirectoryInfo(exportDir).Name; string dir = GeneratedDir + "/" + name;
    Directory.CreateDirectory(dir); AssetDatabase.Refresh();
    var flowTex = ImportData(flowPath, dir, "spring_flow.png"); if (flowTex == null) return Fail("spring_flow.png を取り込めませんでした");
+   // 滝つぼからの泡の帯（Revision 29 から。無い書き出しでは泡の帯なし）
+   string maskPath = string.IsNullOrEmpty(sp.mask) ? null : Path.Combine(exportDir, sp.mask);
+   var maskTex = maskPath != null && File.Exists(maskPath) ? ImportData(maskPath, dir, "spring_mask.png") : null;
    var depthTex = new Texture2D(TN, TN, TextureFormat.RHalf, false, true) { name = "SpringDepth", wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Bilinear };
    depthTex.SetPixelData(half, 0); depthTex.Apply(false, false);
    string depthPath = dir + "/SpringDepth.asset"; AssetDatabase.DeleteAsset(depthPath); AssetDatabase.CreateAsset(depthTex, depthPath); depthTex = AssetDatabase.LoadAssetAtPath<Texture2D>(depthPath);
@@ -256,6 +260,7 @@ public static class MapWaterBuilder {
    string meshPath = dir + "/SpringWater.mesh.asset"; AssetDatabase.DeleteAsset(meshPath); AssetDatabase.CreateAsset(mesh, meshPath); mesh = AssetDatabase.LoadAssetAtPath<Mesh>(meshPath);
    string matPath = dir + "/SpringWater.mat"; AssetDatabase.DeleteAsset(matPath); var mat = new Material(shW) { name = "SpringWater" }; AssetDatabase.CreateAsset(mat, matPath); mat = AssetDatabase.LoadAssetAtPath<Material>(matPath);
    mat.SetTexture("_DetailTex", detail); mat.SetTexture("_FlowTex", flowTex); mat.SetTexture("_DepthTex", depthTex);
+   if (maskTex != null) { mat.SetTexture("_MaskTex", maskTex); if (sp.trailMaxCover > 0) mat.SetFloat("_TrailMaxCover", sp.trailMaxCover); }
    mat.SetVector("_MapRect", new Vector4(0, 0, 1f / size, 1f / size));
    if (sp.maxSpeed > 0) mat.SetFloat("_FlowMax", sp.maxSpeed);
    if (sp.bankRange > 0) mat.SetFloat("_BankRange", sp.bankRange);
@@ -273,9 +278,36 @@ public static class MapWaterBuilder {
    r0.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off; r0.receiveShadows = false;
    // 時刻を進めるだけの制御（波紋なし）。地図の原点は root と同じなので、この物の位置（= root の原点）を使う
    var ctl = go.AddComponent<MapWaterController>(); ctl.surface = r0; ctl.rippleEnabled = false; ctl.depthTexture = depthTex; ctl.mapSize = new Vector2(size, sizeZ);
+   res.materials = 1; res.textures = maskTex != null ? 3 : 2; res.meshes = 1;
+   // 小川が崖を落ちる所：置いた滝と同じ幕（MapWater/Fall）と飛沫（MapWater/Splash）。幕は滝つぼに立ち、上端は崖の縁へ寄せる（lean）
+   int nFalls = 0;
+   if (sp.falls != null && sp.falls.Length > 0) {
+    var shF = Shader.Find("MapWater/Fall"); var shS = Shader.Find("MapWater/Splash");
+    if (shF != null && shS != null) {
+     Material Mat(Shader s0, string n) { string pth = dir + "/" + n + ".mat"; AssetDatabase.DeleteAsset(pth); var m0 = new Material(s0) { name = n }; AssetDatabase.CreateAsset(m0, pth); return AssetDatabase.LoadAssetAtPath<Material>(pth); }
+     var fallMat = Mat(shF, "SpringFall"); var splashMat = Mat(shS, "SpringSplash"); splashMat.SetTexture("_DetailTex", detail); res.materials += 2;
+     var fallRs = new List<Renderer>(); var splashRs = new List<Renderer>();
+     foreach (var f in sp.falls) {
+      if (f == null || f.foot == null || f.foot.Length < 3 || f.direction == null || f.direction.Length < 2 || f.top - f.bottom < 0.6f) continue;
+      var down = new Vector2(f.direction[0], f.direction[1]); if (down.sqrMagnitude < 1e-6f) continue; down.Normalize();
+      string id = string.IsNullOrEmpty(f.id) ? "springfall_" + nFalls : f.id;
+      var info = new MapWaterFallInfo { id = id, plunge = new Vector3(f.foot[0], f.bottom, f.foot[2]), upstream = -down, width = Mathf.Max(f.width * 1.1f, 0.6f), height = f.top - f.bottom };
+      ctl.falls.Add(info);
+      var fg = new GameObject("SpringFall_" + id); fg.transform.SetParent(go.transform, false); res.gameObjects++;
+      fg.transform.localPosition = info.plunge; fg.transform.localRotation = Quaternion.Euler(0, Mathf.Atan2(info.upstream.x, info.upstream.y) * Mathf.Rad2Deg, 0);
+      var fm = MapWaterMeshes.FallSheet(info, id, Mathf.Clamp(f.lean - 0.2f, 0.25f, 1.4f)); string fmPath = dir + "/SpringFall_" + id + ".mesh.asset"; AssetDatabase.DeleteAsset(fmPath); AssetDatabase.CreateAsset(fm, fmPath); fm = AssetDatabase.LoadAssetAtPath<Mesh>(fmPath);
+      fg.AddComponent<MeshFilter>().sharedMesh = fm; var fr = fg.AddComponent<MeshRenderer>(); fr.sharedMaterial = fallMat; fr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off; fr.receiveShadows = false; fallRs.Add(fr); res.meshes++;
+      var sg = new GameObject("SpringSplash_" + id); sg.transform.SetParent(fg.transform, false); res.gameObjects++;
+      var spm = MapWaterMeshes.Splash(info, id); string spPath = dir + "/SpringSplash_" + id + ".mesh.asset"; AssetDatabase.DeleteAsset(spPath); AssetDatabase.CreateAsset(spm, spPath); spm = AssetDatabase.LoadAssetAtPath<Mesh>(spPath);
+      sg.AddComponent<MeshFilter>().sharedMesh = spm; var spr = sg.AddComponent<MeshRenderer>(); spr.sharedMaterial = splashMat; spr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off; spr.receiveShadows = false; splashRs.Add(spr); res.meshes++;
+      nFalls++;
+     }
+     ctl.fallRenderers = fallRs.ToArray(); ctl.splashRenderers = splashRs.ToArray();
+    }
+   }
    AssetDatabase.SaveAssets();
-   res.built = true; res.root = root; res.controller = ctl; res.materials = 1; res.textures = 2; res.meshes = 1;
-   res.message = $"MapWater: 水源の水を作りました — Springs（頂点 {pos.Count}、三角形 {tri.Count / 3}、プール {pools}、水深 最大 {maxD:F2}m）";
+   res.built = true; res.root = root; res.controller = ctl;
+   res.message = $"MapWater: 水源の水を作りました — Springs（頂点 {pos.Count}、三角形 {tri.Count / 3}、プール {pools}、滝 {nFalls}、水深 最大 {maxD:F2}m）";
    Debug.Log(res.message);
    return res;
   } catch (Exception e) {

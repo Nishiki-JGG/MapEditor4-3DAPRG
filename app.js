@@ -552,7 +552,7 @@ function shoulderMask(){
   const keep=(distance,radius)=>{m=Math.min(m,sstep(radius,radius+.4,distance));};
   for(const b of bridges)keep(distToPolyline(x,z,[[b.x1,b.z1],[b.x2,b.z2]]),b.w/2+.4);
   for(const st of stairs)keep(distToPolyline(x,z,[[st.x1,st.z1],[st.x2,st.z2]]),st.w/2+.4);
-  for(const f of falls){const[ux,uz]=fallDir(f),lat=Math.abs((x-f.x)*uz-(z-f.z)*ux),along=Math.abs((x-f.x)*ux+(z-f.z)*uz);if(along<2)keep(lat,f.w/2+.4);}
+  for(const f of fallBands()){const[ux,uz]=fallDir(f),lat=Math.abs((x-f.x)*uz-(z-f.z)*ux),along=Math.abs((x-f.x)*ux+(z-f.z)*uz);if(along<2)keep(lat,f.w/2+.4);}
   for(const q of markers)if(q.kind==='port'||isLink(q.kind))keep(Math.hypot(x-q.x,z-q.z),Math.max(q.r||0,(q.w||2)/2)+.5);
   rocks.query(x,z,4,p=>keep(Math.hypot(x-p[1],z-p[2]),Math.max(1.5,PROP[p[0]].r||0)*p[4]+.6));
   memo.set(key,m);return m;};
@@ -609,6 +609,8 @@ function refreshWaterData() {
     const rf = res.falls[i]; if (!rf || rf.dry) continue; const f = falls[i];
     WATERU.uFalls.value[n++].set(rf.cx, rf.cz, (Math.abs(Math.sin(f.x * 12.9898 + f.z * 78.233)) * 43758.5453) % 1, f.w);
   }
+  // the springs' falls ring their plunge pools too (the ring code is shared by the springs' water)
+  if (springRes) for (const f of springRes.falls) { if (n >= 8) break; if (f.top - f.bottom < .6) continue; WATERU.uFalls.value[n++].set(f.foot[0], f.foot[1], (Math.abs(Math.sin(f.foot[0] * 12.9898 + f.foot[1] * 78.233)) * 43758.5453) % 1, Math.max(f.width * 1.1, .6)); }
   WATERU.uFallCount.value = n; waterInfo = res; showWaterInfo();
 }
 // the open sea on a TN×TN grid with spacing TS (1 = sea), from the shore field; water.js leaves it out when it sets the river's speed
@@ -937,8 +939,11 @@ function applySprings() {
   const res = springs.length && !BIOME().lava ? TDSprings.solve(springInput(N, CELL, base)) : null, cv = res ? TDSprings.carve(res, base) : new Float32Array(N * N);
   for (let k = 0; k < N * N; k++) H[k] = base[k] - cv[k];
   SC.set(cv); updateTerrain(); refreshWaterData();
-  // nothing stands in the new water but water plants
-  const n0 = props.length; props = props.filter(p => PROP[p[0]].water || PROP[p[0]].id === 'reed' || springLevelAt(p[1], p[2]) - heightAt(p[1], p[2]) < .03);
+  // nothing stands in the new water but water plants; and no boulder or cliff stone stands in a spring's falling water
+  // (the same clearing as a placed waterfall: by position, or any point of the stone's outline)
+  const inFall = (x, z) => springRes && springRes.falls.some(f => { const ax = x - f.x, az = z - f.z, along = ax * f.dir[0] + az * f.dir[1], lat = Math.abs(ax * f.dir[1] - az * f.dir[0]); return lat < f.width * .55 + .3 && along > -1 && along < f.lean + 1.2; });
+  const n0 = props.length; props = props.filter(p => (PROP[p[0]].water || PROP[p[0]].id === 'reed' || springLevelAt(p[1], p[2]) - heightAt(p[1], p[2]) < .03) &&
+    !(FALL_CLEARS.has(PROP[p[0]].id) && (inFall(p[1], p[2]) || cliffWorldHull(p).some(([hx, hz]) => inFall(hx, hz)))));
   if (props.length !== n0) rebuildProps();
   rebuildSpringMarks();
 }
@@ -1662,6 +1667,11 @@ const mistTex = (() => {
 })();
 streamMat.uniforms.uLava = BU.uLava;
 const fallDir = f => [-Math.sin(f.rot), -Math.cos(f.rot)];   // uphill direction (toward the source)
+// the placed falls, and the springs' streams falling down a cliff as the same kind of band (foot x, z; width w; rot facing downstream)
+function fallBands() {
+  if (!springRes || !springRes.falls.length) return falls;
+  return falls.concat(springRes.falls.map(f => ({ x: f.foot[0], z: f.foot[1], w: f.width, rot: Math.atan2(f.dir[0], f.dir[1]), spring: true })));
+}
 function streamGeometry(f) {
   const [ux, uz] = fallDir(f), ex = f.x + ux * .8, ez = f.z + uz * .8;   // top of the falling sheet
   const L = Math.hypot(f.sx - ex, f.sz - ez), M = Math.max(4, Math.ceil(L / .35)), px = -uz, pz = ux;
@@ -1707,7 +1717,7 @@ function fallGeometry(w, hgt, lean, f) {
 // its lip, so the rock skin cannot poke through the water. 1 = full relief, fading to 0 within the fall's band.
 function fallReliefMask(x, z) {
   let k = 1;
-  for (const f of falls) {
+  for (const f of fallBands()) {
     const [ux, uz] = fallDir(f), ax = x - f.x, az = z - f.z, along = ax * ux + az * uz, lat = Math.abs(ax * uz - az * ux), w = f.w * .6;
     k = Math.min(k, Math.max(sstep(w + .5, w + 1.5, lat), sstep(3, 4, along), sstep(-1.5, -2.5, along)));
   }
@@ -1719,14 +1729,33 @@ function rebuildSpringFalls() {
   for (const c of [...springFallGroup.children]) { if (c.geometry) c.geometry.dispose(); if (c.isSprite) c.material.dispose(); springFallGroup.remove(c); }
   if (!springRes) return;
   for (const f of springRes.falls) {
-    const hgt = f.top - f.bottom, w = Math.max(f.width, .5), rot = Math.atan2(f.dir[0], f.dir[1]), x = f.x + f.dir[0] * .45, z = f.z + f.dir[1] * .45;
+    // the sheet stands in the plunge pool (foot) and arcs back up to the lip, leaving the cliff face behind it: the water
+    // leaves the lip moving forward and falls clear of the rock
+    // its top a little in front of the lip and just under the stream's surface, so the rounded cliff edge cannot hide the sheet
+    // while its top edge shows over the ground
+    const hgt = f.top - f.bottom, w = Math.max(f.width * 1.1, .6), rot = Math.atan2(f.dir[0], f.dir[1]), x = f.foot[0] + f.dir[0] * .15, z = f.foot[1] + f.dir[1] * .15, lean = clamp(f.lean - .2, .25, 1.4);
     if (hgt < .6) continue;
-    const m = new THREE.Mesh(fallGeometry(w, hgt + .1, .35), fallMat); m.position.set(x, f.bottom, z); m.rotation.y = rot; m.renderOrder = 3; springFallGroup.add(m);
-    const foam = new THREE.Mesh(new THREE.PlaneGeometry(w * 2, w * 1.5), foamMat);
-    foam.rotation.set(-Math.PI / 2, 0, rot); foam.position.set(x + f.dir[0] * .4, f.bottom + .03, z + f.dir[1] * .4); foam.renderOrder = 4; springFallGroup.add(foam);
-    const mist = new THREE.Sprite(new THREE.SpriteMaterial({ map: mistTex, transparent: true, depthWrite: false, opacity: .3 }));
-    mist.position.set(x + f.dir[0] * .4, f.bottom + w * .4, z + f.dir[1] * .4); mist.scale.setScalar(w * 2); mist.renderOrder = 5; springFallGroup.add(mist);
+    const m = new THREE.Mesh(fallGeometry(w, hgt - .02, lean), fallMat); m.position.set(x, f.bottom - .04, z); m.rotation.y = rot; m.renderOrder = 3; springFallGroup.add(m);
+    const foam = new THREE.Mesh(new THREE.PlaneGeometry(w * 1.6, w * 1.3), foamMat);   // the rings on the water (uFalls) carry the rest
+    foam.rotation.set(-Math.PI / 2, 0, rot); foam.position.set(x + f.dir[0] * .2, f.bottom + .03, z + f.dir[1] * .2); foam.renderOrder = 4; springFallGroup.add(foam);
+    const mist = new THREE.Sprite(new THREE.SpriteMaterial({ map: mistTex, transparent: true, depthWrite: false, opacity: .35 }));
+    mist.position.set(x + f.dir[0] * .3, f.bottom + w * .45, z + f.dir[1] * .3); mist.userData = { mist: true, base: w * 2.4, ph: x * 3.1 }; mist.scale.setScalar(w * 2.4); mist.renderOrder = 5; springFallGroup.add(mist);
   }
+}
+// a placed waterfall follows the ground after it is reshaped: its foot comes down when the pool under it is dug (down to the
+// water when it reaches it) and goes up when it is filled, and its lip follows the cliff top. Measured the way placeFall did
+// (the lowest ground 0..3 m downhill of the cliff point, 1 m uphill of the foot; the highest 0..3 m uphill of it)
+function refitFalls() {
+  let changed = false;
+  for (const f of falls) {
+    const [ux, uz] = fallDir(f); let lo = Infinity, hi = -Infinity;
+    for (let d = 0; d <= 3 + 1e-9; d += .25) { lo = Math.min(lo, heightAt(f.x + ux * (1 - d), f.z + uz * (1 - d))); hi = Math.max(hi, heightAt(f.x + ux * (1 + d), f.z + uz * (1 + d))); }
+    const bottom = Math.max(lo, state.water), top = f.sx !== undefined ? hi + .04 : hi - .05;
+    if (Math.abs(bottom - f.bottom) > .01) { f.bottom = bottom; changed = true; }
+    if (Math.abs(top - f.top) > .15) { f.top = top; changed = true; }
+  }
+  if (changed) rebuildFalls();
+  return changed;
 }
 function rebuildFalls() {
   scheduleWater(); if (typeof cliffRelief !== 'undefined') scheduleCliffRelief();
@@ -4082,28 +4111,30 @@ async function buildExport() {
   let springPngs = [], springsMeta = undefined, poolsMeta = undefined;
   if (springExp) {
     for (const w of springExp.warnings) validation.warnings.push('水源: ' + w);
-    const SW = new Uint8Array(TN * TN * 4), SF = new Uint8Array(TN * TN * 4), lo = -2, span = range + 4;
+    const SW = new Uint8Array(TN * TN * 4), SF = new Uint8Array(TN * TN * 4), SM = new Uint8Array(TN * TN * 4), lo = -2, span = range + 4;
     for (let k = 0; k < TN * TN; k++) {
-      SF[k * 4] = SF[k * 4 + 1] = 128;
+      SF[k * 4] = SF[k * 4 + 1] = 128; SM[k * 4 + 3] = 255;
       const e = springExp.edge[k]; if (e !== e) continue;
       const v = Math.round(clamp((e - mn - lo) / span, 0, 1) * 65535);
       SW[k * 4] = v >> 8; SW[k * 4 + 1] = v & 255; SW[k * 4 + 2] = springExp.kind[k] * 80; SW[k * 4 + 3] = 255;
     }
-    TDSprings.packInto(springExp, SF, null, { maxSpeed: wo.maxSpeed, bankRange: wo.bankRange });
-    springPngs = [{ name: 'spring_water.png', data: TDWater.encodePngRGBA(TN, TN, SW) }, { name: 'spring_flow.png', data: TDWater.encodePngRGBA(TN, TN, SF) }];
+    TDSprings.packInto(springExp, SF, SM, { maxSpeed: wo.maxSpeed, bankRange: wo.bankRange, trailMaxCover: wo.trailMaxCover });
+    springPngs = [{ name: 'spring_water.png', data: TDWater.encodePngRGBA(TN, TN, SW) }, { name: 'spring_flow.png', data: TDWater.encodePngRGBA(TN, TN, SF) }, { name: 'spring_mask.png', data: TDWater.encodePngRGBA(TN, TN, SM) }];
     const Ux = p => [U.x(p[0]), U.y(p[2]), U.z(p[1])];
     springsMeta = {
-      version: 1, water: 'spring_water.png', flow: 'spring_flow.png', resolution: TN, cellSize: +TS.toFixed(6), maxSpeed: wo.maxSpeed, bankRange: wo.bankRange, surfaceMin: lo, surfaceSpan: +span.toFixed(6),
+      version: 1, water: 'spring_water.png', flow: 'spring_flow.png', mask: 'spring_mask.png', trailMaxCover: wo.trailMaxCover, resolution: TN, cellSize: +TS.toFixed(6), maxSpeed: wo.maxSpeed, bankRange: wo.bankRange, surfaceMin: lo, surfaceSpan: +span.toFixed(6),
       encoding: {
         water: `RGBA8, same grid and rows as water_flow.png (PNG row 0 = Unity z max). R*256+G = surface y (Unity) = value/65535*surfaceSpan + surfaceMin. B = kind*80 (0 dry, 1 stream, 2 pond, 3 pool). A = 255 where the water mesh has a vertex: water, and the dry vertices next to it held just under their ground (so the shore falls between vertices); 0 elsewhere.`,
         flow: 'RGBA8, the same encoding as water_flow.png (R,G flow, B 0.5, A distance to the bank / bankRange), for the springs\' water only.',
+        mask: 'RGBA8, the same encoding as water_mask.png: R = foam-trail cover / trailMaxCover (around the plunge pools of the springs\' falls and a few metres downstream). A = 255.',
         mesh: 'Build quads whose four corners have A = 255 and at least one corner of kind 1 or 2; pools (kind 3) get their own flat sheets (see pools). Signed depth = surface - height.',
       },
       model: 'Baked, no simulation: each spring keeps an area wet (preset); the water runs down the steepest way, fills hollows to their brim and spills on (fill-spill-merge, Barnes et al. 2021). Stream channels are already carved into the heightmap.',
       sources: springExp.springs.map(q => ({ id: q.id, preset: q.preset, name: TDSprings.PRESETS[q.preset].name, flowLps: q.q, wetArea: q.area, position: P3(q.x, heightAt(q.x, q.z), q.z), end: q.end, wet: q.wet })),
       ponds: springExp.ponds.map(p => ({ level: U.y(p.level), area: p.area, maxDepth: p.maxDepth, springs: p.springs })),
       streams: springExp.streams.map(st => ({ end: st.end, springs: st.springs, points: st.points.map(q => [...Ux(q), q[3], q[4]]), pointFormat: '[x, surface y, z, width, depth] (Unity, m)' })),
-      falls: springExp.falls.map(f => ({ position: P3(f.x, f.top, f.z), direction: [f.dir[0], -f.dir[1]], width: f.width, top: U.y(f.top), bottom: U.y(f.bottom) })),
+      falls: springExp.falls.map((f, i) => ({ id: 'springfall_' + (i + 1), position: P3(f.x, f.top, f.z), foot: P3(f.foot[0], f.bottom, f.foot[1]), direction: [f.dir[0], -f.dir[1]], width: f.width, top: U.y(f.top), bottom: U.y(f.bottom), lean: f.lean,
+        note: 'position = the lip (top of the fall), foot = the plunge pool; the sheet stands in the plunge pool and leans back up to about 0.2 m in front of the lip (lean = horizontal lip-to-foot distance). direction = downstream (Unity xz).' })),
     };
   }
   if (pools.length) poolsMeta = pools.map(p => ({ id: p.id, type: p.type, center: P3((p.x1 + p.x2) / 2, p.floor, (p.z1 + p.z2) / 2), size: [+(p.x2 - p.x1).toFixed(3), +(p.z2 - p.z1).toFixed(3)],
@@ -4205,7 +4236,7 @@ revision・書き出し日時・ファイルごとの SHA-256・contentHash は 
 - cliff_relief_mesh.json : 急斜面がある場合だけ。岩面の実形状（Unity座標・頂点法線・三角形・岩色/苔/濡れ/雪の属性）。meta.terrain.cliffRelief が参照します。表示用の追加メッシュで、歩行用高さ/通行判定は変更しません。Unity側では別途読み込みと材質の割当が必要です。
 - cliff_style.png  : 岩壁の種類（場所ごと。R = meta.cliffStyles の番号）。岩・崖石・小石は props.csv の cliffStyle 列。
 - walkable.png     : 通行判定（離散値。補間しないでください）。meta.json の agentProfile の体格で計算。
-- spring_water.png / spring_flow.png : 水源の小川・池・プールの水面の高さと流れ（水源かプールがあるときだけ）。符号は meta.json の springs.encoding。
+- spring_water.png / spring_flow.png / spring_mask.png : 水源の小川・池・プールの水面の高さ・流れ・滝つぼからの泡の帯（水源かプールがあるときだけ）。符号は meta.json の springs.encoding。
 - props.csv        : 小物の配置。instanceId は再書き出しでも変わりません。assetKey は asset_catalog.json の対応表。
 - asset_catalog.json : 種類ごとの assetKey と、エディターが使う代理の当たり判定。編集してエディターに読み込めます。
 - meta.json        : 座標仕様、開始地点、出入口・敵/宝箱候補・禁止範囲、階層移動（魔法陣・上り/下り階段 = floorLinks）、橋・階段・滝、水、天候、霧。
@@ -4838,6 +4869,7 @@ function endStroke() {
   // ground the stroke reshaped is the user's now: the springs' carving there is no longer given back when they carve again
   const s0 = undoStack[undoStack.length - 1];
   if (stroke.active && s0 && s0.SC && !['spring', 'pool'].includes(state.tool)) for (let k = 0; k < N * N; k++) if (H[k] !== s0.H[k]) SC[k] = 0;
+  if (stroke.active && falls.length && s0 && H.some((h, k) => h !== s0.H[k])) refitFalls();   // placed waterfalls follow the reshaped ground
   stroke.dragStart = null; drag = null; stroke.active = false;
 }
 canvas.addEventListener('pointerup', e => { if (e.pointerType === 'touch') { touchUp(e); return; } endStroke(); });
@@ -4999,7 +5031,7 @@ function update(dt) {
   }
   if (glowTick-- <= 0) { glowTick = 20; const c = state.mode === 'edit' ? cam.target : player; updateGlowLights(c.x, c.z); }
   glowLights.forEach((l, k) => { l.intensity = l.userData.base * (.85 + .15 * Math.sin(timeU.value * 9 + k * 2.1)) * (1 - .5 * dimU.value); });
-  for (const c of fallGroup.children) if (c.userData.mist) {
+  for (const c of [...fallGroup.children, ...springFallGroup.children]) if (c.userData.mist) {
     const t = timeU.value * 1.3 + c.userData.ph; c.scale.setScalar(c.userData.base * (1 + .08 * Math.sin(t))); c.material.opacity = (.34 + .1 * Math.sin(t * .7)) * (1 - .6 * dimU.value);
   }
   const dimT = state.showWalk ? 1 : 0;
@@ -5265,13 +5297,13 @@ const bootReady=bootPending?.startsWith('prepared:')?prepareMap('pending',0,{tok
   prepareMap(bootPending==='sample2'&&SIZE===SAMPLE2_SIZE?'sample2':bootPending==='flat'||SIZE!==64?'flat':'sample',bootPending==='sample2'?11:7,{boot:true});
 
 // hooks for automated checks
-window.__app = { get springs() { return springs; }, set springs(v) { springs = v; }, get pools() { return pools; }, get springRes() { return springRes; }, SC, placeSpring, placePool, applySprings, solveSprings, waterAt, springLevelAt, poolDist, poolWallAt, POOL_WALL, deckAt, fillGroundAll,buildPreparedSample,prepareMap,cancelMapPreparation,bootReady,get preparation(){return mapPreparation?{id:mapPreparation.id,phase:mapPreparation.phase,requestedMode:mapPreparation.requestedMode,elapsedMs:performance.now()-mapPreparation.start}:null;},get preparationStats(){return lastPreparedState;},
+window.__app = { refitFalls, placeFall, springFallGroup, fallGroup, get springs() { return springs; }, set springs(v) { springs = v; }, get pools() { return pools; }, get springRes() { return springRes; }, SC, placeSpring, placePool, applySprings, solveSprings, waterAt, springLevelAt, poolDist, poolWallAt, POOL_WALL, deckAt, fillGroundAll,buildPreparedSample,prepareMap,cancelMapPreparation,bootReady,get preparation(){return mapPreparation?{id:mapPreparation.id,phase:mapPreparation.phase,requestedMode:mapPreparation.requestedMode,elapsedMs:performance.now()-mapPreparation.start}:null;},get preparationStats(){return lastPreparedState;},
   propGrounding,groundedParts,groundedNormal,groundedGhost,groundPreview,setGroundPreview,propBaseY,get cliffContactProgress(){return cliffContactProgress;},cliffFits,effectiveGeometry,fitCliffContact,adoptCliffContact, cliffProtected,cliffProtectionReason,nearFeatureReason, get cliffContactStats(){return cliffContactStats;},
   pickGroundDetail,adjustGroundDetail,selectedGroundDetail,updateTouch,touchStats, pavingMask, cliffRelief, rebuildCliffRelief, groundTrial, groundTexture, terrainSource:tGeo, terrain, renderer, camera, SIZE, state, H, S, O, F, C, propMeshes, ghostMeshes, cliffIndexAt, BIOMES, CLIFF_STYLES, applyCliffStyle, deckAt, linkDeckAt, runValidation, genSample, genSample2, secretRegions, secretLineX, passageGeometry, terrainRes, TERRAIN_RES, snapshot, sha256, LINK_KINDS, normalizeCatalog, catalogExport, valueIssues, areaIssue, deckAt, getColliders, PROP, get colliderMaxR() { return colliderMaxR; }, rebuildMarkers, portLanding, linkTrigger, linkArrival, LINK_SPEC, get markers() { return markers; }, placeMarker, ensureIds, applyCatalog, ATMOS, WEATHER, applyAtmo, makeCoast, glowLights, applyBiome, applyPalette, propVisible, toolVisible, updateTerrain, rebuildProps, genFlat, floorAt, bridgeAt, stairsAt, placeSlope, placeStairs, placeBridge, pickTarget, regenGroundProps, rebuildBridges, get stairs() { return stairs; }, get bridges() { return bridges; }, get falls() { return falls; }, overrideAt, heroMat, hero, heroBody, get heroLook() { return heroLook; }, setHeroLook, heroStyle, heroGlow, get ghosts() { return ghosts; }, get props() { return props; }, cam, playCam, player, keys, setMode, setTool, update, heightAt, walkable, slope: slopeAt,
   stroke(x, z, frames = 20, opts = {}) {
     hit = new THREE.Vector3(x, heightAt(x, z), z); beginStroke({ shiftKey: !!opts.shift });
     for (let f = 0; f < frames; f++) { if (stroke.active && !['scatter', 'erase'].includes(state.tool)) { applyBrush(x, z, 1 / 60); } }
-    stroke.active = false; updateTerrain(); rebuildProps();
+    stroke.active = false; updateTerrain(); rebuildProps(); if (falls.length) refitFalls();
   },
   render() { renderer.render(scene, camera); },
   setTime(t) { timeU.value = t; }, get time() { return timeU.value; },

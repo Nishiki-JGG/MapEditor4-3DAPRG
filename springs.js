@@ -188,7 +188,7 @@
       else pools.push({ id: P.id, body: b, level: P.level, cells: P.cells.length });
     });
     // 小川: セルの中心を結ぶ線をなめらかにして、幅のぶんのセルを塗る（いちばん近い線の水面）
-    const best = new Float32Array(n).fill(1e9);
+    const best = new Float32Array(n).fill(1e9), face = new Uint8Array(n);   // face: 滝の落ちる崖の面（水面を描かない。滝の幕だけ）
     bodies.forEach((st, b) => {
       if (st.kind !== 'stream' || st.path.length < 1) return;
       const m = st.path.length, px = new Float64Array(m), pz = new Float64Array(m), ps = new Float64Array(m), w = new Float64Array(m);
@@ -199,22 +199,33 @@
       // どこで終わるか: water 水位より低い水へ / edge 地図の端 / pond 池へ / join ほかの流れへ / dry 地面に浸み込む
       const last = st.path[m - 1], end = sink(last) ? 'water' : onEdge(last) ? 'edge' : own[last] >= 0 && own[last] !== b ? (bodies[own[last]].kind === 'stream' ? 'join' : 'pond') : 'dry';
       streams.push({ body: b, points: pts, end, springs: sys[find(st.sys)].springs.slice() });
-      // 崖を落ちる所（続けて急な所は 1 つの滝）
+      // 崖を落ちる所（続けて急な所は 1 つの滝）。縁（lip）から滝つぼ（foot）までの区間は水面を描かず、崖の面のセルにも水を置かない
+      const skip = new Uint8Array(m), onFace = new Uint8Array(m);
       for (let t = 1; t < m; t++) {
         const drop = TH[st.path[t - 1]] - TH[st.path[t]]; if (drop < opt.fallDrop) continue;
         let e = t; while (e + 1 < m && TH[st.path[e]] - TH[st.path[e + 1]] >= opt.fallDrop * .5) e++;
-        const dx = px[e] - px[t - 1], dz = pz[e] - pz[t - 1], dl = hyp(dx, dz) || 1;
-        falls.push({ x: +px[t - 1].toFixed(3), z: +pz[t - 1].toFixed(3), dir: [+(dx / dl).toFixed(4), +(dz / dl).toFixed(4)], width: +w[t - 1].toFixed(3), top: +ps[t - 1].toFixed(3), bottom: +ps[e].toFixed(3) });
+        const lx = px[t - 1], lz = pz[t - 1], fx = px[e], fz = pz[e], dx = fx - lx, dz = fz - lz, dl = hyp(dx, dz) || 1, top = ps[t - 1], bottom = ps[e], hw = w[t - 1] / 2 + .6;
+        falls.push({ x: +lx.toFixed(3), z: +lz.toFixed(3), foot: [+fx.toFixed(3), +fz.toFixed(3)], dir: [+(dx / dl).toFixed(4), +(dz / dl).toFixed(4)], lean: +dl.toFixed(3), width: +w[t - 1].toFixed(3), top: +top.toFixed(3), bottom: +bottom.toFixed(3) });
+        for (let q = t - 1; q < e; q++) skip[q] = 1;
+        for (let q = t; q < e; q++) onFace[q] = 1;
+        // 崖の面：縁と滝つぼを結ぶ帯の、上と下の水面の間の高さのセル
+        const i0 = Math.max(0, Math.floor((Math.min(lx, fx) - hw - 1 + HALF) / TS)), i1 = Math.min(TN - 1, Math.ceil((Math.max(lx, fx) + hw + 1 + HALF) / TS));
+        const j0 = Math.max(0, Math.floor((Math.min(lz, fz) - hw - 1 + HALF) / TS)), j1 = Math.min(TN - 1, Math.ceil((Math.max(lz, fz) + hw + 1 + HALF) / TS));
+        for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
+          const k = j * TN + i, qx = X(i) - lx, qz = X(j) - lz, u = clamp((qx * dx + qz * dz) / (dl * dl), 0, 1), d = hyp(qx - dx * u, qz - dz * u);
+          if (d <= hw && TH[k] < top - .12 && TH[k] > bottom + .05) face[k] = 1;
+        }
         t = e;
       }
       for (let t = 0; t < m; t++) {
+        if (skip[t]) continue;
         const a = t, c = Math.min(t + 1, m - 1), hw = Math.max(w[a], w[c]) / 2, r = hw + .5 + TS;
         const i0 = Math.max(0, Math.floor((Math.min(px[a], px[c]) - r + HALF) / TS)), i1 = Math.min(TN - 1, Math.ceil((Math.max(px[a], px[c]) + r + HALF) / TS));
         const j0 = Math.max(0, Math.floor((Math.min(pz[a], pz[c]) - r + HALF) / TS)), j1 = Math.min(TN - 1, Math.ceil((Math.max(pz[a], pz[c]) + r + HALF) / TS));
         const sx = px[c] - px[a], sz = pz[c] - pz[a], L2 = sx * sx + sz * sz, L = Math.sqrt(L2) || 1;
         const slope = a === c ? 0 : Math.max(ps[a] - ps[c], 0) / L, sp = speedOf(slope);
         for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
-          const k = j * TN + i; if (kind[k] >= 2 || sink(k)) continue;
+          const k = j * TN + i; if (kind[k] >= 2 || sink(k) || face[k]) continue;
           const qx = X(i) - px[a], qz = X(j) - pz[a], u = L2 > 0 ? clamp((qx * sx + qz * sz) / L2, 0, 1) : 0, d = hyp(qx - sx * u, qz - sz * u);
           const hwu = (w[a] + (w[c] - w[a]) * u) / 2; if (d > Math.max(hwu + .5, TS * 1.1) || d >= best[k]) continue;   // 幅の外でも、岸が水面より低ければ 0.5m までは水（溝の岸の斜面で水際が決まる）
           let y = ps[a] + (ps[c] - ps[a]) * u;
@@ -222,7 +233,7 @@
           best[k] = d; surf[k] = y; kind[k] = 1; body[k] = b; flow[k * 2] = sx / L * sp; flow[k * 2 + 1] = sz / L * sp;
         }
       }
-      for (let t = 0; t < m; t++) { const k = st.path[t]; if (kind[k] || sink(k)) continue; surf[k] = ps[t]; kind[k] = 1; body[k] = b; }   // 細い所でも線の上は水
+      for (let t = 0; t < m; t++) { const k = st.path[t]; if (kind[k] || sink(k) || onFace[t] || face[k]) continue; surf[k] = ps[t]; kind[k] = 1; body[k] = b; }   // 細い所でも線の上は水
     });
     // 小川の水面をまわりの小川のセルとならす（曲がり角で、隣の区間の水面を取ったセルとの段を消す）。線の上は必ず水
     const onPath = new Uint8Array(n); bodies.forEach(st => { if (st.kind === 'stream') for (const k of st.path) if (kind[k] === 1) onPath[k] = 1; });
@@ -249,6 +260,18 @@
       }
       flow.set(f2);
     }
+    // 泡の帯：滝つぼのまわりと、そこから下流へ数 m（mask の R。water.js の泡の帯と同じ 0..0.65 の「覆う割合」）
+    const trail = new Float32Array(n);
+    for (const f of falls) {
+      const [fx, fz] = f.foot, R = 8, i0 = Math.max(0, Math.floor((fx - R + HALF) / TS)), i1 = Math.min(TN - 1, Math.ceil((fx + R + HALF) / TS)), j0 = Math.max(0, Math.floor((fz - R + HALF) / TS)), j1 = Math.min(TN - 1, Math.ceil((fz + R + HALF) / TS));
+      const h = f.top - f.bottom, strong = clamp(.35 + .12 * h, .35, .65);
+      for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
+        const k = j * TN + i; if (!kind[k]) continue;
+        const qx = X(i) - fx, qz = X(j) - fz, d = hyp(qx, qz), along = qx * f.dir[0] + qz * f.dir[1];
+        const v = strong * (d < f.width ? 1 : along > -.5 ? Math.exp(-(d - f.width) / 3) : 0);
+        if (v > trail[k]) trail[k] = v;
+      }
+    }
     const depth = new Float32Array(n), edge = new Float32Array(n).fill(NaN);
     let wetCount = 0;
     for (let k = 0; k < n; k++) if (kind[k]) { depth[k] = Math.max(surf[k] - TH[k], 0); edge[k] = surf[k]; wetCount++; }
@@ -267,7 +290,7 @@
     }
     for (let k = 0; k < n; k++) if (kind[k]) bank[k] = Math.max(Math.min(bank[k], 50) - .5 * TS, .02);
     for (const sp of outSprings) { const s = find(sp.sys); sp.end = sys[s].end || (sys[s].budget <= 0 ? 'dry' : 'open'); sp.wet = body[sp.cell] >= 0; delete sp.sys; }
-    return { TN, TS, HALF, level, surf, depth, kind, body, flow, edge, bank, wetCount, springs: outSprings, ponds, pools, streams, falls, warnings, options: opt };
+    return { TN, TS, HALF, level, surf, depth, kind, body, flow, edge, bank, trail, wetCount, springs: outSprings, ponds, pools, streams, falls, warnings, options: opt };
   }
 
   // 小川の溝: 線から幅の半分までを溝の深さだけ下げ、岸まで 0.8m かけて元に戻す。溝の底（水面 - 水深 - 溝の深さ）より低い所は掘らない
@@ -293,11 +316,21 @@
         }
       }
     }
+    // 滝つぼ：落ちた所を丸く掘る（滝の高さに応じて 0.25〜0.5m）。崖の面より上は掘らない
+    for (const f of res.falls || []) {
+      if (!f.foot) continue;
+      const [fx, fz] = f.foot, R = Math.max(f.width * .75, .8), D = clamp(.15 + .1 * (f.top - f.bottom), .25, .5), r = R + .6;
+      const i0 = Math.max(0, Math.floor((fx - r + HALF) / TS)), i1 = Math.min(TN - 1, Math.ceil((fx + r + HALF) / TS)), j0 = Math.max(0, Math.floor((fz - r + HALF) / TS)), j1 = Math.min(TN - 1, Math.ceil((fz + r + HALF) / TS));
+      for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
+        const k = j * TN + i; if (TH[k] > f.bottom + .3) continue;
+        const v = D * (1 - sstep(R * .35, r, hyp(X(i) - fx, X(j) - fz))); if (v > out[k]) out[k] = v;
+      }
+    }
     return out;
   }
 
   // 水源の水を、water.js の pack と同じ形式の流れ・泡の画像（RGBA、同じ格子）へ上書きする（水源の水の所だけ）
-  //   flow: R,G = 流れ(ux, -uz)/maxSpeed、B = 0.5、A = 岸からの距離/bankRange（水なら 4 以上）。mask: R = 泡の帯（ここでは 0）
+  //   flow: R,G = 流れ(ux, -uz)/maxSpeed、B = 0.5、A = 岸からの距離/bankRange（水なら 4 以上）。mask: R = 泡の帯（滝つぼから下流）/trailMaxCover
   function packInto(res, flow, mask, o) {
     const maxSpeed = (o && o.maxSpeed) || 2, bankRange = (o && o.bankRange) || 1.5, n = res.TN * res.TN;
     for (let k = 0; k < n; k++) {
@@ -305,7 +338,7 @@
       flow[k * 4] = Math.round((0.5 + 0.5 * clamp(res.flow[k * 2] / maxSpeed, -1, 1)) * 255);
       flow[k * 4 + 1] = Math.round((0.5 + 0.5 * clamp(-res.flow[k * 2 + 1] / maxSpeed, -1, 1)) * 255);
       flow[k * 4 + 2] = 128; flow[k * 4 + 3] = Math.max(4, Math.round(clamp(res.bank[k] / bankRange, 0, 1) * 255));
-      if (mask) { mask[k * 4] = 0; mask[k * 4 + 3] = 255; }
+      if (mask) { mask[k * 4] = Math.round(clamp((res.trail ? res.trail[k] : 0) / ((o && o.trailMaxCover) || .65), 0, 1) * 255); mask[k * 4 + 3] = 255; }
     }
   }
 
