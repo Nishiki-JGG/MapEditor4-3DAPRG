@@ -978,6 +978,7 @@ propMat.onBeforeCompile = propShader; propMat.customProgramCacheKey = () => 'pro
 const rockMat = propMat.clone(); rockMat.defines = { MOSS: '', DETAIL: '' }; rockMat.flatShading = false;   // smoothed normals (makeGeo opt.smooth)
 rockMat.onBeforeCompile = propShader; rockMat.customProgramCacheKey = () => 'prop-rock-contact-v7-moss';
 // walls, columns and other masonry: the same stone detail, no per-biome moss
+const carvedMat=propMat.clone(); carvedMat.flatShading=false; carvedMat.defines={DETAIL:'',DETAIL_K:'.16'}; carvedMat.onBeforeCompile=propShader; carvedMat.customProgramCacheKey=()=> 'prop-carved-v1';
 const masonMat = propMat.clone(); masonMat.defines = { DETAIL: '' };
 masonMat.onBeforeCompile = propShader; masonMat.customProgramCacheKey = () => 'prop-rock-contact-v7-stone';
 // plants: smooth shading from the bent normals (makeGeo part.sn), so canopies and leaves read soft instead of faceted
@@ -1030,7 +1031,7 @@ diffuseColor.rgb *= mix(1., value, woodPixel);
 };
 structWoodMat.customProgramCacheKey = () => 'prop-rock-contact-v7-struct-wood-grain';
 
-const PROP_MATS = { rock: rockMat, stone: masonMat, cards: cardMat, cards2: cardMat2, foliage: foliageMat, ice: iceMat, snow: snowMat, gloss: glossMat };
+const PROP_MATS = { carved: carvedMat, rock: rockMat, stone: masonMat, cards: cardMat, cards2: cardMat2, foliage: foliageMat, ice: iceMat, snow: snowMat, gloss: glossMat };
 const CAP = 8000;
 // plants with touch: true bend away from the hero in walk mode (per-instance attribute 'touch', see updateTouch)
 const TOUCH_GLSL = `// bent away from the hero (touch.xy = world-space bend of the top in m, touch.z = 1 / mesh height); base stays put
@@ -3844,6 +3845,7 @@ revision・書き出し日時・ファイルごとの SHA-256・contentHash は 
     { name: 'asset_catalog.json', data: JSON.stringify(catalogExport(), null, 2) },
     ...(groundedInstances.length?[{name:'grounded_props.json',data:JSON.stringify(groundedData)}]:[]),
     { name: 'shared_props.json', data: TDSharedProps.exportJson() },
+    {name:'small_props.json',data:JSON.stringify(TDSmallPropExport.build(PROP,groundedData,props.filter(p=>TDSmallPropExport.ids.includes(PROP[p[0]].id)).map(p=>{const v=.86+.28*hash2(p[1]*97|0,p[2]*89|0);return{instanceId:p[8],tint:[v*(.95+.1*hash2(p[1]*13|0,7)),v,v*(.95+.1*hash2(3,p[2]*17|0))]};})))},
     { name: 'pine_wind.json', data: TDPineWind.exportJson() },
     {name:'root_grounding.json',data:JSON.stringify({version:1,axes:'Unity world XZ',paint:{file:'root_paint.png',resolution:N,sizeMetres:[SIZE,SIZE]},instances:props.filter(p=>PROP[p[0]].sharedAsset&&TDSharedProps.asset(PROP[p[0]].sharedAsset).rootGrounding).map(p=>{const v=rootSlopeAt(p);return{instanceId:p[8],slope:[v[0],-v[1]],terrain:rootTerrainAt(p)};})})},
     { name: 'shared_ground.json', data: JSON.stringify(TDGroundData) },

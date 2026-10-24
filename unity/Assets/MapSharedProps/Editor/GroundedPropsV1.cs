@@ -20,7 +20,10 @@ public static class GroundedPropsV1 {
  static Vector3 V(float[] a){Floats(a,3);return new Vector3(a[0],a[1],a[2]);}
  public static Data Read(string file){
   var d=JsonUtility.FromJson<Data>(File.ReadAllText(file));Check(d!=null&&d.version==1&&d.units=="metres"&&d.axes=="Unity X/Y/Z"&&d.assets!=null&&d.instances!=null,"format");
-  Check(d.assets.Length==1&&d.instances.Length<=8000,"count");var ids=new HashSet<string>();var allowed=new HashSet<string>(new[]{"starfish0","starfish1","starfish2","starfish3","starfish4","shell0","shell1","shell2","shell3"});
+  // New small-prop sidecar owns tools/rope. Keep the original nine-part shell contract strict.
+  foreach(var a in d.assets)Check(a.id=="shells"||a.id=="miningtools"||a.id=="coiledrope","unknown grounded asset");
+  d.assets=Array.FindAll(d.assets,a=>a.id=="shells");d.instances=Array.FindAll(d.instances,a=>a.type=="shells");
+  Check(d.assets.Length<=1&&d.instances.Length<=8000,"count");var ids=new HashSet<string>();var allowed=new HashSet<string>(new[]{"starfish0","starfish1","starfish2","starfish3","starfish4","shell0","shell1","shell2","shell3"});
   foreach(var a in d.assets){Check(a.id=="shells"&&a.assetKey=="tdj/shells"&&a.parts!=null&&a.parts.Length==9,"asset");
    foreach(var p in a.parts){Check(p!=null&&((p.id=="starfish0"||p.id=="starfish1"||p.id=="starfish2"||p.id=="starfish3"||p.id=="starfish4")||(p.id=="shell0"||p.id=="shell1"||p.id=="shell2"||p.id=="shell3")),"part ID");Check(ids.Add(a.id+"/"+p.id)&&p.positions!=null&&p.positions.Length>0&&p.positions.Length<=20000,"part ID/count");int n=p.positions.Length/3;Floats(p.positions,n*3);Floats(p.normals,n*3);Floats(p.colors,n*3);Check(p.triangles!=null&&p.triangles.Length>0&&p.triangles.Length%3==0,"triangles");foreach(int ix in p.triangles)Check(ix>=0&&ix<n,"index");}
   }

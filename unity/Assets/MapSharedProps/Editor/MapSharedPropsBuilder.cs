@@ -170,7 +170,7 @@ public static class MapSharedPropsBuilder {
    foreach(var p in rows)if(surfaces.TryGetValue(p.instanceId,out var surface)){var tr=r.root.transform.Find(p.instanceId);if(tr&&Array.Find(lib.assets,a=>a.id==p.type).rootSurface!=null)MapSharedProps.SharedRootGrounding.SetSurface(tr.GetComponent<Renderer>(),surface);}
    if(contactDriver)contactDriver.Refresh();
    if(wind!=null){var driver=r.root.AddComponent<MapSharedProps.SharedPineWind>();ConfigureWind(driver,Path.Combine(exportDirectory,"meta.json"));driver.Apply(0);}
-   int grounded=GroundedPropsV1.Build(exportDirectory,r.assetDirectory,r.root.transform,shader);r.placed+=grounded;r.skipped-=grounded;
+   int grounded=GroundedPropsV1.Build(exportDirectory,r.assetDirectory,r.root.transform,shader);r.placed+=grounded;r.skipped-=grounded;int small=SmallPropsV1.Build(exportDirectory,r.assetDirectory,r.root.transform,shader,r.prefabs);r.placed+=small;r.skipped-=small;
     AssetDatabase.SaveAssets(); return r;
   } catch (Exception failure) {
    Debug.LogException(failure);
