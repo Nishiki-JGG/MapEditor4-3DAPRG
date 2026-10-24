@@ -1,6 +1,6 @@
-// 波打ち際の小物（Revision 26）：海岸ツールで浜を作ると、打ち上がりの届く帯に貝殻（ホタテの殻・タカラガイ・貝のかけら）、
-// その上の満ち潮の線に打ち上げられた海藻が、浜と平行に少し並ぶ。内陸の池には置かない。やり直しても増えすぎない。
-// 撒くツールでも、それぞれの高さの帯にだけ置ける。当たり判定は無い。
+// 波打ち際の小物（Revision 26・27）：海岸ツールで浜を作ると、打ち上がりの届く帯に貝殻（ホタテの殻・タカラガイ・貝のかけら）が少し並ぶ。
+// 打ち上げられた海藻は自動では置かない（手で撒く物）。内陸の池には置かない。やり直しても増えない。
+// 撒くツールでは、海藻も含めて、それぞれの高さの帯にだけ置ける。当たり判定は無い。
 //   PW=<playwright のパス> node tests/strandline.js
 const { chromium } = require(process.env.PW || 'playwright');
 const path = require('path');
@@ -34,12 +34,12 @@ const path = require('path');
   const count = id => o.items.filter(i => i.id === id).length, inBand = (list) => list.every(i => i.h >= o.bands[i.id][0] - 1e-6 && i.h <= o.bands[i.id][1] + 1e-6);
   const shells = count('scallop') + count('cowrie') + count('shellbits');
   const checks = [
-    ['海岸ツール：貝殻 3 種と海藻が自動で並ぶ', count('scallop') > 2 && count('cowrie') > 2 && count('shellbits') > 2 && count('wrack') > 8],
-    ['自動の小物は、それぞれの高さの帯（貝：水際〜0.45m、海藻：0.3〜0.65m）にある', inBand(o.items)],
-    ['海藻は浜と平行に並ぶ（海への向きと直角）', o.along.length > 0 && o.along.every(v => v < .35)],
+    ['海岸ツール：貝殻 3 種が自動で並ぶ', count('scallop') > 2 && count('cowrie') > 2 && count('shellbits') > 2],
+    ['海岸ツール：打ち上げられた海藻は自動では置かない', count('wrack') === 0],
+    ['自動の貝殻は、打ち上がりの帯（水際〜0.45m）にある', inBand(o.items)],
     ['内陸の池のまわりには置かない', o.nearPond === 0],
     ['海岸ツールをやり直しても増えない', o.n2 === o.n1],
-    ['撒くツールでも、それぞれの高さの帯にだけ置ける', o.sc.length > 10 && inBand(o.sc)],
+    ['撒くツールでは、海藻も含めて、それぞれの高さの帯にだけ置ける', o.sc.length > 10 && o.sc.some(i => i.id === 'wrack') && inBand(o.sc)],
     ['当たり判定は無い', o.radii.every(r => r === 0)],
     ['ページのエラーなし', errs.length === 0],
   ];

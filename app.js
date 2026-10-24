@@ -1928,20 +1928,17 @@ function makeCoast(a, c) {
   applyBiome(state.biome); updateTerrain(); strandline(); rebuildProps(); rebuildFalls(); rebuildBridges(); rebuildStairs();
   return true;
 }
-// the strand of a sea beach: a few shells and bits of shell where the waves run up, and lines of wrack along the high water
-// mark (the PROP 'shore' band of each); only on the sea's own beach, and never closer to other things than they allow
+// the strand of a sea beach: a few shells and bits of shell where the waves run up (the PROP 'shore' band); only on the sea's
+// own beach, and never closer to other things than they allow. Wrack is not laid here: it is only placed by hand
 function strandline() {
-  const shells = ['scallop', 'cowrie', 'shellbits'].map(TYPE), wrack = TYPE('wrack'); if (shells.some(t => t < 0) || wrack < 0) return;
+  const shells = ['scallop', 'cowrie', 'shellbits'].map(TYPE); if (shells.some(t => t < 0)) return;
   const sh = wGeo.attributes.shore.array, hash = buildPropHash(), W = state.water, step = .7;
   for (let z = -HALF + 1.5; z < HALF - 1.5; z += step) for (let x = -HALF + 1.5; x < HALF - 1.5; x += step) {
     const px = x + (hash2(x * 37 | 0, z * 53 | 0) - .5) * step, pz = z + (hash2(x * 71 | 0, z * 29 | 0) - .5) * step, h = heightAt(px, pz) - W, k = idx(clamp(Math.round((px + HALF) * RES), 0, N - 1), clamp(Math.round((pz + HALF) * RES), 0, N - 1));
-    if (sh[k * 4 + 3] < .5 || h < -.05 || h > .65) continue;
-    const r = hash2(px * 113 | 0, pz * 97 | 0), r2 = hash2(px * 59 | 0, pz * 131 | 0);
-    const t = h > .36 && h < .52 && r < .55 ? wrack : h < .45 && r > .86 ? shells[(r2 * 3) | 0] : -1;   // the wrack in one narrow band, so it reads as a line
+    if (sh[k * 4 + 3] < .5 || h < -.05 || h > .45) continue;
+    const r = hash2(px * 113 | 0, pz * 97 | 0), r2 = hash2(px * 59 | 0, pz * 131 | 0), t = r > .86 ? shells[(r2 * 3) | 0] : -1;
     if (t < 0 || !canPlace(t, px, pz, hash)) continue;
-    // wrack lies along the shore: across the direction to the sea
-    const yaw = t === wrack ? Math.atan2(sh[k * 4 + 1], sh[k * 4 + 2]) + (r2 - .5) * .35 : r2 * Math.PI * 2;   // a prop's x axis turned by yaw = (cos, -sin): here along the shore
-    const p = [t, px, pz, yaw, lerp(PROP[t].sc[0], PROP[t].sc[1], r2), 0]; props.push(p); hash.add(p, px, pz);
+    const p = [t, px, pz, r2 * Math.PI * 2, lerp(PROP[t].sc[0], PROP[t].sc[1], r2), 0]; props.push(p); hash.add(p, px, pz);
   }
 }
 function placeSlope(a, c, w) {
