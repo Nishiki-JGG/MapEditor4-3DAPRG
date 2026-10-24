@@ -35,7 +35,7 @@ const path = require('path');
     return { W: W(), okPier, swapped: br.x1 < br.x2, start, end, deck, walked, endX: br.x2, pierWarn, T, groupNames: group, count: before, after, kinds: [...kinds], minDepth: +Math.min(...depths).toFixed(2), maxDepth: +Math.max(...depths).toFixed(2), above, bridge: br };
   }, CORALS);
   // the tree of props in the menu
-  o.coralGroup = await p.evaluate(CORALS => { const g = [...document.querySelectorAll('#types details.pg')].find(d => d.querySelector('summary').textContent.includes('海の生き物')); return g ? [...g.querySelectorAll('label[data-type]')].length : 0; }, CORALS);
+  o.coralGroup = await p.evaluate(CORALS => { const g = [...document.querySelectorAll('#types details.pg')].find(d => d.querySelector('summary').textContent.includes('海の生き物')); if (!g) return 0; const ids = new Set([...g.querySelectorAll('label[data-type]')].map(l => window.__app.PROP[+l.dataset.type]?.id)); return CORALS.filter(id => ids.has(id)).length; }, CORALS);
   // save → load and the export
   o.io = await p.evaluate(async CORALS => {
     const A = window.__app, n = A.props.filter(q => CORALS.includes(A.PROP[q[0]].id)).length, d = A.serialize();
