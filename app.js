@@ -309,7 +309,8 @@ const LAVA_SURFACE_GLSL=`vec4 lavaSurface(vec2 p,float time){
 }`;
 const terrainMat = new THREE.MeshStandardMaterial({ roughness: .92, metalness: 0 });
 terrainMat.onBeforeCompile = (sh) => {
-  Object.assign(sh.uniforms, TDGround.uniforms, TDBedrock.uniforms); sh.uniforms.uGroundTrial = groundTrial;
+  const useBedrock=!!terrainMat.defines?.BEDROCK_FLOOR;
+  Object.assign(sh.uniforms, TDGround.uniforms, useBedrock?TDBedrock.uniforms:{}); sh.uniforms.uGroundTrial = groundTrial;
   sh.uniforms.uWater = waterU; sh.uniforms.uDim = dimU; sh.uniforms.uTime = timeU; sh.uniforms.uStoneGrain=rockGrainU; sh.uniforms.uPavingMask=pavingMaskU; sh.uniforms.uPavingMap=pavingMapU; Object.assign(sh.uniforms, BU);
   sh.vertexShader = sh.vertexShader
     .replace('#include <common>', '#include <common>\nattribute float reliefSlope; varying float vReliefSlope; attribute float springLift; varying float vSpringHw; attribute vec4 splatA; attribute vec4 splatB; attribute vec2 splatC; attribute vec3 cliffT; attribute vec4 cliffM; attribute vec2 cliffW; varying vec3 vCT; varying vec4 vCM; varying vec2 vCW; varying vec4 vSA; varying vec4 vSB; varying vec2 vSC; varying vec3 vWPos; varying vec3 vWNor;')
@@ -320,7 +321,7 @@ varying float vReliefSlope; varying float vSpringHw; varying vec4 vSA; varying v
 uniform vec3 uG0; uniform vec3 uG1; uniform vec3 uGH; uniform vec3 uRockTint; uniform float uFlowers; uniform float uSnow; uniform float uSnowLine; uniform float uWet; uniform float uSea;
 varying vec3 vCT; varying vec4 vCM; varying vec2 vCW; uniform int uPitN; uniform vec4 uPitA[8]; uniform vec4 uPitB[8];
 ${TDGround.GLSL}
-${TDBedrock.GLSL}
+${useBedrock?TDBedrock.GLSL:''}
 uniform float uGroundTrial;
 float gGloss=0.; float gSurfaceHeight=0.; vec3 gGlow=vec3(0.);
 ${GLSL_NOISE}
@@ -448,12 +449,13 @@ vec3 terrainColor(){
     col+=mix(ic,vec3(.93,.97,1.),crk*.8)*icW;
     gGloss=max(gGloss,icW*.9);
   }
-  // Manually painted continuous bedrock: packed colour and millimetre relief, no geometry.
+${useBedrock?`  // Manually painted continuous bedrock: packed colour and millimetre relief, no geometry.
   if(vSC.y>0.){
     vec4 bed=bedrockSurface(p);
     col+=bed.rgb*(.90+.20*a)*vSC.y;
     gSurfaceHeight+=(bed.a-.5)*.018*vSC.y;
   }
+`:''}
   col/=paintNorm;gGlow/=paintNorm;
   // beach sand (ground painted with sand keeps its own sand, so the beach has one colour)
   float hw=wp.y-uWater;
@@ -503,8 +505,13 @@ for(int i=0;i<8;i++){ if(i>=uPitN) break; vec2 d=vWPos.xz-uPitA[i].xy; float lx=
 normal=surfaceNormal(-vViewPosition,normal,gSurfaceHeight);`)
     .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor=mix(roughnessFactor,.55,gGloss);')
     .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance+=pow(gGlow,vec3(2.2))*(1.-.6*uDim);');
+  // With no bedrock paint, retain the previous terrain shader and sampler budget.
+  if(!useBedrock){
+    sh.vertexShader=sh.vertexShader.replace('varying vec2 vSC;','varying float vSC;').replace('vSC=splatC;','vSC=splatC.x;');
+    sh.fragmentShader=sh.fragmentShader.replace('varying vec2 vSC;','varying float vSC;').replace('+vSC.x+vSC.y;','+vSC;').replaceAll('vSC.x','vSC');
+  }
 };
-terrainMat.customProgramCacheKey = () => 'terrain-dryland-v1';
+terrainMat.customProgramCacheKey = () => 'terrain-dryland-v1'+(terrainMat.defines?.BEDROCK_FLOOR?'-bedrock':'');
 
 function gridIndex() {
   const ix = new Uint32Array((N - 1) * (N - 1) * 6); let o = 0;
@@ -1042,12 +1049,16 @@ function updateTerrain() {
   if (typeof linkGroup !== 'undefined') for (const g of linkGroup.children) g.position.y = heightAt(g.userData.m.x, g.userData.m.z);
   if (typeof updateAtmoHeights === 'function' && fogGroup) updateAtmoHeights();
   const pos = tGeo.attributes.position.array, sa = tGeo.attributes.splatA.array, sb = tGeo.attributes.splatB.array, sc = tGeo.attributes.splatC.array, dp = wGeo.attributes.depth.array;
+  let bedrockPainted=false;
   for (let k = 0; k < N * N; k++) {
     if(pos[k*3+1]!==H[k])propGrounding.changed(k);
     pos[k * 3 + 1] = H[k]; dp[k] = state.water - H[k];
     for (let c = 0; c < 4; c++) sa[k * 4 + c] = effectiveS[k * NS + c] / 255;
     for (let c = 0; c < 4; c++) sb[k * 4 + c] = effectiveS[k * NS + 4 + c] / 255;
-    sc[k * 2] = effectiveS[k * NS + 8] / 255; sc[k * 2 + 1] = effectiveS[k * NS + 9] / 255;
+    sc[k * 2] = effectiveS[k * NS + 8] / 255; sc[k * 2 + 1] = effectiveS[k * NS + 9] / 255; bedrockPainted ||= sc[k*2+1]>0;
+  }
+  if(bedrockPainted!==!!terrainMat.defines?.BEDROCK_FLOOR){
+    for(const material of [terrainMat,reliefMat]){material.defines=bedrockPainted?{BEDROCK_FLOOR:1}:{};material.needsUpdate=true;}
   }
   fillCliffAttrs();
   TDPavingMask.updateMask(pavingMask,effectiveS,NS);

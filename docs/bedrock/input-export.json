@@ -1,7 +1,11 @@
 [
   {
     "mobile": false,
-    "paint": 245,
+    "initial": {
+      "shader": false,
+      "uploaded": false
+    },
+    "paint": 12,
     "touch": false,
     "masks": [
       0,
@@ -42,7 +46,11 @@
   },
   {
     "mobile": true,
-    "paint": 245,
+    "initial": {
+      "shader": false,
+      "uploaded": false
+    },
+    "paint": 55,
     "touch": true,
     "masks": [
       0,

@@ -37,16 +37,16 @@
       "triangles": 9600,
       "geometries": 159,
       "textures": 18,
-      "medianMs": 2.5999999940395355,
-      "p95Ms": 3.5
+      "medianMs": 1.800000011920929,
+      "p95Ms": 2.0999999940395355
     },
     "grass": {
       "calls": 3,
       "triangles": 9600,
       "geometries": 158,
       "textures": 18,
-      "medianMs": 2.2000000178813934,
-      "p95Ms": 3.600000023841858
+      "medianMs": 1.7000000178813934,
+      "p95Ms": 2.7999999821186066
     },
     "addedCalls": 0,
     "addedTriangles": 0
@@ -55,7 +55,7 @@
   "baselineErrors": [],
   "sample": {
     "ok": true,
-    "ms": 14661.5,
+    "ms": 4446.199999988079,
     "channels": 10,
     "bedrockAbsent": true,
     "props": 5761,

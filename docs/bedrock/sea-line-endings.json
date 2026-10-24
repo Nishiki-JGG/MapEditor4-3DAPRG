@@ -1,0 +1,22 @@
+{
+  "references": [
+    {
+      "ref": "e112282",
+      "path": "unity/Assets/MapWater/Runtime/Shaders/MapSeaShared.hlsl",
+      "sha256": "093014e068c6a9b623f5c23776a8244ba62386fe16fad5c3ed05487937001caa",
+      "matchesGenerated": true,
+      "CRLF": false
+    },
+    {
+      "ref": "6f56909",
+      "path": "unity/Assets/MapWater/Runtime/Shaders/MapSeaShared.hlsl",
+      "sha256": "093014e068c6a9b623f5c23776a8244ba62386fe16fad5c3ed05487937001caa",
+      "matchesGenerated": true,
+      "CRLF": false
+    }
+  ],
+  "generatedSha256": "093014e068c6a9b623f5c23776a8244ba62386fe16fad5c3ed05487937001caa",
+  "workingTreeCRLF": true,
+  "workingRawMatches": false,
+  "workingNormalizedMatches": true
+}

@@ -1,0 +1,14 @@
+[
+  {
+    "screenshot": "top-down-borders.png",
+    "maxRGBDifference": 0,
+    "meanRGBDifference": 0.0,
+    "changedPixels": 0
+  },
+  {
+    "screenshot": "top-down-detail.png",
+    "maxRGBDifference": 1,
+    "meanRGBDifference": 1.5984654731457801e-06,
+    "changedPixels": 3
+  }
+]
