@@ -1,0 +1,1 @@
+TDProps.add({id:'smallbarrel',name:'小樽',r:.29,min:1,sc:[.8,1.2],slope:.18,vis:.32,anyGround:true,tags:['ruins','castle'],height:.72,groundSink:.002,material:'cards2',build(){return TDPracticalParts.build(TDPracticalParts.barrel(),803,true);}});

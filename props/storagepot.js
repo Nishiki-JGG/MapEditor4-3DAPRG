@@ -1,0 +1,1 @@
+TDProps.add({id:'storagepot',name:'貯蔵の壺',r:.29,min:1,sc:[.8,1.2],slope:.18,vis:.32,anyGround:true,tags:['ruins','castle'],height:.73,groundSink:.002,build(){const P=TDPracticalParts;return P.build([P.part(P.vessel(),undefined,P.clay)],806);}});
