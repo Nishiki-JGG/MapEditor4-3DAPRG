@@ -1654,7 +1654,8 @@ const GTOOL_TAGS = {
 };
 const inPalette = tags => state.palette === 'all' || tags.includes('common') || tags.includes(state.palette);
 const propVisible = i => !PROP[i].legacyOnly && inPalette(PROP[i].tags);
-const toolVisible = id => !GTOOL_TAGS[id] || inPalette(GTOOL_TAGS[id]);
+// 地形・地面の道具は小物パレットで隠さない。材質の選択肢を失わせない。
+const toolVisible = id => true;
 function bridgeProfile(b) {
   const L = Math.hypot(b.x2 - b.x1, b.z2 - b.z1);
   if (b.type === 'pier') {   // starts on the land (x1, z1), climbs over the ramp, level out over the water
@@ -2324,7 +2325,7 @@ const TOOLS = [
   { id: 'lower', name: '下げる', key: '3', hint: 'なだらかに掘り下げます。水位より下は水になります。' },
   { id: 'flat', name: '平らに', key: '4', hint: 'ドラッグ開始地点の高さにそろえます。' },
   { id: 'smooth', name: 'なだらか', key: '5', hint: '段差や凸凹をならします。' },
-  { id: 'grass', name: '標準床', key: '6', hint: '塗装を消してバイオームの標準床に戻します。草原・森林は草、洞窟は砕石、砂漠は砂、古城・遺跡は石畳、雪原は雪です。' },
+  { id: 'grass', name: '塗装を消す', key: '6', hint: '塗装を消し、未塗装の床に戻します。草原・森林は草地、新しい洞窟は土、砂漠・海岸は砂地、遺跡・古城は石畳です。読み込んだマップの床指定は保持します。' },
   { id: 'dirt', name: '土', key: '7', hint: '土の道を塗ります。' },
   { id: 'cobble', name: '石畳', key: '8', hint: '石畳を塗ります。' },
   { id: 'sand', name: '砂地', key: 'z', hint: '風紋のある砂地を塗ります。歩くと少し遅くなります（×0.85）。' },
@@ -3491,7 +3492,7 @@ function serialize() {
     format: 'map-editor-proto', version: 2, size: SIZE, resolution: RES, vertices: N,
     roomId: (ensureIds(), state.roomId), nextId: state.nextId, revision: state.revision, lastExportHash: state.lastExportHash, agent: { ...state.agent }, catalog: state.catalog,
     markers: markers.map(m => ({ ...m })),
-    waterLevel: state.water, spawn: state.spawn, biome: state.biome, ...(state.biome==='cave'?{baseGround:GROUND[baseGroundChannel()] || 'grass'}:{}), cliffStyle: state.cliffStyle, sea: state.sea, atmosphere: { ...state.atmo }, weather: { ...state.weather }, sunlight: state.sunOn, darkness: state.darkness, name: state.mapName,
+    waterLevel: state.water, spawn: state.spawn, biome: state.biome, ...((state.biome==='cave'||baseGroundChannel()!==TDTerrainPaint.baseChannel(state.biome))?{baseGround:GROUND[baseGroundChannel()] || 'grass'}:{}), cliffStyle: state.cliffStyle, sea: state.sea, atmosphere: { ...state.atmo }, weather: { ...state.weather }, sunlight: state.sunOn, darkness: state.darkness, name: state.mapName,
     heightsF32: b64(new Uint8Array(H.slice().buffer)), splat: b64(S), walkOverride: b64(O), cliffMap: b64(C),   // exact heights: save → load → export reproduces the RAW
     propTypes: PROP.map(p => p.id),
     cliffFits: cliffFits.records.size?cliffFits.save():undefined,
@@ -3516,7 +3517,7 @@ function decodeMap(d,size=SIZE){
   d = remapPropTypes(d);
   // decode and check everything first; the current map is touched only after all checks pass
   const issues = valueIssues(d,size);
-  if(d.baseGround!==undefined&&d.baseGround!=='grass'&&!GROUND.includes(d.baseGround))issues.push('baseGround: 未対応の床ID');
+  if(d.baseGround!=null&&d.baseGround!=='grass'&&!GROUND.includes(d.baseGround))issues.push('baseGround: 未対応の床ID');
   const dec = (name, s) => { if (typeof s !== 'string') { issues.push(`${name}: ありません`); return null; } try { return unb64(s); } catch (e) { issues.push(`${name}: base64 として読めません`); return null; } };
   let newH = null;
   if (d.heightsF32 !== undefined) {
@@ -3933,13 +3934,13 @@ function toast(msg) { toastEl.textContent = msg; toastEl.classList.add('show'); 
 const toolsEl = $('tools');
 TOOLS.forEach(t => { const b = document.createElement('button'); b.dataset.tool = t.id; b.innerHTML = `${t.name}<kbd>${t.key}</kbd>`; b.onclick = () => setTool(t.id); toolsEl.appendChild(b); });
 const fillGroundSel=$('fillGround');
-fillGroundSel.add(new Option('バイオームの標準床','grass'));
+fillGroundSel.add(new Option('塗装を消す（未塗装の床に戻す）','grass'));
 for(const id of GROUND)fillGroundSel.add(new Option(TOOLS.find(t=>t.id===id).name,id));
 function fillGroundAll(id){
  const channel=GROUND.indexOf(id);if(id!=='grass'&&channel<0)return false;
  pushUndo();S.fill(0);if(channel>=0)for(let k=0;k<N*N;k++)S[k*NS+channel]=255;
  updateTerrain();regenGroundProps();
- toast('床全体を「'+(channel<0?'バイオームの標準床':TOOLS.find(t=>t.id===id).name)+'」に変更しました（Ctrl+Zで戻せます）');return true;
+ toast('床全体を「'+(channel<0?'未塗装の床':TOOLS.find(t=>t.id===id).name)+'」に変更しました（Ctrl+Zで戻せます）');return true;
 }
 $('fillGroundAll').onclick=()=>fillGroundAll(fillGroundSel.value);
 const biomeSel = $('biome'), paletteSel = $('palette');
@@ -3949,7 +3950,7 @@ biomeSel.onchange = e => {
   pushUndo(); state.biome = e.target.value;
   state.sunOn = !BIOME().noSun; $('sunOn').checked = state.sunOn;
   const a = BIOME().atmo; state.atmo = { ...state.atmo, kind: a ? a[0] : 'none', amount: a ? a[1] : state.atmo.amount };
-  applyBiome(e.target.value); updateTerrain(); regenGroundProps(); toast(`マップのバイオーム: ${BIOME().name}` + (a ? `（${ATMOS[a[0]].name}）` : ''));
+  applyBiome(e.target.value,GROUND[TDTerrainPaint.baseChannel(e.target.value)] || 'grass'); updateTerrain(); regenGroundProps(); toast(`マップのバイオーム: ${BIOME().name}` + (a ? `（${ATMOS[a[0]].name}）` : ''));
 };
 $('sunOn').onchange = e => { pushUndo(); state.sunOn = e.target.checked; applyAtmo(); };
 for (const [v, d] of Object.entries(DARK_LEVELS)) $('darkness').add(new Option(d.name, v));
@@ -4109,7 +4110,7 @@ function applyBiome(id,baseGround) {
   if (B.moss) v3(BU.uMoss, B.moss); BU.uMossAmt.value = B.moss ? 1 : 0;
   BU.uLava.value = B.lava ? 1 : 0; BU.uSea.value = state.sea || B.id === 'beach' ? 1 : 0; computeShoreField(); BU.uFlowers.value = B.flowers ?? 1; BU.uSnow.value = B.snow || 0; BU.uSnowLine.value = B.snowLine ?? -100;
   if ($('biome')) $('biome').value = B.id;
-  if($('baseGroundInfo'))$('baseGroundInfo').textContent='標準床：'+(baseGroundChannel()<0?'草地':TOOLS.find(t=>t.id===GROUND[baseGroundChannel()]).name)+'（塗装済みの場所は保持）';
+  if($('baseGroundInfo'))$('baseGroundInfo').textContent='未塗装の床：'+(baseGroundChannel()<0?'草地':TOOLS.find(t=>t.id===GROUND[baseGroundChannel()]).name)+'（塗装済みの場所は保持）';
   walkDirty = true;
   applyAtmo();
 }
@@ -4118,9 +4119,9 @@ function applyPalette() {
   syncTypesUI();
   if (!toolVisible(state.tool)) setTool('plateau'); else showVariants();
   if (state.palette === 'all') { $('paletteInfo').textContent = '全てのパーツを表示しています。'; return; }
-  const all = [...PROP.map(t => t.tags), ...Object.values(GTOOL_TAGS), ...Object.values(BRIDGE_TAGS), ...Object.values(STAIR_TAGS)];
+  const all = [...PROP.map(t => t.tags), ...Object.values(BRIDGE_TAGS), ...Object.values(STAIR_TAGS)];
   const own = all.filter(t => t.includes(state.palette)).length, common = all.filter(t => t.includes('common')).length;
-  $('paletteInfo').textContent = `このバイオーム専用 ${own}種 ＋ 共通 ${common}種` + (own < 4 ? '（専用パーツは今後追加予定）' : '');
+  $('paletteInfo').textContent = `小物・橋・階段：専用 ${own}種 ＋ 共通 ${common}種（地形・地面の道具は常に表示）` + (own < 4 ? '（専用パーツは今後追加予定）' : '');
 }
 function setTool(id) {
   state.tool = id;
