@@ -4947,29 +4947,29 @@ $('export').onclick = async () => {
   const button=$('export');if(button.disabled)return;button.disabled=true;
   try { const { files, validation } = await buildExport({sharedAssets:true}); showValidation(validation);
     download(baseName() + '_export_unity.zip', await makeZip(files));
-    toast('軽量ZIPを保存しました。初回・素材更新時は共通資産も保存してください');
+    toast('UnityデータのZIPを書き出しました。初回・素材更新時は「共通素材（ZIP）」も書き出してください');
   } catch(err) { toast('書き出し失敗: '+err.message); } finally {button.disabled=false;}
 };
 let gameFolderHandle=null, gameFolderBusy=false;
 $('saveGameFolder').onclick=async()=>{
  if(gameFolderBusy||roomPackageBusy)return;
- if(!window.showDirectoryPicker){toast('フォルダ保存にはPC版ChromeまたはEdgeを使ってください。部屋セットと共通資産ZIPでも保存できます。');return;}
+ if(!window.showDirectoryPicker){$('advancedExport').open=true;toast('フォルダへの書き出しにはPC版ChromeまたはEdgeが必要です。「詳細な書き出し」から編集データ＋Unityデータと共通素材のZIPを書き出すこともできます。');return;}
  gameFolderBusy=true;$('saveGameFolder').disabled=true;
  try{
   if(!gameFolderHandle)gameFolderHandle=await window.showDirectoryPicker({id:'totsudan-maps',mode:'readwrite'});
   const before=TDMapPackage.authoringState(serialize()),result=await buildExport({sharedAssets:true});
-  if(TDMapPackage.authoringState(serialize())!==before)throw Error('書き出し中に地図が変わりました。もう一度保存してください。');
+  if(TDMapPackage.authoringState(serialize())!==before)throw Error('書き出し中に地図が変わりました。もう一度書き出してください。');
   const saved=await TDAssetRegistry.save(gameFolderHandle,result,baseName(),makeZip,sha256);
-  showValidation(result.validation);$('sharedAssetsHint').textContent='保存先: '+gameFolderHandle.name+'/'+saved.folder+'。素材追加 '+saved.added+' 件、再利用 '+saved.reused+' 件。';
-  toast(result.validation.errors.length?'保存しました。取り込み前に検証エラーの修正が必要です。':'部屋と必要な共通素材を保存しました。ゲームへの取り込み用データです。');
- }catch(e){if(e.name!=='AbortError')toast('フォルダ保存失敗: '+e.message);if(e.name==='NotAllowedError')gameFolderHandle=null;}
+  showValidation(result.validation);$('sharedAssetsHint').textContent='書き出し先: '+gameFolderHandle.name+'/'+saved.folder+'。素材追加 '+saved.added+' 件、再利用 '+saved.reused+' 件。';
+  toast(result.validation.errors.length?'Unity用に書き出しました。取り込み前に検証エラーの修正が必要です。':'Unity用データと必要な共通素材を書き出しました。');
+ }catch(e){if(e.name!=='AbortError')toast('Unity用の書き出し失敗: '+e.message);if(e.name==='NotAllowedError')gameFolderHandle=null;}
  finally{gameFolderBusy=false;$('saveGameFolder').disabled=false;}
 };
 $('saveSharedAssets').onclick = async () => {
   const button=$('saveSharedAssets');if(button.disabled)return;button.disabled=true;
   try {const result=await buildExport({sharedAssets:true});download(result.sharedName,await makeZip(result.sharedFiles));
-    $('sharedAssetsHint').textContent='共通資産 '+result.sharedName+' を保存。同名ファイルは1つだけ保管してください。';
-  } catch(err) {toast('共通資産の保存失敗: '+err.message);} finally {button.disabled=false;}
+    $('sharedAssetsHint').textContent='共通素材 '+result.sharedName+' を書き出しました。同名ファイルは1つだけ保管してください。';
+  } catch(err) {toast('共通素材の書き出し失敗: '+err.message);} finally {button.disabled=false;}
 };
 // ZIP内の原稿をそのまま併記し、別々の保存による版違いを防ぐ。
 let roomPackageBusy = false;
@@ -4978,11 +4978,11 @@ $('saveRoom').onclick = async () => {
   roomPackageBusy = true; $('saveRoom').disabled = true;
   try {
     ensureIds(); applyCatalog();
-    toast('部屋セットを書き出しています。保存が終わるまで編集をお待ちください');
+    toast('編集データとUnityデータを書き出しています。完了まで編集をお待ちください');
     const pack = await TDMapPackage.create({ name: baseName(), snapshot: serialize, buildExport:()=>buildExport({sharedAssets:true}), makeZip });
     showValidation(pack.validation); download(pack.name, pack.blob);
-    toast(pack.validation.errors.length ? '部屋セットを保存しました。検証エラーの修正が必要です' : '部屋セットを保存しました。ZIPを展開するとJSONとUnity用ZIPが同じフォルダに入ります');
-  } catch (err) { toast('部屋セットを保存できませんでした: ' + err.message); }
+    toast(pack.validation.errors.length ? '編集データとUnityデータのZIPを書き出しました。検証エラーの修正が必要です' : '編集データとUnityデータのZIPを書き出しました。共通素材も一緒に保管してください');
+  } catch (err) { toast('編集データとUnityデータを書き出せませんでした: ' + err.message); }
   finally { roomPackageBusy = false; $('saveRoom').disabled = false; }
 };
 $('validate').onclick = () => showValidation(runValidation());

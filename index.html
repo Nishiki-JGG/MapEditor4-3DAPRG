@@ -194,13 +194,21 @@
   <label class="sel"><span>大きさ</span><select id="mapSize"></select></label>
   <div class="row"><button id="newSample">サンプル</button><button id="newSample2">サンプル2（隠し通路）</button><button id="newFlat">平らな新規</button></div>
   <div class="hint">大きさを選んで「平らな新規」で作ります。サイズが変わるとページを読み直すため、取り消し履歴は消えます。サンプルは 64m、サンプル2（遺跡・隠し通路）は 48m です。</div>
-  <div class="row" style="margin-top:6px"><button id="save" title="Ctrl+S。名前を付けて保存したファイルがあれば、そこへ上書き">保存 (JSON)</button><button id="saveAs" title="保存先とファイル名を選んで保存">名前を付けて保存</button><button id="load">読み込み</button><button id="export">Unity用書き出し (zip)</button></div>
-  <button id="saveGameFolder" style="width:100%;margin-top:6px">マップフォルダへ保存（素材も自動同期）</button>
-  <button id="saveRoom" style="width:100%;margin-top:6px">部屋セットを保存 (JSON＋ZIP)</button>
-  <button id="saveSharedAssets" style="width:100%;margin-top:6px">共通資産を保存（初回・素材更新時）</button>
-  <p id="sharedAssetsHint" class="hint">「マップフォルダへ保存」は素材の追加分も自動保存します。共通資産ZIPは移送・従来保存用です。</p>
-  <div class="hint">部屋セットのZIPを展開し、部屋ごとのフォルダで保管してください。</div>
-  <div class="hint" id="saveTarget"></div>
+  <section id="mapFileActions" aria-label="保存と書き出し">
+    <div class="row" style="margin-top:6px"><button id="save" title="Ctrl+S。編集内容を保存。保存先を選んであれば上書き">保存</button><button id="saveAs" title="Ctrl+Shift+S。別のファイル名や保存先を選んで保存">名前を付けて保存</button><button id="load" title="保存したマップを開いて編集を再開">開く</button></div>
+    <div class="hint">編集内容を保存し、あとから編集を再開できます。</div>
+    <div class="hint" id="saveTarget"></div>
+    <button id="saveGameFolder" style="width:100%;margin-top:10px" title="Unity取り込み用のデータと必要な共通素材を、選んだフォルダへ書き出す">Unity用に書き出す</button>
+    <p id="sharedAssetsHint" class="hint" role="status">Unityへ渡すときに使います。必要な素材も自動で書き出します。</p>
+    <details id="advancedExport" style="margin-top:6px">
+      <summary style="cursor:pointer">詳細な書き出し</summary>
+      <p class="hint">個別のZIPが必要な場合に使います。通常は「Unity用に書き出す」だけで大丈夫です。</p>
+      <button id="export" style="width:100%;margin-top:6px">Unityデータのみ（ZIP）</button>
+      <button id="saveRoom" style="width:100%;margin-top:6px">編集データ＋Unityデータ（ZIP）</button>
+      <button id="saveSharedAssets" style="width:100%;margin-top:6px">共通素材（ZIP）</button>
+      <p class="hint">個別のZIPを使う場合は、初回・素材更新時に共通素材も書き出し、マップと一緒に保管してください。</p>
+    </details>
+  </section>
   <div class="row" style="margin-top:6px"><button id="validate">検証</button><button id="loadCatalog">資産対応表を読み込み</button></div>
   <input id="catalogFile" type="file" accept=".json,application/json" hidden>
   <div id="valReport" hidden></div>
