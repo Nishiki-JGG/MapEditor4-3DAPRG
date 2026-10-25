@@ -142,9 +142,9 @@
   const profileOf = t => profile(t.w, t.h, t);
   // 洞窟の断面：下は切り立ち、上は丸い。頂きが片側へ寄り、輪郭はでこぼこ（左右の位置 u は左から右へ単調。真上の高さ top(u) が 1 つに決まる）
   function caveProfile(w, h, seed) {
-    const hw = w / 2, K = 18, skew = (hash(seed, 1) - .5) * 1.2, tilt = (hash(seed, 2) - .5) * .4, raw = [];
+    const hw = w / 2, K = 28, skew = (hash(seed, 1) - .5) * 1.2, tilt = (hash(seed, 2) - .5) * .4, raw = [];
     for (let k = 0; k <= K; k++) {
-      const th = Math.PI * (1 - k / K), c = Math.cos(th), sn = Math.sin(th), nz = k === 0 || k === K ? 0 : (vn2(k * .6 + seed, seed * .37) - .5) * .24 + (hash(k, seed) - .5) * .07;
+      const th = Math.PI * (1 - k / K), c = Math.cos(th), sn = Math.sin(th), nz = k === 0 || k === K ? 0 : (vn2(k * .38 + seed, seed * .37) - .5) * .24 + (vn2(k * 1.1 - seed, seed) - .5) * .06;
       const v = Math.pow(sn, .62) * (1 + tilt * c) * (1 + nz);
       raw.push([hw * Math.sign(c) * Math.pow(Math.abs(c), .85) + skew * hw * .22 * v * (1 - Math.abs(c)), v]);
     }
@@ -159,6 +159,8 @@
     const top = lat => { if (lat <= -hw || lat >= hw) return 0; let k = 1; while (k < K && pts[k][0] < lat) k++; const a = pts[k - 1], b = pts[k], f = (lat - a[0]) / ((b[0] - a[0]) || 1); return a[1] + (b[1] - a[1]) * clamp(f, 0, 1); };
     return { pts, nrm, arc, hs: h * .5, r: h * .5, top, cave: true };
   }
+  // 洞窟の壁のふくらみ（中へ、m）：線にそった距離 s と輪郭の長さ a で決まる。網と、口のまわりの地面の切り抜きで同じ値を使う
+  const caveBulge = (seed, s, a, foot) => .4 * (foot ? .45 : 1) * (vn2(s * .55 + seed, a * .8 + 3) * .45 + vn2(s * 1.9 + seed * 1.7, a * 2.1) * .37 + vn2(s * 5.3 - seed, a * 5.2) * .18);
   const archTop = (pr, hw, lat) => { if (pr.top) return pr.top(lat); const l = Math.min(Math.abs(lat) / hw, 1); return pr.hs + pr.r * Math.sqrt(1 - l * l); };
 
   function build(prep, H) {
@@ -232,15 +234,26 @@
         emit(V(f[0], 0), V(f[1], 1), V(f[2], 2), s, MAT.rock);
       }
     };
+    // 丸く風化した岩（洞窟）：320 面、重ねたむらでゆがめ、なめらかな法線（隣の面の向きの平均）。上を向いた所に苔
+    const boulder = (cen, rx, ry, rz, yaw, seed, color, s, ground = true) => {
+      const used = new Set(); for (const f of ICO.f2) for (const i of f) used.add(i);
+      const cuts = [0, 1].map(j => ({ n: unit([(hash(1 + j * 5, seed) - .5) * .8, -.5 - hash(2 + j, seed) * .5, (hash(3 + j * 5, seed) - .5) * .8]), d: .55 + .25 * hash(4 + j, seed) }));
+      const loc = new Map(); for (const i of used) { const v = ICO.v[i]; let k = 1 + (vn2(v[0] * 1.1 + seed, v[1] * 1.3 + v[2] * .9 - seed) - .5) * .75 + (vn2(v[2] * 2.7 - seed, v[0] * 2.3 + v[1] * 2.1 + seed) - .5) * .28 + (vn2(v[1] * 6.3 + seed, v[2] * 5.9 - v[0] * 4) - .5) * .08; let p = v.map(x => x * k); if (ground) { for (const cut of cuts) { const e = dot(p, cut.n) - cut.d; if (e > 0) p = sub3(p, cut.n.map(x => x * e * .8)); } if (p[1] < -.4) p = [p[0], -.4 - (p[1] + .4) * .25, p[2]]; } loc.set(i, p); }
+      const cy = Math.cos(yaw), sy = Math.sin(yaw), W0 = i => { const [x, y, z] = loc.get(i), X = x * rx, Y = y * ry, Z = z * rz; return [cen[0] + X * cy + Z * sy, cen[1] + Y, cen[2] - X * sy + Z * cy]; };
+      const P0 = new Map(), Nacc = new Map(); for (const i of used) { P0.set(i, W0(i)); Nacc.set(i, [0, 0, 0]); }
+      for (const [a, b, c] of ICO.f2) { let fn = cross(sub3(P0.get(b), P0.get(a)), sub3(P0.get(c), P0.get(a))); if (dot(fn, sub3(P0.get(a), cen)) < 0) fn = fn.map(x => -x); for (const i of [a, b, c]) Nacc.set(i, add(Nacc.get(i), fn)); }
+      const V = i => { const k = .84 + .16 * vn2(ICO.v[i][0] * 3 + seed, ICO.v[i][2] * 3) - .22 * Math.max(0, -ICO.v[i][1]); return { p: P0.get(i), n: unit(Nacc.get(i)), c: [color[0] * k, color[1] * k, color[2] * k] }; };
+      for (const [a, b, c] of ICO.f2) emit(V(a), V(b), V(c), s, MAT.rock | MOSSY);
+    };
     // 垂れ下がる円錐（鍾乳石）：根元 base から下へ長さ len、半径 rad
     const cone = (base, len, rad, color, sd) => {
-      const n = 6, tip = [base[0] + (hash(sd, 1) - .5) * .05, base[1] - len, base[2] + (hash(sd, 2) - .5) * .05], ring = [];
+      const n = 7, tip = [base[0] + (hash(sd, 1) - .5) * .09, base[1] - len, base[2] + (hash(sd, 2) - .5) * .09], ring = [];
       for (let k = 0; k < n; k++) { const a = k / n * Math.PI * 2, r = rad * (.8 + .4 * hash(k, sd)); ring.push({ p: [base[0] + Math.cos(a) * r, base[1] + .03, base[2] + Math.sin(a) * r], n: unit([Math.cos(a) * len, -rad, Math.sin(a) * len]), c: color }); }
       for (let k = 0; k < n; k++) { const a = ring[k], b = ring[(k + 1) % n]; emit(a, b, { p: tip, n: unit(add(a.n, b.n).map((x, i) => i === 1 ? -1 : x)), c: color.map(x => x * .85) }, 7, MAT.rock); }
     };
     // 垂れ下がる根・つる：上の点 top から長さ len、幅 wd の細い帯（前後の向き aw に面を向ける）
-    const strand = (top, F, len, wd, color, m, seed) => {
-      const n = 6, pts = []; for (let k = 0; k <= n; k++) { const t = k / n, sw = Math.sin(t * 2.6 + seed) * .06 * t; pts.push([top[0] + F.ax[0] * sw + F.aw[0] * t * .05, top[1] - len * t, top[2] + F.ax[2] * sw + F.aw[2] * t * .05]); }
+    const strand = (top, F, len, wd, color, m, seed, sway = .06) => {
+      const n = 6, pts = []; for (let k = 0; k <= n; k++) { const t = k / n, sw = Math.sin(t * 2.6 + seed) * sway * t; pts.push([top[0] + F.ax[0] * sw + F.aw[0] * t * .05, top[1] - len * t, top[2] + F.ax[2] * sw + F.aw[2] * t * .05]); }
       const nn = unit(F.aw.map(x => x)); for (let k = 0; k < n; k++) {
         const w0 = wd * (1 - k / n * .6), w1 = wd * (1 - (k + 1) / n * .6), V = (p, w, t) => ({ p: [p[0] + F.ax[0] * w, p[1], p[2] + F.ax[2] * w], n: nn, c: mix(color, color.map(x => x * .7), t), uv: [t * len, w] });
         quad(V(pts[k], -w0 / 2, k / n), V(pts[k], w0 / 2, k / n), V(pts[k + 1], w1 / 2, (k + 1) / n), V(pts[k + 1], -w1 / 2, (k + 1) / n), 7, m);
@@ -254,22 +267,29 @@
       const dkOf = q => 1 - Math.exp(-(q.toOpen || 0) / (cave ? 1.5 : 2.2));   // 奥ほど暗い（0 = 入口）。洞窟はすぐ暗い
       const tone = (pair, a, b) => mix(pair[0], pair[1], hash(a + seed, b));
       const shade = (c, k) => [c[0] * k, c[1] * k, c[2] * k];
-      const brick = style === 'masonry' || style === 'ruins', wallMat = brick ? MAT.brick | (style === 'ruins' ? MOSSY : 0) : MAT.rock;
+      const brick = style === 'masonry' || style === 'ruins', wallMat = brick ? MAT.brick | (style === 'ruins' ? MOSSY : 0) : MAT.rock | (cave ? MOSSY : 0);
       const floorMat = brick ? MAT.flag | (style === 'ruins' ? MOSSY : 0) : MAT.dirt;
       // 素掘り・坑道の壁は、中へだけふくらむでこぼこ（口のまわりで地面の縁より外へ出ない）
       const rough = cave ? .34 : style === 'rock' ? .2 : style === 'mine' ? .14 : style === 'ruins' ? .03 : 0, last = pr.pts.length - 1;
       const ring = q => pr.pts.map(([u, v, c], k) => {
-        const [nu, nv] = pr.nrm[k], fq = cave ? 3.2 : 1.4, b = k === 0 || k === last ? 0 : rough * (vn2(q.s * fq + seed, k * .8) * .7 + hash(Math.round(q.s * 8) + seed, k) * (cave ? .45 : .25));
+        const [nu, nv] = pr.nrm[k], a = pr.arc[k];
+        // 洞窟：重ねたむら（大きなうねり・こぶ・細かい凹凸）。壁の足もとも少し動かし、床との境をまっすぐにしない
+        const b = cave ? caveBulge(seed, q.s, a, k === 0 || k === last)
+          : k === 0 || k === last ? 0 : rough * (vn2(q.s * 1.4 + seed, k * .8) * .7 + hash(Math.round(q.s * 8) + seed, k) * .25);
         const uu = u + nu * b, vv = v + nv * b, ao = c ? .9 : .6 + .4 * sstep(0, .9, vv);
-        const base = brick ? tone(pal.wall, 3, 1) : [1, 1, 1], vary = brick ? 1 : (.86 + .22 * vn2(q.s * .9 + seed, k * .5 + 3)) * (cave ? 1 + .3 * Math.exp(-(q.toOpen || 0) / .8) : 1);
-        // 洞窟の壁は、面ごとの法線（角ばった岩肌）
-        return { p: W(q, uu, vv), n: cave ? undefined : [q.nx * nu, nv, q.nz * nu], c: shade(base, ao * vary), uv: [q.s, pr.arc[k]], d: dkOf(q) };
+        const base = brick ? tone(pal.wall, 3, 1) : [1, 1, 1], vary = brick ? 1 : (.86 + .22 * vn2(q.s * .9 + seed, k * .5 + 3)) * (cave ? 1 + .3 * sstep(0, .5, q.toOpen || 0) * Math.exp(-(q.toOpen || 0) / 1.2) : 1);
+        return { p: W(q, uu, vv), n: [q.nx * nu, nv, q.nz * nu], c: shade(base, ao * vary), uv: [q.s, pr.arc[k]], d: dkOf(q) };
       });
       const rings = st.map(q => q.cls ? ring(q) : null);
+      // 洞窟の壁の法線は、でこぼこした形そのものから（隣の輪と、輪の隣の点）。なめらかで、平らな面の線が出ない
+      if (cave) rings.forEach((r, k) => {
+        if (!r) return; const ra = rings[k - 1] || r, rb = rings[k + 1] || r;
+        r.forEach((v, j) => { const ta = sub3(rb[j].p, ra[j].p), tb = sub3(r[Math.min(last, j + 1)].p, r[Math.max(0, j - 1)].p); let n = unit(cross(ta, tb)); if (dot(n, v.n) < 0) n = n.map(x => -x); v.n = dot(ta, ta) > 1e-8 && dot(tb, tb) > 1e-8 ? n : v.n; });
+      });
       // 床（中の区間と、口の外 0.5m。外では地面に沿わせて、地面の下へもぐる）
       const fl = [-hw, -hw / 2, 0, hw / 2, hw];
       const floorV = (q, u) => {
-        const x = q.x + q.nx * u, z = q.z + q.nz * u, y = q.cls ? q.y + .01 : clamp(H(x, z) + .02, q.y - .35, q.y + .01), ao = 1 - .3 * sstep(.45, 1, Math.abs(u) / hw);
+        const x = q.x + q.nx * u, z = q.z + q.nz * u, y = q.cls ? q.y + .01 : q.toMouth > .3 ? Math.min(H(x, z) - .06, q.y + .01) : clamp(H(x, z) + .02, q.y - .35, q.y + .01), ao = 1 - .3 * sstep(.45, 1, Math.abs(u) / hw);
         return { p: [x, y, z], n: [0, 1, 0], c: shade(tone(pal.floor, 5, 2), ao), uv: [q.s, u], d: q.cls ? dkOf(q) : 0 };
       };
       const onFloor = q => q.cls > 0 || q.toMouth <= .5;
@@ -289,7 +309,7 @@
         // 屋根を透かしたときの切り口：壁の外側に、床の下から真上の地面まで立つ暗い岩の面
         for (const sd of [-1, 1]) {
           const u = sd * (hw + .28), A0 = W(a, u, -.1), B0 = W(b, u, -.1), n = [-sd * a.nx, 0, -sd * a.nz], c = [.72, .72, .72], V = p => ({ p, n, c, d: .35 });
-          quad(V(A0), V(B0), V([B0[0], H(B0[0], B0[2]) - .03, B0[2]]), V([A0[0], H(A0[0], A0[2]) - .03, A0[2]]), 6, MAT.rock);
+          fan(clip([V(A0), V(B0), V([B0[0], H(B0[0], B0[2]) - .03, B0[2]]), V([A0[0], H(A0[0], A0[2]) - .03, A0[2]])], under), 6, MAT.rock);   // 崖の面の近くで、2 点の間が地面の上へ出ないように切る
         }
         const F = { o: [a.x, a.y, a.z], ax: [a.nx, 0, a.nz], aw: [a.tx, 0, a.tz] }, wd = tone(pal.wood || [[.4, .3, .2], [.5, .38, .25]], k, 1), kd = dkOf(a);
         // 坑道：1.8m ごとに木の支保工（左右の丸太の柱と梁）
@@ -324,7 +344,7 @@
         for (let p = 0; p + 1 < r.length; p++) emit(c, { ...r[p], n }, { ...r[p + 1], n }, 1, wallMat);
         emit({ ...r[0], n }, { ...r[r.length - 1], n }, c, 1, wallMat);
         const e = hw + .28, A0 = W(q, -e, -.1), B0 = W(q, e, -.1), V = p => ({ p, n, c: [.5, .5, .5], d: .6 });   // 切り口：行き止まりの上も地面まで
-        quad(V(A0), V(B0), V([B0[0], H(B0[0], B0[2]) - .03, B0[2]]), V([A0[0], H(A0[0], A0[2]) - .03, A0[2]]), 6, MAT.rock);
+        fan(clip([V(A0), V(B0), V([B0[0], H(B0[0], B0[2]) - .03, B0[2]]), V([A0[0], H(A0[0], A0[2]) - .03, A0[2]])], under), 6, MAT.rock);
       }
       // ---- 坑口：トンネルの区間の端から外へ、地面が天井の高さより下がる所（崖や斜面の面）に、種類ごとの枠と飾り
       for (let k = 0; k < st.length; k++) {
@@ -368,18 +388,25 @@
             }
           } else if (cave) {
             // 洞窟：大きな岩で囲み、上は張り出した岩の庇。天井から鍾乳石、苔と根が垂れ、足もとは崩れた岩の扇
-            const n = Math.round(10 + t.w * 2.4);
+            // 口のまわり：崖の面にそった薄いふくらみ（岩肌の張り出し。崖の面へ半分埋めた、面の向きにつぶした岩）。口の縁にまたがって縁の線を隠す
+            const yawF = Math.atan2(-F.ax[2], F.ax[0]), n = Math.round(10 + t.w * 2.6);
             for (let i = 0; i < n; i++) {
-              const f = (i + .15 + .7 * hash(i, ms)) / n, [u, v, du, dv] = outline(f), up = v > t.h * .6, rad = .26 + .36 * hash(i + 3, ms) + (up ? .1 : 0);
-              const off = rad * (up ? .45 : .9), cu = u + du * off, cv = v + dv * off, w = faceW(cu, cv);
+              const f = (i + .1 + .8 * hash(i, ms)) / n, [u, v, du, dv] = outline(f), up = v > t.h * .6, k = hash(i + 3, ms), along = .35 + .45 * k, tall = .4 + .45 * hash(i, ms + 8), deep = .2 + .14 * hash(i, ms + 9);
+              const off = (up ? .05 : -.08) + .25 * hash(i, ms + 1), cu = u + du * off, cv = v + dv * off, w = faceW(cu + du * .15, cv + dv * .15);
               if (w === null || w < -1) continue;
-              lump(P(F, cu, cv, Math.min(w, .5) - rad * .45), rad * (1.1 + .4 * hash(i, 9)), rad * (.85 + .3 * hash(i, 11)), rad * (.85 + .3 * hash(i, 13)), hash(i, ms + 2) * 6.3, ms + i * 7, [.9, .9, .9], 7);
+              boulder(P(F, cu, cv, Math.min(w, .6) - deep * .35), up ? along * 1.2 : along * .8, up ? tall * .7 : tall, deep, yawF + (hash(i, ms + 2) - .5) * .5, ms + i * 7, [.92, .92, .92], 7, false);
             }
-            // 庇：口の上に、崖から前へ張り出す平たい岩
-            for (let i = 0; i < 1; i++) {
-              const u = (hash(i, ms + 59) - .5) * hw * .6 + (hash(i, ms + 60) - .5) * .4, v = topF(u) + .18 + .15 * hash(i, ms + 61), w = faceW(u, v);
-              if (w === null) continue; const rad = .55 + .25 * hash(i, ms + 62);
-              lump(P(F, u, v + rad * .25, Math.min(w, 1.3) + rad * .2), rad * 1.4, rad * .6, rad * 1.1, hash(i, ms + 63) * .8 - .4, ms + 70 + i, [.86, .86, .86], 7);
+            // 庇：口の上に、少し前へ張り出す岩肌
+            for (let i = 0; i < 2; i++) {
+              const u = (i - .5) * hw * .7 + (hash(i, ms + 60) - .5) * .3, v = topF(u) + .2 + .12 * hash(i, ms + 61), w = faceW(u, v);
+              if (w === null) continue;
+              boulder(P(F, u, v, Math.min(w, 1.2) + .05), .7 + .3 * hash(i, ms + 62), .32 + .1 * hash(i, ms + 64), .42, yawF + (hash(i, ms + 63) - .5) * .4, ms + 70 + i, [.88, .88, .88], 7, false);
+            }
+            // 足もとの大岩：左右に 1〜2 個ずつ、崖のすそへ寄せて
+            for (let i = 0; i < 4; i++) {
+              if (i >= 2 && hash(i, ms + 65) < .5) continue;
+              const sd = i % 2 ? 1 : -1, u = sd * (hw + .15 + .55 * hash(i, ms + 66)), w0 = faceW(u, .3), r = .3 + .25 * hash(i, ms + 67), w = (w0 === null ? 0 : w0) + r * .2 + .3 * hash(i, ms + 68);
+              boulder(P(F, u, groundV(u, w) + r * .25, w), r * 1.3, r * .85, r, hash(i, ms + 69) * 6, ms + 80 + i, [.9, .9, .9], 7);
             }
             // 鍾乳石：口から中へ 1.5m までの天井。頭（床から 2m）より上だけ
             for (let i = 0; i < 9; i++) {
@@ -387,19 +414,27 @@
               if (len < .1) continue; const p = P(F, u, v, w), g = groundV(u, w); if (g > v - .1) continue;   // 天井が地面の上へ出ている所（口の外）には付けない
               cone(p, len, .05 + .07 * hash(i, ms + 83), [.84, .84, .84], ms + i * 3);
             }
-            // 口の上から垂れる苔と根
-            for (let i = 0; i < 8; i++) {
-              const u = (hash(i, ms + 90) - .5) * t.w * .95, v = topF(u) + .05, w = faceW(u, v + .15);
-              if (w === null) continue; const moss = i % 3 !== 0;
-              strand(P(F, u, v, Math.min(w, 1) + .04), F, (moss ? .25 : .2) + (moss ? .5 : .5) * hash(i, ms + 91), moss ? .16 : .035, moss ? tone(pal.vine, i, 4).map(x => x * .8) : C(0x4b3726), moss ? MAT.plant : MAT.wood, i * 1.3);
+            // 口の上から垂れる苔と根：何本かずつ束になって、ゆるく曲がる
+            for (let i = 0; i < 6; i++) {
+              const u0 = (hash(i, ms + 90) - .5) * t.w * .95, moss = true;
+              for (let j = 0; j < (moss ? 4 : 2); j++) {
+                const u = u0 + (j - 1.5) * .07 + (hash(j, i + ms) - .5) * .05, v = topF(u) + .04, w = faceW(u, v + .15); if (w === null) continue;
+                const len = (moss ? .18 : .2) + (moss ? .5 : .45) * hash(i * 7 + j, ms + 91);
+                strand(P(F, u, v, Math.min(w, 1) + .03 + .03 * hash(j, i)), F, len, moss ? .07 + .04 * hash(j, i + 1) : .03, moss ? tone(pal.vine, i + j, 4).map(x => x * (.7 + .2 * hash(j, i))) : C(0x4b3726), moss ? MAT.plant : MAT.wood, i * 1.3 + j * 2.1, .14);
+              }
             }
-            // 足もと：崩れた岩の扇（脇に大きめ、前へ小さく散る）と、中の壁ぎわの石
+            // 足もと：前へ小さく散る石と、中の壁ぎわの石
             for (let i = 0; i < 12; i++) {
-              const side = i < 4, sd = i % 2 ? 1 : -1, u = side ? sd * (hw - .1 + .8 * hash(i, ms + 100)) : (hash(i, ms + 100) - .5) * (t.w + 1.6);
+              const side = false, sd = i % 2 ? 1 : -1, u = side ? sd * (hw - .1 + .8 * hash(i, ms + 100)) : (hash(i, ms + 100) - .5) * (t.w + 1.6);
               const w0 = faceW(u, .2), w = (w0 === null ? 0 : w0) + (side ? .15 : .3 + 1.6 * hash(i, ms + 101)), r = side ? .22 + .2 * hash(i, ms + 102) : .06 + .12 * hash(i, ms + 102);
-              lump(P(F, u, groundV(u, w) + r * .2, w), r * 1.25, r * .7, r, hash(i, 5) * 6, ms + 120 + i, [.88, .88, .88], 7);
+              boulder(P(F, u, groundV(u, w) + r * .2, w), r * 1.25, r * .7, r, hash(i, 5) * 6, ms + 120 + i, [.88, .88, .88], 7);
             }
-            for (let i = 0; i < 4; i++) { const sd = i % 2 ? 1 : -1, u = sd * (hw - .2 - .1 * hash(i, ms + 130)), w = -.4 - 1.6 * hash(i, ms + 131), r = .1 + .1 * hash(i, ms + 132); lump(P(F, u, r * .2, w), r * 1.3, r * .7, r, hash(i, 7) * 6, ms + 140 + i, [.8, .8, .8], 7); }
+            // 壁の足もと：中から口の外まで、壁ぎわに大小の石と砂利を並べる（床と壁の境を隠す）
+            for (const sd of [-1, 1]) for (let i = 0, w = .6; w > -3.2; i++) {
+              const r = .07 + .17 * hash(i, ms + 130 + sd) * hash(i + 5, ms), u = sd * (hw - .06 - r * .5 - .1 * hash(i, ms + 133)), g = Math.max(0, groundV(u, w));
+              if (w < 0 || faceW(u, .1) === null || w < faceW(u, .1)) boulder(P(F, u, g + r * .15, w), r * 1.35, r * .62, r, hash(i, 7 + sd) * 6, ms + 140 + i * 3 + sd, [.86, .86, .86], 7);
+              w -= .16 + .3 * hash(i, ms + 134 + sd);
+            }
           } else if (style === 'mine') {
             const wd = i => tone(pal.wood, k + i, 2), F2 = { ...F, o: P(F, 0, 0, .05) };
             for (const sd of [-1, 1]) {
@@ -481,8 +516,9 @@
     const g = (1 + Math.sqrt(5)) / 2, v = [[-1, g, 0], [1, g, 0], [-1, -g, 0], [1, -g, 0], [0, -1, g], [0, 1, g], [0, -1, -g], [0, 1, -g], [g, 0, -1], [g, 0, 1], [-g, 0, -1], [-g, 0, 1]].map(unit);
     let f = [[0, 11, 5], [0, 5, 1], [0, 1, 7], [0, 7, 10], [0, 10, 11], [1, 5, 9], [5, 11, 4], [11, 10, 2], [10, 7, 6], [7, 1, 8], [3, 9, 4], [3, 4, 2], [3, 2, 6], [3, 6, 8], [3, 8, 9], [4, 9, 5], [2, 4, 11], [6, 2, 10], [8, 6, 7], [9, 8, 1]];
     const mid = new Map(), m = (a, b) => { const key = a < b ? a + ',' + b : b + ',' + a; if (!mid.has(key)) { v.push(unit(add(v[a], v[b]))); mid.set(key, v.length - 1); } return mid.get(key); };
-    f = f.flatMap(([a, b, c]) => { const ab = m(a, b), bc = m(b, c), ca = m(c, a); return [[a, ab, ca], [b, bc, ab], [c, ca, bc], [ab, bc, ca]]; });
-    return { v, f };
+    const split = f => f.flatMap(([a, b, c]) => { const ab = m(a, b), bc = m(b, c), ca = m(c, a); return [[a, ab, ca], [b, bc, ab], [c, ca, bc], [ab, bc, ca]]; });
+    f = split(f); const f1 = f; f = split(f);
+    return { v, f: f1, f2: f };   // f: 80 面（角ばった岩）、f2: 320 面（洞窟の、丸く風化した岩）
   })();
 
   // ---- 口のまわりの地面（cap）：穴を開けたセルの地面を 1/res の細かい格子で作り直し、トンネルの口（床から天井までの断面の中）を切り抜く。
@@ -495,8 +531,13 @@
       prep.forEach((T, i) => {
         const q = nearest(T, x, z); if (!q || q.end && q.d > 1e-6) return;
         const S = stationAt(T, q.s); if (S.cls === 0) return;
-        const hw = T.t.w / 2, v = H(x, z) - q.y;
-        best = Math.min(best, Math.max(Math.abs(q.lat) - (hw + .02), -.05 - v, v - (archTop(pr[i], hw, q.lat) + .02)));
+        const hw = T.t.w / 2, v = H(x, z) - q.y, P0 = pr[i];
+        let d = Math.max(Math.abs(q.lat) - (hw + .02), -.05 - v, v - (archTop(P0, hw, q.lat) + .02));
+        if (P0.cave && d < 0) {   // 洞窟：壁のふくらみの分だけ口が狭い（縁の線が、壁と同じに波打つ）
+          let kb = 0, db = 1e9; P0.pts.forEach((p, k) => { const e = hyp(p[0] - q.lat, p[1] - v); if (e < db) { db = e; kb = k; } });
+          d += caveBulge(seedOf(T.t), q.s, P0.arc[kb], kb === 0 || kb === P0.pts.length - 1);
+        }
+        best = Math.min(best, d);
       });
       return best;
     };
