@@ -1,0 +1,11 @@
+<linker>
+  <assembly fullname="TotsuDan.Shell.Runtime" ignoreIfMissing="1">
+    <type fullname="TotsuDan.Prototype.Discovery.DiscoveryRoomTorchPresentation" preserve="all" />
+  </assembly>
+  <assembly fullname="TotsuDan.Prototype.Runtime" ignoreIfMissing="1">
+    <type fullname="TotsuDan.Prototype.Discovery.DiscoveryRoomTorchPresentation" preserve="all" />
+  </assembly>
+  <assembly fullname="Assembly-CSharp" ignoreIfMissing="1">
+    <type fullname="TotsuDan.Prototype.Discovery.DiscoveryRoomTorchPresentation" preserve="all" />
+  </assembly>
+</linker>

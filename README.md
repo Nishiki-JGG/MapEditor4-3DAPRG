@@ -167,3 +167,6 @@ PW=<playwright のパス> node tests/rev5_terrain_grid.js
 Unity用の書き出しは共通素材を分離した可逆圧縮版です。「詳細な書き出し」でZIPを個別に出力する場合のみ、初回・素材更新時に共通素材ZIPも書き出します。[保存方法・旧ZIP変換・Unity取り込み](docs/ROOM_PACKAGE_STORAGE.md)。
 
 Unityへの受け渡しには「Unity用に書き出す」を使います。新規・変更素材だけを共通資産庫へ保存し、旧部屋の参照を維持します。[素材台帳と取り込み](docs/ASSET_REGISTRY.md)。
+
+
+凸ダン本体のモデルとVFXを使う[壁掛け松明](docs/WALL_TORCH.md)を追加しました。「置く」から配置し、保存・再読込・元PrefabへのUnity復元に対応します。既存の松明とランタンはそのまま使えます。

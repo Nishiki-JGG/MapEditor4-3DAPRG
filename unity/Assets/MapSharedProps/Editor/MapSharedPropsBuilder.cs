@@ -181,6 +181,7 @@ public static class MapSharedPropsBuilder {
    if(contactDriver)contactDriver.Refresh();
    if(wind!=null){var driver=r.root.AddComponent<MapSharedProps.SharedPineWind>();ConfigureWind(driver,Path.Combine(exportDirectory,"meta.json"));driver.Apply(0);}
    int grounded=GroundedPropsV1.Build(exportDirectory,r.assetDirectory,r.root.transform,shader);r.placed+=grounded;r.skipped-=grounded;int small=SmallPropsV1.Build(exportDirectory,r.assetDirectory,r.root.transform,shader,r.prefabs);r.placed+=small;r.skipped-=small;
+    var torches=RoomTorchBuilder.Build(exportDirectory,r.root.transform);if(torches!=null){r.placed+=torches.Fixtures.Length;r.skipped-=torches.Fixtures.Length;}
     AssetDatabase.SaveAssets(); return r;
   } catch (Exception failure) {
    Debug.LogException(failure);

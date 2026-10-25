@@ -1,0 +1,17 @@
+<!doctype html><html lang="ja"><meta charset="utf-8"><title>元の壁掛け松明との比較用描画</title>
+<style>body{margin:0;background:#08090b}canvas{display:block}</style>
+<script src="../three.min.js"></script><script>window.TDProps={add(d){window.definition=d;}};</script>
+<script src="../props/wall-torch-source.js"></script><script src="../props/wall_torch.js"></script>
+<body><script>
+const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(38,1280/720,.1,200),renderer=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});renderer.setSize(1280,720);renderer.setClearColor(0x060709);renderer.outputColorSpace=THREE.SRGBColorSpace;document.body.append(renderer.domElement);
+const material=new THREE.MeshStandardMaterial({color:new THREE.Color(.17,.18,.2),roughness:.9});
+function box(name,p,s){const o=new THREE.Mesh(new THREE.BoxGeometry(...s),material);o.name=name;o.position.set(...p);scene.add(o);}
+box('確認用の床',[0,-.1,0],[40,.2,40]);box('確認用の壁',[0,1.15,-.14],[2,2.3,.12]);
+scene.add(new THREE.AmbientLight(new THREE.Color(.08,.08,.08),1));const sun=new THREE.DirectionalLight(0xffffff,.3);sun.position.set(-3,6,4);scene.add(sun);
+const fixture=new THREE.Mesh(definition.build(),TDWallTorch.fixtureMaterial);fixture.position.y=1.45;scene.add(fixture);
+const lightPool=Array.from({length:6},()=>{const l=new THREE.PointLight(0xffffff,0,8,2);scene.add(l);return l;});
+const effect=TDWallTorch.create(scene),type={...definition,assetKey:'tdj/wall_torch'},props=[[0,0,0,0,1,0,1,null,'prop_0001']];effect.sync(props,[type],()=>1.45,'visual-compare');
+let time=0;function pose(overhead=false){const target=new THREE.Vector3(0,1.5,0),yaw=.6,pitch=overhead?1.25:.35,distance=overhead?5:2.4;camera.position.copy(target).add(new THREE.Vector3(Math.sin(yaw)*Math.cos(pitch),Math.sin(pitch),Math.cos(yaw)*Math.cos(pitch)).multiplyScalar(distance));camera.lookAt(target);}
+function frame(dt=1/60){time+=dt;effect.update(time,dt,camera,{x:0,z:0},720);effect.updateLights(lightPool,props,[type],[],{x:0,z:0},time,dt,0,()=>0);renderer.render(scene,camera);}
+pose();for(let i=0;i<180;i++)frame();window.compare={effect,fixture,lightPool,renderer,camera,pose,frame};function animate(){frame();requestAnimationFrame(animate);}requestAnimationFrame(animate);
+</script></html>
