@@ -5,9 +5,9 @@ const report={pass:false,url:base,commit:execFileSync('git',['rev-parse','HEAD']
 const save=()=>fs.writeFileSync(path.join(out,'published.json'),JSON.stringify(report,null,2)),wait=ms=>new Promise(r=>setTimeout(r,ms));
 const init="window.cliffRegenerations=0;let layer;Object.defineProperty(window,'TDCliffLayering',{configurable:true,get:()=>layer,set:v=>{layer=v;v.fitAsync=async()=>{cliffRegenerations++;throw Error('固定サンプル再生成禁止');};}});";
 (async()=>{
- const files=execFileSync('git',['diff','--name-only','github/main~2','HEAD','--','index.html','app.js','props/wall_torch.js','props/wall-torch-source.js','prepared','tunnels.js'],{cwd:root,encoding:'utf8'}).trim().split(/\r?\n/).filter(f=>f&&fs.existsSync(path.join(root,f)));
+ const files=execFileSync('git',['diff','--name-only','bfc47bd','HEAD','--','index.html','app.js','props/wall_torch.js','props/wall-torch-source.js','prepared','tunnels.js'],{cwd:root,encoding:'utf8'}).trim().split(/\r?\n/).filter(f=>f&&fs.existsSync(path.join(root,f)));
  const hash=b=>crypto.createHash('sha256').update(b).digest('hex');
- for(const file of files){const response=await fetch(new URL(file,base)+'?verify='+report.commit);assert.equal(response.status,200,file);const expected=hash(fs.readFileSync(path.join(root,file))),actual=hash(Buffer.from(await response.arrayBuffer()));assert.equal(actual,expected,file);report.files.push({file,sha256:actual});}save();
+ for(const file of files){const response=await fetch(new URL(file,base)+'?verify='+report.commit);assert.equal(response.status,200,file);const expected=hash(execFileSync('git',['show','HEAD:'+file],{cwd:root,maxBuffer:64*1024*1024})),actual=hash(Buffer.from(await response.arrayBuffer()));assert.equal(actual,expected,file);report.files.push({file,sha256:actual});}save();
  for(const [kind,size] of [['sample',64],['sample2',48]])await withPage(base+'index.html#size='+size,async p=>{
   for(let i=0;i<600;i++){if(await p.eval('!!window.__app&&!__app.preparation&&!!__app.preparationStats'))break;await wait(100);}
   const before=await p.eval(`(()=>{const A=__app;window.oldMap=JSON.stringify(A.serialize());window.oldH=A.H;window.oldProps=A.props;return{source:A.preparationStats.preparedSource,walk:A.preparationStats.walkReused,fit:A.preparationStats.fitStats,props:A.props.length,regen:cliffRegenerations};})()`);
