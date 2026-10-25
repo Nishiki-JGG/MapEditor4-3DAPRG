@@ -18,7 +18,7 @@
     const base = safeName(name), folder = base + '/';
     const zip = await (await makeZip(result.files)).arrayBuffer();
     const sharedNote = result.sharedName ? '共通資産: '+result.sharedName+'\n同じ版は全ての部屋で1個だけ保管してください。エディタの「共通資産を保存」から入手できます。\n\n' : '';
-    const note = sharedNote + '凸ダン用の部屋セット\n\nこのフォルダのJSONとUnity用ZIPを一緒に保管してください。\nJSONはエディタで再編集する原稿です。ZIPは同じ原稿から書き出したUnity用データです。\n再編集後は「部屋セットを保存」で両方を書き出し直してください。\n凸ダンへの取り込みを依頼する際は、このフォルダを指定してください。\n\n' +
+    const note = sharedNote + 'ゲーム用の部屋セット\n\nこのフォルダのJSONとUnity用ZIPを一緒に保管してください。\nJSONはエディタで再編集する原稿です。ZIPは同じ原稿から書き出したUnity用データです。\n再編集後は「部屋セットを保存」で両方を書き出し直してください。\nゲームへの取り込みを依頼する際は、このフォルダを指定してください。\n\n' +
       (result.validation.errors.length ? '検証エラーがあります。本体への取り込み前にエディタで修正が必要です。\n' : 'エディタ検証にエラーはありません。本体の素材対応と実プレイ確認は別途必要です。\n');
     return { name: base + '_room.zip', validation: result.validation, blob: await makeZip([
       { name: folder + base + '.json', data: map.data },

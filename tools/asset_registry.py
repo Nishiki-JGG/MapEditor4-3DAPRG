@@ -1,4 +1,4 @@
-"""凸ダンの共通素材ソース台帳。モデル・画像単位の内容IDで重複を保存しない。"""
+"""ゲームの共通素材ソース台帳。モデル・画像単位の内容IDで重複を保存しない。"""
 import json
 import re
 from pathlib import Path

@@ -4895,7 +4895,7 @@ $('saveGameFolder').onclick=async()=>{
   if(TDMapPackage.authoringState(serialize())!==before)throw Error('書き出し中に地図が変わりました。もう一度保存してください。');
   const saved=await TDAssetRegistry.save(gameFolderHandle,result,baseName(),makeZip,sha256);
   showValidation(result.validation);$('sharedAssetsHint').textContent='保存先: '+gameFolderHandle.name+'/'+saved.folder+'。素材追加 '+saved.added+' 件、再利用 '+saved.reused+' 件。';
-  toast(result.validation.errors.length?'保存しました。取り込み前に検証エラーの修正が必要です。':'部屋と必要な共通素材を保存しました。凸ダンへの取り込み用データです。');
+  toast(result.validation.errors.length?'保存しました。取り込み前に検証エラーの修正が必要です。':'部屋と必要な共通素材を保存しました。ゲームへの取り込み用データです。');
  }catch(e){if(e.name!=='AbortError')toast('フォルダ保存失敗: '+e.message);if(e.name==='NotAllowedError')gameFolderHandle=null;}
  finally{gameFolderBusy=false;$('saveGameFolder').disabled=false;}
 };

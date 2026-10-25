@@ -322,8 +322,8 @@
   "bodyShown": true,
   "meta": {
    "id": "remy",
-   "name": "Remy（凸ダンの主人公の体）",
-   "source": "Mixamo Remy（凸ダン game/client の PlayerRemy/Remy.fbx）",
+   "name": "Remy（サイズ確認用のキャラクター）",
+   "source": "Mixamo Remy（元モデル: Remy.fbx）",
    "hipsHeight": 0.95,
    "height": 1.719,
    "pose": "立ち姿：腕を 68 度下ろし、肘を 14 度曲げる",

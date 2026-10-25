@@ -3,7 +3,7 @@
 #   （歩き・走りは Mixamo の Action Adventure Pack の Remy 用）
 # - 骨付き：骨（67本、名前の "mixamorig:" は外す）、頂点ごとの骨と重み（4本まで）、立ち姿（腕を約 68 度下ろし肘を少し曲げる）、歩きと走りの 1 周期ずつ。
 # - 歩き・走りは、前へ進む分（腰の水平の移動の平均）を取り除いて、その場で動く形にする。進む速さ（m/秒）を clips.<名前>.speed に書く。
-# - 大きさはゲーム本体と同じ：腰の骨（Hips）の高さを 0.95m にする（凸ダンの PlayerRemyBody.HipsHeight）。
+# - 大きさはゲーム本体と同じ：腰の骨（Hips）の高さを 0.95m にする（ゲームの PlayerRemyBody.HipsHeight）。
 # - 座標は three.js（Y が上、顔は +Z）。足の裏が 0、立ち姿の腰の真下が原点。
 # - テクスチャは色（Diffuse）だけ。体 1024、ほかは 512 の JPEG。髪とまつ毛は透明度（Opacity）を足した PNG。
 import bpy, sys, os, json, math, base64, tempfile
@@ -148,7 +148,7 @@ for o in meshes:
     total_v += len(pos); total_t += len(idx) // 3
 
 # 立ち姿の身長（腕を下ろした姿勢で、足の裏から頭のてっぺん。休み姿勢と同じ：腕は高さに効かない）
-meta = {'id': 'remy', 'name': 'Remy（凸ダンの主人公の体）', 'source': 'Mixamo Remy（凸ダン game/client の PlayerRemy/Remy.fbx）',
+meta = {'id': 'remy', 'name': 'Remy（サイズ確認用のキャラクター）', 'source': 'Mixamo Remy（元モデル: Remy.fbx）',
         'hipsHeight': HIPS_HEIGHT, 'height': round(hi_y, 3),
         'pose': f'立ち姿：腕を {ARM_DOWN_DEG:g} 度下ろし、肘を {ELBOW_DEG:g} 度曲げる', 'verts': total_v, 'tris': total_t, 'bonesCount': len(bones),
         'clips': {k: {'source': c['source'], 'speed': c['speed'], 'duration': c['duration'], 'leftFront': c['leftFront']} for k, c in clips.items()}}
