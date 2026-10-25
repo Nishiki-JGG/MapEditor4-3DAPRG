@@ -1433,7 +1433,7 @@ function rebuildProps(visualOnly = false) {
     mesh.setMatrixAt(c[t], _m);
     if(mesh.userData.rootSlope){const v=rootSlopeAt(p);mesh.userData.rootSlope.setXY(c[t],v[0],v[1]);mesh.userData.rootSlope.needsUpdate=true;mesh.userData.rootTerrain.setXYZW(c[t],...rootTerrainAt(p));mesh.userData.rootTerrain.needsUpdate=true;}
     const v = .86 + .28 * hash2(x * 97 | 0, z * 89 | 0);
-    mesh.setColorAt(c[t], (shared || PROP[t].roomTorch) ? _c.setRGB(1, 1, 1) : savedCliffTint(p)?_c.fromArray(savedCliffTint(p)):_c.setRGB(v * (.95 + .1 * hash2(x * 13 | 0, 7)), v, v * (.95 + .1 * hash2(3, z * 17 | 0))));
+    mesh.setColorAt(c[t], (shared || PROP[t].roomTorch || PROP[t].fireEffect) ? _c.setRGB(1, 1, 1) : savedCliffTint(p)?_c.fromArray(savedCliffTint(p)):_c.setRGB(v * (.95 + .1 * hash2(x * 13 | 0, 7)), v, v * (.95 + .1 * hash2(3, z * 17 | 0))));
     if (!ghost && mesh.userData.cliffI) mesh.userData.cliffI.array[c[t]] = cliffIndexNear(x, z);
     if (!ghost && mesh.userData.touch) { touchIdx.set(p, c[t]); touchProps.push(p);indexTouch(p); }
     c[t]++;
@@ -1443,7 +1443,7 @@ function rebuildProps(visualOnly = false) {
   propMeshes.forEach((m, t) => { m.count = PROP[t].geo.userData.groundParts?0:cnt[t]; m.instanceMatrix.needsUpdate = true; m.instanceColor.needsUpdate = true; if (m.userData.cliffI) m.userData.cliffI.needsUpdate = true; });
   ghostMeshes.forEach((m, t) => { m.count = PROP[t].geo.userData.groundParts?0:gcnt[t]; m.instanceMatrix.needsUpdate = true; m.instanceColor.needsUpdate = true; });
   for(const[map,counts]of [[groundedNormal,cnt],[groundedGhost,gcnt]])for(const[t,meshes]of map)for(const m of meshes){m.count=counts[t];m.instanceMatrix.needsUpdate=m.instanceColor.needsUpdate=true;}
-  if (props.some(p => PROP[p[0]].roomTorch)) ensureIds();
+  if (props.some(p => PROP[p[0]].roomTorch||PROP[p[0]].fireEffect)) ensureIds();
   wallTorches.sync(props, PROP, propBaseY, state.roomId);
   touchStats.registered=touchProps.length;
   if(state.tool==='detail')syncGroundDetailUI();
@@ -4590,7 +4590,10 @@ revision・書き出し日時・ファイルごとの SHA-256・contentHash は 
   }
   const roomTorches = TDWallTorch.exportData(props, PROP, state.roomId, U, propBaseY);
   if (roomTorches) { meta.requiredFeatures = [...(meta.requiredFeatures || []), 'roomTorchesV1']; meta.roomTorches = { file: 'room_torches.json', vfxId: roomTorches.vfxId }; }
+  const fireProps=TDFireFixtures.exportData(props,PROP,state.roomId,U,propBaseY);
+  if(fireProps)meta.requiredFeatures=[...(meta.requiredFeatures||[]),'firePropsV1'];
   const files = [
+    ...(fireProps?[{name:'fire_props.json',data:JSON.stringify(fireProps)}]:[]),
     ...(roomTorches ? [{name:'room_torches.json',data:JSON.stringify(roomTorches)}] : []),
     ...(bedrockPng?[{name:'bedrock.png',data:bedrockPng}]:[]),
     {name:'root_paint.png',data:rootPaintPng},
@@ -4689,7 +4692,7 @@ const PROP_GROUPS = [
   ['岩・崖', ['drysoil_curl','drysoil_cup','drysoil_flake','scree', 'rock', 'mossrock', 'pebble', 'cliff', 'cliff_split', 'cliff_shoulder', 'cliff_joint', 'cliff_slab', 'cliff_talus', 'rubblepile', 'stalagmite', 'crystal', 'lavarock', 'obsidian', 'fumarole', 'iceblock', 'icespike']],
   ['遺跡・墓', ['column', 'brokencol', 'ruinwall', 'archgate', 'statue', 'statue_seated', 'statue_damaged', 'stele', 'obelisk', 'pyramid', 'gravestone', 'crossgrave', 'mausoleum', 'bones', 'bonepile', 'skullpile', 'magiccircle', 'demonspire']],
   ['海の生き物', ['braincoral', 'staghorn', 'pillarcoral', 'seafan', 'tablecoral', 'roundcoral', 'scallop', 'cowrie', 'shellbits', 'wrack']],
-  ['建物・道具', ['wall_torch', 'torch', 'lantern', 'banner', 'woodfence', 'ironfence', 'castlewall', 'tower', 'gatehouse', 'lighthouse', 'rowboat', 'haystack', 'miningtools', 'supplycrate', 'smallbarrel', 'tiedsack', 'coiledrope', 'storagepot', 'brokenpot', 'shells', 'snowman', 'kamakura']],
+  ['建物・道具', ['wall_torch', 'torch', 'brazier', 'lantern', 'banner', 'woodfence', 'ironfence', 'castlewall', 'tower', 'gatehouse', 'lighthouse', 'rowboat', 'haystack', 'miningtools', 'supplycrate', 'smallbarrel', 'tiedsack', 'coiledrope', 'storagepot', 'brokenpot', 'shells', 'snowman', 'kamakura']],
 ];
 // [group name, type indices]; types not in PROP_GROUPS (added later) land in "その他"
 function propGroups() {
@@ -5554,10 +5557,10 @@ function installWalkPreparation(w){
  for(const n of ['position','walk','forced','secret'])wkGeo.attributes[n].needsUpdate=true;wkGeo.computeBoundingSphere();walkDirty=false;
 }
 async function preparationKey(kind,seed,job){
- const config=JSON.stringify([kind,seed,SIZE,kind==='sample2'?'ruins':state.biome,state.agent,state.cliffStyle,state.catalog,TDPreparation.version,TDPreparedSamples.recipeVersion,[...document.scripts].filter(s=>!s.dataset.preparedSample&&!s.hasAttribute('data-presentation-only')).map(s=>(s.getAttribute('src')||'').replace('app.js?walltorch1&','app.js?public-label1&')).filter(Boolean)]);
+ const config=JSON.stringify([kind,seed,SIZE,kind==='sample2'?'ruins':state.biome,state.agent,state.cliffStyle,state.catalog,TDPreparation.version,TDPreparedSamples.recipeVersion,[...document.scripts].filter(s=>!s.dataset.preparedSample&&!s.hasAttribute('data-presentation-only')).map(s=>(s.getAttribute('src')||'').replace(/app.js\?(walltorch1|firequality1)&/,'app.js?public-label1&')).filter(Boolean)]);
  if(preparationKeys.has(config))return preparationKeys.get(config);
  const hashes=[];
- await TDPreparation.each(PROP,async t=>{if(t.r<=0)return;const a=t.geo.attributes.position.array,ix=t.geo.index?.array;const hash=async a=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new Uint8Array(a.buffer,a.byteOffset,a.byteLength))),v=>v.toString(16).padStart(2,'0')).join('');hashes.push([t.id,t.r,t.height,t.yawOffset,await hash(a),ix?await hash(ix):'']);},job);
+ await TDPreparation.each(PROP,async t=>{if(t.r<=0||t.manualOnly)return;const prep=t.preparationGeo||t.geo,a=prep.attributes.position.array,ix=prep.index?.array;const hash=async a=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new Uint8Array(a.buffer,a.byteOffset,a.byteLength))),v=>v.toString(16).padStart(2,'0')).join('');hashes.push([t.id,t.r,t.height,t.yawOffset,await hash(a),ix?await hash(ix):'']);},job);
  const key='sample:'+await crypto.subtle.digest('SHA-256',new TextEncoder().encode(config+JSON.stringify(hashes))).then(b=>Array.from(new Uint8Array(b),v=>v.toString(16).padStart(2,'0')).join(''));
  TDPreparation.check(job);preparationKeys.set(config,key);return key;
 }

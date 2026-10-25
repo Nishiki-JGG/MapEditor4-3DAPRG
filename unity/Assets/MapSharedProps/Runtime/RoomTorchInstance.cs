@@ -39,7 +39,7 @@ namespace MapSharedProps
             if (rates != null) SetParticleVisibility(1f);
             // playOnAwakeの粒子はOnEnable時には既に再生中になり得る。原本にseedを渡す前に完全停止する。
             foreach (var system in particles) system.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
-            if (presentation.GetType().FullName != "TotsuDan.Prototype.Discovery.DiscoveryRoomTorchPresentation")
+            if (presentation.GetType().FullName != "TotsuDan.Prototype.Discovery.DiscoveryRoomTorchPresentation" && !(presentation is FirePresentation))
                 throw new InvalidOperationException("壁掛け松明の原本コンポーネントが違います。");
             if (initialize == null) initialize = presentation.GetType().GetMethod("Initialize", new[] { typeof(int), typeof(string) });
             if (initialize == null) throw new InvalidOperationException("元松明のInitialize(int,string)がありません。");

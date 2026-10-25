@@ -11,11 +11,12 @@ text = (args.evidence / 'unity.log').read_text(encoding='utf8', errors='replace'
 result = json.loads((args.evidence / 'unity.json').read_text(encoding='utf8'))
 seed_asserts = text.count('Setting the random seed while system is still playing')
 compile_errors = len(re.findall(r'error CS\d+', text))
+shader_errors = len(re.findall(r'Shader error', text, re.I))
 blocks = re.findall(r'^\w*(?:Exception|AssertionException):.*?(?=\n\n|\Z)', text, re.M | re.S)
 baseline = [b for b in blocks if 'UnityEditor.Search.SearchDatabase' in b and 'RoomTorch' not in b and 'MapSharedProps' not in b]
 unexpected = [b for b in blocks if b not in baseline]
-gate = {'pass': bool(result.get('pass')) and 'ROOM_TORCH_VALIDATION PASS' in text and seed_asserts == 0 and compile_errors == 0 and not unexpected,
-        'seedAssertionsFullLog': seed_asserts, 'compileErrors': compile_errors,
+gate = {'pass': bool(result.get('pass')) and 'ROOM_TORCH_VALIDATION PASS' in text and seed_asserts == 0 and compile_errors == 0 and shader_errors == 0 and not unexpected,
+        'seedAssertionsFullLog': seed_asserts, 'compileErrors': compile_errors, 'shaderErrors': shader_errors,
         'unexpectedExceptionBlocks': unexpected, 'baselineSearchDatabase': baseline,
         'scope': 'Unity起動全体のログ。初回Awake/OnEnableと終了前を含む。'}
 (args.evidence / 'unity-log-gate.json').write_text(json.dumps(gate, ensure_ascii=False, indent=2), encoding='utf8')

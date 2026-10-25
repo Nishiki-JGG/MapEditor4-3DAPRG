@@ -36,6 +36,7 @@ for name in ['ProjectVersion.txt', 'GraphicsSettings.asset', 'QualitySettings.as
 for source in (root / 'unity/Assets/MapSharedProps').rglob('*'):
     if source.is_file(): copy(source, project / 'Assets/MapSharedProps' / source.relative_to(root / 'unity/Assets/MapSharedProps'))
 copy(root / 'tests/unity/RoomTorchChecks.cs', project / 'Assets/Editor/RoomTorchChecks.cs')
+copy(root / 'tests/unity/FireQualityChecks.cs', project / 'Assets/Editor/FireQualityChecks.cs')
 
 # 使用中の版をローカルへコピーしてオフラインで再現する。Library自体は複製しない。
 cached = {p.name.split('@')[0]: p for p in (args.game / 'Library/PackageCache').iterdir() if (p / 'package.json').exists()}

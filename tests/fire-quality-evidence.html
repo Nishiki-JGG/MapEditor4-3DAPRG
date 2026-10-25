@@ -1,0 +1,7 @@
+<!doctype html><html lang="ja"><meta charset="utf-8"><title>松明と篝火の品質比較</title><style>*{box-sizing:border-box}body{margin:0;padding:22px;background:#10151c;color:#e9edf1;font:16px 'Yu Gothic UI',sans-serif}h1{font-size:28px;margin:0 0 8px}p{color:#b4bfca;margin:0 0 16px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.card{background:#1b232d;border:1px solid #354253;border-radius:7px;overflow:hidden}.card h2{font-size:18px;margin:10px 12px}.card img{width:100%;display:block}footer{font-size:14px;color:#bbc5ce;margin-top:14px;line-height:1.6}</style><body>
+<h1>松明の品質改善と、地面置き篝火の追加</h1><p>左から既存松明・原本復元用の壁掛け・新しい篝火。原本RoomTorchのPrefab/VFXは未変更。</p><div class="grid">
+<section class="card"><h2>改善前 / Web暗所</h2><img src="../output/playwright/fire-quality/before-cave-close.png"></section>
+<section class="card"><h2>改善後 / Web暗所</h2><img src="../output/playwright/fire-quality/final-cave-close.png"></section>
+<section class="card"><h2>改善後 / Web昼・見下ろし</h2><img src="../output/playwright/fire-quality/final-grassland-overhead.png"></section>
+<section class="card"><h2>書き出し・Prefab保存再読込後 / Unity</h2><img src="../output/playwright/fire-quality/unity-day-overhead.png"></section>
+</div><footer>交差した薪、灰・炭・熾火、荷重を受ける三脚。3Dの炎は透明な交差面と流れる密度で描画。煙・火の粉と個体ごとの揺らぎを追加。<br>WebとUnityは照明・地面・粒子時刻が異なる比較です。Unityの中央の壁掛けは契約どおり元Prefab/VFXそのものへ復元しています。開始地点マーカーは改善後の撮影では画角外へ移動。詳細・負荷・制限はHANDOFFとJSON記録を参照。</footer></body></html>

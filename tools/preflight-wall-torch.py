@@ -11,7 +11,7 @@ u = args.unity_data
 out = root / 'output/playwright/wall-torch'
 out.mkdir(parents=True, exist_ok=True)
 refs = list((u / 'NetStandard/ref/2.1.0').glob('*.dll')) + list((u / 'NetStandard/compat/2.1.0/shims/netfx').glob('*.dll')) + list((u / 'Managed/UnityEngine').glob('*.dll'))
-sources = list((root / 'unity/Assets/MapSharedProps').rglob('*.cs')) + [root / 'tests/unity/RoomTorchChecks.cs']
+sources = list((root / 'unity/Assets/MapSharedProps').rglob('*.cs')) + [root / 'tests/unity/RoomTorchChecks.cs',root / 'tests/unity/FireQualityChecks.cs']
 options = ['-nologo', '-utf8output', '-nostdlib+', '-target:library', '-define:UNITY_EDITOR,UNITY_6000_0_OR_NEWER,UNITY_2021_3_OR_NEWER', '-out:' + str(out / 'TorchPreflight.dll')]
 options += ['-r:' + str(p) for p in refs] + [str(p) for p in sources]
 rsp = out / 'preflight.rsp'
