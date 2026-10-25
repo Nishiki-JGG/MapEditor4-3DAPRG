@@ -18,7 +18,7 @@ using Debug = UnityEngine.Debug;
 public static class RoomTorchChecks
 {
     const string StageKey = "RoomTorchChecks.Stage";
-    [Serializable] public class Row { public int count, activeLights, shadowedLights, activeEmitters, particles, drawCalls; public double cpuMedianMs, cpuP95Ms, frameMedianMs, frameP95Ms; public bool initialized, serializedRoundtrip; }
+    [Serializable] public class Row { public int count, activeLights, shadowedLights, activeEmitters, particles, drawCalls; public double cpuMedianMs, cpuP95Ms, frameMedianMs, frameP95Ms, warmupGameSeconds; public bool initialized, serializedRoundtrip; }
     [Serializable] public class Report { public bool pass; public string unity, gpu, graphicsApi, error; public int unexpectedErrors; public List<string> checks = new List<string>(), logs = new List<string>(), baselineLogs = new List<string>(); public List<Row> performance = new List<Row>(); }
     static Report report;
     static int phase, frame;
@@ -26,6 +26,7 @@ public static class RoomTorchChecks
     static readonly int[] Counts = { 1, 10, 50 };
     static List<double> intervals = new List<double>(), cpu = new List<double>();
     static double previous, warmupUntil;
+    static float warmupGameStart;
     static Camera camera;
     static GameObject original;
     static RoomTorchBudget current;
@@ -107,7 +108,7 @@ public static class RoomTorchChecks
             report.checks.Add("Web書出し→元GUIDのPrefab配置→部屋Prefab保存/再読込→PlayModeの初期化/粒子2種/モデル/参照/Collider確認");
             report.checks.Add("距離で粒子を減らした後の再有効化で煙の発生数が復元");
             report.checks.Add("同じseed/keyで原本と復元Prefabの位相一致");
-            current.SetFocus(camera.transform); SetCamera(false, false); phase = frame = 0; previous = EditorApplication.timeSinceStartup; warmupUntil = previous + 2;
+            current.SetFocus(camera.transform); SetCamera(false, false); phase = frame = 0; previous = EditorApplication.timeSinceStartup; warmupUntil = previous + 2; warmupGameStart = Time.time;
             EditorApplication.update += Step;
         }
         catch (Exception error) { Finish(error); }
@@ -156,7 +157,7 @@ public static class RoomTorchChecks
         {
             double now = EditorApplication.timeSinceStartup;
             // バッチの45フレームは煙の寿命より短いため、実時間で定常状態を待つ。
-            if (now < warmupUntil) { previous = now; return; }
+            if (now < warmupUntil || Time.time - warmupGameStart < 2f) { previous = now; return; }
             if (frame > 0) intervals.Add((now - previous) * 1000); previous = now; frame++;
             var watch = Stopwatch.StartNew();
             CaptureFrame(); cpu.Add(watch.Elapsed.TotalMilliseconds);
@@ -165,12 +166,13 @@ public static class RoomTorchChecks
             Require(current.ActiveLights <= 6, "6灯の上限を超えました");
             int shadowed = fixtures.Count(f => f.SourceLight.enabled && f.SourceLight.shadows != LightShadows.None); Require(shadowed <= 2, "影付き2灯の上限を超えました");
             report.performance.Add(new Row { count = Counts[phase], activeLights = current.ActiveLights, shadowedLights = shadowed, activeEmitters = current.ActiveEmitters,
-                particles = fixtures.Sum(f => f.Particles.Sum(p => p.particleCount)), drawCalls = UnityStats.drawCalls, initialized = true, serializedRoundtrip = phase == 0,
+                particles = fixtures.Sum(f => f.Particles.Sum(p => p.particleCount)), drawCalls = UnityStats.drawCalls, initialized = true, serializedRoundtrip = phase == 0, warmupGameSeconds = Time.time - warmupGameStart,
                 cpuMedianMs = Percentile(cpu, .5), cpuP95Ms = Percentile(cpu, .95), frameMedianMs = Percentile(intervals, .5), frameP95Ms = Percentile(intervals, .95) });
             if (phase == 0)
             {
                 SetCamera(false, false); Capture("unity-imported-close"); SetCamera(true, false); Capture("unity-imported-overhead");
                 current.gameObject.SetActive(false); original.SetActive(true);
+                var source = Presentation(original); source.GetType().GetMethod("ApplyPresentation", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(source, new object[] { Time.time });
                 foreach (var particle in original.GetComponentsInChildren<ParticleSystem>()) particle.Simulate(2f, false, true, true);
                 SetCamera(false, false); Capture("unity-original-close"); SetCamera(true, false); Capture("unity-original-overhead"); original.SetActive(false); current.gameObject.SetActive(true);
                 report.checks.Add("近距離/見下ろしの元Prefabと復元PrefabをURPで描画");
@@ -184,7 +186,7 @@ public static class RoomTorchChecks
                 report.checks.Add("1/10/50本のPlayMode実行・6灯/影2灯上限・遠距離粒子停止");
                 Finish(null); return;
             }
-            phase++; LoadCount(Counts[phase]); frame = 0; warmupUntil = now + 2; cpu.Clear(); intervals.Clear(); Save();
+            phase++; LoadCount(Counts[phase]); frame = 0; warmupUntil = EditorApplication.timeSinceStartup + 2; warmupGameStart = Time.time; cpu.Clear(); intervals.Clear(); Save();
         }
         catch (Exception error) { Finish(error); }
     }
