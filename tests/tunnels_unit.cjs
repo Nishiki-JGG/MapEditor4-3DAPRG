@@ -19,12 +19,21 @@ const tun = (id, pts, style = 'rock', w = 2.4, h = 2.8) => ({ id, style, w, h, p
   ok('地形の穴：入口（斜面）だけ、幅＋壁の範囲（奥の丘と平地には開けない）', cells.length > 10 && info.holes.x[0] > -1.5 && info.holes.x[1] < first(2).x + .7 && info.holes.z[1] < 1.2 + .45 + .25);
   const g = T.build(P, H), subs = T.SUBMESH.map((n, i) => [n, g.sub.filter(s => s === i).length]);
   info.mesh = { tris: g.sub.length, subs: Object.fromEntries(subs), lamps: g.lamps.length };
-  ok('網：床・壁・天井がある（坑口の板は作らない）', subs.slice(0, 3).every(([, n]) => n > 0) && subs[3][1] === 0 && g.pos.length === g.sub.length * 9 && g.col.length === g.pos.length);
-  // 口のまわりの地面：穴のセルを細かく作り直し、口（床から天井までの断面の中）だけ抜く
-  const cp = T.cap(P, H, holes, 97, .5, 24), nq = cp.quads.length / 2; let inOpen = 0, kept = 0;
-  for (let k = 0; k < nq; k++) { const x = cp.quads[k * 2] + cp.size / 2, z = cp.quads[k * 2 + 1] + cp.size / 2, y = H(x, z); kept++; if (Math.abs(z) < 1.1 && y > 3.05 && y < 3 + 2.8 - .3) inOpen++; }
-  info.cap = { quads: nq, of: cells.length * 16, inOpen };
-  ok('口のまわりの地面：穴のセルの一部を作り直し、口の中は抜く', nq > 0 && nq < cells.length * 16 && inOpen === 0);
+  ok('網：床・壁・天井と、素掘りの坑口の岩（decor）がある（坑口の板は作らない）。頂点ごとの法線・模様の座標・奥の暗さ', subs.slice(0, 3).every(([, n]) => n > 0) && subs[3][1] === 0 && subs[7][1] > 200 && g.pos.length === g.sub.length * 9 && g.col.length === g.pos.length && g.nor.length === g.pos.length && g.uv.length === g.sub.length * 6 && g.dk.length === g.sub.length * 3 && g.mat.length === g.sub.length);
+  // 法線は単位長さ。壁・天井は奥ほど暗い
+  let badN = 0; for (let k = 0; k < g.nor.length; k += 3) if (Math.abs(Math.hypot(g.nor[k], g.nor[k + 1], g.nor[k + 2]) - 1) > 1e-3) badN++;
+  ok('網：法線は単位長さ、奥（10m）は口より暗い', badN === 0 && Math.max(...Array.from(g.dk)) > .9 && Math.min(...Array.from(g.dk)) === 0);
+  // 口のまわりの地面：穴のセルを細かく作り直し、口の輪郭で切り抜く（口の中へ垂れ下がる細い三角形が無い）
+  const cp = T.cap(P, H, holes, 97, .5, 24), nt = cp.tris.length / 6; let inOpen = 0, area = 0;
+  const inside = (x, z) => { const y = H(x, z), l = Math.min(Math.abs(z) / 1.2, 1), top = T.profile(2.4, 2.8).hs + T.profile(2.4, 2.8).r * Math.sqrt(1 - l * l); return x > first(1).x + .05 && Math.abs(z) < 1.15 && y > 3 + .03 && y < 3 + top - .05; };
+  for (let k = 0; k < nt; k++) {
+    const p = [0, 1, 2].map(i => [cp.tris[k * 6 + i * 2], cp.tris[k * 6 + i * 2 + 1]]); area += Math.abs((p[1][0] - p[0][0]) * (p[2][1] - p[0][1]) - (p[2][0] - p[0][0]) * (p[1][1] - p[0][1])) / 2;
+    // 重心と、各辺の中点・各頂点と重心の中点が、口の中に入らない
+    const pts = [[(p[0][0] + p[1][0] + p[2][0]) / 3, (p[0][1] + p[1][1] + p[2][1]) / 3]]; for (let i = 0; i < 3; i++) { const j = (i + 1) % 3; pts.push([(p[i][0] + p[j][0]) / 2, (p[i][1] + p[j][1]) / 2], [(p[i][0] + pts[0][0]) / 2, (p[i][1] + pts[0][1]) / 2]); }
+    if (pts.some(([x, z]) => inside(x, z))) inOpen++;
+  }
+  info.cap = { tris: nt, area: +area.toFixed(2), of: cells.length * .25, inOpen };
+  ok('口のまわりの地面：穴のセルの一部を作り直し、口の中は抜く（垂れ下がる三角形なし）', nt > 0 && area < cells.length * .25 && area > cells.length * .25 * .2 && inOpen === 0);
   let bad = 0; for (let k = 0; k < g.pos.length; k++) if (!Number.isFinite(g.pos[k])) bad++;
   ok('網：数値はすべて有限', bad === 0);
   // 天井は床から高さ h まで、中の壁は幅の半分の所（素掘りのでこぼこ 0.14m まで）

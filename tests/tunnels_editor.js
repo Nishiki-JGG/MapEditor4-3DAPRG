@@ -61,11 +61,13 @@ const path = require('path');
   const e = await p.evaluate(async () => {
     const A = window.__app, out = {};
     A.setTool('tunnel'); A.stroke(9, 0, 0); A.update(1 / 60); out.editCut = A.cutU.a.value.w;
+    // the trodden ground before the west mouth: cobbles (masonry), none far away
+    { const T = A.tunnelPrep[0], m = T.st.find(q => q.cls > 0); out.paint = { mouth: +A.splatAt(m.x - 1, m.z, 1).toFixed(2), far: +A.splatAt(m.x - 6, m.z + 6, 1).toFixed(2) }; }
     A.undo(); A.undo(); out.undo = [A.tunnels.length, A.tunnels[0].pts.length]; A.redo(); A.redo(); out.redo = A.tunnels.length;   // the cursor stroke, then the second drag
     const d = JSON.parse(JSON.stringify(A.serialize())); A.genFlat(); A.updateTerrain(); A.rebuildTunnels(); out.cleared = A.tunnelGroup.children.length;
     A.deserialize(d); out.loaded = { n: A.tunnels.length, mesh: A.tunnelGroup.children.length, walk: A.walkable(9, 0) };
     const { files } = await A.buildExport(), f = nm => files.find(x => x.name === nm), meta = JSON.parse(f('meta.json').data), tm = f('tunnels_mesh.json') && JSON.parse(f('tunnels_mesh.json').data);
-    out.exp = { mesh: !!tm, subs: tm && tm.submeshes.map(s => [s.name, s.triangles.length / 3]), verts: tm && tm.vertices.length / 3, tunnels: meta.tunnels && meta.tunnels.length, mouths: meta.tunnels && meta.tunnels.map(t => t.mouths.length), holes: meta.terrain.holes, holeCells: meta.terrain.holeCells, rules: !!meta.tunnelRules, warnings: (JSON.parse(f('validation.json').data).warnings || []).filter(s => s.includes('トンネル')) };
+    out.exp = { normals: tm && tm.normals && tm.normals.length === tm.vertices.length, decor: tm && tm.submeshes.some(s => s.name === 'decor' && s.triangles.length > 0), mesh: !!tm, subs: tm && tm.submeshes.map(s => [s.name, s.triangles.length / 3]), verts: tm && tm.vertices.length / 3, tunnels: meta.tunnels && meta.tunnels.length, mouths: meta.tunnels && meta.tunnels.map(t => t.mouths.length), holes: meta.terrain.holes, holeCells: meta.terrain.holeCells, rules: !!meta.tunnelRules, warnings: (JSON.parse(f('validation.json').data).warnings || []).filter(s => s.includes('トンネル')) };
     // walkable.png: the tunnel floor is marked 56 (G)
     const img = await createImageBitmap(new Blob([f('walkable.png').data], { type: 'image/png' })), cv = document.createElement('canvas'); cv.width = img.width; cv.height = img.height; const cx = cv.getContext('2d'); cx.drawImage(img, 0, 0);
     const TN = img.width, TS = 48 / (TN - 1), px = cx.getImageData(Math.round((9 + 24) / TS), Math.round((24 - 0) / TS), 1, 1).data; out.exp.walkPx = [px[0], px[1]];
@@ -90,6 +92,8 @@ const path = require('path');
     ['編集：トンネルツールでトンネルの上にカーソルを置くと、屋根を透かす', e.editCut > 0],
     ['取り消し・やり直し：続きを掘る前（1 本、点 2 つ）に戻り、やり直せる', e.undo[0] === 1 && e.undo[1] === 2 && e.redo === 2],
     ['保存・読み込みでトンネルが戻る', e.cleared === 0 && e.loaded.n === 2 && e.loaded.mesh >= 3 && e.loaded.walk],
+    ['口の手前に石畳を塗る（遠くは塗らない）', e.paint.mouth > .4 && e.paint.far < .05],
+    ['書き出し：網に法線がある（石積みは飾りの岩・つるを作らない）', e.exp.normals && !e.exp.decor],
     ['書き出し：tunnels_mesh.json（床・壁・天井・枠・口のまわりの地面）と meta.tunnels・穴', e.exp.mesh && e.exp.subs.find(s => s[0] === 'floor')[1] > 0 && e.exp.subs.find(s => s[0] === 'cap')[1] > 0 && e.exp.subs.find(s => s[0] === 'frame')[1] > 0 && e.exp.tunnels === 2 && e.exp.mouths[0] === 2 && e.exp.holes === 'holes.png' && e.exp.holeCells > 0 && e.exp.rules],
     ['書き出し：walkable.png のトンネルの床は 56、検証の警告なし', e.exp.walkPx[0] === 255 && e.exp.walkPx[1] === 56 && e.exp.warnings.length === 0],
     ['プールツール：マウスのドラッグで作れる', np1 === np0 + 1],

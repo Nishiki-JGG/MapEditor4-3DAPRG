@@ -2293,37 +2293,75 @@ const tunnelGroup = new THREE.Group(); scene.add(tunnelGroup);
 const tunnelLineGroup = new THREE.Group(); scene.add(tunnelLineGroup);
 const tunnelHoleTex = (() => { const t = new THREE.DataTexture(new Uint8Array((N - 1) * (N - 1) * 4), N - 1, N - 1, THREE.RGBAFormat); t.magFilter = t.minFilter = THREE.NearestFilter; t.generateMipmaps = false; t.needsUpdate = true; return t; })();
 const tunnelHoleU = { value: tunnelHoleTex }, tunnelOnU = { value: 0 };
-const tunnelMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .92, metalness: 0, flatShading: true, side: THREE.DoubleSide });
+const tunnelMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .92, metalness: 0, side: THREE.DoubleSide });
+// the look of each part (TDTunnels.MAT, per vertex): the cliff's own rock, masonry courses and flagstones from the tunnel's
+// own coordinates (along, around), stone blocks, wood grain, trodden soil, iron, plants; +16 = moss on faces turned up.
+// The vertex colour is the base colour (a brightness factor on rock); tDk darkens further in (less while the roof is cut away).
 tunnelMat.onBeforeCompile = sh => {
-  sh.uniforms.uCutA = cutU.a; sh.uniforms.uCutB = cutU.b;
-  sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vTW;').replace('#include <begin_vertex>', '#include <begin_vertex>\nvTW=(modelMatrix*vec4(transformed,1.)).xyz;');
-  sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vTW;\n' + CUT_GLSL).replace('#include <clipping_planes_fragment>', '#include <clipping_planes_fragment>\nif(cutAway(vTW,true)) discard;');
+  sh.uniforms.uCutA = cutU.a; sh.uniforms.uCutB = cutU.b; sh.uniforms.uStoneGrain = rockGrainU; sh.uniforms.uRockTint = BU.uRockTint; sh.uniforms.uDim = dimU;
+  sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vTW; varying vec3 vTN; varying vec2 vTUv; varying float vTDk; varying float vTMat; attribute vec2 tUv; attribute float tDk; attribute float tMat;')
+    .replace('#include <begin_vertex>', '#include <begin_vertex>\nvTW=(modelMatrix*vec4(transformed,1.)).xyz; vTN=normalize(mat3(modelMatrix)*objectNormal); vTUv=tUv; vTDk=tDk; vTMat=tMat;');
+  sh.fragmentShader = sh.fragmentShader.replace('#include <common>', `#include <common>
+varying vec3 vTW; varying vec3 vTN; varying vec2 vTUv; varying float vTDk; varying float vTMat; uniform vec3 uRockTint; uniform float uDim;
+${CUT_GLSL}
+${GLSL_NOISE}
+${STONE_SURFACE_GLSL}
+${DIM_GLSL}
+float gTH=0.;
+vec3 tunnelAlbedo(vec3 c){
+  float mm=floor(vTMat+.5),mossy=step(15.5,mm);mm=mod(mm,16.);
+  vec3 p=vTW,n=normalize(vTN)*(gl_FrontFacing?1.:-1.);vec2 gr=stoneGrain(p,n);
+  if(mm<.5){   // rock: the same rock as the terrain's cliffs
+    vec2 rq=vec2((p.x*.75+p.z*.65)*1.1,p.y*1.5);
+    float mineral=fbm(rq*2.7+vec2(3.,7.)),strata=fbm(vec2(p.y*2.2+fbm(rq*.35)*1.6,dot(rq,vec2(.4,.3))));
+    c*=mix(vec3(.43,.41,.36),vec3(.65,.62,.55),mineral)*(.83+.20*strata)*(.80+.30*gr.x+.10*gr.y)*uRockTint;
+    gTH=(gr.x-.5)*.014+(gr.y-.5)*.007;
+  }else if(mm<1.5||(mm>4.5&&mm<5.5)){   // masonry courses (walls) and flagstones (floor): sunk joints, each stone its own shade
+    vec2 sz=mm<1.5?vec2(.62,.4):vec2(.56,.46);float row=floor(vTUv.y/sz.y);
+    vec2 q=vec2(vTUv.x/sz.x+row*.5+(mm>4.5?fract(sin(row*7.13)*91.7)*.6:0.),vTUv.y/sz.y),id=floor(q),f=fract(q),e=min(f,1.-f)*sz;
+    float jt=min(e.x,e.y),joint=1.-smoothstep(.01,.032,jt+(gr.y-.5)*.02),h=fract(sin(dot(id,vec2(12.9898,78.233)))*43758.5453);
+    c*=(.84+.28*h)*(.84+.22*gr.x+.08*gr.y);c=mix(c,c*.5,joint);
+    gTH=-joint*.014+(gr.x-.5)*.007+smoothstep(.0,.1,jt)*.004;
+  }else if(mm<2.5){c*=.82+.26*gr.x+.1*gr.y;gTH=(gr.x-.5)*.012+(gr.y-.5)*.005;}   // cut stone
+  else if(mm<3.5){   // wood: grain along the timber, a few knots
+    float g=fbm(vec2(vTUv.x*1.3,vTUv.y*17.)),k=smoothstep(.8,.9,vn(vTUv*vec2(3.,9.)));
+    c*=(.76+.42*g)*(1.-.35*k);gTH=(g-.5)*.008;
+  }else if(mm<4.5){   // trodden soil and small stones
+    float d=fbm(p.xz*2.3),pb=smoothstep(.74,.86,vn(p.xz*13.));
+    c*=.8+.36*d;c=mix(c,c*1.3+.03,pb*.6);gTH=(d-.5)*.012+pb*.008;
+  }else if(mm<6.5){c*=.85+.2*gr.y;}   // iron
+  else if(mm<7.5){c*=.78+.44*fbm(p.xz*5.+p.y*3.);}   // roots and vines
+  if(mossy>.5){   // ruins: moss on the tops and in the floor's joints
+    float mk=smoothstep(.35,.85,n.y)*smoothstep(.47,.62,fbm(p.xz*2.6+p.y*1.3));
+    if(mm>4.5&&mm<5.5)mk=max(mk,smoothstep(.56,.74,fbm(p.xz*1.7))*.7);
+    c=mix(c,vec3(.27,.36,.17)*(.8+.4*gr.x),mk*.85);
+  }
+  return c;
+}`).replace('#include <clipping_planes_fragment>', '#include <clipping_planes_fragment>\nif(cutAway(vTW,true)) discard;')
+    .replace('#include <color_fragment>', '#include <color_fragment>\ndiffuseColor.rgb=dimc(pow(tunnelAlbedo(vColor.rgb),vec3(2.2))*mix(1.,uCutA.w>0.?.4:.07,vTDk));')
+    .replace('#include <normal_fragment_maps>', '#include <normal_fragment_maps>\nnormal=surfaceNormal(-vViewPosition,normal,gTH);');
 };
-tunnelMat.customProgramCacheKey = () => 'tunnel-v1';
+tunnelMat.customProgramCacheKey = () => 'tunnel-v2';
 const tunnelLampMat = new THREE.MeshBasicMaterial({ vertexColors: true });
 // the cut faces: shown as the sides of the cut-away (only the line of sight through them is cut)
 const tunnelShaftMat = tunnelMat.clone(); tunnelShaftMat.onBeforeCompile = sh => { tunnelMat.onBeforeCompile(sh); sh.fragmentShader = sh.fragmentShader.replace('if(cutAway(vTW,true)) discard;', 'if(cutAway(vTW,false)) discard;'); };
-tunnelShaftMat.customProgramCacheKey = () => 'tunnel-shaft-v1';
+tunnelShaftMat.customProgramCacheKey = () => 'tunnel-shaft-v2';
 // the ground around a mouth, rebuilt finer with the opening left out (TDTunnels.cap): the terrain's own material, without its holes
 const tunnelCapMat = terrainMat.clone(); tunnelCapMat.onBeforeCompile = terrainMat.onBeforeCompile;
 tunnelCapMat.customProgramCacheKey = () => terrainMat.customProgramCacheKey() + '-tunnel-cap';
 function tunnelCapGeometry(c) {
-  const nq = c.quads.length / 2, f = c.size, names = Object.keys(tGeo.attributes).filter(n => n !== 'position' && n !== 'normal');
-  const P = new Float32Array(nq * 12), Nn = new Float32Array(nq * 12), At = names.map(n => new Float32Array(nq * 4 * tGeo.attributes[n].itemSize)), ix = new Uint32Array(nq * 6);
-  for (let q = 0; q < nq; q++) {
-    const x0 = c.quads[q * 2], z0 = c.quads[q * 2 + 1];
-    [[x0, z0], [x0 + f, z0], [x0, z0 + f], [x0 + f, z0 + f]].forEach(([x, z], v) => {
-      const o = q * 4 + v, y = heightAt(x, z), e = .15, gx = (heightAt(x + e, z) - heightAt(x - e, z)) / (2 * e), gz = (heightAt(x, z + e) - heightAt(x, z - e)) / (2 * e), l = Math.hypot(gx, 1, gz);
-      P.set([x, y, z], o * 3); Nn.set([-gx / l, 1 / l, -gz / l], o * 3);
-      // every other terrain attribute (paint, rock style, wetness…), bilinear on the grid like the terrain's own vertices
-      const fx = clamp((x + HALF) * RES, 0, N - 1), fz = clamp((z + HALF) * RES, 0, N - 1), i = Math.min(Math.floor(fx), N - 2), j = Math.min(Math.floor(fz), N - 2), u = fx - i, w = fz - j, k = idx(i, j);
-      names.forEach((n, a) => { const src = tGeo.attributes[n], s0 = src.itemSize; for (let ch = 0; ch < s0; ch++) { const g = (kk) => src.array[kk * s0 + ch]; At[a][o * s0 + ch] = (g(k) * (1 - u) + g(k + 1) * u) * (1 - w) + (g(k + N) * (1 - u) + g(k + N + 1) * u) * w; } });
-    });
-    ix.set([q * 4, q * 4 + 2, q * 4 + 1, q * 4 + 1, q * 4 + 2, q * 4 + 3], q * 6);
+  const nv = c.tris.length / 2, names = Object.keys(tGeo.attributes).filter(n => n !== 'position' && n !== 'normal');
+  const P = new Float32Array(nv * 3), Nn = new Float32Array(nv * 3), At = names.map(n => new Float32Array(nv * tGeo.attributes[n].itemSize));
+  for (let o = 0; o < nv; o++) {
+    const x = c.tris[o * 2], z = c.tris[o * 2 + 1], y = heightAt(x, z), e = .15, gx = (heightAt(x + e, z) - heightAt(x - e, z)) / (2 * e), gz = (heightAt(x, z + e) - heightAt(x, z - e)) / (2 * e), l = Math.hypot(gx, 1, gz);
+    P.set([x, y, z], o * 3); Nn.set([-gx / l, 1 / l, -gz / l], o * 3);
+    // every other terrain attribute (paint, rock style, wetness…), bilinear on the grid like the terrain's own vertices
+    const fx = clamp((x + HALF) * RES, 0, N - 1), fz = clamp((z + HALF) * RES, 0, N - 1), i = Math.min(Math.floor(fx), N - 2), j = Math.min(Math.floor(fz), N - 2), u = fx - i, w = fz - j, k = idx(i, j);
+    names.forEach((n, a) => { const src = tGeo.attributes[n], s0 = src.itemSize; for (let ch = 0; ch < s0; ch++) { const g = (kk) => src.array[kk * s0 + ch]; At[a][o * s0 + ch] = (g(k) * (1 - u) + g(k + 1) * u) * (1 - w) + (g(k + N) * (1 - u) + g(k + N + 1) * u) * w; } });
   }
   const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(P, 3)); geo.setAttribute('normal', new THREE.BufferAttribute(Nn, 3));
   names.forEach((n, a) => geo.setAttribute(n, new THREE.BufferAttribute(At[a], tGeo.attributes[n].itemSize)));
-  geo.setIndex(new THREE.BufferAttribute(ix, 1)); return geo;
+  return geo;
 }
 const tunnelLineMat = new THREE.LineDashedMaterial({ color: 0x8fe0ff, dashSize: .6, gapSize: .4, transparent: true, opacity: .85, depthTest: false });
 function rebuildTunnels() {
@@ -2335,16 +2373,19 @@ function rebuildTunnels() {
     // G: the cells over a tunnel (cut away above the head of the one inside)
     for (let j = 0; j < N - 1; j++) for (let i = 0; i < N - 1; i++) { const q = TDTunnels.query(tunnelPrep, vx(i) + CELL / 2, vx(j) + CELL / 2, .15); if (q && q.cls) hd[(j * (N - 1) + i) * 4 + 1] = 255; }   // inside the walls only
     const cp = TDTunnels.cap(tunnelPrep, heightAt, hl, N, CELL, HALF);
-    if (cp.quads.length) {
+    if (cp.tris.length) {
       tunnelCapMat.defines = { ...(terrainMat.defines || {}), TUNNEL_CAP: '' }; tunnelCapMat.needsUpdate = true;
       const m = new THREE.Mesh(tunnelCapGeometry(cp), tunnelCapMat); m.castShadow = m.receiveShadow = true; tunnelGroup.add(m);
     }
     const g = TDTunnels.build(tunnelPrep, heightAt), part = s => s === 5 ? 1 : s === 6 ? 2 : 0;   // 0 rock/stone/timber, 1 lamps, 2 the cut faces (shafts)
     for (const which of [0, 1, 2]) {
-      const P = [], Cc = []; for (let t = 0; t < g.sub.length; t++) if (part(g.sub[t]) === which) { for (let q = 0; q < 9; q++) { P.push(g.pos[t * 9 + q]); Cc.push(g.col[t * 9 + q]); } }
-      if (!P.length) continue;
-      const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); geo.setAttribute('color', new THREE.Float32BufferAttribute(Cc, 3)); geo.computeVertexNormals();
-      const m = new THREE.Mesh(geo, [tunnelMat, tunnelLampMat, tunnelShaftMat][which]); m.castShadow = which === 0; m.receiveShadow = false; tunnelGroup.add(m);   // inside the hill: no sun shadow (the vertex colours darken it)
+      const tl = []; for (let t = 0; t < g.sub.length; t++) if (part(g.sub[t]) === which) tl.push(t);
+      if (!tl.length) continue;
+      const n = tl.length * 3, P = new Float32Array(n * 3), Nn = new Float32Array(n * 3), Cc = new Float32Array(n * 3), Uv = new Float32Array(n * 2), Dk = new Float32Array(n), Mt = new Float32Array(n);
+      tl.forEach((t, o) => { P.set(g.pos.subarray(t * 9, t * 9 + 9), o * 9); Nn.set(g.nor.subarray(t * 9, t * 9 + 9), o * 9); Cc.set(g.col.subarray(t * 9, t * 9 + 9), o * 9); Uv.set(g.uv.subarray(t * 6, t * 6 + 6), o * 6); Dk.set(g.dk.subarray(t * 3, t * 3 + 3), o * 3); Mt.fill(g.mat[t], o * 3, o * 3 + 3); });
+      const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(P, 3)); geo.setAttribute('normal', new THREE.BufferAttribute(Nn, 3)); geo.setAttribute('color', new THREE.BufferAttribute(Cc, 3));
+      geo.setAttribute('tUv', new THREE.BufferAttribute(Uv, 2)); geo.setAttribute('tDk', new THREE.BufferAttribute(Dk, 1)); geo.setAttribute('tMat', new THREE.BufferAttribute(Mt, 1));
+      const m = new THREE.Mesh(geo, [tunnelMat, tunnelLampMat, tunnelShaftMat][which]); m.castShadow = which === 0; m.receiveShadow = false; tunnelGroup.add(m);   // inside the hill: no sun shadow (tDk darkens it)
     }
     tunnelLamps = g.lamps;
     // the route on the ground while editing: a dashed line over the stretches under the hill
@@ -2396,29 +2437,54 @@ function placeTunnel(a, c) {
   const pt = { x: +c.x.toFixed(2), z: +c.z.toFixed(2), y: +y1.toFixed(3) };
   if (t) t.pts.push(pt);
   else tunnels.push(t = { id: newId('tunnel'), style: state.variant.tunnel || 'rock', w: sz.w, h: sz.h, pts: [{ x: +from.x.toFixed(2), z: +from.z.toFixed(2), y: +y0.toFixed(3) }, pt] });
-  rebuildTunnels(); clearTunnelProps(); rebuildProps();
+  rebuildTunnels(); paintTunnelMouths(t); clearTunnelProps(); rebuildProps();
   return null;
+}
+// the trodden ground before each mouth: soil (masonry: cobbles), fading out over about 2.5 m, ragged at the edges.
+// Painted into the map's ground layers (so it is undone, saved and exported like any painting) and never lowered.
+function paintTunnelMouths(t) {
+  const T = TDTunnels.prepare([t], heightAt)[0]; if (!T) return;
+  const ch = GROUND.indexOf(t.style === 'masonry' ? 'cobble' : 'dirt'), reach = 2.6, hw = t.w / 2, peak = t.style === 'ruins' ? .55 : .85;
+  for (let k = 0; k + 1 < T.st.length; k++) {
+    const a = T.st[k], b = T.st[k + 1]; if (!!a.cls === !!b.cls) continue;   // a mouth: open ↔ cut or tunnel
+    const m = a.cls ? b : a, o = a.cls ? 1 : -1;   // the open side's first station, and outward along the line
+    forBrush(m.x + m.tx * o * reach / 2, m.z + m.tz * o * reach / 2, reach / 2 + hw + .8, (i, d, px, pz) => {
+      const along = ((px - m.x) * m.tx + (pz - m.z) * m.tz) * o, lat = Math.abs((px - m.x) * m.nx + (pz - m.z) * m.nz), n = fbm(px * .9 + 3, pz * .9) - .5;
+      const k1 = (1 - sstep(reach * .45, reach, along + n * .8)) * (1 - sstep(hw - .1 + along * .12, hw + .55 + along * .2, lat + n * .5)) * (along > -.6 ? 1 : 0);
+      const want = k1 * peak, cur = TDTerrainPaint.weight(S, i * NS, NS, ch); if (want > cur + .01) TDTerrainPaint.paint(S, i * NS, NS, ch, (want - cur) / (1 - cur));
+    });
+  }
+  updateTerrain(); regenGroundProps();
 }
 // the tunnels' meshes for the export (Unity frame): one vertex list with colours, triangles per submesh. The Unity z axis is
 // the editor's mirrored, so every triangle is written in the reverse order to keep its front face
 function tunnelMeshJson(te, P3, mn) {
-  const g = te.mesh, V = [], Cc = [], subs = [...TDTunnels.SUBMESH, 'cap'], T = subs.map(() => []);
+  const g = te.mesh, V = [], Nn = [], Cc = [], subs = [...TDTunnels.SUBMESH, 'cap'], T = subs.map(() => []), R = TDTunnels.ROCK;
+  // colours: sRGB like the editor's vertex colours (MapTunnels/Tunnel raises them to 2.2; the editor's surface patterns are not exported),
+  // rock times the cliff rock's mean colour, darker further in
+  const lin = (c, k) => Math.max(c, 0) * Math.pow(k, 1 / 2.2);
   for (let t = 0; t < g.sub.length; t++) {
-    const b = V.length / 3;
-    for (let q = 0; q < 3; q++) { V.push(...P3(g.pos[t * 9 + q * 3], g.pos[t * 9 + q * 3 + 1], g.pos[t * 9 + q * 3 + 2])); Cc.push(...[0, 1, 2].map(c => +g.col[t * 9 + q * 3 + c].toFixed(3))); }
+    const b = V.length / 3, rock = (g.mat[t] & 15) === TDTunnels.MAT.rock;
+    for (let q = 0; q < 3; q++) {
+      const o = t * 9 + q * 3, k = 1 - .85 * g.dk[t * 3 + q];
+      V.push(...P3(g.pos[o], g.pos[o + 1], g.pos[o + 2])); Nn.push(+g.nor[o].toFixed(3), +g.nor[o + 1].toFixed(3), +(-g.nor[o + 2]).toFixed(3));
+      Cc.push(...[0, 1, 2].map(c => +lin(g.col[o + c] * (rock ? R[c] : 1), k).toFixed(4)));
+    }
     T[g.sub[t]].push(b, b + 2, b + 1);
   }
   // the rebuilt ground around the mouths, coloured by its steepness (rock on the face, grass on top) — or use the terrain's layers
-  const cp = te.cap, f = cp.size, ci = subs.length - 1;
-  for (let q = 0; q < cp.quads.length / 2; q++) {
-    const x0 = cp.quads[q * 2], z0 = cp.quads[q * 2 + 1], b = V.length / 3, pts = [[x0, z0], [x0 + f, z0], [x0, z0 + f], [x0 + f, z0 + f]];
-    const ys = pts.map(([x, z]) => te.thB(x, z)), steep = clamp((Math.max(...ys) - Math.min(...ys)) / f / 1.2, 0, 1), c = [lerp(.36, .52, steep), lerp(.46, .48, steep), lerp(.22, .42, steep)].map(v => +v.toFixed(3));
-    pts.forEach(([x, z], v) => { V.push(...P3(x, ys[v], z)); Cc.push(...c); });
-    T[ci].push(b, b + 1, b + 2, b + 1, b + 3, b + 2);
+  const cp = te.cap, ci = subs.length - 1;
+  for (let q = 0; q < cp.tris.length / 6; q++) {
+    const b = V.length / 3, pts = [0, 1, 2].map(i => [cp.tris[q * 6 + i * 2], cp.tris[q * 6 + i * 2 + 1]]), ps = pts.map(([x, z]) => [x, te.thB(x, z), z]);
+    const n = (() => { const a = ps[1].map((v, i) => v - ps[0][i]), c = ps[2].map((v, i) => v - ps[0][i]), x = a[1] * c[2] - a[2] * c[1], y = a[2] * c[0] - a[0] * c[2], z = a[0] * c[1] - a[1] * c[0], l = Math.hypot(x, y, z) || 1; return [x / l, Math.abs(y / l), z / l]; })();
+    const steep = clamp((1 - n[1]) * 2.5, 0, 1), c = [lerp(.36, .52, steep), lerp(.46, .48, steep), lerp(.22, .42, steep)].map(v => lin(v, 1));
+    ps.forEach(([x, y, z]) => { V.push(...P3(x, y, z)); Nn.push(+n[0].toFixed(3), +n[1].toFixed(3), +(-n[2]).toFixed(3)); Cc.push(...c.map(v => +v.toFixed(4))); });
+    T[ci].push(b, b + 2, b + 1);
   }
-  return { format: 'tdj-tunnel-mesh', version: 1, frame: 'Unity world, same as meta.json (m)', winding: 'clockwise front faces (Unity); the editor draws them double-sided',
-    note: 'floor / wall / ceiling / frame: vertex-coloured rock, stone and timber (lit); lamp: emissive (the light itself: meta.tunnels[].lamps); shaft: dark rock faces from the walls up to just under the ground, hidden in the hill until the roof is cut away (then cut only along the line of sight); cap: the ground around a mouth over the terrain holes (holes.png -2), shaped like the exported heightmap with the opening left out — render it like the terrain or with its vertex colours. Colliders: floor, wall, ceiling, cap.',
-    vertices: V, colors: Cc, submeshes: subs.map((name, i) => ({ name, triangles: T[i] })) };
+  return { format: 'tdj-tunnel-mesh', version: 2, frame: 'Unity world, same as meta.json (m)', winding: 'clockwise front faces (Unity); the editor draws them double-sided',
+    colors: 'sRGB (raise to 2.2 for the albedo, as MapTunnels/Tunnel does); rock already times its mean colour; darker further in from the mouth',
+    note: 'floor / wall / ceiling / frame: vertex-coloured rock, stone and timber (lit); lamp: emissive (the light itself: meta.tunnels[].lamps); shaft: dark rock faces from the walls up to just under the ground, hidden in the hill until the roof is cut away (then cut only along the line of sight); decor: rocks, rubble, roots, vines and rails around the mouths (no collision); cap: the ground around a mouth over the terrain holes (holes.png -2), cut to the opening\'s outline',
+    vertices: V, normals: Nn, colors: Cc, submeshes: subs.map((name, i) => ({ name, triangles: T[i] })) };
 }
 // nothing stands in a mouth or a cutting; no boulder or cliff stone around a mouth (by position or by its outline)
 function clearTunnelProps() {
@@ -5608,7 +5674,7 @@ const bootReady=bootPending?.startsWith('prepared:')?prepareMap('pending',0,{tok
   prepareMap(bootPending==='sample2'&&SIZE===SAMPLE2_SIZE?'sample2':bootPending==='flat'||SIZE!==64?'flat':'sample',bootPending==='sample2'?11:7,{boot:true});
 
 // hooks for automated checks
-window.__app = { bedrockReady,get tunnels() { return tunnels; }, set tunnels(v) { tunnels = v; }, get tunnelPrep() { return tunnelPrep; }, get tunnelLamps() { return tunnelLamps; }, placeTunnel, rebuildTunnels, tunnelGroup, tunnelHoleTex, cutU, refitFalls, placeFall, springFallGroup, fallGroup, get springs() { return springs; }, set springs(v) { springs = v; }, get pools() { return pools; }, get springRes() { return springRes; }, SC, placeSpring, placePool, applySprings, solveSprings, waterAt, springLevelAt, poolDist, poolWallAt, POOL_WALL, deckAt, fillGroundAll,buildPreparedSample,prepareMap,cancelMapPreparation,bootReady,get preparation(){return mapPreparation?{id:mapPreparation.id,phase:mapPreparation.phase,requestedMode:mapPreparation.requestedMode,elapsedMs:performance.now()-mapPreparation.start}:null;},get preparationStats(){return lastPreparedState;},
+window.__app = { bedrockReady, splatAt,get tunnels() { return tunnels; }, set tunnels(v) { tunnels = v; }, get tunnelPrep() { return tunnelPrep; }, get tunnelLamps() { return tunnelLamps; }, placeTunnel, rebuildTunnels, tunnelGroup, tunnelHoleTex, cutU, refitFalls, placeFall, springFallGroup, fallGroup, get springs() { return springs; }, set springs(v) { springs = v; }, get pools() { return pools; }, get springRes() { return springRes; }, SC, placeSpring, placePool, applySprings, solveSprings, waterAt, springLevelAt, poolDist, poolWallAt, POOL_WALL, deckAt, fillGroundAll,buildPreparedSample,prepareMap,cancelMapPreparation,bootReady,get preparation(){return mapPreparation?{id:mapPreparation.id,phase:mapPreparation.phase,requestedMode:mapPreparation.requestedMode,elapsedMs:performance.now()-mapPreparation.start}:null;},get preparationStats(){return lastPreparedState;},
   propGrounding,groundedParts,groundedNormal,groundedGhost,groundPreview,setGroundPreview,propBaseY,get cliffContactProgress(){return cliffContactProgress;},cliffFits,effectiveGeometry,fitCliffContact,adoptCliffContact, cliffProtected,cliffProtectionReason,nearFeatureReason, get cliffContactStats(){return cliffContactStats;},
   pickGroundDetail,adjustGroundDetail,selectedGroundDetail,updateTouch,touchStats, pavingMask, cliffRelief, rebuildCliffRelief, groundTrial, groundTexture, terrainSource:tGeo, terrain, renderer, camera, SIZE, state, H, S, O, F, C, propMeshes, ghostMeshes, cliffIndexAt, BIOMES, CLIFF_STYLES, applyCliffStyle, deckAt, linkDeckAt, runValidation, genSample, genSample2, secretRegions, secretLineX, passageGeometry, terrainRes, TERRAIN_RES, snapshot, sha256, LINK_KINDS, normalizeCatalog, catalogExport, valueIssues, areaIssue, deckAt, getColliders, PROP, get colliderMaxR() { return colliderMaxR; }, rebuildMarkers, portLanding, linkTrigger, linkArrival, LINK_SPEC, get markers() { return markers; }, placeMarker, ensureIds, applyCatalog, ATMOS, WEATHER, applyAtmo, makeCoast, glowLights, applyBiome, applyPalette, propVisible, toolVisible, updateTerrain, rebuildProps, genFlat, floorAt, bridgeAt, stairsAt, placeSlope, placeStairs, placeBridge, pickTarget, regenGroundProps, rebuildBridges, get stairs() { return stairs; }, get bridges() { return bridges; }, get falls() { return falls; }, overrideAt, heroMat, hero, heroBody, get heroLook() { return heroLook; }, setHeroLook, heroStyle, heroGlow, get ghosts() { return ghosts; }, get props() { return props; }, cam, playCam, player, keys, setMode, setTool, update, heightAt, walkable, slope: slopeAt,
   stroke(x, z, frames = 20, opts = {}) {

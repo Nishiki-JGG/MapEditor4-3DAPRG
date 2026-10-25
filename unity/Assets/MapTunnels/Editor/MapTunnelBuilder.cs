@@ -13,7 +13,7 @@ namespace MapTunnels.EditorTools {
 public static class MapTunnelBuilder {
  public const string RuntimeDir = "Assets/MapTunnels/Runtime", GeneratedDir = "Assets/MapTunnelsGenerated";
  [Serializable] class SubDto { public string name; public int[] triangles; }
- [Serializable] class MeshDto { public string format; public float[] vertices, colors; public SubDto[] submeshes; }
+ [Serializable] class MeshDto { public string format; public float[] vertices, normals, colors; public SubDto[] submeshes; }
  public sealed class Result { public bool built; public string message; public GameObject root; public int triangles, lights; }
 
  public static Result Build(string exportDir, Transform parent = null, Vector3? origin = null, string assetName = null) {
@@ -38,7 +38,10 @@ public static class MapTunnelBuilder {
     var tri = meshDto.submeshes[s].triangles ?? new int[0]; mesh.SetTriangles(tri, s); res.triangles += tri.Length / 3;
     string n = meshDto.submeshes[s].name; if (n == "floor" || n == "wall" || n == "ceiling" || n == "cap") solid.AddRange(tri);
    }
-   mesh.RecalculateNormals(); mesh.RecalculateBounds();
+   // 法線は書き出しのもの（version 2：岩肌はなめらか、石・木は平ら）。無ければ計算する
+   if (meshDto.normals != null && meshDto.normals.Length == nv * 3) { var nor = new Vector3[nv]; for (int k = 0; k < nv; k++) nor[k] = new Vector3(meshDto.normals[k * 3], meshDto.normals[k * 3 + 1], meshDto.normals[k * 3 + 2]); mesh.normals = nor; }
+   else mesh.RecalculateNormals();
+   mesh.RecalculateBounds();
    var colMesh = new Mesh { name = "TunnelsCollider", indexFormat = UnityEngine.Rendering.IndexFormat.UInt32 }; colMesh.vertices = pos; colMesh.SetTriangles(solid, 0); colMesh.RecalculateBounds();
 
    string name = assetName ?? new DirectoryInfo(exportDir).Name, dir = GeneratedDir + "/" + name;
