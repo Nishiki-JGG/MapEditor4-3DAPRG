@@ -2440,11 +2440,11 @@ function placeTunnel(a, c) {
   rebuildTunnels(); paintTunnelMouths(t); clearTunnelProps(); rebuildProps();
   return null;
 }
-// the trodden ground before each mouth: soil (masonry: cobbles), fading out over about 2.5 m, ragged at the edges.
+// the trodden ground before each mouth: soil (masonry: cobbles; ruins and caves fainter), fading out over about 2.5 m, ragged at the edges.
 // Painted into the map's ground layers (so it is undone, saved and exported like any painting) and never lowered.
 function paintTunnelMouths(t) {
   const T = TDTunnels.prepare([t], heightAt)[0]; if (!T) return;
-  const ch = GROUND.indexOf(t.style === 'masonry' ? 'cobble' : 'dirt'), reach = 2.6, hw = t.w / 2, peak = t.style === 'ruins' ? .55 : .85;
+  const ch = GROUND.indexOf(t.style === 'masonry' ? 'cobble' : 'dirt'), reach = 2.6, hw = t.w / 2, peak = t.style === 'ruins' ? .55 : t.style === 'cave' ? .5 : .85;
   for (let k = 0; k + 1 < T.st.length; k++) {
     const a = T.st[k], b = T.st[k + 1]; if (!!a.cls === !!b.cls) continue;   // a mouth: open ↔ cut or tunnel
     const m = a.cls ? b : a, o = a.cls ? 1 : -1;   // the open side's first station, and outward along the line

@@ -50,6 +50,18 @@ const tun = (id, pts, style = 'rock', w = 2.4, h = 2.8) => ({ id, style, w, h, p
   info.styles = res;
   ok('見た目：坑道は支保工、石積み・遺跡は坑口の枠の石（素掘りの枠は松明の腕木だけ）', res.mine.frame > 100 && res.masonry.frame > res.rock.frame + 15 && res.ruins.frame > res.masonry.frame);
 }
+// 洞窟：ゆがんだ丸い断面（左右は単調、頂きは高さ h、床の幅の外へ出ない）、口の地面は輪郭で切り抜く、坑口の岩・鍾乳石、灯りなし
+{
+  const tc = tun('cave1', [[-4, 0, 3], [12, 0, 3]], 'cave', 3.2, 3.4), P = T.prepare([tc], H), g = T.build(P, H), pr = T.profileOf(tc);
+  let mono = true; for (let k = 1; k < pr.pts.length; k++) if (pr.pts[k][0] <= pr.pts[k - 1][0]) mono = false;
+  const vmax = Math.max(...pr.pts.map(p => p[1])), umax = Math.max(...pr.pts.map(p => Math.abs(p[0])));
+  const other = T.profileOf({ ...tc, id: 'cave2' }), differs = other.pts.some((p, k) => Math.abs(p[1] - pr.pts[k][1]) > .05);
+  const holes = T.holes(P, H, 97, .5, 24), cp = T.cap(P, H, holes, 97, .5, 24); let inOpen = 0;
+  const first1 = P[0].st.find(q => q.cls > 0);
+  for (let k = 0; k < cp.tris.length / 6; k++) { const x = (cp.tris[k * 6] + cp.tris[k * 6 + 2] + cp.tris[k * 6 + 4]) / 3, z = (cp.tris[k * 6 + 1] + cp.tris[k * 6 + 3] + cp.tris[k * 6 + 5]) / 3, y = H(x, z); if (x > first1.x + .05 && Math.abs(z) < 1.5 && y > 3.03 && y < 3 + pr.top(z) - .05) inOpen++; }
+  info.cave = { mono, vmax: +vmax.toFixed(2), umax, differs, decor: g.sub.filter(x => x === 7).length, lamps: g.lamps.length, inOpen };
+  ok('洞窟：断面は左右に単調・高さ h・幅の中、トンネルごとに形が違う、口の地面は輪郭で切り抜く、坑口の岩と鍾乳石があり灯りは無い', mono && Math.abs(vmax - 3.4) < 1e-6 && umax <= 1.6 + 1e-9 && differs && inOpen === 0 && info.cave.decor > 500 && g.lamps.length === 0);
+}
 // 枝分かれ：本線の途中から北へ。互いの中の壁・床は作らない（口が開く）
 {
   const t1 = tun('a', [[-4, 0, 3], [14, 0, 3]]), t2 = tun('b', [[8, 0, 3], [8, 10, 3]]), P = T.prepare([t1, t2], H), g = T.build(P, H);
