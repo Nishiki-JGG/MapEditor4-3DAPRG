@@ -114,7 +114,9 @@
   <div class="hint">高さ・手置き小物を保持。Ctrl+Zで元に戻せます。</div>
   <label class="sel"><span>パレット</span><select id="palette"></select></label>
   <label class="sel"><span>岩壁</span><select id="cliffStyle"></select></label>
-  <label class="hint" style="display:block;margin:4px 0"><input type="checkbox" id="sunOn" checked> 太陽光（オフ: 洞窟など。松明・水晶などの明かりと環境光だけになります）</label>
+  <label class="hint" style="display:block;margin:4px 0"><input type="checkbox" id="sunOn" checked> 屋外光（太陽／月。洞窟ではオフ）</label>
+  <label class="sel"><span>時間帯</span><select id="timeOfDay" aria-label="時間帯"></select></label>
+  <div class="hint">夜は満月の月明かり。時間帯はマップに保存し、Unityにも引き継ぎます。</div>
   <label class="sel" id="darkRow" hidden><span>明るさ</span><select id="darkness"></select></label>
   <div class="hint" id="paletteInfo"></div>
 
@@ -393,6 +395,6 @@
 <script src="asset-registry.js?v=registry1"></script>
 <script src="map-storage.js?v=shared1"></script>
 <script src="map-package.js?public-label1&v=shared1"></script>
-<script src="app.js?pureblack1&firequality1&v=registry1-shared1-bedrock3-explicit-materials1-drysoil-relief1-sea6-prepared1-mobile1-river2-ground2-contact1-rollback1-cavesoil1-variants1-practical1-pier1-strand1-room1-propsreview2-nowrack1-spring1-falls1-tunnel4"></script>
+<script src="app.js?time-of-day1&pureblack1&firequality1&v=registry1-shared1-bedrock3-explicit-materials1-drysoil-relief1-sea6-prepared1-mobile1-river2-ground2-contact1-rollback1-cavesoil1-variants1-practical1-pier1-strand1-room1-propsreview2-nowrack1-spring1-falls1-tunnel4"></script>
 </body>
 </html>

@@ -31,7 +31,7 @@ let markers = [];                         // game markers: {id, kind, x, z, rot,
 const state = {
   roomId: '', nextId: 1, revision: 0, lastExportHash: '', catalog: { types: {}, floorLinks: {} },
   agent: { radius: .3, height: 1.8, maxSlopeDeg: 51.3, maxWaterDepth: .9, maxStep: .5, arrivalClearance: .5 },   // who the walkability is computed for
-  biome: 'forest', palette: 'all', cliffStyle: 'standard', sunOn: true, darkness: 'dark', mapName: '', sea: false, weather: { kind: 'none', amount: .7 }, atmo: { kind: 'none', amount: .6, height: 3 },
+  biome: 'forest', palette: 'all', cliffStyle: 'standard', sunOn: true, timeOfDay: 'day', darkness: 'dark', mapName: '', sea: false, weather: { kind: 'none', amount: .7 }, atmo: { kind: 'none', amount: .6, height: 3 },
   variant: { bridge: 'wood', stairs: 'stone', place: 0, marker: 'port', link: 'warp', cliffpaint: 1, spring: 'brook', pool: 'rect', tunnel: 'rock' }, tunnelSize: 'normal', tunnelSlope: 'flat', placeScale: 1, placeRot: 0, placeRandom: true,
   mode: 'edit', tool: 'plateau', radius: 4, strength: .6, density: .6, brushShape: 'circle',
   types: new Set([0, 1]), water: .8, spawn: { x: 0, z: 22 },
@@ -110,6 +110,14 @@ sun.shadow.bias = -.005 / (sun.shadow.camera.far - sun.shadow.camera.near); sun.
 scene.add(sun, sun.target);
 // without sunlight (caves): how much light the room still gets. dark = only the room's own lights (torches, crystals…)
 // and a faint sky; normal / bright add sky light and a soft shadowless light from above so the room reads clearly
+// Stable IDs are saved and exported; the clock does not advance by itself.
+const TIMES = {
+  day: { name: '昼', sun: null, sky: null, ground: null, direct: 1, ambient: 1, position: [-48,62,-14], water: [1,1,1] },
+  evening: { name: '夕方', sun: 0xffb56b, sky: 0xafb5dc, ground: 0x75533e, direct: .72, ambient: .70, position: [-68,22,14], water: [.72,.48,.30] },
+  night: { name: '夜（満月）', sun: 0xb9d0ff, sky: 0x819fd8, ground: 0x354464, direct: .28, ambient: .32, position: [48,62,14], water: [.15,.23,.39] }
+};
+const timeId = id => Object.hasOwn(TIMES,id) ? id : 'day';
+const waterTimeTint = { value: new THREE.Vector3(1,1,1) };
 const DARK_LEVELS = { dark: { name: '暗い（明かりだけ）', hemi: 1, fill: 0 }, normal: { name: 'ふつう', hemi: 2.2, fill: 1.6 }, bright: { name: '明るい', hemi: 3.5, fill: 3.2 } };
 const fill = new THREE.DirectionalLight(0xffffff, 0);
 fill.position.set(-12, 60, 18); fill.visible = false; scene.add(fill, fill.target);
@@ -1656,9 +1664,16 @@ let weatherHemi = 1, flash = 0;
 function applyWeather() {
   const W = WEATHER[state.weather.kind] || WEATHER.none, k = state.weather.amount, B = BIOME(), on = state.weather.kind !== 'none';
   const light = on ? lerp(1, W.light ?? 1, k) : 1;
-  sun.intensity = state.sunOn ? B.sunI * light : 0; sun.visible = state.sunOn;   // off: no sun and no sun shadows (caves)
+  const T = TIMES[timeId(state.timeOfDay)];
+  sun.color.setHex(state.sunOn ? (T.sun ?? B.sun) : B.sun);
+  hemi.color.setHex(state.sunOn ? (T.sky ?? B.sky) : B.sky);
+  hemi.groundColor.setHex(state.sunOn ? (T.ground ?? B.ground) : B.ground);
+  sun.position.set(...T.position);
+  waterMat.uniforms.uSun.value.copy(sun.position).normalize();
+  waterTimeTint.value.set(...(state.sunOn ? T.water : [1,1,1]));
+  sun.intensity = state.sunOn ? B.sunI * T.direct * light : 0; sun.visible = state.sunOn;   // off: no sun and no sun shadows (caves)
   const D = state.sunOn ? null : DARK_LEVELS[state.darkness] || DARK_LEVELS.dark;
-  weatherHemi = hemi.intensity = B.hemi * (.55 + .45 * light) * (D ? D.hemi : 1);
+  weatherHemi = hemi.intensity = B.hemi * (.55 + .45 * light) * (D ? D.hemi : T.ambient);
   fill.visible = !!D && D.fill > 0; fill.intensity = D ? D.fill * light : 0; fill.color.setHex(B.sun);   // fill: absolute intensity in the biome's light colour
   BU.uWind.value.set(WIND_DIR.x, WIND_DIR.y, on ? (W.wind || 0) * k : 0);
   waterMat.uniforms.uWaveH.value = .38 + .55 * Math.min(1, on ? (W.wind || 0) * k : 0);   // sea waves grow with the wind
@@ -1679,6 +1694,7 @@ function applyWeather() {
   if (veil.visible) { veilMat.uniforms.uVCol.value.setRGB(...W.veil.color); veilMat.uniforms.uVAlpha.value = W.veil.alpha * k; veilMat.uniforms.uStreak.value = W.veil.streak; }
   if (on && W.fogColor) scene.fog.color.lerp(new THREE.Color().setRGB(...W.fogColor), k * .8);
   if ($('sunOn')) { $('sunOn').checked = state.sunOn; $('darkRow').hidden = state.sunOn; $('darkness').value = state.darkness; }
+  if ($('timeOfDay')) { $('timeOfDay').value=timeId(state.timeOfDay); $('timeOfDay').disabled=!state.sunOn; }
   if ($('weatherKind')) { $('weatherKind').value = state.weather.kind; $('weatherAmount').value = k; $('weatherAmountV').textContent = k.toFixed(2); }
 }
 
@@ -1752,6 +1768,10 @@ const mistTex = (() => {
   x.fillStyle = g; x.fillRect(0, 0, 64, 64); return new THREE.CanvasTexture(c);
 })();
 streamMat.uniforms.uLava = BU.uLava;
+for (const m of [waterMat,springMat,fallMat,foamMat,streamMat]) {
+  m.uniforms.uTimeLightTint=waterTimeTint;
+  m.fragmentShader='uniform vec3 uTimeLightTint;\n'+m.fragmentShader.replace('#include <tonemapping_fragment>', 'gl_FragColor.rgb *= mix(uTimeLightTint,vec3(1.),step(.5,uLava));\n#include <tonemapping_fragment>');
+}
 const fallDir = f => [-Math.sin(f.rot), -Math.cos(f.rot)];   // uphill direction (toward the source)
 // the placed falls, and the springs' streams falling down a cliff as the same kind of band (foot x, z; width w; rot facing downstream)
 function fallBands() {
@@ -2983,8 +3003,8 @@ const TOOLS = [
   { id: 'walkAuto', name: '自動に戻す', key: 'j', hint: '塗った所の上書きを消し、自動判定に戻します。' },
 ];
 const undoStack = [], redoStack = [];
-const snapshot = () => ({ ...(tunnels.length ? { TU: JSON.parse(JSON.stringify(tunnels)) } : {}), ...(springs.length ? { SP: springs.map(s => ({ ...s })) } : {}), ...(pools.length ? { PL: pools.map(p => ({ ...p })) } : {}), ...(SC.some(v => v) ? { SC: SC.slice() } : {}), H: H.slice(), S: S.slice(), O: O.slice(), C: C.slice(), CF: cliffFits.save(), P: props.map(p => p.slice()), F: falls.map(f => ({ ...f })), B: bridges.map(b => ({ ...b })), T: stairs.map(st => ({ ...st })), W: state.water, sp: { ...state.spawn }, bi: state.biome, at: { ...state.atmo }, sea: state.sea, we: { ...state.weather }, sun: state.sunOn, dk: state.darkness, M: markers.map(m => ({ ...m })), nid: state.nextId, rid: state.roomId, cat: JSON.stringify(state.catalog), ag: { ...state.agent }, cs: state.cliffStyle });
-function restore(s,prepared,deferMarkers=false) { cliffFits.clear();H.set(s.H); tunnels = s.TU ? JSON.parse(JSON.stringify(s.TU)) : []; springs = (s.SP || []).map(q => ({ ...q })); pools = (s.PL || []).map(q => ({ ...q })); if (s.SC) SC.set(s.SC); else SC.fill(0); rebuildPools(); S.set(s.S); O.set(s.O); if (s.C) C.set(s.C); else C.fill(0); walkDirty = true; props = s.P.map(p => p.slice()); falls = s.F.map(f => ({ ...f })); bridges = s.B.map(b => ({ ...b })); stairs = (s.T || []).map(st => ({ ...st })); state.water = s.W; state.spawn = { ...s.sp }; if (s.at) state.atmo = { ...s.at }; if (s.we) state.weather = { ...s.we }; state.sunOn = s.sun !== false; state.darkness = s.dk || 'dark'; markers = (s.M || []).map(m => ({ ...m })); state.nextId = s.nid || state.nextId; state.roomId = s.rid || state.roomId; if (s.cat) { state.catalog = JSON.parse(s.cat); applyCatalog(); } if (s.ag) { state.agent = { ...s.ag }; syncAgentUI(); colliders = null; } state.cliffStyle = s.cs || 'standard'; applyCliffStyle(); if ($('cliffStyle')) $('cliffStyle').value = state.cliffStyle; if(!deferMarkers)rebuildMarkers(); state.sea = !!s.sea; applyBiome(s.bi || state.biome); syncUI(); updateTerrain(); rebuildTunnels(); solveSprings(); rebuildSpringMarks(); rebuildProps(); rebuildFalls(); rebuildBridges(); rebuildStairs();if(prepared)cliffFits.installPrepared(prepared,props,cliffInputSignature());else cliffFits.load(s.CF,props,cliffInputSignature());rebuildProps(); }
+const snapshot = () => ({ ...(tunnels.length ? { TU: JSON.parse(JSON.stringify(tunnels)) } : {}), ...(springs.length ? { SP: springs.map(s => ({ ...s })) } : {}), ...(pools.length ? { PL: pools.map(p => ({ ...p })) } : {}), ...(SC.some(v => v) ? { SC: SC.slice() } : {}), H: H.slice(), S: S.slice(), O: O.slice(), C: C.slice(), CF: cliffFits.save(), P: props.map(p => p.slice()), F: falls.map(f => ({ ...f })), B: bridges.map(b => ({ ...b })), T: stairs.map(st => ({ ...st })), W: state.water, sp: { ...state.spawn }, bi: state.biome, at: { ...state.atmo }, sea: state.sea, we: { ...state.weather }, sun: state.sunOn, tod: state.timeOfDay, dk: state.darkness, M: markers.map(m => ({ ...m })), nid: state.nextId, rid: state.roomId, cat: JSON.stringify(state.catalog), ag: { ...state.agent }, cs: state.cliffStyle });
+function restore(s,prepared,deferMarkers=false) { cliffFits.clear();H.set(s.H); tunnels = s.TU ? JSON.parse(JSON.stringify(s.TU)) : []; springs = (s.SP || []).map(q => ({ ...q })); pools = (s.PL || []).map(q => ({ ...q })); if (s.SC) SC.set(s.SC); else SC.fill(0); rebuildPools(); S.set(s.S); O.set(s.O); if (s.C) C.set(s.C); else C.fill(0); walkDirty = true; props = s.P.map(p => p.slice()); falls = s.F.map(f => ({ ...f })); bridges = s.B.map(b => ({ ...b })); stairs = (s.T || []).map(st => ({ ...st })); state.water = s.W; state.spawn = { ...s.sp }; if (s.at) state.atmo = { ...s.at }; if (s.we) state.weather = { ...s.we }; state.sunOn = s.sun !== false; state.timeOfDay = timeId(s.tod); state.darkness = s.dk || 'dark'; markers = (s.M || []).map(m => ({ ...m })); state.nextId = s.nid || state.nextId; state.roomId = s.rid || state.roomId; if (s.cat) { state.catalog = JSON.parse(s.cat); applyCatalog(); } if (s.ag) { state.agent = { ...s.ag }; syncAgentUI(); colliders = null; } state.cliffStyle = s.cs || 'standard'; applyCliffStyle(); if ($('cliffStyle')) $('cliffStyle').value = state.cliffStyle; if(!deferMarkers)rebuildMarkers(); state.sea = !!s.sea; applyBiome(s.bi || state.biome); syncUI(); updateTerrain(); rebuildTunnels(); solveSprings(); rebuildSpringMarks(); rebuildProps(); rebuildFalls(); rebuildBridges(); rebuildStairs();if(prepared)cliffFits.installPrepared(prepared,props,cliffInputSignature());else cliffFits.load(s.CF,props,cliffInputSignature());rebuildProps(); }
 function pushUndo() { undoStack.push(snapshot()); if (undoStack.length > 40) undoStack.shift(); redoStack.length = 0; }
 function undo() { if (!undoStack.length) return; redoStack.push(snapshot()); restore(undoStack.pop()); toast('取り消し'); }
 function redo() { if (!redoStack.length) return; undoStack.push(snapshot()); restore(redoStack.pop()); toast('やり直し'); }
@@ -4124,7 +4144,7 @@ function serialize() {
     format: 'map-editor-proto', version: 2, size: SIZE, resolution: RES, vertices: N,
     roomId: (ensureIds(), state.roomId), nextId: state.nextId, revision: state.revision, lastExportHash: state.lastExportHash, agent: { ...state.agent }, catalog: state.catalog,
     markers: markers.map(m => ({ ...m })),
-    waterLevel: state.water, spawn: state.spawn, biome: state.biome, cliffStyle: state.cliffStyle, sea: state.sea, atmosphere: { ...state.atmo }, weather: { ...state.weather }, sunlight: state.sunOn, darkness: state.darkness, name: state.mapName,
+    waterLevel: state.water, spawn: state.spawn, biome: state.biome, cliffStyle: state.cliffStyle, sea: state.sea, atmosphere: { ...state.atmo }, weather: { ...state.weather }, sunlight: state.sunOn, timeOfDay: state.timeOfDay, darkness: state.darkness, name: state.mapName,
     heightsF32: b64(new Uint8Array(H.slice().buffer)), splat: b64(S), walkOverride: b64(O), cliffMap: b64(C),   // exact heights: save → load → export reproduces the RAW
     propTypes: PROP.map(p => p.id),
     cliffFits: cliffFits.records.size?cliffFits.save():undefined,
@@ -4193,7 +4213,7 @@ function deserialize(d,prepared) {
   if(!prepared){cliffFits.validate(d.cliffFits,d.props,cliffInputSignature(newH,d.falls||[],d.waterLevel));cancelMapPreparation(false);}
   cliffFits.clear();H.set(newH);
   if (spLayers === NS) S.set(sp); else { S.fill(0); for (let k = 0; k < N * N; k++) for (let c = 0; c < spLayers; c++) S[k * NS + c] = sp[k * spLayers + c]; }
-  O.set(wo); C.set(cm); walkDirty = true; tunnels = d.tunnels ? JSON.parse(JSON.stringify(d.tunnels)) : []; springs = (d.springs || []).map(q => ({ ...q })); pools = (d.pools || []).map(q => ({ ...q })); if (sc) SC.set(sc); else SC.fill(0); rebuildPools(); props = d.props.map(p => p.slice()); falls = (d.falls || []).map(f => ({ ...f })); bridges = (d.bridges || []).map(b => ({ ...b })); stairs = (d.stairs || []).map(st => ({ ...st })); rebuildFalls(); rebuildBridges(); rebuildStairs(); state.water = d.waterLevel; state.spawn = d.spawn; state.sea = !!d.sea; state.weather = d.weather ? { ...d.weather } : { kind: 'none', amount: .7 }; state.sunOn = d.sunlight !== false; state.darkness = DARK_LEVELS[d.darkness] ? d.darkness : 'dark'; setMapName(typeof d.name === 'string' ? d.name : ''); state.cliffStyle = CLIFF_STYLES.some(c => c[0] === d.cliffStyle) ? d.cliffStyle : 'standard'; applyCliffStyle(); if ($('cliffStyle')) $('cliffStyle').value = state.cliffStyle; state.atmo = d.atmosphere ? { ...d.atmosphere } : { kind: 'none', amount: .6, height: 3 };
+  O.set(wo); C.set(cm); walkDirty = true; tunnels = d.tunnels ? JSON.parse(JSON.stringify(d.tunnels)) : []; springs = (d.springs || []).map(q => ({ ...q })); pools = (d.pools || []).map(q => ({ ...q })); if (sc) SC.set(sc); else SC.fill(0); rebuildPools(); props = d.props.map(p => p.slice()); falls = (d.falls || []).map(f => ({ ...f })); bridges = (d.bridges || []).map(b => ({ ...b })); stairs = (d.stairs || []).map(st => ({ ...st })); rebuildFalls(); rebuildBridges(); rebuildStairs(); state.water = d.waterLevel; state.spawn = d.spawn; state.sea = !!d.sea; state.weather = d.weather ? { ...d.weather } : { kind: 'none', amount: .7 }; state.sunOn = d.sunlight !== false; state.timeOfDay = timeId(d.timeOfDay); state.darkness = DARK_LEVELS[d.darkness] ? d.darkness : 'dark'; setMapName(typeof d.name === 'string' ? d.name : ''); state.cliffStyle = CLIFF_STYLES.some(c => c[0] === d.cliffStyle) ? d.cliffStyle : 'standard'; applyCliffStyle(); if ($('cliffStyle')) $('cliffStyle').value = state.cliffStyle; state.atmo = d.atmosphere ? { ...d.atmosphere } : { kind: 'none', amount: .6, height: 3 };
   state.roomId = d.roomId || newRoomId(); state.nextId = d.nextId || 1; state.revision = d.revision || 0;
   state.agent = { ...state.agent, ...(d.agent || {}) }; state.catalog = normalizeCatalog(d.catalog); state.lastExportHash = d.lastExportHash || ''; applyCatalog(); syncAgentUI();
   markers = (d.markers || []).map(m => ({ ...m })); ensureIds();
@@ -4494,7 +4514,7 @@ async function buildExport({sharedAssets = false} = {}) {
     groundTypes: Object.fromEntries(GROUND.map((g, i) => [g, { maskFile: `mask_${[0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3][i]}.png`, maskChannel: [0, 1, 0, 1, 2, 0, 1, 2, 0, 1, 2][i], effectId: GROUND_EFFECT[g] || null, speedHint: GROUND_SPEED[i], ...(g === 'lava' ? { blocksWalk: true } : {}) }])),
     agentProfile: { ...state.agent, note: 'walkable.png と validation はこの体格用。大型の敵などは agentProfile を変えて計算し直してください。height は橋・階段の上の障害物の判定にだけ使用（頭上空間は未検査）。' },
     definitions: VALIDATION_DEFS,
-    mapName: state.mapName, biome: state.biome, sunlight: state.sunOn,
+    mapName: state.mapName, biome: state.biome, sunlight: state.sunOn, timeOfDay: state.timeOfDay,
     darkness: state.sunOn ? null : { level: state.darkness, skyLightScale: DARK_LEVELS[state.darkness].hemi, overheadFill: DARK_LEVELS[state.darkness].fill, note: 'without sunlight: sky (hemisphere) light × skyLightScale, plus a shadowless overhead directional light of intensity overheadFill in the sun colour' },
     cliffStyle: { default: state.cliffStyle, map: 'cliff_style.png', note: 'Rock-wall style per location: cliff_style.png R = index into cliffStyles (nearest editor vertex, never interpolated). Applies to the terrain cliff faces (cliff layer in weights) and to rock / cliff / pebble props (props.csv cliffStyle column).' },
     cliffStyles: CLIFF_STYLES.map((c, i) => ({ index: i, id: c[0], name: c[1], ...cliffParams(c[2]) })),
@@ -4677,6 +4697,8 @@ biomeSel.onchange = e => {
   const a = BIOME().atmo; state.atmo = { ...state.atmo, kind: a ? a[0] : 'none', amount: a ? a[1] : state.atmo.amount };
   applyBiome(e.target.value); updateTerrain(); regenGroundProps(); toast(`マップのバイオーム: ${BIOME().name}` + (a ? `（${ATMOS[a[0]].name}）` : ''));
 };
+for(const [id,t] of Object.entries(TIMES)) $('timeOfDay').add(new Option(t.name,id));
+$('timeOfDay').onchange = e => { pushUndo(); state.timeOfDay=timeId(e.target.value); applyAtmo(); };
 $('sunOn').onchange = e => { pushUndo(); state.sunOn = e.target.checked; applyAtmo(); };
 for (const [v, d] of Object.entries(DARK_LEVELS)) $('darkness').add(new Option(d.name, v));
 $('darkness').onchange = e => { pushUndo(); state.darkness = e.target.value; applyAtmo(); };
@@ -5530,6 +5552,8 @@ preparationPanel.querySelector('button').onclick=()=>cancelMapPreparation(true);
 const preparationKeys=new Map();
 function unlockPreparation(job){
  clearInterval(job.clock);for(const [el,disabled]of job.controls)el.disabled=disabled;
+ // The loaded map may have changed outdoor lighting while controls were locked.
+ $('timeOfDay').disabled=!state.sunOn;
  preparationPanel.hidden=true;preparationPanel.style.display='none';keys.clear();stroke.active=false;
 }
 function cancelMapPreparation(restoreMap=true){
@@ -5568,7 +5592,7 @@ function installWalkPreparation(w){
  for(const n of ['position','walk','forced','secret'])wkGeo.attributes[n].needsUpdate=true;wkGeo.computeBoundingSphere();walkDirty=false;
 }
 async function preparationKey(kind,seed,job){
- const config=JSON.stringify([kind,seed,SIZE,kind==='sample2'?'ruins':state.biome,state.agent,state.cliffStyle,state.catalog,TDPreparation.version,TDPreparedSamples.recipeVersion,[...document.scripts].filter(s=>!s.dataset.preparedSample&&!s.hasAttribute('data-presentation-only')).map(s=>(s.getAttribute('src')||'').replace(/app.js\?(walltorch1|firequality1)&/,'app.js?public-label1&')).filter(Boolean)]);
+ const config=JSON.stringify([kind,seed,SIZE,kind==='sample2'?'ruins':state.biome,state.agent,state.cliffStyle,state.catalog,TDPreparation.version,TDPreparedSamples.recipeVersion,[...document.scripts].filter(s=>!s.dataset.preparedSample&&!s.hasAttribute('data-presentation-only')).map(s=>(s.getAttribute('src')||'').replace('time-of-day1&','').replace(/app.js\?(walltorch1|firequality1)&/,'app.js?public-label1&')).filter(Boolean)]);
  if(preparationKeys.has(config))return preparationKeys.get(config);
  const hashes=[];
  await TDPreparation.each(PROP,async t=>{if(t.r<=0||t.manualOnly)return;const prep=t.preparationGeo||t.geo,a=prep.attributes.position.array,ix=prep.index?.array;const hash=async a=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new Uint8Array(a.buffer,a.byteOffset,a.byteLength))),v=>v.toString(16).padStart(2,'0')).join('');hashes.push([t.id,t.r,t.height,t.yawOffset,await hash(a),ix?await hash(ix):'']);},job);
@@ -5614,7 +5638,7 @@ async function prepareMap(kind,seed=7,options={}){
  mapPreparation=job;keys.clear();stroke.active=false;
  for(const el of document.querySelectorAll('button,input,select,textarea')){if(preparationPanel.contains(el))continue;job.controls.push([el,el.disabled]);el.disabled=true;}
  preparationPanel.hidden=false;preparationPanel.style.display='flex';job.clock=setInterval(()=>{preparationPanel.querySelector('span').textContent=((performance.now()-job.start)/1000).toFixed(1)+' 秒';},100);
- const viewSettings={atmo:{...state.atmo},weather:{...state.weather},sunOn:state.sunOn,darkness:state.darkness};
+ const viewSettings={atmo:{...state.atmo},weather:{...state.weather},sunOn:state.sunOn,timeOfDay:state.timeOfDay,darkness:state.darkness};
  let staged=null,cacheHit=false,fitStats=null,cacheKey=null,persistent=false,persistentStored=false,outgoingToken=null,preparedSource='generated',bundleBytes=0;
  try{
   await TDPreparation.pause(job);
@@ -5701,7 +5725,7 @@ const bootReady=bootPending?.startsWith('prepared:')?prepareMap('pending',0,{tok
 // hooks for automated checks
 window.__app = { wallTorches, bedrockReady, splatAt,get tunnels() { return tunnels; }, set tunnels(v) { tunnels = v; }, get tunnelPrep() { return tunnelPrep; }, get tunnelLamps() { return tunnelLamps; }, placeTunnel, rebuildTunnels, tunnelGroup, tunnelHoleTex, cutU, refitFalls, placeFall, springFallGroup, fallGroup, get springs() { return springs; }, set springs(v) { springs = v; }, get pools() { return pools; }, get springRes() { return springRes; }, SC, placeSpring, placePool, applySprings, solveSprings, waterAt, springLevelAt, poolDist, poolWallAt, POOL_WALL, deckAt, fillGroundAll,buildPreparedSample,prepareMap,cancelMapPreparation,bootReady,get preparation(){return mapPreparation?{id:mapPreparation.id,phase:mapPreparation.phase,requestedMode:mapPreparation.requestedMode,elapsedMs:performance.now()-mapPreparation.start}:null;},get preparationStats(){return lastPreparedState;},
   propGrounding,groundedParts,groundedNormal,groundedGhost,groundPreview,setGroundPreview,propBaseY,get cliffContactProgress(){return cliffContactProgress;},cliffFits,effectiveGeometry,fitCliffContact,adoptCliffContact, cliffProtected,cliffProtectionReason,nearFeatureReason, get cliffContactStats(){return cliffContactStats;},
-  pickGroundDetail,adjustGroundDetail,selectedGroundDetail,updateTouch,touchStats, pavingMask, cliffRelief, rebuildCliffRelief, groundTrial, groundTexture, terrainSource:tGeo, terrain, renderer, camera, SIZE, state, H, S, O, F, C, propMeshes, ghostMeshes, cliffIndexAt, BIOMES, CLIFF_STYLES, applyCliffStyle, deckAt, linkDeckAt, runValidation, genSample, genSample2, secretRegions, secretLineX, passageGeometry, terrainRes, TERRAIN_RES, snapshot, sha256, LINK_KINDS, normalizeCatalog, catalogExport, valueIssues, areaIssue, deckAt, getColliders, PROP, get colliderMaxR() { return colliderMaxR; }, rebuildMarkers, portLanding, linkTrigger, linkArrival, LINK_SPEC, get markers() { return markers; }, placeMarker, ensureIds, applyCatalog, ATMOS, WEATHER, applyAtmo, makeCoast, glowLights, applyBiome, applyPalette, propVisible, toolVisible, updateTerrain, rebuildProps, genFlat, floorAt, bridgeAt, stairsAt, placeSlope, placeStairs, placeBridge, pickTarget, regenGroundProps, rebuildBridges, get stairs() { return stairs; }, get bridges() { return bridges; }, get falls() { return falls; }, overrideAt, heroMat, hero, heroBody, get heroLook() { return heroLook; }, setHeroLook, heroStyle, heroGlow, get ghosts() { return ghosts; }, get props() { return props; }, cam, playCam, player, keys, setMode, setTool, update, heightAt, walkable, slope: slopeAt,
+  pickGroundDetail,adjustGroundDetail,selectedGroundDetail,updateTouch,touchStats, pavingMask, cliffRelief, rebuildCliffRelief, groundTrial, groundTexture, terrainSource:tGeo, terrain, renderer, camera, SIZE, state, H, S, O, F, C, propMeshes, ghostMeshes, cliffIndexAt, BIOMES, CLIFF_STYLES, applyCliffStyle, deckAt, linkDeckAt, runValidation, genSample, genSample2, secretRegions, secretLineX, passageGeometry, terrainRes, TERRAIN_RES, snapshot, sha256, LINK_KINDS, normalizeCatalog, catalogExport, valueIssues, areaIssue, deckAt, getColliders, PROP, get colliderMaxR() { return colliderMaxR; }, rebuildMarkers, portLanding, linkTrigger, linkArrival, LINK_SPEC, get markers() { return markers; }, placeMarker, ensureIds, applyCatalog, ATMOS, WEATHER, applyAtmo, makeCoast, glowLights, applyBiome, applyPalette, TIMES, timeId, propVisible, toolVisible, updateTerrain, rebuildProps, genFlat, floorAt, bridgeAt, stairsAt, placeSlope, placeStairs, placeBridge, pickTarget, regenGroundProps, rebuildBridges, get stairs() { return stairs; }, get bridges() { return bridges; }, get falls() { return falls; }, overrideAt, heroMat, hero, heroBody, get heroLook() { return heroLook; }, setHeroLook, heroStyle, heroGlow, get ghosts() { return ghosts; }, get props() { return props; }, cam, playCam, player, keys, setMode, setTool, update, heightAt, walkable, slope: slopeAt,
   stroke(x, z, frames = 20, opts = {}) {
     hit = new THREE.Vector3(x, heightAt(x, z), z); beginStroke({ shiftKey: !!opts.shift });
     for (let f = 0; f < frames; f++) { if (stroke.active && !['scatter', 'erase'].includes(state.tool)) { applyBrush(x, z, 1 / 60); } }
