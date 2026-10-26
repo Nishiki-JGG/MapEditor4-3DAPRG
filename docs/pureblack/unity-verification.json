@@ -1,0 +1,66 @@
+{
+    "pass": true,
+    "unity": "6000.6.2f1",
+    "checks": [
+        {
+            "name": "Persisted URP pipeline loaded",
+            "pass": true,
+            "detail": ""
+        },
+        {
+            "name": "Exported pureblack contract enables unlit floor",
+            "pass": true,
+            "detail": ""
+        },
+        {
+            "name": "Linear uncompressed clamp mask without mipmaps",
+            "pass": true,
+            "detail": ""
+        },
+        {
+            "name": "unity-bright.png opaque RGB zero in 4096 pixels",
+            "pass": true,
+            "detail": "nonBlack=0, max=0, minAlpha=255"
+        },
+        {
+            "name": "unity-dark.png opaque RGB zero in 4096 pixels",
+            "pass": true,
+            "detail": "nonBlack=0, max=0, minAlpha=255"
+        },
+        {
+            "name": "unity-torch.png opaque RGB zero in 4096 pixels",
+            "pass": true,
+            "detail": "nonBlack=0, max=0, minAlpha=255"
+        },
+        {
+            "name": "unity-fog-unlit.png opaque RGB zero in 4096 pixels",
+            "pass": true,
+            "detail": "nonBlack=0, max=0, minAlpha=255"
+        },
+        {
+            "name": "unity-mask-boundary.png opaque RGB zero in 4096 pixels",
+            "pass": true,
+            "detail": "nonBlack=0, max=0, minAlpha=255"
+        },
+        {
+            "name": "Unpainted side stays visible",
+            "pass": true,
+            "detail": ""
+        },
+        {
+            "name": "Disable restores previous floor at black-side sample",
+            "pass": true,
+            "detail": ""
+        },
+        {
+            "name": "Old exports default to no black floor",
+            "pass": true,
+            "detail": ""
+        },
+        {
+            "name": "URP shader compiles",
+            "pass": true,
+            "detail": ""
+        }
+    ]
+}

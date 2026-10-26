@@ -1,0 +1,36 @@
+[
+  {
+    "kind": "sample",
+    "sourceRef": "cd7b2ff",
+    "sourceFile": "sample-64-7-c3d0f99361d9.js",
+    "sourceSha256": "c3d0f99361d904fc65fb7872fdbe83f2697cf61ec61cc381aea65464fef2a76d",
+    "targetFile": "sample-64-7-07f65e64c5bf.js",
+    "targetSha256": "07f65e64c5bfad226f498607ca5d35a7940cc0dd10d6cfeb58ad2c4fe7fe2874",
+    "sourceKey": "sample:ca9b1240e3163fc30cbf7329f4489a375a4ed092082d8aaba3011c2c6ec8e601",
+    "targetKey": "sample:b725356d156e73d973b480b44d2386660df282f71cdaca2aef61cad3c20f8a29",
+    "sourceChannels": 10,
+    "targetChannels": 11,
+    "geometryAndCollisionUnchanged": true,
+    "addedChannelAllZero": true,
+    "rockRegenerationCalls": 0,
+    "props": 5761,
+    "fits": 552
+  },
+  {
+    "kind": "sample2",
+    "sourceRef": "cd7b2ff",
+    "sourceFile": "sample2-48-11-043ec2713bde.js",
+    "sourceSha256": "043ec2713bdeb50e25a39f809991e88aeafb99228b1d01e06b03ccf03d812f8e",
+    "targetFile": "sample2-48-11-aebb43b7b903.js",
+    "targetSha256": "aebb43b7b9035264e84fac2f76bbc146cb38685256c2607c2434da1fd92ca8ca",
+    "sourceKey": "sample:a55da5cea6fd71fb27bde62a3db94ad663adffc1bb295e5df8feb597c88f563a",
+    "targetKey": "sample:b4a19241f03b480a24ea7131a09e853e7ef9b43e16e46081a9d8081e5d2a6aaa",
+    "sourceChannels": 10,
+    "targetChannels": 11,
+    "geometryAndCollisionUnchanged": true,
+    "addedChannelAllZero": true,
+    "rockRegenerationCalls": 0,
+    "props": 536,
+    "fits": 226
+  }
+]

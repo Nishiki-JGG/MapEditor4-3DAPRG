@@ -1,0 +1,412 @@
+{
+  "base": "cd7b2ff",
+  "contract": {
+    "ns": 11,
+    "selected": true,
+    "brush": true,
+    "undo": true,
+    "redo": true,
+    "filled": true,
+    "fillUndo": true,
+    "fillRedo": true,
+    "roundtrip": true,
+    "unchanged": true,
+    "noProps": true,
+    "walk": true
+  },
+  "legacy": [
+    {
+      "channels": 9,
+      "everyIDPreserved": true
+    },
+    {
+      "channels": 10,
+      "everyIDPreserved": true
+    }
+  ],
+  "daylight": {
+    "black": {
+      "max": [
+        0,
+        0,
+        0
+      ],
+      "min": [
+        0,
+        0,
+        0
+      ],
+      "nonBlack": 0,
+      "minAlpha": 255,
+      "count": 1600
+    },
+    "reference": {
+      "max": [
+        182,
+        146,
+        101
+      ],
+      "min": [
+        138,
+        92,
+        48
+      ],
+      "nonBlack": 1600,
+      "minAlpha": 255,
+      "count": 1600
+    },
+    "gl": 0
+  },
+  "dark": {
+    "black": {
+      "max": [
+        0,
+        0,
+        0
+      ],
+      "min": [
+        0,
+        0,
+        0
+      ],
+      "nonBlack": 0,
+      "minAlpha": 255,
+      "count": 1600
+    },
+    "reference": {
+      "max": [
+        10,
+        7,
+        3
+      ],
+      "min": [
+        2,
+        1,
+        0
+      ],
+      "nonBlack": 1600,
+      "minAlpha": 255,
+      "count": 1600
+    },
+    "gl": 0
+  },
+  "torch": {
+    "black": {
+      "max": [
+        0,
+        0,
+        0
+      ],
+      "min": [
+        0,
+        0,
+        0
+      ],
+      "nonBlack": 0,
+      "minAlpha": 255,
+      "count": 1600
+    },
+    "reference": {
+      "max": [
+        12,
+        7,
+        3
+      ],
+      "min": [
+        3,
+        1,
+        0
+      ],
+      "nonBlack": 1600,
+      "minAlpha": 255,
+      "count": 1600
+    },
+    "gl": 0,
+    "lights": 6
+  },
+  "fogToneDither": {
+    "black": {
+      "max": [
+        0,
+        0,
+        0
+      ],
+      "min": [
+        0,
+        0,
+        0
+      ],
+      "nonBlack": 0,
+      "minAlpha": 255,
+      "count": 1600
+    },
+    "reference": {
+      "max": [
+        255,
+        255,
+        255
+      ],
+      "min": [
+        254,
+        254,
+        254
+      ],
+      "nonBlack": 1600,
+      "minAlpha": 255,
+      "count": 1600
+    },
+    "gl": 0
+  },
+  "reflection": {
+    "black": {
+      "max": [
+        0,
+        0,
+        0
+      ],
+      "min": [
+        0,
+        0,
+        0
+      ],
+      "nonBlack": 0,
+      "minAlpha": 255,
+      "count": 1600
+    },
+    "reference": {
+      "max": [
+        235,
+        223,
+        204
+      ],
+      "min": [
+        207,
+        178,
+        146
+      ],
+      "nonBlack": 1600,
+      "minAlpha": 255,
+      "count": 1600
+    },
+    "gl": 0
+  },
+  "withBedrock": {
+    "black": {
+      "max": [
+        0,
+        0,
+        0
+      ],
+      "min": [
+        0,
+        0,
+        0
+      ],
+      "nonBlack": 0,
+      "minAlpha": 255,
+      "count": 1600
+    },
+    "reference": {
+      "max": [
+        165,
+        128,
+        84
+      ],
+      "min": [
+        121,
+        77,
+        38
+      ],
+      "nonBlack": 1600,
+      "minAlpha": 255,
+      "count": 1600
+    },
+    "gl": 0
+  },
+  "uiSaveLoad": true,
+  "afterLoad": {
+    "black": {
+      "max": [
+        0,
+        0,
+        0
+      ],
+      "min": [
+        0,
+        0,
+        0
+      ],
+      "nonBlack": 0,
+      "minAlpha": 255,
+      "count": 1600
+    },
+    "reference": {
+      "max": [
+        182,
+        146,
+        101
+      ],
+      "min": [
+        138,
+        92,
+        48
+      ],
+      "nonBlack": 1600,
+      "minAlpha": 255,
+      "count": 1600
+    },
+    "gl": 0
+  },
+  "export": {
+    "feature": true,
+    "contract": {
+      "id": "pureblack",
+      "mask": "mask_3.png",
+      "channel": 2,
+      "weights": "weights_4.png",
+      "weightChannel": 0,
+      "opaque": true,
+      "outputRGB": [
+        0,
+        0,
+        0
+      ],
+      "stage": "after lighting, fog, tone mapping, colour conversion and dithering",
+      "cliffs": "existing slope coverage retained",
+      "unity": {
+        "shader": "MapSharedGround/Grass",
+        "maskProperty": "_PureBlackMask",
+        "enableProperty": "_PureBlackEnabled",
+        "sizeProperty": "_PureBlackMapSize"
+      },
+      "note": "Unrelated camera post effects or foreground VFX can still composite over the rendered floor."
+    },
+    "ids": {
+      "dirt": {
+        "maskFile": "mask_0.png",
+        "maskChannel": 0,
+        "effectId": null,
+        "speedHint": 1
+      },
+      "cobble": {
+        "maskFile": "mask_0.png",
+        "maskChannel": 1,
+        "effectId": null,
+        "speedHint": 1
+      },
+      "sand": {
+        "maskFile": "mask_1.png",
+        "maskChannel": 0,
+        "effectId": "slow_light",
+        "speedHint": 0.85
+      },
+      "rubble": {
+        "maskFile": "mask_1.png",
+        "maskChannel": 1,
+        "effectId": "slow_light",
+        "speedHint": 0.8
+      },
+      "swamp": {
+        "maskFile": "mask_1.png",
+        "maskChannel": 2,
+        "effectId": "slow",
+        "speedHint": 0.55
+      },
+      "poison": {
+        "maskFile": "mask_2.png",
+        "maskChannel": 0,
+        "effectId": "poison",
+        "speedHint": 0.6
+      },
+      "lava": {
+        "maskFile": "mask_2.png",
+        "maskChannel": 1,
+        "effectId": "lava",
+        "speedHint": 0.5,
+        "blocksWalk": true
+      },
+      "snowfield": {
+        "maskFile": "mask_2.png",
+        "maskChannel": 2,
+        "effectId": "slow_light",
+        "speedHint": 0.8
+      },
+      "ice": {
+        "maskFile": "mask_3.png",
+        "maskChannel": 0,
+        "effectId": "ice",
+        "speedHint": 1
+      },
+      "bedrock": {
+        "maskFile": "mask_3.png",
+        "maskChannel": 1,
+        "effectId": null,
+        "speedHint": 1
+      },
+      "pureblack": {
+        "maskFile": "mask_3.png",
+        "maskChannel": 2,
+        "effectId": null,
+        "speedHint": 1
+      }
+    },
+    "files": {
+      "mask_3.png": {
+        "left": [
+          0,
+          0,
+          255,
+          255
+        ],
+        "right": [
+          0,
+          0,
+          0,
+          255
+        ]
+      },
+      "weights_4.png": {
+        "left": [
+          255,
+          0,
+          0,
+          255
+        ],
+        "right": [
+          0,
+          0,
+          0,
+          255
+        ]
+      }
+    }
+  },
+  "budget": {
+    "base": {
+      "frame": 27,
+      "calls": 5,
+      "triangles": 9600,
+      "points": 0,
+      "lines": 0,
+      "textures": 22
+    },
+    "black": {
+      "frame": 28,
+      "calls": 5,
+      "triangles": 9600,
+      "points": 0,
+      "lines": 0,
+      "textures": 22
+    },
+    "firstFillAndDrawMs": 21.80000001192093,
+    "newTextures": 0,
+    "extraCalls": 0,
+    "extraTriangles": 0,
+    "paintBytes": 2401,
+    "attributeBytes": 9604
+  },
+  "existingCurrent": "32b5eb625e740c1bce7ac7b288ce7d56ddea72c06ba86d5cbdae728201f8470e",
+  "errors": [],
+  "existingBase": "32b5eb625e740c1bce7ac7b288ce7d56ddea72c06ba86d5cbdae728201f8470e",
+  "pass": true
+}

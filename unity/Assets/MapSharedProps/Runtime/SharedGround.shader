@@ -1,6 +1,7 @@
 Shader "MapSharedGround/Grass" {
  Properties { _GroundMap("Raw sRGB JPEG (manual decode)",2D)="white"{} _GroundParams("Tile m / mix / cos / sin",Vector)=(4,.4,.8660254,.5) _GroundOffset("Second UV offset",Vector)=(.37,.21,0,0) _EditorZero("Unity XZ of editor origin",Vector)=(0,0,0,0) _WaveA("Wave A",Vector)=(.47,.29,.045,0) _WaveB("Wave B",Vector)=(-.21,.53,.025,0) _Decode("Decode exponent",Float)=2.2 _Unlit("Albedo reference",Float)=0
- _DirtMap("Raw sRGB soil",2D)="white"{} _DirtParams("Tile m / mix / cos / sin",Vector)=(2,.35,.8660254,.5) _DirtOffset("Soil second UV offset",Vector)=(.19,.43,0,0) _DirtWeight("Painted soil amount",Range(0,1))=0 _VertexDirt("Use vertex red soil amount",Float)=0 }
+  _DirtMap("Raw sRGB soil",2D)="white"{} _DirtParams("Tile m / mix / cos / sin",Vector)=(2,.35,.8660254,.5) _DirtOffset("Soil second UV offset",Vector)=(.19,.43,0,0) _DirtWeight("Painted soil amount",Range(0,1))=0 _VertexDirt("Use vertex red soil amount",Float)=0
+  _PureBlackMask("Export mask_3 blue (linear)",2D)="black"{} _PureBlackMapSize("Map size metres XZ",Vector)=(1,1,0,0) _PureBlackEnabled("Use opaque unlit black floor",Float)=0 }
  SubShader {
   Tags {"RenderPipeline"="UniversalPipeline" "RenderType"="Opaque"}
   Pass {
@@ -14,8 +15,9 @@ Shader "MapSharedGround/Grass" {
    #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
    TEXTURE2D(_GroundMap);SAMPLER(sampler_GroundMap);
    TEXTURE2D(_DirtMap);SAMPLER(sampler_DirtMap);
+    TEXTURE2D(_PureBlackMask);SAMPLER(sampler_PureBlackMask);
    CBUFFER_START(UnityPerMaterial)
-    float4 _GroundParams,_GroundOffset,_EditorZero,_WaveA,_WaveB,_DirtParams,_DirtOffset;float _Decode,_Unlit,_DirtWeight,_VertexDirt;
+     float4 _GroundParams,_GroundOffset,_EditorZero,_WaveA,_WaveB,_DirtParams,_DirtOffset,_PureBlackMapSize,_PureBlackMask_TexelSize;float _Decode,_Unlit,_DirtWeight,_VertexDirt,_PureBlackEnabled;
    CBUFFER_END
    struct Varyings {float4 positionCS:SV_POSITION;float3 positionWS:TEXCOORD0;half3 normalWS:TEXCOORD1;float dirt:TEXCOORD2;};
    Varyings Vert(float4 p:POSITION,float3 n:NORMAL,float4 color:COLOR){Varyings o;VertexPositionInputs v=GetVertexPositionInputs(p.xyz);o.positionCS=v.positionCS;o.positionWS=v.positionWS;o.normalWS=TransformObjectToWorldNormal(n);o.dirt=lerp(_DirtWeight,color.r,_VertexDirt);return o;}
@@ -32,11 +34,14 @@ Shader "MapSharedGround/Grass" {
     return c;
    }
    half4 Frag(Varyings i):SV_Target{
+     // Opaque floor, not a hole or a black PBR albedo. No lighting or fog on full coverage.
+     float black=0;
+     if(_PureBlackEnabled>.5){float2 uv=saturate(i.positionWS.xz/_PureBlackMapSize.xy);uv=uv*(1-_PureBlackMask_TexelSize.xy)+.5*_PureBlackMask_TexelSize.xy;black=saturate(SAMPLE_TEXTURE2D(_PureBlackMask,sampler_PureBlackMask,uv).b);if(black>=1)return half4(0,0,0,1);}
     float2 p=float2(i.positionWS.x-_EditorZero.x,_EditorZero.y-i.positionWS.z);half3 c=pow(lerp(Grass(p),Dirt(p),SoilWeight(p,i.dirt)),_Decode);
-    if(_Unlit>.5)return half4(c,1);
+     if(_Unlit>.5)return half4(c*(1-black),1);
     InputData input=(InputData)0;input.positionWS=i.positionWS;input.shadowCoord=TransformWorldToShadowCoord(i.positionWS);input.normalWS=normalize(i.normalWS);input.viewDirectionWS=GetWorldSpaceNormalizeViewDir(i.positionWS);input.bakedGI=SampleSH(input.normalWS);input.shadowMask=half4(1,1,1,1);input.normalizedScreenSpaceUV=GetNormalizedScreenSpaceUV(i.positionCS);
     SurfaceData surface=(SurfaceData)0;surface.albedo=c;surface.metallic=0;surface.specular=half3(.04,.04,.04);surface.smoothness=.08;surface.normalTS=half3(0,0,1);surface.occlusion=1;surface.alpha=1;
-    return UniversalFragmentPBR(input,surface);
+     half4 lit=UniversalFragmentPBR(input,surface);lit.rgb*=1-black;return lit;
    }
    ENDHLSL
   }

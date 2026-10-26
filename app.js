@@ -10,11 +10,11 @@ const STEP = 2.2;          // plateau tool step height (m)
 const SKIRT_Y = -14;       // bottom of the map's outer wall
 const H = new Float32Array(N * N);       // heights (m)
 const propGrounding=TDPropGrounding.createCache(H,N,CELL,HALF);
-const NS = 10;                           // splat channels, bedrock appended at 9
+const NS = 11;                           // append-only paint IDs: bedrock 9, pureblack 10
 const effectiveS = new Float32Array(N * N * NS);
 const S = new Uint8Array(N * N * NS);    // splat follows GROUND, 0..255
-const GROUND = ['dirt', 'cobble', 'sand', 'rubble', 'swamp', 'poison', 'lava', 'snowfield', 'ice', 'bedrock'];
-const GROUND_SPEED = [1, 1, .85, .8, .55, .6, .5, .8, 1, 1];   // walk speed factor per ground type
+const GROUND = ['dirt', 'cobble', 'sand', 'rubble', 'swamp', 'poison', 'lava', 'snowfield', 'ice', 'bedrock', 'pureblack'];
+const GROUND_SPEED = [1, 1, .85, .8, .55, .6, .5, .8, 1, 1, 1];   // walk speed factor per ground type
 const O = new Uint8Array(N * N);         // walk override: 0 = auto, 1 = force walkable, 2 = force blocked, 3 = secret passage
 const F = new Float32Array(N * N);
 const C = new Uint8Array(N * N);         // rock-wall style painted per vertex: 0 = the map's default, k = CLIFF_STYLES[k - 1]       // floor height used inside secret passages (H elsewhere)
@@ -329,11 +329,11 @@ terrainMat.onBeforeCompile = function(sh) {
   sh.uniforms.uCutA = cutU.a; sh.uniforms.uCutB = cutU.b; sh.uniforms.uTunHoles = tunnelHoleU; sh.uniforms.uTunOn = tunnelOnU;
   sh.uniforms.uWater = waterU; sh.uniforms.uDim = dimU; sh.uniforms.uTime = timeU; sh.uniforms.uStoneGrain=rockGrainU; sh.uniforms.uPavingMask=pavingMaskU; sh.uniforms.uPavingMap=pavingMapU; Object.assign(sh.uniforms, BU);
   sh.vertexShader = sh.vertexShader
-    .replace('#include <common>', '#include <common>\nattribute float reliefSlope; varying float vReliefSlope; attribute float springLift; varying float vSpringHw; attribute vec4 splatA; attribute vec4 splatB; attribute vec2 splatC; attribute vec3 cliffT; attribute vec4 cliffM; attribute vec2 cliffW; varying vec3 vCT; varying vec4 vCM; varying vec2 vCW; varying vec4 vSA; varying vec4 vSB; varying vec2 vSC; varying vec3 vWPos; varying vec3 vWNor;')
+    .replace('#include <common>', '#include <common>\nattribute float reliefSlope; varying float vReliefSlope; attribute float springLift; varying float vSpringHw; attribute vec4 splatA; attribute vec4 splatB; attribute vec3 splatC; attribute vec3 cliffT; attribute vec4 cliffM; attribute vec2 cliffW; varying vec3 vCT; varying vec4 vCM; varying vec2 vCW; varying vec4 vSA; varying vec4 vSB; varying vec3 vSC; varying vec3 vWPos; varying vec3 vWNor;')
     .replace('#include <begin_vertex>', '#include <begin_vertex>\nvReliefSlope=reliefSlope; vSpringHw=10.-springLift; vSA=splatA; vSB=splatB; vSC=splatC; vCT=cliffT; vCM=cliffM; vCW=cliffW; vWPos=(modelMatrix*vec4(position,1.)).xyz; vWNor=normalize(mat3(modelMatrix)*normal);');
   sh.fragmentShader = sh.fragmentShader
     .replace('#include <common>', `#include <common>
-varying float vReliefSlope; varying float vSpringHw; varying vec4 vSA; varying vec4 vSB; varying vec2 vSC; varying vec3 vWPos; varying vec3 vWNor; uniform float uWater; uniform float uDim; uniform float uTime;
+varying float vReliefSlope; varying float vSpringHw; varying vec4 vSA; varying vec4 vSB; varying vec3 vSC; varying vec3 vWPos; varying vec3 vWNor; uniform float uWater; uniform float uDim; uniform float uTime;
 uniform vec3 uG0; uniform vec3 uG1; uniform vec3 uGH; uniform vec3 uRockTint; uniform float uFlowers; uniform float uSnow; uniform float uSnowLine; uniform float uWet; uniform float uSea;
 varying vec3 vCT; varying vec4 vCM; varying vec2 vCW; uniform int uPitN; uniform vec4 uPitA[8]; uniform vec4 uPitB[8];
 uniform sampler2D uTunHoles; uniform float uTunOn;
@@ -341,7 +341,7 @@ ${CUT_GLSL}
 ${TDGround.GLSL}
 ${useBedrock?TDBedrock.GLSL:''}
 uniform float uGroundTrial;
-float gGloss=0.; float gSurfaceHeight=0.; vec3 gGlow=vec3(0.);
+float gGloss=0.; float gSurfaceHeight=0.; float gPureBlack=0.; vec3 gGlow=vec3(0.);
 ${GLSL_NOISE}
 ${LAVA_SURFACE_GLSL}
 ${PAVING_GLSL}
@@ -492,6 +492,7 @@ ${useBedrock?`  // Manually painted continuous bedrock: packed colour and millim
   rock*=1.-.35*vCW.x;
   rock=mix(rock, vec3(.93,.95,1.), vCW.y*smoothstep(.3,.7,n.y+(fbm(rq*1.7)-.5)*.5));
   float rockW=smoothstep(.18,.48,slope+(a-.5)*.30);
+  gPureBlack=clamp(vSC.z,0.,1.)*(1.-rockW);
   col=mix(col,rock,rockW);
   gGloss=max(gGloss,vCW.x*.8*rockW);
   // underwater bed
@@ -530,13 +531,17 @@ if(cutAway(vWPos,tunCell.g>.5)) discard;`)
 normal=surfaceNormal(-vViewPosition,normal,gSurfaceHeight);`)
     .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor=mix(roughnessFactor,.55,gGloss);')
     .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance+=pow(gGlow,vec3(2.2))*(1.-.6*uDim);');
-  // With no bedrock paint, retain the previous terrain shader and sampler budget.
+  // Apply opaque black after lighting, fog, tone mapping, colour conversion and dithering.
+  // Mixed brush edges retain coverage; cliff colour/relief still follows the existing slope.
+  sh.fragmentShader=sh.fragmentShader.replace('#include <dithering_fragment>',
+    '#include <dithering_fragment>\ngl_FragColor.rgb=mix(gl_FragColor.rgb,vec3(0.),gPureBlack);');
+  // With no bedrock paint, retain the previous sampler budget.
   if(!useBedrock){
-    sh.vertexShader=sh.vertexShader.replace('varying vec2 vSC;','varying float vSC;').replace('vSC=splatC;','vSC=splatC.x;');
-    sh.fragmentShader=sh.fragmentShader.replace('varying vec2 vSC;','varying float vSC;').replace('+vSC.x+vSC.y;','+vSC;').replaceAll('vSC.x','vSC');
+    sh.vertexShader=sh.vertexShader.replace('varying vec3 vSC;','varying vec2 vSC;').replace('vSC=splatC;','vSC=splatC.xz;');
+    sh.fragmentShader=sh.fragmentShader.replace('varying vec3 vSC;','varying vec2 vSC;').replace('+vSC.x+vSC.y;','+vSC.x;').replaceAll('vSC.z','vSC.y');
   }
 };
-terrainMat.customProgramCacheKey = function(){return 'terrain-dryland-v1'+(this.defines?.BEDROCK_FLOOR?'-bedrock':'');};
+terrainMat.customProgramCacheKey = function(){return 'terrain-dryland-v1-black1'+(this.defines?.BEDROCK_FLOOR?'-bedrock':'');};
 
 function gridIndex() {
   const ix = new Uint32Array((N - 1) * (N - 1) * 6); let o = 0;
@@ -556,7 +561,7 @@ const tGeo = new THREE.BufferGeometry();
   tGeo.setAttribute('springLift', new THREE.BufferAttribute(new Float32Array(N * N), 1));   // 10 - height above a spring's stream or pond (m): 0 = none near (also what a mesh without it reads)
   tGeo.setAttribute('splatA', new THREE.BufferAttribute(new Float32Array(N * N * 4), 4));
   tGeo.setAttribute('splatB', new THREE.BufferAttribute(new Float32Array(N * N * 4), 4));
-  tGeo.setAttribute('splatC', new THREE.BufferAttribute(new Float32Array(N * N * 2), 2));
+  tGeo.setAttribute('splatC', new THREE.BufferAttribute(new Float32Array(N * N * 3), 3));
   tGeo.setAttribute('cliffT', new THREE.BufferAttribute(new Float32Array(N * N * 3).fill(1), 3));
   tGeo.setAttribute('cliffM', new THREE.BufferAttribute(new Float32Array(N * N * 4), 4));
   tGeo.setAttribute('cliffW', new THREE.BufferAttribute(new Float32Array(N * N * 2), 2));
@@ -1118,7 +1123,7 @@ function updateTerrain() {
     pos[k * 3 + 1] = H[k]; dp[k] = state.water - H[k];
     for (let c = 0; c < 4; c++) sa[k * 4 + c] = effectiveS[k * NS + c] / 255;
     for (let c = 0; c < 4; c++) sb[k * 4 + c] = effectiveS[k * NS + 4 + c] / 255;
-    sc[k * 2] = effectiveS[k * NS + 8] / 255; sc[k * 2 + 1] = effectiveS[k * NS + 9] / 255; painted ||= sc[k*2+1]>0;
+    for(let c=0;c<3;c++)sc[k*3+c]=effectiveS[k*NS+8+c]/255;painted ||= sc[k*3+1]>0;
   }
   bedrockPainted=painted;setBedrockVariant(painted&&bedrockPrepared);
   if(painted&&!bedrockPrepared&&!bedrockPreparation)void bedrockReady().catch(()=>{});
@@ -1942,7 +1947,7 @@ const BRIDGE_TAGS = {
 const STAIR_TAGS = { dirt: ['grassland', 'forest', 'jungle', 'canyon', 'mountain', 'beach'], stone: ['common'], wood: ['forest', 'cave', 'beach', 'snow', 'jungle'], built: ['ruins', 'castle', 'desert', 'demon', 'graveyard'] };
 // ground paint tools; tools not listed here (terrain, structures, walkability) are always shown
 const GTOOL_TAGS = {
-  grass: ['common'], dirt: ['common'], bedrock: ['common'], cobble: ['grassland', 'ruins', 'castle', 'desert', 'graveyard'], sand: ['desert', 'beach', 'canyon', 'wasteland'],
+  grass: ['common'], dirt: ['common'], bedrock: ['common'], pureblack: ['common'], cobble: ['grassland', 'ruins', 'castle', 'desert', 'graveyard'], sand: ['desert', 'beach', 'canyon', 'wasteland'],
   rubble: ['wasteland', 'mountain', 'canyon', 'volcano', 'cave', 'ruins', 'desert', 'graveyard'], swamp: ['forest', 'jungle', 'demon', 'cave', 'graveyard'], poison: ['demon', 'jungle', 'cave', 'volcano'],
   lava: ['volcano', 'demon'], snowfield: ['snow', 'mountain'], ice: ['snow', 'mountain', 'cave'], coast: ['beach'],
 };
@@ -2521,7 +2526,7 @@ function makeCoast(a, c) {
     const sw = sstep(-5, -2, t) * sstep(beach + 4, beach, t);
     if (sw > 0) {
       S[k * NS + 2] = Math.max(S[k * NS + 2], sw * 255);
-      for (const o of [0, 1, 3, 4, 5, 6, 7, 8, 9]) S[k * NS + o] = Math.round(S[k * NS + o] * (1 - sw));
+      for (const o of [0, 1, 3, 4, 5, 6, 7, 8, 9, 10]) S[k * NS + o] = Math.round(S[k * NS + o] * (1 - sw));
     }
   }
   state.sea = true;
@@ -2949,6 +2954,7 @@ const TOOLS = [
   { id: 'sand', name: '砂地', key: 'z', hint: '風紋のある砂地を塗ります。歩くと少し遅くなります（×0.85）。' },
   { id: 'rubble', name: '荒れ地', key: 'x', hint: 'ひび割れた乾いた地面に石が転がる荒れ地を塗ります。塗り終えると小石が自動で散らばります（×0.8）。' },
   { id: 'bedrock', name: '岩盤', key: 'j', hint: '片理・細い亀裂・白い鉱物脈のある灰色の岩盤を塗ります。地形の高さは変わりません。' },
+  { id: 'pureblack', name: '完全な黒', key: '', hint: '照明・影・反射・霧に影響されない不透明な黒い床を塗ります。地形や歩行は変わりません。' },
   { id: 'swamp', name: '沼地', key: 'c', hint: 'ぬかるみと濁った水たまりの沼地を塗ります。葦や枯れ木が自動で生えます。歩くと遅くなります（×0.55）。' },
   { id: 'coast', name: '海岸', key: 'l', hint: '砂浜にしたい所から海の方向へドラッグします。その先が砂浜と海になり、波が打ち寄せます。' },
   { id: 'lava', name: '溶岩', key: 'u', hint: '黒い溶岩の殻と、光りながら流れるマグマを塗ります。歩けません（通行不可）。' },
@@ -4243,7 +4249,7 @@ function sha256(bytes) {
   return Array.from(Hh, v => v.toString(16).padStart(8, '0')).join('');
 }
 const GROUND_EFFECT = { sand: 'slow_light', rubble: 'slow_light', swamp: 'slow', poison: 'poison', lava: 'lava', snowfield: 'slow_light', ice: 'ice' };
-const WEIGHT_LAYERS = ['grass', 'dirt', 'cobble', 'sand', 'rubble', 'swamp', 'poison', 'lava', 'snowfield', 'ice', 'cliff', 'bedrock'];
+const WEIGHT_LAYERS = ['grass', 'dirt', 'cobble', 'sand', 'rubble', 'swamp', 'poison', 'lava', 'snowfield', 'ice', 'cliff', 'bedrock', 'pureblack'];
 async function buildExport({sharedAssets = false} = {}) {
   refreshGroundWeights();
   if(mapPreparation||cliffContactDisabled)throw Error('崖の岩を調整中です。完了後に書き出してください');
@@ -4309,20 +4315,20 @@ async function buildExport({sharedAssets = false} = {}) {
     return lerp(lerp(s(i, j), s(i + 1, j), u), lerp(s(i, j + 1), s(i + 1, j + 1), u), w);
   };
   const maskPngs = [await pngOf((i, j) => [mask(i, j, 0), mask(i, j, 1), 0]), await pngOf((i, j) => [mask(i, j, 2), mask(i, j, 3), mask(i, j, 4)]),
-    await pngOf((i, j) => [mask(i, j, 5), mask(i, j, 6), mask(i, j, 7)]), await pngOf((i, j) => [mask(i, j, 8), mask(i, j, 9), 0])];
+    await pngOf((i, j) => [mask(i, j, 5), mask(i, j, 6), mask(i, j, 7)]), await pngOf((i, j) => [mask(i, j, 8), mask(i, j, 9), mask(i, j, 10)])];
   const W8 = new Uint8Array(TN * TN * WEIGHT_LAYERS.length);
   for (let j = 0; j < TN; j++) for (let i = 0; i < TN; i++) {
     const k = j * TN + i, x = tx(i), z = tx(j), w = new Float32Array(WEIGHT_LAYERS.length); w[0] = 1;
     const add = (L, m) => { if (m <= 0) return; for (let q = 0; q < w.length; q++) w[q] *= 1 - m; w[L] += m; };
-    let paintTotal=0;for(let c=0;c<NS;c++){const layer=c===9?11:c+1;w[layer]=sBil(x,z,c)/255;paintTotal+=w[layer];}
-    w[0]=Math.max(0,1-paintTotal);if(paintTotal>1)for(let c=0;c<NS;c++)w[c===9?11:c+1]/=paintTotal;
+    let paintTotal=0;for(let c=0;c<NS;c++){const layer=c>=9?c+2:c+1;w[layer]=sBil(x,z,c)/255;paintTotal+=w[layer];}
+    w[0]=Math.max(0,1-paintTotal);if(paintTotal>1)for(let c=0;c<NS;c++)w[c>=9?c+2:c+1]/=paintTotal;
     const g = slopeAt(x, z); add(10, sstep(.24, .42, 1 - 1 / Math.sqrt(1 + g * g)));
     const q8 = Array.from(w, v => Math.floor(v * 255)); let rest = 255 - q8.reduce((a, v) => a + v, 0), top = 0;
     for (let q = 1; q < w.length; q++) if (w[q] > w[top]) top = q;
     q8[top] += rest; for (let q = 0; q < w.length; q++) W8[k * w.length + q] = q8[q];
   }
   const L8 = WEIGHT_LAYERS.length, wgt = (i, j, L) => L < L8 ? W8[(j * TN + i) * L8 + L] : 0;
-  const weightPngs = []; for (let b = 0; b < 4; b++) weightPngs.push(await pngOf((i, j) => [wgt(i, j, b * 3), wgt(i, j, b * 3 + 1), wgt(i, j, b * 3 + 2)]));
+  const weightPngs = []; for (let b = 0; b < Math.ceil(L8/3); b++) weightPngs.push(await pngOf((i, j) => [wgt(i, j, b * 3), wgt(i, j, b * 3 + 1), wgt(i, j, b * 3 + 2)]));
   const cliffPng = await pngOf((i, j) => { const v = cliffIndexNear(tx(i), tx(j)); return [v, v, v]; });   // style index per export vertex (legend: meta.cliffStyles)
   const walkPng = await pngOf((i, j) => {
     const x = tx(i), z = tx(j), d = deckAt(x, z, 0), o = overrideAt(x, z), auto = autoWalkable(x, z);
@@ -4474,17 +4480,18 @@ async function buildExport({sharedAssets = false} = {}) {
       'weights_0.png': { usage: 'terrain layer weights', layers: WEIGHT_LAYERS.slice(0, 3), sRGB: false, filter: 'bilinear', mipmaps: false, compression: 'none' },
       'weights_1.png': { usage: 'terrain layer weights', layers: WEIGHT_LAYERS.slice(3, 6), sRGB: false, filter: 'bilinear', mipmaps: false, compression: 'none' },
       'weights_2.png': { usage: 'terrain layer weights', layers: WEIGHT_LAYERS.slice(6, 9), sRGB: false, filter: 'bilinear', mipmaps: false, compression: 'none' },
-      'weights_3.png': { usage: 'terrain layer weights', layers: WEIGHT_LAYERS.slice(9), sRGB: false, filter: 'bilinear', mipmaps: false, compression: 'none' },
+      'weights_3.png': { usage: 'terrain layer weights', layers: WEIGHT_LAYERS.slice(9,12), sRGB: false, filter: 'bilinear', mipmaps: false, compression: 'none' },
+      'weights_4.png': { usage: 'terrain layer weights', layers: WEIGHT_LAYERS.slice(12), sRGB: false, filter: 'bilinear', mipmaps: false, compression: 'none' },
       'mask_0.png': { usage: 'raw paint masks (game logic)', channels: ['dirt', 'cobble', null], sRGB: false, filter: 'point', mipmaps: false, compression: 'none' },
       'mask_1.png': { usage: 'raw paint masks (game logic)', channels: ['sand', 'rubble', 'swamp'], sRGB: false, filter: 'point', mipmaps: false, compression: 'none' },
       'mask_2.png': { usage: 'raw paint masks (game logic)', channels: ['poison', 'lava', 'snowfield'], sRGB: false, filter: 'point', mipmaps: false, compression: 'none' },
-      'mask_3.png': { usage: 'raw paint masks (game logic)', channels: ['ice', 'bedrock', null], sRGB: false, filter: 'point', mipmaps: false, compression: 'none' },
+      'mask_3.png': { usage: 'raw paint masks (game logic)', channels: ['ice', 'bedrock', 'pureblack'], sRGB: false, filter: 'point', mipmaps: false, compression: 'none' },
       ...(holesPng ? { 'holes.png': { usage: 'terrain holes for secret passages and tunnel mouths: 0 = hole, 255 = keep the surface (TerrainData.SetHoles: true = surface). (heightmap-1)² cells, image row 0 = z max; cell (i, j) spans export vertices i..i+1, j..j+1. Every hole cell is covered by secret_passages_mesh.json (floor / walls / ceiling / cap) or, at a tunnel, by tunnels_mesh.json (its cap, floor and walls)', sRGB: false, filter: 'point', mipmaps: false, compression: 'none' } } : {}),
       'cliff_style.png': { usage: 'rock-wall style index per export vertex (R; legend meta.cliffStyles)', sRGB: false, filter: 'point', mipmaps: false, compression: 'none' },
       'walkable.png': { usage: 'walkability (discrete values, never interpolate)', channels: ['final 255=walkable', 'surface 0 ground/32 bridge deck/40 pool kerb/48 stairs/56 tunnel floor/64 secret/128 forced on/255 forced off (forced off wins over decks)', 'auto 255=walkable'], sRGB: false, filter: 'point', mipmaps: false, compression: 'none' },
     },
     groundBlend: { base: 'grass', layers: WEIGHT_LAYERS, rule: 'sequential: for each layer in order, m = smoothstep(lo, hi, mask); all weights *= (1 - m); weight[layer] += m. cliff comes from slope (1 - normal.y).', thresholds: { dirt: [.2, .55], cobble: [.3, .55], others: [.25, .6], cliff: [.24, .42] } },
-    groundTypes: Object.fromEntries(GROUND.map((g, i) => [g, { maskFile: `mask_${[0, 0, 1, 1, 1, 2, 2, 2, 3, 3][i]}.png`, maskChannel: [0, 1, 0, 1, 2, 0, 1, 2, 0, 1][i], effectId: GROUND_EFFECT[g] || null, speedHint: GROUND_SPEED[i], ...(g === 'lava' ? { blocksWalk: true } : {}) }])),
+    groundTypes: Object.fromEntries(GROUND.map((g, i) => [g, { maskFile: `mask_${[0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3][i]}.png`, maskChannel: [0, 1, 0, 1, 2, 0, 1, 2, 0, 1, 2][i], effectId: GROUND_EFFECT[g] || null, speedHint: GROUND_SPEED[i], ...(g === 'lava' ? { blocksWalk: true } : {}) }])),
     agentProfile: { ...state.agent, note: 'walkable.png と validation はこの体格用。大型の敵などは agentProfile を変えて計算し直してください。height は橋・階段の上の障害物の判定にだけ使用（頭上空間は未検査）。' },
     definitions: VALIDATION_DEFS,
     mapName: state.mapName, biome: state.biome, sunlight: state.sunOn,
@@ -4587,6 +4594,10 @@ revision・書き出し日時・ファイルごとの SHA-256・contentHash は 
     bedrockPng=new Uint8Array(await (await new Promise(r=>c.toBlob(r,'image/png'))).arrayBuffer());
     meta.requiredFeatures=[...(meta.requiredFeatures||[]),'bedrockFloorV1'];
     meta.bedrockFloor={texture:'bedrock.png',channels:'RGB albedo (raw sRGB, one final decode), A shallow relief',sourceScaleMetres:6.428571,patchSpacingMetres:1.8,reliefMetres:.018,sampling:'terrain/bedrock.js bedrockSurface; four continuous interior patches, restrained rotation, explicit mip gradients',note:'対応する床シェーダーが必要です。この変更にはUnity側の実装を含みません。'};
+  }
+  if(S.some((v,i)=>i%NS===10&&v>0)){
+    meta.requiredFeatures=[...(meta.requiredFeatures||[]),'pureBlackFloorV1'];
+    meta.pureBlackFloor={id:'pureblack',mask:'mask_3.png',channel:2,weights:'weights_4.png',weightChannel:0,opaque:true,outputRGB:[0,0,0],stage:'after lighting, fog, tone mapping, colour conversion and dithering',cliffs:'existing slope coverage retained',unity:{shader:'MapSharedGround/Grass',maskProperty:'_PureBlackMask',enableProperty:'_PureBlackEnabled',sizeProperty:'_PureBlackMapSize'},note:'Unrelated camera post effects or foreground VFX can still composite over the rendered floor.'};
   }
   const roomTorches = TDWallTorch.exportData(props, PROP, state.roomId, U, propBaseY);
   if (roomTorches) { meta.requiredFeatures = [...(meta.requiredFeatures || []), 'roomTorchesV1']; meta.roomTorches = { file: 'room_torches.json', vfxId: roomTorches.vfxId }; }
