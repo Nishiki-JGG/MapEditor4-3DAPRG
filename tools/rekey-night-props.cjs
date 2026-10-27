@@ -1,0 +1,42 @@
+// 完成形状・配置・通行を再生成せず、実行時の小物キーだけを更新する。
+const fs=require('fs'),path=require('path'),http=require('http'),zlib=require('zlib'),crypto=require('crypto'),assert=require('assert/strict'),codec=require('../terrain/prepared-codec'),{withPage}=require('../tests/cdp');
+const root=path.resolve(__dirname,'..'),dir=path.join(root,'prepared'),out=path.resolve(process.env.NIGHT_OUT||path.join(root,'output/playwright/night-props')),sha=b=>crypto.createHash('sha256').update(b).digest('hex'),norm=s=>s.replace(/\r\n?/g,'\n');
+const file=path.join(dir,'manifest.js'),manifest=JSON.parse(fs.readFileSync(file,'utf8').slice('window.TDPreparedManifest='.length).trim().replace(/;$/,'')),pending=[],report=[];
+// 地形・岩・通行・自動生成の生成元が変わった場合、キーだけの更新は禁止。
+const renderOnlySources=[];
+for(const [name,hash]of Object.entries(manifest.sources))if(name!=='index.html'){
+ let current=norm(fs.readFileSync(path.join(root,name),'utf8'));
+
+ // Stage26 reverses only the seven-chest material choice; geometry and generation bytes still match.
+ if(name==='app.js'&&sha(current)!==hash){const previous=current.replace("const base = TDChestSurface.ids.includes(t.id)?TDChestSurface.material(source,t.id,timeU,hemi) : t.surface ?", "const base = t.surface ?");if(sha(previous)===hash){current=previous;renderOnlySources.push(name);}}
+ // Stage23 changes only material selection for tiedsack and coiledrope; reverse both exact hooks.
+ if(name==='app.js'&&sha(current)!==hash){const previous=current.replace(" : TDFibreFinish.ids.includes(t.id)?TDFibreFinish.material(source,t.id) : t.material==='chestmetal'"," : t.material==='chestmetal'").replace('ghost?ghostMat:TDFibreFinish.material(PROP_MATS[t.material]||propMat,t.id),capacity','ghost?ghostMat:(PROP_MATS[t.material]||propMat),capacity');if(sha(previous)===hash){current=previous;renderOnlySources.push(name);}}
+ // Stage22 permits only the following reversible rendering hooks; no generation bytes.
+ if(name==='app.js'&&sha(current)!==hash){const previous=current.replace('TDChestSeries.material(t.id,timeU,hemi)','TDChestSeries.material(t.id,timeU)').replace('const chestPresentation = TDChestPresentation.create(scene,timeU);\n','').replace('||TDChestPresentation.slots(PROP[p[0]].id).length','').replace('  chestPresentation.sync(props,PROP,propMeshes,ghosts);\n','').replace('window.__app = { chestPresentation, wallTorches,','window.__app = { wallTorches,');if(sha(previous)===hash){current=previous;renderOnlySources.push(name);}}
+ if(name==='app.js'&&sha(current)!==hash){const previous=current.replace("'supplycrate', 'treasurechest_worn', 'treasurechest', 'treasurechest_reinforced', 'treasurechest_ornate', 'treasurechest_silver', 'treasurechest_gold', 'treasurechest_rainbow', 'smallbarrel'","'supplycrate', 'treasurechest', 'smallbarrel'").replace("const base = t.surface ? TDSmallPropSurface.material(source,t.surface) : t.material==='chestmetal' ? TDChestSeries.material(t.id,timeU) : source;","const base = t.surface ? TDSmallPropSurface.material(source,t.surface) : source;");if(sha(previous)===hash){current=previous;renderOnlySources.push(name);}}
+ // A single catalogue entry changes UI grouping, never generation.
+ if(name==='app.js'&&sha(current)!==hash){const previous=current.replace("'supplycrate', 'treasurechest', 'smallbarrel'","'supplycrate', 'smallbarrel'");if(sha(previous)===hash){current=previous;renderOnlySources.push(name);}}
+ if(name==='app.js'&&sha(current)!==hash){const previous=current.replace("['rowboat','seafan','pillarcoral','scallop'].includes(PROP[p[0]].id)","['rowboat','seafan'].includes(PROP[p[0]].id)");if(sha(previous)===hash){current=previous;renderOnlySources.push(name);}}
+ if(name==='app.js'&&sha(current)!==hash){const previous=current.replace("['rowboat','seafan'].includes(PROP[p[0]].id)?{rootPosition","PROP[p[0]].id==='rowboat'?{rootPosition");if(sha(previous)===hash){current=previous;renderOnlySources.push(name);}}
+ if(name==='app.js'&&sha(current)!==hash){const previous=current.replace("...(PROP[p[0]].id==='rowboat'?{rootPosition:[U.x(p[1]),U.y(propBaseY(p)),U.z(p[2])]}:{}),",'');if(sha(previous)===hash){current=previous;renderOnlySources.push(name);}}
+ if(name==='app.js'&&sha(current)!==hash){
+  const previousGroundMaterial=current.replace('ghost?ghostMat:(PROP_MATS[t.material]||propMat),capacity','ghost?ghostMat:propMat,capacity');
+  if(sha(previousGroundMaterial)===hash){current=previousGroundMaterial;renderOnlySources.push(name);}else{
+  // Only these two opt-in material selections may differ. All generation bytes
+  // must still match the manifest's previous app.js hash after reversing them.
+  current=current.replace('const source = t.sharedAsset ? TDSharedProps.material(t.sharedAsset) : PROP_MATS[t.material] || propMat;\n  const base = t.surface ? TDSmallPropSurface.material(source,t.surface) : source;','const base = t.sharedAsset ? TDSharedProps.material(t.sharedAsset) : PROP_MATS[t.material] || propMat;').replace("t.material === 'cards2' ? ghostCardMat2 : t.surface ? TDSmallPropSurface.material(ghostMat,t.surface) : ghostMat, 256)","t.material === 'cards2' ? ghostCardMat2 : ghostMat, 256)");
+  renderOnlySources.push(name);
+  }
+ }
+ assert.equal(sha(current),hash,'key-only rekey cannot accept generation source change: '+name);
+}
+const server=http.createServer((q,r)=>{const rel=new URL(q.url,'http://x').pathname,p=path.resolve(root,'.'+rel);if(!p.startsWith(root+path.sep))return r.writeHead(403).end();fs.readFile(p,(e,b)=>{if(!e&&rel==='/app.js')b=Buffer.from(b.toString().replace('window.__app = {','window.__nightDescriptor=async(kind,seed)=>({key:await preparationKey(kind,seed),profile:preparedProfile(kind)});window.__app = {'));if(!e&&rel==='/terrain/cliff-layering.js')b=Buffer.from(b.toString()+`;TDCliffLayering.fitAsync=()=>{throw Error('Rekey must not regenerate rocks');};`);r.writeHead(e?404:200,{'Content-Type':p.endsWith('.js')?'text/javascript':p.endsWith('.html')?'text/html':'application/octet-stream'});r.end(e?'404':b);});});
+(async()=>{await new Promise(r=>server.listen(0,'127.0.0.1',r));try{for(const e of manifest.entries){
+ const descriptor=await withPage('http://127.0.0.1:'+server.address().port+'/index.html#size='+e.size,async p=>{await p.eval('(async()=>{for(let i=0;i<600&&!window.__app;i++)await new Promise(r=>setTimeout(r,100));await __app.bootReady;})()');const d=await p.eval(`(()=>{const q=${JSON.stringify(e.profile)};Object.assign(__app.state,{biome:q.biome,agent:q.agent,cliffStyle:q.cliffStyle,catalog:q.catalog});return __nightDescriptor('${e.kind}',${e.seed});})()`);assert.deepEqual(p.errors,[]);return d;},{hardware:true,wait:800,w:800,h:600,initScript:"sessionStorage.setItem('me_pending','flat');"});
+ assert.deepEqual(descriptor.profile,e.profile);const script=fs.readFileSync(path.join(dir,e.file),'utf8'),packed=Buffer.from(JSON.parse(script.slice(script.indexOf(',')+1).trim().replace(/\);$/,'')),'base64');assert.equal(sha(packed),e.sha256);const old=codec.decode(zlib.gunzipSync(packed));assert.equal(old.key,e.key);const next={...old,key:descriptor.key},raw=codec.encode(next),gz=zlib.gzipSync(raw,{level:9,mtime:0}),check=codec.decode(zlib.gunzipSync(gz));assert.deepEqual({...check,key:old.key},old,'completed data must be identical except key');const hash=sha(gz),name=e.kind+'-'+e.size+'-'+e.seed+'-'+hash.slice(0,12)+'.js',text='TDPreparedSamples.register('+JSON.stringify(name)+','+JSON.stringify(gz.toString('base64'))+');\n';pending.push({old:e.file,name,text});report.push({kind:e.kind,oldKey:e.key,key:descriptor.key,keyOnly:true,props:e.props,fits:e.fits});Object.assign(e,{key:descriptor.key,file:name,sha256:hash,rawBytes:raw.length,gzipBytes:gz.length,scriptBytes:Buffer.byteLength(text),httpGzipBytes:zlib.gzipSync(text,{level:9}).length});
+ }
+ for(const name of Object.keys(manifest.sources))manifest.sources[name]=sha(norm(fs.readFileSync(path.join(root,name),'utf8')));
+ for(const p of pending)fs.writeFileSync(path.join(dir,p.name),p.text);fs.writeFileSync(file,'window.TDPreparedManifest='+JSON.stringify(manifest)+';\n');
+ for(const p of pending)if(p.old!==p.name&&!manifest.entries.some(e=>e.file===p.old)){assert.equal(path.basename(p.old),p.old);fs.unlinkSync(path.join(dir,p.old));}
+ fs.mkdirSync(out,{recursive:true});fs.writeFileSync(path.join(out,'rekey.json'),JSON.stringify({pass:true,renderOnlySources,report},null,2));console.log(JSON.stringify({pass:true,renderOnlySources,report}));
+ }finally{server.close();}})().catch(e=>{console.error(e);process.exitCode=1});

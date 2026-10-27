@@ -120,10 +120,16 @@ n=normalize(n-float3(_TDRootSlope.x,0,_TDRootSlope.y)*n.y*v.rootMask.x);
    HLSLPROGRAM
    #pragma vertex Vert
    #pragma fragment Frag
+   #pragma shader_feature_local _ SMALL_PROP_SHADOW_BIAS
+   #pragma multi_compile_vertex _ _CASTING_PUNCTUAL_LIGHT_SHADOW
    #pragma target 3.0
    #pragma shader_feature_local _ ROOT_SURFACE
    #pragma shader_feature_local _ ROOT_GROUND
    #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+#ifdef SMALL_PROP_SHADOW_BIAS
+   #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Shadows.hlsl"
+   float3 _LightDirection;float3 _LightPosition;
+#endif
    TEXTURE2D(_BaseMap); SAMPLER(sampler_BaseMap);
    CBUFFER_START(UnityPerMaterial)
     float4 _BaseMap_ST, _BaseColor, _PineBand, _PineWaves, _PinePhase, _PineResponse, _PlantTouch, _TDRootSlope, _RootSurface,_TDRootTerrain,_RootPaintMap,_RootGrassParams,_RootDirtParams,_RootGrassOffset,_RootDirtOffset,_RootWaveA,_RootWaveB; float _Cutoff, _Cull, _PlantCombinedLimit;
@@ -145,13 +151,26 @@ TEXTURE2D(_RootGrass);SAMPLER(sampler_RootGrass);TEXTURE2D(_RootDirt);SAMPLER(sa
 float4 rootSurface:TEXCOORD1;
 #endif
  };
-   Varyings Vert(float4 p:POSITION,float2 uv:TEXCOORD0,float2 weights:TEXCOORD1,float2 rootMask:TEXCOORD3) { Varyings o;
+   Varyings Vert(float4 p:POSITION,float3 normalOS:NORMAL,float2 uv:TEXCOORD0,float2 weights:TEXCOORD1,float2 rootMask:TEXCOORD3) { Varyings o;
 #ifdef ROOT_SURFACE
 o.rootSurface=RootSurfaceInfo(TransformObjectToWorld(p.xyz),TransformObjectToWorld(float3(0,0,0)),rootMask.x,rootMask.y,length(GetObjectToWorldMatrix()._m01_m11_m21));
 #endif
 o.positionCS=TransformObjectToHClip(p.xyz);float2 wind=SharedPlantOffset(p.y,uv.y,weights,TransformObjectToWorld(float3(0,0,0)).xz,length(GetObjectToWorldMatrix()._m00_m10_m20));if(dot(wind,wind)>0){float3 wp=TransformObjectToWorld(p.xyz);wp.xz+=wind;o.positionCS=TransformWorldToHClip(wp);}
 #ifdef ROOT_GROUND
 float3 rootWS=TransformObjectToWorld(p.xyz);rootWS.y+=SharedRootRise(rootWS,TransformObjectToWorld(float3(0,0,0)),rootMask.x,_TDRootSlope.xy);rootWS.xz+=wind;o.positionCS=TransformWorldToHClip(rootWS);
+#endif
+#ifdef SMALL_PROP_SHADOW_BIAS
+// Opted-in small prop only: apply the light's existing URP bias, not new settings.
+float3 shadowWS=TransformObjectToWorld(p.xyz);shadowWS.xz+=wind;
+#ifdef ROOT_GROUND
+shadowWS.y+=SharedRootRise(shadowWS,TransformObjectToWorld(float3(0,0,0)),rootMask.x,_TDRootSlope.xy);
+#endif
+#if _CASTING_PUNCTUAL_LIGHT_SHADOW
+float3 shadowLightDirection=normalize(_LightPosition-shadowWS);
+#else
+float3 shadowLightDirection=_LightDirection;
+#endif
+o.positionCS=ApplyShadowClamping(TransformWorldToHClip(ApplyShadowBias(shadowWS,TransformObjectToWorldNormal(normalOS),shadowLightDirection)));
 #endif
  o.uv=TRANSFORM_TEX(uv,_BaseMap); return o; }
    half4 Frag(Varyings i):SV_Target { clip(SAMPLE_TEXTURE2D(_BaseMap,sampler_BaseMap,i.uv).a*_BaseColor.a-_Cutoff);

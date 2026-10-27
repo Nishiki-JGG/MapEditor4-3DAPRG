@@ -55,7 +55,7 @@ namespace MapSharedProps.EditorTools
                 for (int i = 0; i < 3; i++) Require(Mathf.Abs(item.position[i] - Number(3 + i)) < .0011f, "CSVとVFXの位置が違います");
                 Require(Mathf.Abs(item.scale[0] - Number(7)) < .0011f && Mathf.Abs(item.scale[1] - Number(8)) < .0011f && Mathf.Abs(item.scale[2] - Number(7)) < .0011f, "CSVとVFXの倍率が違います");
             }
-            var root = new GameObject("凸ダン壁掛け松明"); root.transform.SetParent(parent, false);
+            var root = new GameObject("壁掛け松明"); root.transform.SetParent(parent, false);
             try
             {
                 var fixtures = new List<RoomTorchInstance>();
@@ -76,7 +76,7 @@ namespace MapSharedProps.EditorTools
             catch { UnityEngine.Object.DestroyImmediate(root); throw; }
         }
 
-        [MenuItem("Tools/Map Shared Props/凸ダンの壁掛け松明を取り込む")]
+        [MenuItem("Tools/Map Shared Props/壁掛け松明を取り込む")]
         private static void Import()
         {
             string folder = EditorUtility.OpenFolderPanel("Unity用に書き出したマップを選択", "", ""); if (string.IsNullOrEmpty(folder)) return;

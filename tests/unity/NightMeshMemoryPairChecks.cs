@@ -1,0 +1,17 @@
+using System;using System.IO;using System.Collections.Generic;using System.Security.Cryptography;using UnityEngine;using UnityEditor;using UnityEditor.SceneManagement;using UnityEngine.Rendering;using UnityEngine.Rendering.Universal;using MapSharedProps.EditorTools;
+public static class NightMeshMemoryPairChecks {
+ [Serializable]class Row{public string id,path,beforeHash,afterHash;public bool sameReference;public long beforeBytes,afterBytes,warmBytes;public int vertices,indices,stride;}
+ [Serializable]class Report{public bool pass;public string error;public long beforeBytes,afterBytes,warmBytes;public List<Row> rows;}
+ static string Arg(string k){var a=Environment.GetCommandLineArgs();return a[Array.IndexOf(a,k)+1];}
+ static string Hash(Mesh m){using(var s=new MemoryStream()){using(var w=new BinaryWriter(s)){foreach(var p in m.vertices){w.Write(p.x);w.Write(p.y);w.Write(p.z);}foreach(var p in m.normals){w.Write(p.x);w.Write(p.y);w.Write(p.z);}foreach(var p in m.colors){w.Write(p.r);w.Write(p.g);w.Write(p.b);w.Write(p.a);}foreach(var p in m.uv){w.Write(p.x);w.Write(p.y);}foreach(var p in m.triangles)w.Write(p);w.Flush();return Convert.ToBase64String(SHA256.Create().ComputeHash(s.ToArray()));}}}
+ public static void Run(){int code=0;var report=new Report{pass=false,rows=new List<Row>()};var output=Arg("-memory-output");Directory.CreateDirectory(output);try{
+  EditorSceneManager.NewScene(NewSceneSetup.EmptyScene,NewSceneMode.Single);
+  var rd=ScriptableObject.CreateInstance<UniversalRendererData>();var rp=UniversalRenderPipelineAsset.Create(rd);GraphicsSettings.defaultRenderPipeline=rp;QualitySettings.renderPipeline=rp;
+  var old=MapSharedPropsBuilder.Build(Arg("-memory-before"));var next=MapSharedPropsBuilder.Build(Arg("-memory-after"));next.root.SetActive(false);
+  var data=SmallPropsV1.Read(Path.Combine(Arg("-memory-after"),"small_props.json"));if(data.assets.Length!=36)throw new Exception("Expected frozen 36 Native assets");
+  foreach(var a in data.assets){var x=old.prefabs[a.id].GetComponent<MeshFilter>().sharedMesh;var y=next.prefabs[a.id].GetComponent<MeshFilter>().sharedMesh;var row=new Row{id=a.id,path=AssetDatabase.GetAssetPath(x),sameReference=x==y,beforeHash=Hash(x),afterHash=Hash(y),beforeBytes=UnityEngine.Profiling.Profiler.GetRuntimeMemorySizeLong(x),afterBytes=UnityEngine.Profiling.Profiler.GetRuntimeMemorySizeLong(y),vertices=y.vertexCount,indices=y.triangles.Length,stride=y.GetVertexBufferStride(0)};if(!row.sameReference||row.beforeHash!=row.afterHash||row.beforeBytes!=row.afterBytes)throw new Exception("Source/cache mismatch: "+a.id);report.rows.Add(row);report.beforeBytes+=row.beforeBytes;report.afterBytes+=row.afterBytes;}
+  var camera=new GameObject("Memory phase camera").AddComponent<Camera>();camera.gameObject.AddComponent<UniversalAdditionalCameraData>();camera.transform.position=new Vector3(48,55,18);camera.transform.LookAt(new Vector3(48,0,48));camera.targetTexture=new RenderTexture(1000,800,24);camera.Render();
+  foreach(var row in report.rows){var mesh=old.prefabs[row.id].GetComponent<MeshFilter>().sharedMesh;row.warmBytes=UnityEngine.Profiling.Profiler.GetRuntimeMemorySizeLong(mesh);report.warmBytes+=row.warmBytes;}
+  report.pass=true;
+ }catch(Exception e){code=1;report.error=e.ToString();Debug.LogException(e);}finally{File.WriteAllText(Path.Combine(output,"report.json"),JsonUtility.ToJson(report,true));EditorApplication.Exit(code);}}
+}

@@ -23,7 +23,18 @@ TDProps.add({
       return mixc(groove, c0, .55 + .45 * rib);
     };
     // the ears either side of the hinge
-    const ear = s => { const v = [[0, .006, R0 * .45], [s * .022, .004, R0 * .45 + .004], [s * .016, .006, R0 * .45 - .012]]; if (s < 0) v.reverse(); const e = new THREE.BufferGeometry(); e.setAttribute('position', new THREE.Float32BufferAttribute(v.flat(), 3)); return e; };   // facing up
+    const ear = s => {
+      const i = s < 0 ? 0 : nA, edge = [pt(i, 0), pt(i, 1), pt(i, 2)];
+      const outer = [s * .022, edge[0][1] - .002, R0 * .45 + .004], vertices = [];
+      // 主殻の既存の側縁2辺をそのまま共有し、蝶番との離れをなくす。
+      for (let j = 0; j < 2; j++) {
+        const tri = [outer, edge[j].slice(0, 3), edge[j + 1].slice(0, 3)];
+        const a = new THREE.Vector3(...tri[0]), n = new THREE.Vector3(...tri[1]).sub(a).cross(new THREE.Vector3(...tri[2]).sub(a));
+        if (n.y < 0) [tri[1], tri[2]] = [tri[2], tri[1]];
+        vertices.push(...tri.flat());
+      }
+      const e = new THREE.BufferGeometry(); e.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3)); return e;
+    };
     return makeGeo([{ g, m: new THREE.Matrix4(), cfn, j: .05 }, { g: ear(1), m: new THREE.Matrix4(), c: cream, j: .05 }, { g: ear(-1), m: new THREE.Matrix4(), c: cream, j: .05 }], 81);
   },
 });

@@ -1,4 +1,4 @@
-# 凸ダンの壁掛け松明
+# 壁掛け松明
 
 2026-10-26検証：Webの配置・保存再読込・削除・Undo/Redo、元GUIDからのUnity Prefab復元・保存再読込・PlayMode初期化・再有効化に合格。Unityの全起動ログで粒子seed Assert 0、コンパイルエラー0、新規例外0を確認しました。元ゲームのPrefab/VFXファイルは変更していません。
 
@@ -10,7 +10,7 @@
 
 Windows/RTX 4070 SUPER、1280×720。Unityは各配置後に実時間・ゲーム時間とも2秒以上待機し120サンプルを採取しました。WebのVFX更新時間とUnityのURP描画要求CPU時間は測定範囲が違うため、両者の速度比較やPlayer FPSには換算できません。既存のUnity Editor SearchDatabase例外1件と、元URP設定による影アトラスの自動縮小警告は別途記録しています。
 
-「置く」→「建物・道具」→「壁掛け松明（凸ダン）」で配置します。既存の松明 `torch` とランタン `lantern` は変更していません。元ゲームの `RoomTorch` を別ID `wall_torch`／資産キー `tdj/wall_torch` として追加しました。
+「置く」→「建物・道具」→「壁掛け松明」で配置します。既存の松明 `torch` とランタン `lantern` は変更していません。元ゲームの `RoomTorch` を別ID `wall_torch`／資産キー `tdj/wall_torch` として追加しました。
 
 ## 表示と配置
 
@@ -33,7 +33,7 @@ Unity側には本リポジトリの `unity/Assets/MapSharedProps` と、元ゲ�
 - `Resources/DiscoveryPresentation/TorchSpark.mat`、`TorchSmoke.mat`
 - `Runtime/DiscoveryRoomTorchPresentation.cs`、各原本の `.meta`、対応するURP
 
-元PrefabのGUIDは `076bf4c551dc4254e85f0316aba457c6`、VFX IDは `vfx.environment.torch.fire` です。元ゲーム内では既に揃っている資産です。取り込みは従来の `MapSharedPropsBuilder.Build` に接続してあり、壁掛け松明だけを確認する場合はメニュー「Tools → Map Shared Props → 凸ダンの壁掛け松明を取り込む」も使えます。元Prefabが欠ける場合や抽出時と版が違う場合は、代わりの炎を生成せずエラーにします。
+元PrefabのGUIDは `076bf4c551dc4254e85f0316aba457c6`、VFX IDは `vfx.environment.torch.fire` です。元ゲーム内では既に揃っている資産です。取り込みは従来の `MapSharedPropsBuilder.Build` に接続してあり、壁掛け松明だけを確認する場合はメニュー「Tools → Map Shared Props → 壁掛け松明を取り込む」も使えます。元Prefabが欠ける場合や抽出時と版が違う場合は、代わりの炎を生成せずエラーにします。
 
 部屋Prefabを保存して再読込した際も `RoomTorchInstance` が元の `Initialize(int,string)` を呼び直します。原本は非アクティブなテンプレートのため、配置後に有効化します。自動再生する粒子は完全停止してからseedを設定し、必要な粒子を再生します。元Prefab・元スクリプトの編集は不要です。
 

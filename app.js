@@ -1365,7 +1365,8 @@ function touchMat(base) {
   return touchMats.get(base);
 }
 const propMeshes = PROP.map(t => {
-  const base = t.sharedAsset ? TDSharedProps.material(t.sharedAsset) : PROP_MATS[t.material] || propMat;
+  const source = t.sharedAsset ? TDSharedProps.material(t.sharedAsset) : PROP_MATS[t.material] || propMat;
+  const base = TDChestSurface.ids.includes(t.id)?TDChestSurface.material(source,t.id,timeU,hemi) : t.surface ? TDSmallPropSurface.material(source,t.surface) : TDFibreFinish.ids.includes(t.id)?TDFibreFinish.material(source,t.id) : t.material==='chestmetal' ? TDChestSeries.material(t.id,timeU,hemi) : source;
   const m = new THREE.InstancedMesh(t.geo, t.touch ? touchMat(base) : base, CAP);
   if(t.sharedAsset&&TDSharedProps.asset(t.sharedAsset).rootGrounding){m.userData.rootSlope=new THREE.InstancedBufferAttribute(new Float32Array(CAP*2),2);t.geo.setAttribute('rootSlope',m.userData.rootSlope);m.userData.rootTerrain=new THREE.InstancedBufferAttribute(new Float32Array(CAP*4),4);t.geo.setAttribute('rootTerrain',m.userData.rootTerrain);}
   if (t.touch) { m.userData.touch = new THREE.InstancedBufferAttribute(new Float32Array(CAP * 3), 3).setUsage(THREE.DynamicDrawUsage); t.geo.setAttribute('touch', m.userData.touch); }
@@ -1382,7 +1383,7 @@ const ghostCardMat = ghostMat.clone(); ghostCardMat.map = atlasTex; ghostCardMat
 const ghostCardMat2 = ghostCardMat.clone(); ghostCardMat2.map = atlasTex2;
 const ghostMeshes = PROP.map(t => {
   const root=t.sharedAsset&&TDSharedProps.asset(t.sharedAsset).rootGrounding,g=root?(()=>{const g=new THREE.BufferGeometry();g.setIndex(t.geo.index);for(const[name,a]of Object.entries(t.geo.attributes))g.setAttribute(name,a);g.boundingBox=t.geo.boundingBox;g.boundingSphere=t.geo.boundingSphere;return g;})():t.geo;
-  const m = new THREE.InstancedMesh(g, t.sharedAsset ? TDSharedProps.material(t.sharedAsset, true) : t.material === 'cards' ? ghostCardMat : t.material === 'cards2' ? ghostCardMat2 : ghostMat, 256);
+  const m = new THREE.InstancedMesh(g, t.sharedAsset ? TDSharedProps.material(t.sharedAsset, true) : t.material === 'cards' ? ghostCardMat : t.material === 'cards2' ? ghostCardMat2 : t.surface ? TDSmallPropSurface.material(ghostMat,t.surface) : ghostMat, 256);
   if(root){m.userData.rootSlope=new THREE.InstancedBufferAttribute(new Float32Array(256*2),2);g.setAttribute('rootSlope',m.userData.rootSlope);m.userData.rootTerrain=new THREE.InstancedBufferAttribute(new Float32Array(256*4),4);g.setAttribute('rootTerrain',m.userData.rootTerrain);}
   m.frustumCulled = false; m.count = 0; m.renderOrder = 8;
   m.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(256 * 3), 3);
@@ -1400,6 +1401,7 @@ const _m = new THREE.Matrix4(), _q = new THREE.Quaternion(), _p = new THREE.Vect
 const glowLights = Array.from({ length: 6 }, () => { const l = new THREE.PointLight(0xffaa55, 0, 10, 1.7); l.userData.base = 0; scene.add(l); return l; });
 let glowTick = 0;
 const wallTorches = TDWallTorch.create(scene);
+const chestPresentation = TDChestPresentation.create(scene,timeU);
 function updateGlowLights(cx, cz) {
   const cand = [];
   for (const p of props) { const L = PROP[p[0]].light; if (!L) continue; const d = (p[1] - cx) ** 2 + (p[2] - cz) ** 2; if (d < 1600) cand.push([d, p]); }
@@ -1476,7 +1478,7 @@ function groundedParts(p){return propGrounding.get(p,PROP[p[0]].geo,PROP[p[0]].g
 function groundedMeshes(type,ghost,needed){
  const map=ghost?groundedGhost:groundedNormal,old=map.get(type);if(old&&old[0].instanceMatrix.count>=needed)return old;
  const capacity=Math.min(ghost?256:CAP,Math.max(16,2**Math.ceil(Math.log2(needed)))),t=PROP[type];
- const meshes=TDPropGrounding.parts(t.geo).map((part,i)=>{const m=new THREE.InstancedMesh(part.geometry,ghost?ghostMat:propMat,capacity);m.instanceColor=new THREE.InstancedBufferAttribute(new Float32Array(capacity*3),3);m.frustumCulled=false;m.count=0;m.castShadow=m.receiveShadow=!ghost;m.renderOrder=ghost?8:0;if(old){m.instanceMatrix.array.set(old[i].instanceMatrix.array);m.instanceColor.array.set(old[i].instanceColor.array);scene.remove(old[i]);old[i].dispose();}scene.add(m);return m;});map.set(type,meshes);return meshes;
+ const meshes=TDPropGrounding.parts(t.geo).map((part,i)=>{const m=new THREE.InstancedMesh(part.geometry,ghost?ghostMat:TDFibreFinish.material(PROP_MATS[t.material]||propMat,t.id),capacity);m.instanceColor=new THREE.InstancedBufferAttribute(new Float32Array(capacity*3),3);m.frustumCulled=false;m.count=0;m.castShadow=m.receiveShadow=!ghost;m.renderOrder=ghost?8:0;if(old){m.instanceMatrix.array.set(old[i].instanceMatrix.array);m.instanceColor.array.set(old[i].instanceColor.array);scene.remove(old[i]);old[i].dispose();}scene.add(m);return m;});map.set(type,meshes);return meshes;
 }
 function rebuildProps(visualOnly = false) {
   refreshCliffFits(visualOnly);
@@ -1508,8 +1510,9 @@ function rebuildProps(visualOnly = false) {
   propMeshes.forEach((m, t) => { m.count = PROP[t].geo.userData.groundParts?0:cnt[t]; m.instanceMatrix.needsUpdate = true; m.instanceColor.needsUpdate = true; if (m.userData.cliffI) m.userData.cliffI.needsUpdate = true; });
   ghostMeshes.forEach((m, t) => { m.count = PROP[t].geo.userData.groundParts?0:gcnt[t]; m.instanceMatrix.needsUpdate = true; m.instanceColor.needsUpdate = true; });
   for(const[map,counts]of [[groundedNormal,cnt],[groundedGhost,gcnt]])for(const[t,meshes]of map)for(const m of meshes){m.count=counts[t];m.instanceMatrix.needsUpdate=m.instanceColor.needsUpdate=true;}
-  if (props.some(p => PROP[p[0]].roomTorch||PROP[p[0]].fireEffect)) ensureIds();
+  if (props.some(p => PROP[p[0]].roomTorch||PROP[p[0]].fireEffect||TDChestPresentation.slots(PROP[p[0]].id).length)) ensureIds();
   wallTorches.sync(props, PROP, propBaseY, state.roomId);
+  chestPresentation.sync(props,PROP,propMeshes,ghosts);
   touchStats.registered=touchProps.length;
   if(state.tool==='detail')syncGroundDetailUI();
   if (!visualOnly) { colliders = null; walkDirty = true; }
@@ -4702,7 +4705,7 @@ revision・書き出し日時・ファイルごとの SHA-256・contentHash は 
     ...(groundedInstances.length?[{name:'grounded_props.json',data:JSON.stringify(groundedData)}]:[]),
     { name: 'shared_props.json', data: (()=>{const d=JSON.parse(TDSharedProps.exportJson());d.sourceLibraryVersion=d.libraryVersion;d.libraryVersion='shared-registry/1';return JSON.stringify(d);})() },
     { name: 'asset_bindings.json', data: JSON.stringify({schemaVersion:1,bindings:Object.entries(catalogExport().types).filter(([,v])=>v.sharedModel).map(([id,v])=>({id,...v}))}) },
-    {name:'small_props.json',data:JSON.stringify(TDSmallPropExport.build(PROP,groundedData,props.filter(p=>TDSmallPropExport.ids.includes(PROP[p[0]].id)).map(p=>{const v=.86+.28*hash2(p[1]*97|0,p[2]*89|0);return{instanceId:p[8],tint:[v*(.95+.1*hash2(p[1]*13|0,7)),v,v*(.95+.1*hash2(3,p[2]*17|0))]};})))},
+    {name:'small_props.json',data:JSON.stringify(TDSmallPropExport.build(PROP,groundedData,props.filter(p=>TDSmallPropExport.ids.includes(PROP[p[0]].id)).map(p=>{const v=.86+.28*hash2(p[1]*97|0,p[2]*89|0);return{instanceId:p[8],...(['rowboat','seafan','pillarcoral','scallop'].includes(PROP[p[0]].id)?{rootPosition:[U.x(p[1]),U.y(propBaseY(p)),U.z(p[2])]}:{}),tint:[v*(.95+.1*hash2(p[1]*13|0,7)),v,v*(.95+.1*hash2(3,p[2]*17|0))]};})))},
     { name: 'pine_wind.json', data: TDPineWind.exportJson() },
     {name:'root_grounding.json',data:JSON.stringify({version:1,axes:'Unity world XZ',paint:{file:'root_paint.png',resolution:N,sizeMetres:[SIZE,SIZE]},instances:props.filter(p=>PROP[p[0]].sharedAsset&&TDSharedProps.asset(PROP[p[0]].sharedAsset).rootGrounding).map(p=>{const v=rootSlopeAt(p);return{instanceId:p[8],slope:[v[0],-v[1]],terrain:rootTerrainAt(p)};})})},
     { name: 'shared_ground.json', data: JSON.stringify(TDGroundData) },
@@ -4780,7 +4783,7 @@ const PROP_GROUPS = [
   ['岩・崖', ['drysoil_curl','drysoil_cup','drysoil_flake','scree', 'rock', 'mossrock', 'pebble', 'cliff', 'cliff_split', 'cliff_shoulder', 'cliff_joint', 'cliff_slab', 'cliff_talus', 'rubblepile', 'stalagmite', 'crystal', 'lavarock', 'obsidian', 'fumarole', 'iceblock', 'icespike']],
   ['遺跡・墓', ['column', 'brokencol', 'ruinwall', 'archgate', 'statue', 'statue_seated', 'statue_damaged', 'stele', 'obelisk', 'pyramid', 'gravestone', 'crossgrave', 'mausoleum', 'bones', 'bonepile', 'skullpile', 'magiccircle', 'demonspire']],
   ['海の生き物', ['braincoral', 'staghorn', 'pillarcoral', 'seafan', 'tablecoral', 'roundcoral', 'scallop', 'cowrie', 'shellbits', 'wrack']],
-  ['建物・道具', ['wall_torch', 'torch', 'brazier', 'lantern', 'banner', 'woodfence', 'ironfence', 'castlewall', 'tower', 'gatehouse', 'lighthouse', 'rowboat', 'haystack', 'miningtools', 'supplycrate', 'smallbarrel', 'tiedsack', 'coiledrope', 'storagepot', 'brokenpot', 'shells', 'snowman', 'kamakura']],
+  ['建物・道具', ['wall_torch', 'torch', 'brazier', 'lantern', 'banner', 'woodfence', 'ironfence', 'castlewall', 'tower', 'gatehouse', 'lighthouse', 'rowboat', 'haystack', 'miningtools', 'supplycrate', 'treasurechest_worn', 'treasurechest', 'treasurechest_reinforced', 'treasurechest_ornate', 'treasurechest_silver', 'treasurechest_gold', 'treasurechest_rainbow', 'smallbarrel', 'tiedsack', 'coiledrope', 'storagepot', 'brokenpot', 'shells', 'snowman', 'kamakura']],
 ];
 // [group name, type indices]; types not in PROP_GROUPS (added later) land in "その他"
 function propGroups() {
@@ -5778,7 +5781,7 @@ const bootReady=bootPending?.startsWith('prepared:')?prepareMap('pending',0,{tok
   prepareMap(bootPending==='sample2'&&SIZE===SAMPLE2_SIZE?'sample2':bootPending==='flat'||SIZE!==64?'flat':'sample',bootPending==='sample2'?11:7,{boot:true});
 
 // hooks for automated checks
-window.__app = { wallTorches, bedrockReady, splatAt,get tunnels() { return tunnels; }, set tunnels(v) { tunnels = v; }, get tunnelPrep() { return tunnelPrep; }, get tunnelLamps() { return tunnelLamps; }, placeTunnel, rebuildTunnels, tunnelGroup, tunnelHoleTex, cutU, refitFalls, placeFall, springFallGroup, fallGroup, get springs() { return springs; }, set springs(v) { springs = v; }, get pools() { return pools; }, get springRes() { return springRes; }, SC, placeSpring, placePool, applySprings, solveSprings, waterAt, springLevelAt, poolDist, poolWallAt, POOL_WALL, deckAt, fillGroundAll,buildPreparedSample,prepareMap,cancelMapPreparation,bootReady,get preparation(){return mapPreparation?{id:mapPreparation.id,phase:mapPreparation.phase,requestedMode:mapPreparation.requestedMode,elapsedMs:performance.now()-mapPreparation.start}:null;},get preparationStats(){return lastPreparedState;},
+window.__app = { chestPresentation, wallTorches, bedrockReady, splatAt,get tunnels() { return tunnels; }, set tunnels(v) { tunnels = v; }, get tunnelPrep() { return tunnelPrep; }, get tunnelLamps() { return tunnelLamps; }, placeTunnel, rebuildTunnels, tunnelGroup, tunnelHoleTex, cutU, refitFalls, placeFall, springFallGroup, fallGroup, get springs() { return springs; }, set springs(v) { springs = v; }, get pools() { return pools; }, get springRes() { return springRes; }, SC, placeSpring, placePool, applySprings, solveSprings, waterAt, springLevelAt, poolDist, poolWallAt, POOL_WALL, deckAt, fillGroundAll,buildPreparedSample,prepareMap,cancelMapPreparation,bootReady,get preparation(){return mapPreparation?{id:mapPreparation.id,phase:mapPreparation.phase,requestedMode:mapPreparation.requestedMode,elapsedMs:performance.now()-mapPreparation.start}:null;},get preparationStats(){return lastPreparedState;},
   propGrounding,groundedParts,groundedNormal,groundedGhost,groundPreview,setGroundPreview,propBaseY,get cliffContactProgress(){return cliffContactProgress;},cliffFits,effectiveGeometry,fitCliffContact,adoptCliffContact, cliffProtected,cliffProtectionReason,nearFeatureReason, get cliffContactStats(){return cliffContactStats;},
   pickGroundDetail,adjustGroundDetail,selectedGroundDetail,updateTouch,touchStats, pavingMask, cliffRelief, rebuildCliffRelief, groundTrial, groundTexture, terrainSource:tGeo, terrain, renderer, camera, SIZE, state, H, S, O, F, C, propMeshes, ghostMeshes, cliffIndexAt, BIOMES, CLIFF_STYLES, applyCliffStyle, deckAt, linkDeckAt, runValidation, genSample, genSample2, secretRegions, secretLineX, passageGeometry, terrainRes, TERRAIN_RES, snapshot, sha256, LINK_KINDS, normalizeCatalog, catalogExport, valueIssues, areaIssue, deckAt, getColliders, PROP, get colliderMaxR() { return colliderMaxR; }, rebuildMarkers, portLanding, linkTrigger, linkArrival, LINK_SPEC, get markers() { return markers; }, placeMarker, ensureIds, applyCatalog, ATMOS, WEATHER, applyAtmo, makeCoast, glowLights, applyBiome, applyPalette, TIMES, timeId, propVisible, toolVisible, updateTerrain, rebuildProps, genFlat, floorAt, bridgeAt, stairsAt, placeSlope, placeStairs, placeBridge, pickTarget, regenGroundProps, rebuildBridges, get stairs() { return stairs; }, get bridges() { return bridges; }, get falls() { return falls; }, overrideAt, heroMat, hero, heroBody, get heroLook() { return heroLook; }, setHeroLook, heroStyle, heroGlow, get ghosts() { return ghosts; }, get props() { return props; }, cam, playCam, player, keys, setMode, setTool, update, heightAt, walkable, slope: slopeAt,
   stroke(x, z, frames = 20, opts = {}) {

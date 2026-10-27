@@ -1,4 +1,4 @@
-// 凸ダン本体の壁掛け松明。既存の地面置きtorchとは別の固定ID。
+// 元Prefabに対応する壁掛け松明。既存の地面置きtorchとは別の固定ID。
 (() => {
   'use strict';
   const S = TDWallTorchSource, lerp = (a, b, t) => a + (b - a) * t;
@@ -18,7 +18,7 @@
   const previewGeometry = geometry(previewData);
   const colors = previewGeometry.attributes.color;
   for (let i = 0; i < colors.count; i++) colors.setXYZ(i, ...sourceColor(i < S.fixture.positions.length / 3 ? S.fixtureMaterial.color : S.flameMaterial.color).toArray());
-  TDProps.add({ id: 'wall_torch', name: '壁掛け松明（凸ダン）', r: 0, min: 2, sc: [1, 1], slope: 10,
+  TDProps.add({ id: 'wall_torch', name: '壁掛け松明', r: 0, min: 2, sc: [1, 1], slope: 10,
     vis: .22, height: .45, anyGround: true, tags: ['cave', 'castle', 'ruins'], roomTorch: true,
     // 原本rootの支点は柄の中央。既存の接地処理で床から1.45mに支える。
     groundSink: -S.defaultMountHeight, material: 'wallTorch', light: [0xff9136, 3, .26],
@@ -62,7 +62,7 @@
     return { object, config, count: 0 };
   }
   function create(scene) {
-    const group = new THREE.Group(); group.name = '凸ダン壁掛け松明 VFX'; scene.add(group);
+    const group = new THREE.Group(); group.name = '壁掛け松明 VFX'; scene.add(group);
     // 3枚の交差面。透明な縁と流れる密度を持つ炎を全灯具で共有する。
     const flameGeo = new THREE.PlaneGeometry(1,1,4,8), flameMat = new THREE.ShaderMaterial({transparent:true,depthWrite:false,side:THREE.DoubleSide,uniforms:{fireTime:{value:0}},vertexShader:`attribute float firePhase;uniform float fireTime;varying vec2 vUv;varying float vPhase;void main(){vUv=uv;vPhase=firePhase;vec3 p=position;p.x+=sin(uv.y*7.-fireTime*3.+firePhase)*uv.y*uv.y*.075;gl_Position=projectionMatrix*modelViewMatrix*instanceMatrix*vec4(p,1.);}`,fragmentShader:`uniform float fireTime;varying vec2 vUv;varying float vPhase;
       float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(hash(i),hash(i+vec2(1,0)),f.x),mix(hash(i+vec2(0,1)),hash(i+1.),f.x),f.y);}

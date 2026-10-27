@@ -1,0 +1,53 @@
+{
+  "verifiedUtc": "2026-10-27T21:19:39.424327+00:00",
+  "mainBase": "441e1405f7d461ec644fa6bc7b3e3d2911aa121b",
+  "adoptedSource": "aadec21ba4ce13f97a8618df9928b7cfce61beaa",
+  "web": {
+    "moonReflection": true,
+    "timeOfDaySaveExport": true,
+    "pureBlackFloor": true,
+    "all136CatalogExact": true,
+    "saveLegacyUndoRedoColliderExport": true,
+    "preparedContentExact": true,
+    "fixedRockRegeneration": 0
+  },
+  "unity": {
+    "version": "6000.5.9f1",
+    "nativeChecks": 647,
+    "customBridgeChecksReused": 154,
+    "unchangedProductFiles": 103,
+    "unchangedCustomInputs": true,
+    "blackFloorChecksReused": 12,
+    "blackFloorExportIdenticalExceptRandomRoomId": [
+      "mask_3.png",
+      "meta.json",
+      "shared_ground.json"
+    ],
+    "nativeIndividualImagesIdentical": 110,
+    "nativeOverviewDifference": {
+      "pixels": 113,
+      "maximumChannelDelta": 28,
+      "bounds": [
+        530,
+        661,
+        744,
+        768
+      ],
+      "note": "宝箱の時刻を固定しない全景に限定。個別固定時刻とPlayer画像は一致。"
+    }
+  },
+  "player": {
+    "checks": 291,
+    "buildErrors": 0,
+    "buildWarnings": 7,
+    "runtimeErrors": [],
+    "runtimeWarnings": [],
+    "imagesIdenticalToAdopted": 34,
+    "editorAndReloadPixelsIdentical": true
+  },
+  "limits": [
+    "実ゲーム統合・全136種Player・モバイル/IL2CPP・別GPU/pipelineは未検証",
+    "限定秘密パターン検査は機密の完全保証ではない",
+    "PlayerはWindows64 Mono/D3D11の専用fixture"
+  ]
+}

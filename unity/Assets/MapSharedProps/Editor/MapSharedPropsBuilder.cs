@@ -108,7 +108,9 @@ public static class MapSharedPropsBuilder {
   }
   return rows;
  }
- public static Result Build(string exportDirectory, Transform parent = null) {
+ public static Result Build(string exportDirectory, Transform parent = null) {return Build(exportDirectory,parent,null);}
+ public static Result Build(string exportDirectory, Transform parent, IReadOnlyDictionary<string,GameObject> externalPrefabs) {
+  FibrePrefabImport.Validate(exportDirectory,externalPrefabs);
   var lib = ReadLibrary(SharedAssetFiles.Resolve(exportDirectory, "shared_props.json"));
   var cat = JsonUtility.FromJson<CatalogDto>(File.ReadAllText(Path.Combine(exportDirectory, "asset_catalog.json")));
   Require(cat != null && cat.types != null, "missing asset catalog types");
@@ -180,7 +182,7 @@ public static class MapSharedPropsBuilder {
    foreach(var p in rows)if(surfaces.TryGetValue(p.instanceId,out var surface)){var tr=r.root.transform.Find(p.instanceId);if(tr&&Array.Find(lib.assets,a=>a.id==p.type).rootSurface!=null)MapSharedProps.SharedRootGrounding.SetSurface(tr.GetComponent<Renderer>(),surface);}
    if(contactDriver)contactDriver.Refresh();
    if(wind!=null){var driver=r.root.AddComponent<MapSharedProps.SharedPineWind>();ConfigureWind(driver,Path.Combine(exportDirectory,"meta.json"));driver.Apply(0);}
-   int grounded=GroundedPropsV1.Build(exportDirectory,r.assetDirectory,r.root.transform,shader);r.placed+=grounded;r.skipped-=grounded;int small=SmallPropsV1.Build(exportDirectory,r.assetDirectory,r.root.transform,shader,r.prefabs);r.placed+=small;r.skipped-=small;
+   int grounded=GroundedPropsV1.Build(exportDirectory,r.assetDirectory,r.root.transform,shader);r.placed+=grounded;r.skipped-=grounded;int small=SmallPropsV1.Build(exportDirectory,r.assetDirectory,r.root.transform,shader,r.prefabs,externalPrefabs);r.placed+=small;r.skipped-=small;
     var torches=RoomTorchBuilder.Build(exportDirectory,r.root.transform);if(torches!=null){r.placed+=torches.Fixtures.Length;r.skipped-=torches.Fixtures.Length;}
     int fire=FirePropsBuilder.Build(exportDirectory,r.assetDirectory,r.root.transform,shader);r.placed+=fire;r.skipped-=fire;
     AssetDatabase.SaveAssets(); return r;

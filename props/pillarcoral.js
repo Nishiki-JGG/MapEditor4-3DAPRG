@@ -10,8 +10,11 @@ TDProps.add({
     for (let k = 0; k < n; k++) {
       const a = k / n * Math.PI * 2 + R() * .7, d = k === 0 ? 0 : .13 + R() * .17, r = .085 + R() * .045, h = .55 + R() * .75 * (1 - d * 1.5);
       const x = Math.cos(a) * d, z = Math.sin(a) * d, lx = (R() - .5) * .16, lz = (R() - .5) * .16;
-      parts.push({ g: new THREE.CylinderGeometry(r, r * 1.1, h, 18, 5), m: mat4(x, h / 2, z, 1, 1, 1, 0, lz, -lx), cfn: fuzz, j: .2 });
-      parts.push({ g: new THREE.SphereGeometry(r, 18, 6, 0, Math.PI * 2, 0, Math.PI / 2), m: mat4(x - lx * h * .5, h, z + lz * h * .5, 1, 1.25, 1, 0, lz, -lx), cfn: fuzz, j: .2 });
+      const shaft = mat4(x, h / 2, z, 1, 1, 1, 0, lz, -lx);
+      const tip = new THREE.Vector3(0, h / 2, 0).applyMatrix4(shaft);
+      parts.push({ g: new THREE.CylinderGeometry(r, r * 1.1, h, 18, 5), m: shaft, cfn: fuzz, j: .2 });
+      // 元の傾き・高さ・半径を保ち、頂部の中心と18角形の接続輪だけを柱に合わせる。
+      parts.push({ g: new THREE.SphereGeometry(r, 18, 6, Math.PI / 2, Math.PI * 2, 0, Math.PI / 2), m: mat4(tip.x, tip.y, tip.z, 1, 1.25, 1, 0, lz, -lx), cfn: fuzz, j: .2 });
     }
     parts.push({ g: displace(new THREE.IcosahedronGeometry(.32, 1), .3, 4), m: mat4(0, .04, 0, 1.2, .3, 1.2), cfn: (y, ny, Rr) => mixc(col(0x8a8378), col(0x9d7a58), Rr()), j: .12 });
     return makeGeo(parts, 91, { ao: .6, smooth: 50 });
