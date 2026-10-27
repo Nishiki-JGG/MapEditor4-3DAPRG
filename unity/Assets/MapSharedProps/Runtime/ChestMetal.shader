@@ -52,10 +52,15 @@ Shader "MapSharedProps/ChestMetal" {
     float3 surfaceUV=ChestSurfaceSampleUV(i.surface,i.positionOS);detail=ChestPacked(surfaceUV,i.surface,i.positionOS);surfaceMask=step(.5,i.surface.z);n=ChestDetailNormal(n,i.positionWS,surfaceUV.xy,(detail.xy*2-1)*surfaceMask);finishColour*=lerp(1,ChestColour(surfaceUV,i.surface,i.positionOS)*detail.a,surfaceMask);
     #endif
     float3 nv=normalize(mul((float3x3)UNITY_MATRIX_V,n)),cv=normalize(mul((float3x3)UNITY_MATRIX_V,GetWorldSpaceNormalizeViewDir(i.positionWS)));
-    float3 cl=normalize(mul((float3x3)UNITY_MATRIX_V,float3(-.3,.8,.5)));Light light=GetMainLight();float shadow=MainLightRealtimeShadow(TransformWorldToShadowCoord(i.positionWS));
+    Light light=GetMainLight();float3 cl=normalize(mul((float3x3)UNITY_MATRIX_V,float3(-.3,.8,.5)));
+    #if defined(CHEST_SURFACE)
+    cl=normalize(mul((float3x3)UNITY_MATRIX_V,light.direction));
+    #endif
+    float shadow=MainLightRealtimeShadow(TransformWorldToShadowCoord(i.positionWS));
     float cs=pow(max(0,dot(nv,normalize(cl+cv))),lerp(lerp(80,160,i.finish),lerp(180,18,detail.b),surfaceMask)),cr=pow(1-max(0,dot(nv,cv)),3),t=_ChestTime<0?_Time.y:_ChestTime;
+    cs*=lerp(1,lerp(1.12,.42,detail.b),surfaceMask);
     float3 refl=reflect(-cv,nv);float env=.14+.45*smoothstep(-.10,.55,refl.y)+.65*pow(max(0,1-abs(refl.y-.4)),lerp(16,lerp(48,6,detail.b),surfaceMask));
-    float3 coat=.5+.5*cos(float3(0,2.094,4.188)+dot(nv,cv)*9+t*.45);
+    env*=lerp(1,lerp(1.18,.48,detail.b),surfaceMask);float3 coat=.5+.5*cos(float3(0,2.094,4.188)+dot(nv,cv)*9+t*.45);
     float gain=saturate(dot(SampleSH(float3(0,1,0)),float3(.2126,.7152,.0722))/.35);
     float3 rgb=finishColour*(SampleSH(n)+light.color*max(0,dot(n,light.direction))*shadow)*lerp(.46,.92,i.finish);
     rgb+=finishColour*env*lerp(.62,.08,i.finish)*gain+lerp(lerp(float3(1,1,1),finishColour,.35),float3(.025,.025,.025)+finishColour*.8,i.ink)*(cs*lerp(.95,.35,i.finish)+cr*.14)*gain;
