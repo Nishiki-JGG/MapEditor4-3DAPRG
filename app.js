@@ -118,6 +118,37 @@ const TIMES = {
 };
 const timeId = id => Object.hasOwn(TIMES,id) ? id : 'day';
 const waterTimeTint = { value: new THREE.Vector3(1,1,1) };
+// No extra camera or render target: reuse the directional shadow map.
+const moonStrength = { value: 0 };
+const moonShadow = { get value() { return sun.shadow.map ? sun.shadow.map.texture : null; } };
+const MOON_GLSL = `
+  uniform float uMoonStrength;
+  uniform sampler2D uMoonShadow;
+  uniform mat4 uMoonShadowMatrix;
+  uniform vec2 uMoonShadowTexel;
+  #include <packing>
+  float moonVisibility(vec3 p){
+    vec4 sc=uMoonShadowMatrix*vec4(p+vec3(0.,.025,0.),1.);vec3 q=sc.xyz/sc.w;
+    if(q.z<=0.||q.z>=1.||any(lessThan(q.xy,vec2(0.)))||any(greaterThan(q.xy,vec2(1.))))return 1.;
+    float visibility=0.;
+    for(int y=0;y<2;y++)for(int x=0;x<2;x++){
+      float d=unpackRGBAToDepth(texture2D(uMoonShadow,q.xy+(vec2(float(x),float(y))-.5)*uMoonShadowTexel));
+      visibility+=step(q.z-.0002,d)*.25;
+    }
+    return visibility;
+  }
+  vec3 moonReflection(vec3 view,vec3 normal,vec3 light){
+    vec3 ray=reflect(-view,normal);float facing=dot(ray,light);
+    vec3 tangent=normalize(cross(vec3(0.,1.,0.),light));vec3 up=cross(light,tangent);
+    vec2 uv=vec2(dot(ray,tangent),dot(ray,up))/max(facing,.001);
+    float r=length(uv),aa=max(fwidth(r),.0008);
+    float disk=1.-smoothstep(.026-aa,.026+aa,r);
+    // Broad low-contrast lunar markings, not a featureless white sticker.
+    float marks=.83+.10*sin(uv.x*180.+sin(uv.y*110.)*2.)*sin(uv.y*150.);
+    float glow=exp(-r*r/0.0064)*.045;
+    return vec3(.72,.84,1.)*(disk*marks*.85+glow)*step(.01,facing)*step(0.,ray.y);
+  }
+`;
 const DARK_LEVELS = { dark: { name: '暗い（明かりだけ）', hemi: 1, fill: 0 }, normal: { name: 'ふつう', hemi: 2.2, fill: 1.6 }, bright: { name: '明るい', hemi: 3.5, fill: 3.2 } };
 const fill = new THREE.DirectionalLight(0xffffff, 0);
 fill.position.set(-12, 60, 18); fill.visible = false; scene.add(fill, fill.target);
@@ -853,7 +884,7 @@ const waterMat = new THREE.ShaderMaterial({
   // pulled a few depth steps toward the camera: where the sheet lies on the sand (the run-up's edge) it must stay in front of
   // it even with a phone's coarse depth buffer, or the two flicker in a pattern of the 0.5 m grid
   transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: 0, polygonOffsetUnits: -2,
-  uniforms: { uTime: timeU, uDim: dimU, uSun: { value: sun.position.clone().normalize() }, uShallow: BU.uShallow, uDeep: BU.uDeep, uLava: BU.uLava, uSea: BU.uSea, uWaveH: { value: .38 }, ...WATERU },
+  uniforms: { uTime: timeU, uDim: dimU, uMoonStrength: moonStrength, uMoonShadow: moonShadow, uMoonShadowMatrix: {value:sun.shadow.matrix}, uMoonShadowTexel: {value:new THREE.Vector2(1/2048,1/2048)}, uSun: { value: sun.position.clone().normalize() }, uShallow: BU.uShallow, uDeep: BU.uDeep, uLava: BU.uLava, uSea: BU.uSea, uWaveH: { value: .38 }, ...WATERU },
   vertexShader: `attribute float depth; attribute vec4 shore; attribute vec2 shore2; uniform float uTime; uniform float uSea; uniform float uWaveH;
     varying float vD; varying float vD0; varying vec3 vWPos; varying vec4 vSea; varying vec2 vPh; varying vec2 vGrad; varying vec2 vDir; varying vec2 vRiv;
     ${GLSL_NOISE}
@@ -873,6 +904,7 @@ const waterMat = new THREE.ShaderMaterial({
     ${GLSL_NOISE}
     ${LAVA_SURFACE_GLSL}
     ${TDSea.GLSL_PRELUDE}${TDSea.COMMON}${TDSea.SHADE}
+    ${MOON_GLSL}
     float caus(vec2 p){
       vec2 q=p+vec2(fbm(p*.8+uTime*.025),fbm(p*.9-uTime*.021))*1.3;
       float a=sin(q.x*8.+q.y*3.5+uTime*.22),b=sin(q.y*9.-q.x*2.3-uTime*.18);
@@ -970,6 +1002,12 @@ const waterMat = new THREE.ShaderMaterial({
         col=lavaSurface(p,uTime).rgb;alpha=1.;
       }
       gl_FragColor=vec4(dimc(pow(col,vec3(2.2))),alpha);
+      vec3 moonLight=vec3(0.);
+      if(uMoonStrength>.001 && uLava<.5 && !dry){
+        vec2 slope=mix(g*(.008+.05*min(speed,2.)),gP*.6+g*.035,seaW);
+        vec3 moonNormal=normalize(vec3(-slope.x,1.,-slope.y));
+        moonLight=moonReflection(V,moonNormal,normalize(uSun))*uMoonStrength*moonVisibility(vWPos)*smoothstep(0.,.12,dP)*(1.-fz*.85);
+      }
       #include <tonemapping_fragment>
       #include <colorspace_fragment>
     }`,
@@ -1671,6 +1709,7 @@ function applyWeather() {
   sun.position.set(...T.position);
   waterMat.uniforms.uSun.value.copy(sun.position).normalize();
   waterTimeTint.value.set(...(state.sunOn ? T.water : [1,1,1]));
+  moonStrength.value = state.sunOn && timeId(state.timeOfDay)==='night' ? Math.max(0,1-(1-light)*1.5) : 0;
   sun.intensity = state.sunOn ? B.sunI * T.direct * light : 0; sun.visible = state.sunOn;   // off: no sun and no sun shadows (caves)
   const D = state.sunOn ? null : DARK_LEVELS[state.darkness] || DARK_LEVELS.dark;
   weatherHemi = hemi.intensity = B.hemi * (.55 + .45 * light) * (D ? D.hemi : T.ambient);
@@ -1772,6 +1811,8 @@ for (const m of [waterMat,springMat,fallMat,foamMat,streamMat]) {
   m.uniforms.uTimeLightTint=waterTimeTint;
   m.fragmentShader='uniform vec3 uTimeLightTint;\n'+m.fragmentShader.replace('#include <tonemapping_fragment>', 'gl_FragColor.rgb *= mix(uTimeLightTint,vec3(1.),step(.5,uLava));\n#include <tonemapping_fragment>');
 }
+for (const m of [waterMat,springMat]) m.fragmentShader=m.fragmentShader.replace('#include <tonemapping_fragment>', 'gl_FragColor.rgb += moonLight;\n#include <tonemapping_fragment>');
+
 const fallDir = f => [-Math.sin(f.rot), -Math.cos(f.rot)];   // uphill direction (toward the source)
 // the placed falls, and the springs' streams falling down a cliff as the same kind of band (foot x, z; width w; rot facing downstream)
 function fallBands() {
@@ -5592,7 +5633,7 @@ function installWalkPreparation(w){
  for(const n of ['position','walk','forced','secret'])wkGeo.attributes[n].needsUpdate=true;wkGeo.computeBoundingSphere();walkDirty=false;
 }
 async function preparationKey(kind,seed,job){
- const config=JSON.stringify([kind,seed,SIZE,kind==='sample2'?'ruins':state.biome,state.agent,state.cliffStyle,state.catalog,TDPreparation.version,TDPreparedSamples.recipeVersion,[...document.scripts].filter(s=>!s.dataset.preparedSample&&!s.hasAttribute('data-presentation-only')).map(s=>(s.getAttribute('src')||'').replace('time-of-day1&','').replace(/app.js\?(walltorch1|firequality1)&/,'app.js?public-label1&')).filter(Boolean)]);
+ const config=JSON.stringify([kind,seed,SIZE,kind==='sample2'?'ruins':state.biome,state.agent,state.cliffStyle,state.catalog,TDPreparation.version,TDPreparedSamples.recipeVersion,[...document.scripts].filter(s=>!s.dataset.preparedSample&&!s.hasAttribute('data-presentation-only')).map(s=>(s.getAttribute('src')||'').replace('moon-reflection1&','').replace('time-of-day1&','').replace(/app.js\?(walltorch1|firequality1)&/,'app.js?public-label1&')).filter(Boolean)]);
  if(preparationKeys.has(config))return preparationKeys.get(config);
  const hashes=[];
  await TDPreparation.each(PROP,async t=>{if(t.r<=0||t.manualOnly)return;const prep=t.preparationGeo||t.geo,a=prep.attributes.position.array,ix=prep.index?.array;const hash=async a=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new Uint8Array(a.buffer,a.byteOffset,a.byteLength))),v=>v.toString(16).padStart(2,'0')).join('');hashes.push([t.id,t.r,t.height,t.yawOffset,await hash(a),ix?await hash(ix):'']);},job);
@@ -5731,6 +5772,7 @@ window.__app = { wallTorches, bedrockReady, splatAt,get tunnels() { return tunne
     for (let f = 0; f < frames; f++) { if (stroke.active && !['scatter', 'erase'].includes(state.tool)) { applyBrush(x, z, 1 / 60); } }
     stroke.active = false; updateTerrain(); rebuildProps(); if (falls.length) refitFalls();
   },
+  moonStrength, waterMat, water, sun,
   render() { renderer.render(scene, camera); },
   setTime(t) { timeU.value = t; }, get time() { return timeU.value; },
   serialize, deserialize, buildExport, makeZip, undo, redo, refreshWaterData, WATERU, get waterInfo() { return waterInfo; }, syncWaterShow,
