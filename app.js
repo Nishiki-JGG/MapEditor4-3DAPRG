@@ -114,7 +114,7 @@ scene.add(sun, sun.target);
 const TIMES = {
   day: { name: '昼', sun: null, sky: null, ground: null, direct: 1, ambient: 1, position: [-48,62,-14], water: [1,1,1] },
   evening: { name: '夕方', sun: 0xffb56b, sky: 0xafb5dc, ground: 0x75533e, direct: .72, ambient: .70, position: [-68,22,14], water: [.72,.48,.30] },
-  night: { name: '夜（満月）', sun: 0xb9d0ff, sky: 0x819fd8, ground: 0x354464, direct: .28, ambient: .32, position: [48,62,14], water: [.15,.23,.39] }
+  night: { name: '夜（満月）', sun: 0xb9d0ff, sky: 0x819fd8, ground: 0x354464, direct: .28, ambient: .32, position: [48,26.6,14], water: [.15,.23,.39] }
 };
 const timeId = id => Object.hasOwn(TIMES,id) ? id : 'day';
 const waterTimeTint = { value: new THREE.Vector3(1,1,1) };
@@ -137,16 +137,30 @@ const MOON_GLSL = `
     }
     return visibility;
   }
-  vec3 moonReflection(vec3 view,vec3 normal,vec3 light){
-    vec3 ray=reflect(-view,normal);float facing=dot(ray,light);
-    vec3 tangent=normalize(cross(vec3(0.,1.,0.),light));vec3 up=cross(light,tangent);
-    vec2 uv=vec2(dot(ray,tangent),dot(ray,up))/max(facing,.001);
-    float r=length(uv),aa=max(fwidth(r),.0008);
-    float disk=1.-smoothstep(.026-aa,.026+aa,r);
-    // Broad low-contrast lunar markings, not a featureless white sticker.
-    float marks=.83+.10*sin(uv.x*180.+sin(uv.y*110.)*2.)*sin(uv.y*150.);
-    float glow=exp(-r*r/0.0064)*.045;
-    return vec3(.72,.84,1.)*(disk*marks*.85+glow)*step(.01,facing)*step(0.,ray.y);
+  float moonNoise(vec2 p){
+    vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
+    float a=fract(sin(dot(i,vec2(127.1,311.7)))*43758.5453);
+    float b=fract(sin(dot(i+vec2(1.,0.),vec2(127.1,311.7)))*43758.5453);
+    float c=fract(sin(dot(i+vec2(0.,1.),vec2(127.1,311.7)))*43758.5453);
+    float d=fract(sin(dot(i+vec2(1.,1.),vec2(127.1,311.7)))*43758.5453);
+    return mix(mix(a,b,f.x),mix(c,d,f.x),f.y);
+  }
+  vec3 moonReflection(vec3 view,vec3 normal,vec3 light,vec3 position,float phase){
+    // The elongated microfacet distribution is tied to the moon azimuth, not screen UV.
+    // Small wave slopes break the reflected light into a moving moon road.
+    vec3 axis=normalize(vec3(light.x,0.,light.z));
+    vec3 side=normalize(cross(normal,axis)),along=normalize(cross(side,normal));
+    vec3 halfLight=normalize(view+light);
+    float nh=max(dot(halfLight,normal),.15);
+    float sx=dot(halfLight,side)/nh,sy=dot(halfLight,along)/nh;
+    float road=exp(-sx*sx/.000625-sy*sy/.1156);
+    vec3 flatSide=vec3(-axis.z,0.,axis.x);
+    vec2 q=vec2(dot(position,flatSide),dot(position,axis));
+    float wave=moonNoise(q*vec2(4.,18.)+vec2(phase*.15,-phase*.6))*.7+moonNoise(q*vec2(1.5,3.)+phase*.12)*.3;
+    float shimmer=smoothstep(.30,.82,wave);
+    float fresnel=.35+.65*pow(1.-max(dot(view,normal),0.),2.);
+    return vec3(.72,.84,1.)*road*shimmer*fresnel*.8
+      *smoothstep(0.,.12,view.y)*smoothstep(0.,.1,light.y);
   }
 `;
 const DARK_LEVELS = { dark: { name: '暗い（明かりだけ）', hemi: 1, fill: 0 }, normal: { name: 'ふつう', hemi: 2.2, fill: 1.6 }, bright: { name: '明るい', hemi: 3.5, fill: 3.2 } };
@@ -1004,9 +1018,9 @@ const waterMat = new THREE.ShaderMaterial({
       gl_FragColor=vec4(dimc(pow(col,vec3(2.2))),alpha);
       vec3 moonLight=vec3(0.);
       if(uMoonStrength>.001 && uLava<.5 && !dry){
-        vec2 slope=mix(g*(.008+.05*min(speed,2.)),gP*.6+g*.035,seaW);
+        vec2 slope=mix(g*(.035+.05*min(speed,2.)),gP*.6+g*.035,seaW);
         vec3 moonNormal=normalize(vec3(-slope.x,1.,-slope.y));
-        moonLight=moonReflection(V,moonNormal,normalize(uSun))*uMoonStrength*moonVisibility(vWPos)*smoothstep(0.,.12,dP)*(1.-fz*.85);
+        moonLight=moonReflection(V,moonNormal,normalize(uSun),vWPos,uTime)*uMoonStrength*moonVisibility(vWPos)*smoothstep(0.,.12,dP)*(1.-fz*.85);
       }
       #include <tonemapping_fragment>
       #include <colorspace_fragment>
