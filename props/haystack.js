@@ -14,7 +14,11 @@ TDProps.add({
     }
     for(let k=1;k<rings.length;k++)for(let j=0;j<N;j++){const a=(k-1)*(N+1)+j,b=a+1;ix.push(a,a+N+1,b,b,a+N+1,b+N+1);}
     for(let j=1;j<N-1;j++)ix.push(0,j,j+1,(rings.length-1)*(N+1),(rings.length-1)*(N+1)+j+1,(rings.length-1)*(N+1)+j);
-    const g=mesh(v,ix);g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
+    let g=mesh(v,ix);g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
+    // Keep the bundle's shape; give the shared straw tile a metre-scale width.
+    g=g.toNonIndexed();const u=g.attributes.uv;
+    for(let i=0;i<(rings.length-1)*N*6;i+=3){const tile=Math.floor(Math.min(u.getX(i),u.getX(i+1),u.getX(i+2))*4+1e-6);for(let j=i;j<i+3;j++)u.setX(j,u.getX(j)*4-tile);}
+
     const parts=[{g,m:new THREE.Matrix4(),cfn:hay,uvr:ATLAS2.uvr('straw'),j:.015}];
     // 縛り縄は縮まった腰へ密着する。別の大きな輪を浮かせない。
     const points=[];for(let j=0;j<=N;j++){const a=j/N*Math.PI*2,r=.708*(1+.045*Math.sin(a*7+.3)+.018*Math.cos(a*11-.8));points.push([Math.cos(a)*r,.645+.014*Math.sin(a*2),Math.sin(a)*r]);}
