@@ -28,7 +28,7 @@ Webの粒子乱数・連続ノイズ・透明粒子の縁はWeb向けの再現�
 
 Unity側には本リポジトリの `unity/Assets/MapSharedProps` と、元ゲームにある次の原本と依存資産が必要です。
 
-- `Assets/TotsuDanShell/Prototype/Resources/DiscoveryPresentation/RoomTorch.prefab`
+- `<source-root>/Resources/DiscoveryPresentation/RoomTorch.prefab`
 - `Art/DungeonPresentation/Torch.asset`、`Flame.asset`、`Blackened iron.mat`、`Torch glow.mat`
 - `Resources/DiscoveryPresentation/TorchSpark.mat`、`TorchSmoke.mat`
 - `Runtime/DiscoveryRoomTorchPresentation.cs`、各原本の `.meta`、対応するURP
@@ -50,7 +50,7 @@ Unity側は取り込んだ部屋グループごとに最大6灯・影付き最�
 - `node tests/wall-torch-browser.cjs`：UI配置、原本形状、保存再読込、削除、Undo/Redo、距離フェード、Unity書出し、位置・角度・倍率、1/10/50本の測定。
 - `node tests/wall-torch-regression.cjs`：64m/48mの固定サンプルを岩の再生成禁止で読み込み、TAB4回後も地形・小物・保存内容が同じこと。
 - `node tests/wall-torch-visual.cjs`：元Prefabと同じ寸法・カメラの比較用Web描画。
-- `python tools/export-wall-torch.py <元ゲームのAssets/TotsuDanShell/Prototype>`：モデル抽出と元資産のSHA-256記録。
+- `python tools/export-wall-torch.py <source-root>`：モデル抽出と元資産のSHA-256記録。
 - `python tools/preflight-wall-torch.py <Unity Editor/Data>`：Unityなしの対象C#コンパイル。
 - `tests/setup-wall-torch-unity.py`、`tests/unity/RoomTorchChecks.cs`：必要な原本だけの隔離環境、Prefab取り込みと保存再読込、PlayMode初期化、1/10/50本、元Prefabとの比較。
 - `python tools/check-wall-torch-log.py <証拠フォルダ>`：起動全体のseed Assert・コンパイルエラー・予期しない例外を検査。既存のEditor SearchDatabase例外は元stackを保存して区別します。

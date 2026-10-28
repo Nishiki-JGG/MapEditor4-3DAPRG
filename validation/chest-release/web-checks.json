@@ -1,0 +1,300 @@
+{
+  "pass": true,
+  "utc": "2026-10-28T12:02:33.375Z",
+  "stages": {
+    "after": {
+      "saveReload": true,
+      "customExcluded": true,
+      "catalogItems": 136,
+      "shaderErrors": [],
+      "failedPrograms": [],
+      "negativeContractsRejected": 10,
+      "partIds": [
+        "treasurechest_silver",
+        "treasurechest_rainbow"
+      ],
+      "wornValid": true,
+      "textureCounts": [
+        {
+          "n": 7,
+          "textures": 31,
+          "geometries": 171
+        },
+        {
+          "n": 21,
+          "textures": 31,
+          "geometries": 171
+        },
+        {
+          "n": 0,
+          "textures": 31,
+          "geometries": 170
+        },
+        {
+          "n": 7,
+          "textures": 31,
+          "geometries": 171
+        },
+        {
+          "n": 0,
+          "textures": 31,
+          "geometries": 170
+        },
+        {
+          "n": 7,
+          "textures": 31,
+          "geometries": 171
+        }
+      ],
+      "views": 10
+    },
+    "fail-silver": {
+      "saveReload": true,
+      "customExcluded": true,
+      "catalogItems": 136,
+      "shaderErrors": [],
+      "failedPrograms": [],
+      "negativeContractsRejected": 10,
+      "partIds": [
+        "treasurechest_rainbow"
+      ],
+      "wornValid": true,
+      "textureCounts": [
+        {
+          "n": 7,
+          "textures": 29,
+          "geometries": 171
+        },
+        {
+          "n": 21,
+          "textures": 29,
+          "geometries": 171
+        },
+        {
+          "n": 0,
+          "textures": 29,
+          "geometries": 170
+        },
+        {
+          "n": 7,
+          "textures": 29,
+          "geometries": 171
+        },
+        {
+          "n": 0,
+          "textures": 29,
+          "geometries": 170
+        },
+        {
+          "n": 7,
+          "textures": 29,
+          "geometries": 171
+        }
+      ],
+      "views": 1
+    },
+    "fail-rainbow": {
+      "saveReload": true,
+      "customExcluded": true,
+      "catalogItems": 136,
+      "shaderErrors": [],
+      "failedPrograms": [],
+      "negativeContractsRejected": 10,
+      "partIds": [
+        "treasurechest_silver"
+      ],
+      "wornValid": true,
+      "textureCounts": [
+        {
+          "n": 7,
+          "textures": 29,
+          "geometries": 171
+        },
+        {
+          "n": 21,
+          "textures": 29,
+          "geometries": 171
+        },
+        {
+          "n": 0,
+          "textures": 29,
+          "geometries": 170
+        },
+        {
+          "n": 7,
+          "textures": 29,
+          "geometries": 171
+        },
+        {
+          "n": 0,
+          "textures": 29,
+          "geometries": 170
+        },
+        {
+          "n": 7,
+          "textures": 29,
+          "geometries": 171
+        }
+      ],
+      "views": 1
+    },
+    "fail-worn": {
+      "saveReload": true,
+      "customExcluded": true,
+      "catalogItems": 136,
+      "shaderErrors": [],
+      "failedPrograms": [],
+      "negativeContractsRejected": 5,
+      "partIds": [
+        "treasurechest_silver",
+        "treasurechest_rainbow"
+      ],
+      "wornValid": null,
+      "textureCounts": [
+        {
+          "n": 7,
+          "textures": 29,
+          "geometries": 171
+        },
+        {
+          "n": 21,
+          "textures": 29,
+          "geometries": 171
+        },
+        {
+          "n": 0,
+          "textures": 29,
+          "geometries": 170
+        },
+        {
+          "n": 7,
+          "textures": 29,
+          "geometries": 171
+        },
+        {
+          "n": 0,
+          "textures": 29,
+          "geometries": 170
+        },
+        {
+          "n": 7,
+          "textures": 29,
+          "geometries": 171
+        }
+      ],
+      "views": 1
+    },
+    "absent": {
+      "saveReload": true,
+      "customExcluded": true,
+      "catalogItems": 136,
+      "shaderErrors": [],
+      "failedPrograms": [],
+      "negativeContractsRejected": 0,
+      "partIds": [],
+      "wornValid": null,
+      "textureCounts": [
+        {
+          "n": 7,
+          "textures": 25,
+          "geometries": 171
+        },
+        {
+          "n": 21,
+          "textures": 25,
+          "geometries": 171
+        },
+        {
+          "n": 0,
+          "textures": 25,
+          "geometries": 170
+        },
+        {
+          "n": 7,
+          "textures": 25,
+          "geometries": 171
+        },
+        {
+          "n": 0,
+          "textures": 25,
+          "geometries": 170
+        },
+        {
+          "n": 7,
+          "textures": 25,
+          "geometries": 171
+        }
+      ],
+      "views": 1
+    },
+    "pending": {
+      "saveReload": true,
+      "customExcluded": true,
+      "catalogItems": 136,
+      "shaderErrors": [],
+      "failedPrograms": [],
+      "negativeContractsRejected": 10,
+      "partIds": [
+        "treasurechest_silver",
+        "treasurechest_rainbow"
+      ],
+      "wornValid": true,
+      "textureCounts": [
+        {
+          "n": 7,
+          "textures": 31,
+          "geometries": 171
+        },
+        {
+          "n": 21,
+          "textures": 31,
+          "geometries": 171
+        },
+        {
+          "n": 0,
+          "textures": 31,
+          "geometries": 170
+        },
+        {
+          "n": 7,
+          "textures": 31,
+          "geometries": 171
+        },
+        {
+          "n": 0,
+          "textures": 31,
+          "geometries": 170
+        },
+        {
+          "n": 7,
+          "textures": 31,
+          "geometries": 171
+        }
+      ],
+      "views": 0,
+      "pendingExportOmitted": true,
+      "roughnessRDiagnostic": {
+        "values": [
+          {
+            "r": 51,
+            "g": 204,
+            "expected": 124,
+            "matches": 141631,
+            "wrongMatches": 0,
+            "gl": 0
+          },
+          {
+            "r": 204,
+            "g": 51,
+            "expected": 231,
+            "matches": 141631,
+            "wrongMatches": 0,
+            "gl": 0
+          }
+        ],
+        "shaderErrors": []
+      }
+    }
+  },
+  "scope": "Web execution on the publication candidate; Unity checks are separate."
+}

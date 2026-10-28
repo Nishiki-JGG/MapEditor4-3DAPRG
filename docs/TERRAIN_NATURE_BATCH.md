@@ -31,7 +31,7 @@
 
 ## 素材の由来と公開制限
 
-確認場所：`TotsuDanGrasslandKit/PROVENANCE.txt`。
+確認場所：`grassland-kit/PROVENANCE.txt`。
 
 採用した元画像は `Textures/field_grass_ground_albedo_procedural.png`（1024²、683,960 bytes）。SHA256 は `d50c38959a9bfb7da854821c791dc9f0a4b1bfa99c74f6ed9850fa3c01e178f6`。記録は「外部入力なしの手続き生成による自作」で、生成元は `tools/staging/claude-grassland-roomkit-01/source/make_textures.py`。元画像は上書きしていない。コピーした入力は `tools/nature/grass-source.js`、今回の細線生成は `tools/nature/bake.cjs`。
 

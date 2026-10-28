@@ -56,7 +56,16 @@ float cs=pow(max(0.,dot(cn,normalize(cl+cv))),80.);float cr=pow(1.-max(0.,dot(cn
 vec3 coat=.5+.5*cos(vec3(0.,2.094,4.188)+dot(cn,cv)*9.+uChestTime*.45);
 float gain=clamp(uChestAmbient,.03,1.);outgoingLight=outgoingLight*.46+diffuseColor.rgb*env*.62*gain+mix(mix(vec3(1.),diffuseColor.rgb,.35),vec3(.025)+diffuseColor.rgb*.8,vChestInk)*(cs*.95+cr*.14)*gain;
 outgoingLight+=(1.-vChestInk)*uChestRainbow*coat*(.10+cr*.14)*gain+diffuseColor.rgb*vChestGlow*(.72+.28*sin(uChestTime*3.+vChestP.x*17.+vChestP.z*11.));
-#include <opaque_fragment>`);};m.customProgramCacheKey=()=> 'chest-metal-v3-'+rainbow;mats.set(id,m);return m;}
+#include <opaque_fragment>`);if(rainbow){sh.uniforms.uChestMagicOrnament={value:0};sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nvarying float vChestMagicUp;').replace('#include <begin_vertex>','#include <begin_vertex>\nvChestMagicUp=normal.y;');sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying float vChestMagicUp;uniform float uChestMagicOrnament;');sh.fragmentShader=sh.fragmentShader.replace('#include <opaque_fragment>',`
+// Magical body radiance follows intrinsic colour; dark engravings and neutral frames are retained.
+vec3 rainBase=max(diffuseColor.rgb,vec3(0.));float rainMax=max(rainBase.r,max(rainBase.g,rainBase.b)),rainMin=min(rainBase.r,min(rainBase.g,rainBase.b));
+float rainBody=smoothstep(.12,.35,(rainMax-rainMin)/max(rainMax,.01))*(1.-vChestInk);
+vec3 rainSpectrum=.5+.5*cos(vec3(0.,2.094,4.188)+vChestP.x*2.2+vChestP.z*1.4+uChestTime*.5);
+float rainSeam=exp(-abs(vChestP.y-.435)*65.);
+float rainWork=(.24+.16*max(vChestMagicUp,0.)+.20*rainSeam)*mix(1.,.65,uChestMagicOrnament);
+vec3 rainEmission=mix(rainBase,rainSpectrum*rainMax,.22)*rainWork*(.94+.06*sin(uChestTime*.9+vChestP.y*3.));
+outgoingLight+=rainEmission*rainBody;
+#include <opaque_fragment>`);}};m.customProgramCacheKey=()=> 'chest-metal-v4-'+rainbow;mats.set(id,m);return m;}
  ids.forEach((id,tier)=>TDProps.add({id,name:names[tier],r:.64,min:1.4,sc:[.85,1.15],slope:.18,vis:.69,anyGround:true,tags:['ruins','castle','cave'],height:tier>=4?.81:tier>=2?.80:.74,groundSink:0,shape:true,material:tier>=3?'chestmetal':'cards2',build:()=>build(tier)}));
  return{ids,material};
 })();

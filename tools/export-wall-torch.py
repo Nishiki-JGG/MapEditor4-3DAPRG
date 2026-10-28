@@ -26,7 +26,7 @@ def mesh(path):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("source", type=Path, help="元ゲームのAssets/TotsuDanShell/Prototype")
+    parser.add_argument("source", type=Path, help="source asset root containing Art, Resources, and Runtime")
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[1]
     files = ["Art/DungeonPresentation/Torch.asset", "Art/DungeonPresentation/Flame.asset",
@@ -34,7 +34,7 @@ def main():
              "Resources/DiscoveryPresentation/RoomTorch.prefab", "Resources/DiscoveryPresentation/RoomTorch.prefab.meta",
              "Resources/DiscoveryPresentation/TorchSmoke.mat", "Resources/DiscoveryPresentation/TorchSpark.mat",
              "Runtime/DiscoveryRoomTorchPresentation.cs"]
-    source = [{"path": "Assets/TotsuDanShell/Prototype/" + name,
+    source = [{"path": "source-root/" + name,
                "sha256": hashlib.sha256((args.source / name).read_bytes()).hexdigest()}
               for name in files]
     prefab = (args.source / files[4]).read_text(encoding="utf8")

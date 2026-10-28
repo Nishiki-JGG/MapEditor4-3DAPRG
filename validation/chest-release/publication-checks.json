@@ -1,0 +1,18 @@
+{
+  "syntaxChecks": 35,
+  "productParity": 33,
+  "preservedUntracked": 10,
+  "extractedPNGDecode": 11,
+  "authoringReproduction": {
+    "silver-colour": "pixel-identical",
+    "silver-packed": "pixel-identical",
+    "rainbow-colour": "pixel-identical",
+    "rainbow-packed": "pixel-identical",
+    "gold-colour": "pixel-identical",
+    "gold-packed": "pixel-identical"
+  },
+  "fixedSamplesRegenerated": 0,
+  "playerExecuted": false,
+  "gameOriginalsModified": false,
+  "compressedAuthoringInputScan": "no personal path or game-name matches"
+}

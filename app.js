@@ -2765,7 +2765,7 @@ const player = { x: 0, z: 0, y: 0, face: 0, moving: 0, t: 0 };
 // cell, so a body of radius r is blocked where dist * scale < r.
 const SHAPE_CELL = .05, SHAPE_PAD = 1, SHAPE_MIN_H = .1;
 function shapeFootprint(t) {
-  const g = t.geo, pos = g.attributes.position, ix = g.index, n = ix ? ix.count : pos.count, bb = g.boundingBox;
+  const g = t.collisionGeo || t.geo; if(!g.boundingBox)g.computeBoundingBox(); const pos = g.attributes.position, ix = g.index, n = ix ? ix.count : pos.count, bb = g.boundingBox;
   const x0 = bb.min.x - SHAPE_PAD, z0 = bb.min.z - SHAPE_PAD, nx = Math.ceil((bb.max.x + SHAPE_PAD - x0) / SHAPE_CELL) + 1, nz = Math.ceil((bb.max.z + SHAPE_PAD - z0) / SHAPE_CELL) + 1;
   const top = new Float32Array(nx * nz).fill(-1e9), P = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
   for (let f = 0; f < n; f += 3) {

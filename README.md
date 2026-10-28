@@ -1,5 +1,7 @@
 # MapEditor4-3DAPRG
 
+宝箱の金属材質・彫金・朽木形状を更新しました。[Unity 導入・Reflection Probe・検証範囲](docs/CHEST_RELEASE.md)。
+
 既存松明と壁掛け松明の炎・煙・火の粉を改善し、三脚と薪・炭・熾火を持つ地面置きの篝火を追加しました。[描画・保存・Unityへの取り込み](docs/FIRE_FIXTURES.md)。
 
 固定サンプルは処理済みの崖岩・通路・衝突情報を同梱し、キャッシュのない端末でも完成品から読み込みます。[同梱データ・初回復元](docs/PREPARED_SAMPLES.md)。新しいランダム生成や編集時の計算とは分離しています。[読込の改善・検証・残る待ち時間](docs/SAMPLE_PREPARATION.md)。

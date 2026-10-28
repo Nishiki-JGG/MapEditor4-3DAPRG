@@ -1,0 +1,58 @@
+{
+  "grassland": {
+    "pass": true,
+    "baked": true,
+    "seed": 71421,
+    "cells": 2207,
+    "placement": {
+      "x": 17.5,
+      "y": 2.52762508392334,
+      "z": 60.0
+    },
+    "cameraPosition": {
+      "x": 15.0,
+      "y": 12.596500396728516,
+      "z": 51.20000076293945
+    },
+    "cameraEuler": {
+      "x": 54.400787353515625,
+      "y": 0.0,
+      "z": 0.0
+    },
+    "fov": 50.0,
+    "reflectionIntensity": 0.5,
+    "receiverChecks": [
+      "small-treasurechest_gold weight=1",
+      "Side relief weight=1"
+    ],
+    "scope": "Isolated Editor reproduction of existing map-generation presentation; original game scene/settings unchanged. No Player, gameplay session, avatar or UI validation."
+  },
+  "cave": {
+    "pass": true,
+    "baked": true,
+    "seed": 71421,
+    "cells": 648,
+    "placement": {
+      "x": -15.0,
+      "y": 0.0,
+      "z": 45.0
+    },
+    "cameraPosition": {
+      "x": -15.0,
+      "y": 10.0,
+      "z": 36.20000076293945
+    },
+    "cameraEuler": {
+      "x": 54.400787353515625,
+      "y": 0.0,
+      "z": 0.0
+    },
+    "fov": 50.0,
+    "reflectionIntensity": 0.5,
+    "receiverChecks": [
+      "small-treasurechest_gold weight=1",
+      "Side relief weight=1"
+    ],
+    "scope": "Isolated Editor reproduction of existing map-generation presentation; original game scene/settings unchanged. No Player, gameplay session, avatar or UI validation."
+  }
+}
