@@ -1,0 +1,146 @@
+{
+  "pass": true,
+  "prefabs": 43,
+  "placements": 1,
+  "triangles": 348,
+  "colliderExact": true,
+  "other42MeshesExact": true,
+  "atlasDimensions": [
+    1024,
+    512
+  ],
+  "sharedReferencesChecked": 225,
+  "readerSourceUnchanged": true,
+  "playerExecuted": false,
+  "baseline": "97c7c222aa13f93327a66a9650c898d2d35da7ca",
+  "webNormalAndLegacySave": true,
+  "mixedTypes": 44,
+  "actualCollisionBucketsCompared": true,
+  "atlasOutsideBannerTileExact": true,
+  "otherNativePayloadsExact": true,
+  "fireLightPayloadExact": true,
+  "beforeTriangles": 352,
+  "afterTriangles": 348,
+  "webLoad": {
+    "before": [
+      {
+        "instances": 9,
+        "each": 9,
+        "samples": 12,
+        "cpuSubmitMedianMs": 4,
+        "cpuSubmitP95Ms": 5,
+        "synchronizedMedianMs": 4,
+        "synchronizedP95Ms": 5,
+        "gpuMedianMs": 7.099392,
+        "gpuSamples": 12,
+        "memory": {
+          "geometries": 182,
+          "textures": 31
+        },
+        "programs": 97,
+        "render": {
+          "frame": 58,
+          "calls": 4,
+          "triangles": 40800,
+          "points": 0,
+          "lines": 0
+        }
+      },
+      {
+        "instances": 225,
+        "each": 225,
+        "samples": 12,
+        "cpuSubmitMedianMs": 4.699999928474426,
+        "cpuSubmitP95Ms": 5.599999904632568,
+        "synchronizedMedianMs": 4.699999928474426,
+        "synchronizedP95Ms": 5.599999904632568,
+        "gpuMedianMs": 8.634368,
+        "gpuSamples": 12,
+        "memory": {
+          "geometries": 182,
+          "textures": 31
+        },
+        "programs": 97,
+        "render": {
+          "frame": 74,
+          "calls": 4,
+          "triangles": 116832,
+          "points": 0,
+          "lines": 0
+        }
+      }
+    ],
+    "after": [
+      {
+        "instances": 9,
+        "each": 9,
+        "samples": 12,
+        "cpuSubmitMedianMs": 4.400000095367432,
+        "cpuSubmitP95Ms": 5.100000023841858,
+        "synchronizedMedianMs": 4.400000095367432,
+        "synchronizedP95Ms": 5.100000023841858,
+        "gpuMedianMs": 7.056384,
+        "gpuSamples": 12,
+        "memory": {
+          "geometries": 182,
+          "textures": 31
+        },
+        "programs": 97,
+        "render": {
+          "frame": 58,
+          "calls": 4,
+          "triangles": 40764,
+          "points": 0,
+          "lines": 0
+        }
+      },
+      {
+        "instances": 225,
+        "each": 225,
+        "samples": 12,
+        "cpuSubmitMedianMs": 4.599999904632568,
+        "cpuSubmitP95Ms": 6,
+        "synchronizedMedianMs": 4.599999904632568,
+        "synchronizedP95Ms": 6,
+        "gpuMedianMs": 9.07264,
+        "gpuSamples": 12,
+        "memory": {
+          "geometries": 182,
+          "textures": 31
+        },
+        "programs": 97,
+        "render": {
+          "frame": 74,
+          "calls": 4,
+          "triangles": 115932,
+          "points": 0,
+          "lines": 0
+        }
+      }
+    ],
+    "viewport": [
+      1280,
+      900
+    ],
+    "timerAvailable": true,
+    "samplesPerCondition": 12
+  },
+  "unityImages": {
+    "studioAndOppositeLight": true,
+    "actualGeneratedGrasslandSeed": 71421,
+    "normalCameraOffset": [
+      0,
+      9,
+      -6.3
+    ],
+    "originalSceneModified": false,
+    "comparisonLightingUnchanged": true
+  },
+  "limits": [
+    "Desktop headless Web and dedicated Editor only; no Player or mobile validation.",
+    "Short sequential GPU samples are not a statistically controlled performance benchmark.",
+    "Unity 225-instance check confirms shared resources, not frame-time performance.",
+    "Actual generated field uses representative seed and normal camera settings; not a complete interactive gameplay session.",
+    "Main visual benefit is close material finish; normal-distance difference is modest."
+  ]
+}

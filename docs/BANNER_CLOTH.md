@@ -1,0 +1,21 @@
+# Banner cloth and timber finish
+
+The previous banner used mostly solid vertex colours and shallow, regular folds, so the cloth and timber read as a rigid sign. The revised banner uses the existing cards2 atlas path for timber grain, a restrained cloth weave and stitched folded hems. The gold diamond is painted onto the cloth and follows its folds; it no longer intersects the fabric as a separate decal.
+
+The cloth remains an 8 by 4 closed grid. Fold depth changes inside the existing 0.1 m radius, and the existing pole, crossbar, ties, placement, scale range, height, ID and Collider contract remain intact. The existing sway setting is unchanged. The new 128 by 128 tile occupies unused space at (768,384) in the existing 1024 by 512 atlas. An independent random seed and clipping keep all previous atlas pixels exact. There is no new texture allocation or light. Triangles decrease from 352 to 348.
+
+## Reproduction
+
+Use Node and the existing headless Chrome/Edge harness. Set `BANNER_REVIEW_PROJECT` to a dedicated evidence directory/project, then run `node tests/banner-cloth.cjs before` and `node tests/banner-cloth.cjs after`. The baseline is 97c7c22. The test writes close and normal-distance images, atlas proofs and importer inputs; it verifies normal save/reload, real collision buckets, unchanged non-banner payloads and fire/light metadata. Cloth UV uses (u,1-t) so the lower hem and painted emblem retain their intended orientation in Web and the existing native atlas decoder.
+
+Set `PROPS_LOAD_OUT` to a separate evidence directory and run `node tests/banner-cloth-load.cjs`. This compares baseline/current rotated and scaled banner placements, normal and legacy saves, all 44 mixed exportable types, and 9/225 banner placements. It normalizes actual Map/Set collision contents rather than stringifying an empty Map. It takes only four warm-up and twelve measurement frames per condition. Detailed measurements are in `validation/banner-cloth/results.json`.
+
+For native reproduction use a dedicated Unity 6000.5.9f1 / URP 17.5 project with the unchanged published importer and shaders. Generate the before/after inputs above; retain the baseline banner and other 42 prefabs in `Assets/Imported104-after`, with importer mesh-cache assets intact. Copy `tests/unity/Banner108Checks.cs` into its Editor folder and execute `Banner108Checks.Run` using background Editor batchmode with graphics enabled. It requires a fresh `Assets/Imported108-after-v3` folder. The 43-prefab build uses the unchanged pre-change Reader; exact real Collider and 42 unrelated shared meshes, atlas dimensions, shader compilation and 225 shared resource references are checked. `Banner108Review.Compare` accepts an existing isolated camera and a placeholder placement for offscreen before/after captures. It does not save a source scene. Do not launch a Player build for this check.
+
+## Visual review and limits
+
+Unity studio and opposite-light captures show wood grain, restrained hems and folded fabric. Existing generated grassland seed 71421 was also captured with its normal saved camera offset (0,9,-6.3), terrain, lighting and post-processing, using an isolated in-memory scene. Normal-distance colour/recognition remain stable; the improvement is modest there, clearer close up. The small textured diamond is softer than its former separate geometry. This is a low-cost material finish, not a large silhouette redesign. Source game scenes were not modified; the private game-specific generator wrapper and images remain local.
+
+Web 9/225 placements retain 4 calls, 31 textures and 182 allocated geometries in the full-catalog harness. Twelve-sample median GPU times were 7.10/8.63 ms before and 7.06/9.07 ms after. This is not evidence of a speedup; sample count and desktop scheduling limit the comparison. Mobile performance, standalone Player, full gameplay and Unity frame time were not validated. Unity's 225 check measures resource sharing only. Screenshots and large native export payloads are local evidence, not repository assets.
+
+Chest, grave, shore, lantern, pottery, rope and concurrent water sources are unchanged. No texture regeneration of fixed rock samples, ID migration, gameplay or lighting change is included.

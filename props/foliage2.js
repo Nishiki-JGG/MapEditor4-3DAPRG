@@ -9,7 +9,7 @@ const W = 1024, H = 512, PAD = 3;
 const RECT = {
   meadow: [0, 0, 512, 256], straw: [512, 0, 256, 256], wood: [768, 0, 256, 256],
   flower0: [0, 256, 128, 128], flower1: [128, 256, 128, 128], flower2: [256, 256, 128, 128], flower3: [384, 256, 128, 128],
-  rosette: [512, 256, 256, 128], white: [768, 256, 64, 64], clay: [832, 256, 128, 128],
+  rosette: [512, 256, 256, 128], white: [768, 256, 64, 64], clay: [832, 256, 128, 128], bannercloth: [768, 384, 128, 128],
 };
 function paint() {
   const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
@@ -91,6 +91,28 @@ function paint() {
     const [x0,y0,w,h]=RECT.clay,im=g.createImageData(w,h),hash=TDGeo.hash2;
     const noise=(x,y)=>{const a=Math.floor(x),b=Math.floor(y),u=x-a,v=y-b,s=u*u*(3-2*u),t=v*v*(3-2*v);return (1-s)*(1-t)*hash(a+271,b+197)+s*(1-t)*hash(a+272,b+197)+(1-s)*t*hash(a+271,b+198)+s*t*hash(a+272,b+198);};
     for(let y=0;y<h;y++)for(let x=0;x<w;x++){const i=(y*w+x)*4,n=noise(x/27,y/23),grain=hash(x+931,y+74),turn=Math.sin(y*.32+noise(x/49,y/39)*2),v=Math.round(237+(n-.5)*24+(grain-.5)*10+turn*1.5-(grain<.018?14:0));im.data[i]=v;im.data[i+1]=v-2;im.data[i+2]=v-4;im.data[i+3]=255;}g.putImageData(im,x0,y0);
+  }
+  // A dyed woven cloth tile for the existing banner. Independent seed and clipping
+  // preserve every previously occupied atlas region and its random-number sequence.
+  {
+    const [x0,y0,w,h]=RECT.bannercloth,S=rng(20261030);
+    g.save();g.beginPath();g.rect(x0,y0,w,h);g.clip();
+    g.fillStyle='#e5e5e5';g.fillRect(x0,y0,w,h);
+    for(let k=0;k<w;k++){
+      const light=82+S()*10;g.strokeStyle=hsl(0,0,light,.45);g.lineWidth=.65;
+      g.beginPath();g.moveTo(x0+k,y0);g.lineTo(x0+k+.35*Math.sin(k),y0+h);g.stroke();
+    }
+    for(let k=0;k<h;k+=2){g.strokeStyle=hsl(0,0,k%4?92:78,.2);g.lineWidth=.65;g.beginPath();g.moveTo(x0,y0+k);g.lineTo(x0+w,y0+k);g.stroke();}
+    // Folded side/bottom hems remain part of the fabric, without a floating strip mesh.
+    g.strokeStyle=hsl(0,0,68,.55);g.lineWidth=3;
+    g.beginPath();g.moveTo(x0+6,y0);g.lineTo(x0+6,y0+h-6);g.lineTo(x0+w-6,y0+h-6);g.lineTo(x0+w-6,y0);g.stroke();
+    g.strokeStyle=hsl(0,0,97,.65);g.lineWidth=.8;
+    for(let k=5;k<h-8;k+=6)for(const x of [x0+7,x0+w-7]){g.beginPath();g.moveTo(x,y0+k);g.lineTo(x,y0+k+2.5);g.stroke();}
+    for(let k=9;k<w-8;k+=6){g.beginPath();g.moveTo(x0+k,y0+h-7);g.lineTo(x0+k+2.5,y0+h-7);g.stroke();}
+    g.globalCompositeOperation='multiply';g.fillStyle='#bc3541';g.fillRect(x0,y0,w,h);g.globalCompositeOperation='source-over';
+    const emblem=[[.5,.245],[.64,.36],[.5,.475],[.36,.36]];
+    g.fillStyle='#d8b040';g.beginPath();emblem.forEach(([u,t],i)=>{const x=x0+PAD+u*(w-2*PAD),y=y0+PAD+t*(h-2*PAD);i?g.lineTo(x,y):g.moveTo(x,y);});g.closePath();g.fill();
+    g.restore();
   }
   g.fillStyle = '#fff'; g.fillRect(...RECT.white);
   const d = g.getImageData(0, 0, W, H).data;
