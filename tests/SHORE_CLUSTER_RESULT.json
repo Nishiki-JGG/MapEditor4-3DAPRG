@@ -36,7 +36,7 @@
           "m": {}
         },
         "render": {
-          "frame": 43,
+          "frame": 44,
           "calls": 12,
           "triangles": 9820,
           "points": 0,
@@ -231,5 +231,152 @@
     "originalScenesUnchanged": true,
     "playerExecuted": false,
     "gpuTimingMeasured": false
+  },
+  "integration": {
+    "preservedMain": "2b35af4b19a2607f1ebaffaa15f973f4cd817510",
+    "normalMerge": true,
+    "waterRegression": {
+      "wave": {
+        "maxJump": 7.474422454833984e-05,
+        "minDepth": 0.008000001311302185,
+        "belowBed": 0
+      },
+      "sea-day": {
+        "gl": 0,
+        "shaderErrors": [],
+        "quads": 192,
+        "visible": true,
+        "light": [
+          0.9203361344537817,
+          0.9203361344537817,
+          0.9203361344537817
+        ],
+        "single": true
+      },
+      "sea-night": {
+        "gl": 0,
+        "shaderErrors": [],
+        "quads": 192,
+        "visible": true,
+        "light": [
+          0.10454557207498386,
+          0.16030321051497526,
+          0.27181848739495806
+        ],
+        "single": true
+      },
+      "sea-evening": {
+        "gl": 0,
+        "shaderErrors": [],
+        "quads": 192,
+        "visible": true,
+        "light": [
+          0.6555798319327731,
+          0.4370532212885154,
+          0.27315826330532217
+        ],
+        "single": true
+      },
+      "opposite": {
+        "gl": 0,
+        "shaderErrors": [],
+        "quads": 192,
+        "visible": true,
+        "light": [
+          0.6555798319327731,
+          0.4370532212885154,
+          0.27315826330532217
+        ],
+        "single": true
+      },
+      "lava": {
+        "gl": 0,
+        "shaderErrors": [],
+        "quads": 192,
+        "visible": false,
+        "light": [
+          0.6555798319327731,
+          0.4370532212885154,
+          0.27315826330532217
+        ],
+        "single": true
+      },
+      "pond": {
+        "gl": 0,
+        "shaderErrors": [],
+        "quads": 192,
+        "visible": true,
+        "light": [
+          1,
+          1,
+          1
+        ],
+        "single": true
+      },
+      "cave": {
+        "gl": 0,
+        "shaderErrors": [],
+        "quads": 192,
+        "visible": true,
+        "light": [
+          0.20560747663551404,
+          0.20560747663551404,
+          0.20560747663551404
+        ],
+        "single": true
+      },
+      "dry": {
+        "gl": 0,
+        "shaderErrors": [],
+        "quads": 0,
+        "visible": false,
+        "light": [
+          0.20560747663551404,
+          0.20560747663551404,
+          0.20560747663551404
+        ],
+        "single": true
+      },
+      "inland-pond": {
+        "gl": 0,
+        "shaderErrors": [],
+        "quads": 0,
+        "visible": false,
+        "light": [
+          0.20560747663551404,
+          0.20560747663551404,
+          0.20560747663551404
+        ],
+        "single": true
+      },
+      "coast": {
+        "gl": 0,
+        "shaderErrors": [],
+        "quads": 95,
+        "visible": true,
+        "light": [
+          1,
+          1,
+          1
+        ],
+        "single": true
+      },
+      "shallow-gale-night": {
+        "gl": 0,
+        "shaderErrors": [],
+        "quads": 192,
+        "visible": true,
+        "light": [
+          0.10454557207498386,
+          0.16030321051497526,
+          0.27181848739495806
+        ],
+        "single": true
+      },
+      "errors": []
+    },
+    "seaHlslSync": "pass",
+    "editorRerunRequired": false,
+    "reason": "Merged water/app/index changes leave the tested shoreline geometry, texture and Native Reader unchanged."
   }
 }

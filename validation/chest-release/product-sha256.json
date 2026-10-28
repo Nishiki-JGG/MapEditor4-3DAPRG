@@ -1,6 +1,6 @@
 {
-  "app.js": "5241e816ba232458a2090fa6a8903eb3020811316e8f817b3de142b4221ee274",
-  "index.html": "c467b74cb17a2db9edd55951b2e868d476a31e76aa5c35e7bde08ca7b47a3407",
+  "app.js": "8d6eaba3b40d28ae8297287d543f87534ac78843dc973484ab5c7186b800d888",
+  "index.html": "c161b6d29ec72c92603dcc0e0112d9b5a248f8adf5594d12426ae3becdc5cc61",
   "props/chest-gold-data.js": "2270c479053cbd000cdcf8d1c2bda1f84756b56d48526edf889302155b3ccd2a",
   "props/chest-gold-surface.js": "217f899d88375e1de7c986e3f35614a22b361aa29839e3a3297ad8e11e19504b",
   "props/chest-part-atlas-contract.js": "980add95d1a49cc0c9f8540656e6fe6cca9978c005d51e9d1735d70e68673bbd",
@@ -33,7 +33,8 @@
   "props/small-prop-export.js": "a1d84ea6654eecd3d7a9e9b1056a9cfcfb1f417caaf3c5fd017c1643ee284092",
   "props/stone-surface.js": "c536d402c75ee9a1fc21dba04131d54845d5dacad78bd929a55d01a9abd849db",
   "props/wall-torch-source.js": "26b9c2078ffbfa7a000e9dc2fda0720934d4c7a372f75bdd3337153e4814cc9a",
-  "release.json": "1950413f60dbad0ee79a3a8c78344fbdce161c66fc3c7e14487dbf687b4754c5",
+  "release.json": "794a45e6ffbfe679d114a15fb6f6fd11461ec6ee03fabf89e1fc2baab67cbcea",
+  "sea.js": "9c929f4f08ac4cf1555ea8f13f58620fd2efaadfb588da56bc64858c5b7d56fb",
   "unity/Assets/MapSharedProps/Editor/ChestPresentationBuilder.cs": "4266b553a28dd80b1dd7f8eee401325e9b7cf5e0957b8a842c3909cf48d84cbf",
   "unity/Assets/MapSharedProps/Editor/ChestRoyalLitBuilder.cs": "4a7eac30ed8966eac116b421a4d6acd0dbda9d8d40e54bb961e33a1cc95ac939",
   "unity/Assets/MapSharedProps/Editor/ChestRoyalLitBuilder.cs.meta": "a1e1d941aabb19c8f7334e61dc940cb6c9e6243cb11e304d5aa4a59050b6e08d",
@@ -51,5 +52,6 @@
   "unity/Assets/MapSharedProps/Runtime/ChestSanctumPresentation.cs": "7a5888aff5e49476cfebccba4059374fc9ae0e797381f9ab480a435b94c72031",
   "unity/Assets/MapSharedProps/Runtime/ChestSanctumPresentation.cs.meta": "c52f77d3977b8f2320e33241dcf663180237a487246a71221737cf9fa89ed279",
   "unity/Assets/MapSharedProps/Runtime/ChestSurface.hlsl": "54a7852fd53a80839e8098e325ce3d8de129066ff8197172ee495578fa0cec9d",
-  "unity/Assets/MapSharedProps/Runtime/ChestWood.shader": "238ff89d58a30675d9e714853173e5f88ebe40f1f4188d02dc9a725afef0bdad"
+  "unity/Assets/MapSharedProps/Runtime/ChestWood.shader": "238ff89d58a30675d9e714853173e5f88ebe40f1f4188d02dc9a725afef0bdad",
+  "unity/Assets/MapWater/Runtime/Shaders/MapSeaShared.hlsl": "a1e8a4abb4582fab5ccf622223d82f376a23a886a54e0fb519f9200a1815d51f"
 }

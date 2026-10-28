@@ -1,7 +1,7 @@
 {
   "release": "shore-cluster-20261028-96",
   "files": {
-    "app.js": "5241e816ba232458a2090fa6a8903eb3020811316e8f817b3de142b4221ee274",
+    "app.js": "8d6eaba3b40d28ae8297287d543f87534ac78843dc973484ab5c7186b800d888",
     "props/chest-presentation.js": "02d054f76798bdf6599156ffb0655085c919b3df733386a47a11f458d3aa5233",
     "props/chest-surface.js": "bf7137cd3c64c736bc50d0dbd2a7b62f4fce1c48db73f6473fc6b9522b24f025",
     "props/chest-relief.js": "2f6d152ccd4c0dfd43d34c9867118d5060704b01ea93cfeafcdf826c479e8f94",
@@ -16,6 +16,7 @@
     "props/marker-parts.js": "8f64dc8689771c3ea2b4749d8d4849c90b8d90f9e4fcb160a0c809ed8103ef96",
     "props/shells.js": "c16f1f1c4c7a60bfcf500d1179b2e668c487c1dd1c39de947a6c6a186929a199",
     "props/grounding.js": "23b4519947dde1e315c1db1f53db18f3b336155310a336223bff4685fb369c4b",
-    "props/shell-surface.js": "d8250789cc78f5fea3f66a12494c63128b73dbdccca861c2b3a2aa7d5025af76"
+    "props/shell-surface.js": "d8250789cc78f5fea3f66a12494c63128b73dbdccca861c2b3a2aa7d5025af76",
+    "sea.js": "9c929f4f08ac4cf1555ea8f13f58620fd2efaadfb588da56bc64858c5b7d56fb"
   }
 }

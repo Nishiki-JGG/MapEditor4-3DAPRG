@@ -23,3 +23,7 @@ Actual pixels were reviewed in the editor's coast tool, dedicated Unity close/op
 Set SHORE_REVIEW_OUT and SHORE_REVIEW_PROJECT (a dedicated review project), then run `node tests/shore-cluster.cjs`. It serves baseline ba3c929 and the current tree and writes Input96-before/after under the review project. Run `node tests/shore-cluster-load.cjs` for the bounded placement check. Copy tests/unity/Shore96Checks.cs to the dedicated project's Editor folder and run `python tests/prepare-shore-cases.py <review-project>`. The test freezes the earlier Reader from Git. Use fresh generated test output folders when replaying its Editor imports, then execute Shore96Checks.Run in background Editor batchmode. No Player executable is needed.
 
 Silver/gold/rainbow presentations, grave stone footing with no soil skirt, and the sea-life palette classification remain intact. See release.json for the delivered script hashes; deployment is checked separately from these local tests.
+
+Integration note: main advanced to 2b35af4 during publication preparation. Its water-boundary and continuous-wave changes were retained in a normal merge. Only the app script-version line conflicted; both the new water version and current content hash are preserved. The shoreline material changes do not alter that water algorithm.
+
+After this merge, the bounded water-side/wave regression and shoreline save/export/GL checks passed again. The shared water HLSL sync check passed. Native shoreline code and assets are byte-identical to the Editor-tested revision, so those imports were not duplicated.

@@ -933,7 +933,7 @@ const waterMat = new THREE.ShaderMaterial({
       float dP=seaW>.001?vD0+hP:vD;
       bool dry=dP<=0.;
       if(dry&&seaW<.01) discard;
-      float d=vD;
+      float d=max(dP,0.);
       float t=1.-exp(-d*1.1);
       vec3 col=mix(uShallow, uDeep, t);
       // 流れ（書き出しと同じ画像）：細波・光の網・泡の模様を、半周期ずらした2層で下流へ運ぶ
@@ -1029,6 +1029,84 @@ const waterMat = new THREE.ShaderMaterial({
 const water = new THREE.Mesh(wGeo, waterMat);
 water.renderOrder = 2;
 scene.add(water);
+
+// 外周の水の断面だけを一つの帯にする。水中の体積や内陸の池の周囲は描かない。
+const waterSideLight = { value: new THREE.Vector3(1,1,1) };
+const waterSidePoints = { value: Array.from({length:6},()=>new THREE.Vector4()) };
+const waterSideColors = { value: Array.from({length:6},()=>new THREE.Vector3()) };
+const waterSideMat = new THREE.ShaderMaterial({
+  transparent:true, depthWrite:false, side:THREE.DoubleSide, forceSinglePass:true,
+  uniforms:{uTime:timeU,uWaveH:waterMat.uniforms.uWaveH,uSea:BU.uSea,uShallow:BU.uShallow,uDeep:BU.uDeep,uDim:dimU,
+    uLight:waterSideLight,uLocal:waterSidePoints,uLocalColor:waterSideColors},
+  vertexShader:`attribute float depth; attribute vec4 shore; attribute vec2 shore2; attribute float top;
+    uniform float uTime,uWaveH,uSea; varying float vDepth,vBelow,vSea; varying vec3 vWorld;
+    ${TDSea.GLSL_PRELUDE}${TDSea.COMMON}
+    void main(){
+      vec4 w=modelMatrix*vec4(position,1.); float h=0.,ph=0.,brk=0.; float seaW=shore.w*uSea;
+      if(seaW>.001){seaWave(w.xz,shore.x,depth,shore.yz,shore2,h,ph,brk);h*=seaW;}
+      w.y+=h*top; vBelow=(depth+h)*(1.-top);vDepth=depth;vSea=seaW;vWorld=w.xyz;
+      gl_Position=projectionMatrix*viewMatrix*w;
+    }`,
+  fragmentShader:`uniform vec3 uShallow,uDeep,uLight; uniform float uDim; uniform vec4 uLocal[6]; uniform vec3 uLocalColor[6];
+    varying float vDepth,vBelow,vSea; varying vec3 vWorld;
+    ${DIM_GLSL}
+    void main(){
+      float z=max(vBelow,0.); vec3 seaTop=mix(mix(uShallow,vec3(.10,.78,.80),.35),uDeep,1.-exp(-.55*vDepth));
+      vec3 col=mix(mix(uShallow,seaTop,vSea),uDeep,1.-exp(-1.1*z));
+      col=mix(col,vec3(.72,.87,.97),vSea*.3*exp(-z/.5));col*=exp(-.25*z);
+      col=mix(col,vec3(.85,.95,1.),.6*(1.-smoothstep(0.,.06,z)));
+      vec3 local=vec3(0.);
+      for(int i=0;i<6;i++){float d=distance(vWorld,uLocal[i].xyz);float a=max(0.,1.-d/max(.01,uLocal[i].w));local+=uLocalColor[i]*a*a*.05;}
+      gl_FragColor=vec4(dimc(pow(col,vec3(2.2)))*(uLight+local),clamp(.90+.04*z,.90,.98));
+      #include <tonemapping_fragment>
+      #include <colorspace_fragment>
+    }`
+});
+const waterSides = new THREE.Mesh(new THREE.BufferGeometry(),waterSideMat);
+waterSides.name='Map water sides';waterSides.renderOrder=1;waterSides.visible=false;waterSides.frustumCulled=false;scene.add(waterSides);
+// 既存の松明の6灯を再利用する。側面のためにライトや毎フレームの地形計算は増やさない。
+const waterSideView=new THREE.Vector3();
+waterSides.onBeforeRender=(_renderer,_scene,viewCamera)=>{
+  // Four planar edges, drawn far-to-near inside this one draw. Otherwise a far
+  // double-sided strip can paint over the near strip because depthWrite is off.
+  const g=waterSides.geometry,edges=g.userData.edges;
+  if(edges){
+    viewCamera.getWorldDirection(waterSideView);
+    const order=edges.map((e,i)=>({i,d:e.x*waterSideView.x+e.z*waterSideView.z})).sort((a,b)=>b.d-a.d).map(e=>e.i);
+    const key=order.join(',');
+    if(g.userData.order!==key){let k=0;for(const i of order)for(const v of edges[i].indices)g.index.array[k++]=v;g.index.needsUpdate=true;g.userData.order=key;}
+  }
+  const B=state.sunOn?BIOME():BIOMES.find(b=>b.id==='forest'),den=Math.max(.001,B.hemi*1.6+B.sunI);
+  const amount=(hemi.intensity*1.6+(sun.visible?sun.intensity:0)+(fill.visible?fill.intensity:0))/den;
+  // Outdoor tint follows the water surface; an unlit cave must not retain the daytime brightness.
+  waterSideLight.value.copy(waterTimeTint.value).multiplyScalar(amount/Math.max(.001,waterTimeTint.value.x,waterTimeTint.value.y,waterTimeTint.value.z));
+  for(let i=0;i<6;i++){const l=glowLights[i];waterSidePoints.value[i].set(l.position.x,l.position.y,l.position.z,l.distance);
+    waterSideColors.value[i].set(l.color.r,l.color.g,l.color.b).multiplyScalar(l.visible?l.intensity:0);}
+};
+function rebuildWaterSides(){
+  const pos=[],depth=[],shore=[],shore2=[],top=[],ix=[],edges=[];
+  const sh=wGeo.attributes.shore.array,sh2=wGeo.attributes.shore2.array;
+  function sample(a,b,t){const k=idx(...a),l=idx(...b),mix=(x,y)=>x+(y-x)*t;
+    return {x:mix(vx(a[0]),vx(b[0])),z:mix(vx(a[1]),vx(b[1])),d:Math.max(0,state.water-mix(H[k],H[l])),
+      s:Array.from({length:4},(_,c)=>mix(sh[k*4+c],sh[l*4+c])),r:Array.from({length:2},(_,c)=>mix(sh2[k*2+c],sh2[l*2+c]))};}
+  for(const [edge] of SIDES){
+    const mid=edge((N-1)/2),e={x:vx(mid[0]),z:vx(mid[1]),indices:[]};edges.push(e);
+    for(let t=0;t<N-1;t++){
+    const a=edge(t),b=edge(t+1),da=state.water-H[idx(...a)],db=state.water-H[idx(...b)];
+    if(da<=0&&db<=0)continue;
+    const start=da<0?da/(da-db):0,end=db<0?da/(da-db):1;
+    if(end-start<1e-6)continue;
+    const base=depth.length;
+    for(const q of [sample(a,b,start),sample(a,b,end)])for(const upper of [1,0]){
+      pos.push(q.x,state.water-q.d*(1-upper),q.z);depth.push(q.d);shore.push(...q.s);shore2.push(...q.r);top.push(upper);
+    }
+    const indices=[base,base+1,base+2,base+2,base+1,base+3];ix.push(...indices);e.indices.push(...indices);
+    }
+  }
+  const g=new THREE.BufferGeometry();
+  for(const [name,arr,n] of [['position',pos,3],['depth',depth,1],['shore',shore,4],['shore2',shore2,2],['top',top,1]])g.setAttribute(name,new THREE.Float32BufferAttribute(arr,n));
+  g.setIndex(ix);g.userData.edges=edges;waterSides.geometry.dispose();waterSides.geometry=g;waterSides.visible=ix.length>0&&BU.uLava.value<.5;
+}
 
 // ---------- water sources (springs.js): streams and ponds above the water level, and the water in the pools
 // The water is worked out once (no simulation): each spring's flow is an area it can keep wet; it runs down the steepest way,
@@ -1200,6 +1278,7 @@ function updateTerrain() {
   SIDES.forEach(([f], s) => { for (let t = 0; t < N; t++) { const [i, j] = f(t); spos[(s * N + t) * 2 * 3 + 1] = H[idx(i, j)]; } });
   sGeo.attributes.position.needsUpdate = true; sGeo.computeBoundingSphere();
   water.position.y = state.water; waterU.value = state.water;
+  rebuildWaterSides();
   scheduleWater();
 }
 
@@ -4918,7 +4997,7 @@ function applyBiome(id) {
   v3(BU.uG0, B.g[0]); v3(BU.uG1, B.g[1]); v3(BU.uGH, B.g[2]); v3(BU.uRockTint, B.rock || [1, 1, 1]); v3(BU.uPropTint, B.prop || [1, 1, 1]);
   v3(BU.uShallow, B.water[0]); v3(BU.uDeep, B.water[1]);
   if (B.moss) v3(BU.uMoss, B.moss); BU.uMossAmt.value = B.moss ? 1 : 0;
-  BU.uLava.value = B.lava ? 1 : 0; BU.uSea.value = state.sea || B.id === 'beach' ? 1 : 0; computeShoreField(); BU.uFlowers.value = B.flowers ?? 1; BU.uSnow.value = B.snow || 0; BU.uSnowLine.value = B.snowLine ?? -100;
+  BU.uLava.value = B.lava ? 1 : 0; BU.uSea.value = state.sea || B.id === 'beach' ? 1 : 0; computeShoreField(); rebuildWaterSides(); BU.uFlowers.value = B.flowers ?? 1; BU.uSnow.value = B.snow || 0; BU.uSnowLine.value = B.snowLine ?? -100;
   if ($('biome')) $('biome').value = B.id;
   walkDirty = true;
   applyAtmo();
@@ -5791,7 +5870,7 @@ window.__app = { chestPresentation, wallTorches, bedrockReady, splatAt,get tunne
     for (let f = 0; f < frames; f++) { if (stroke.active && !['scatter', 'erase'].includes(state.tool)) { applyBrush(x, z, 1 / 60); } }
     stroke.active = false; updateTerrain(); rebuildProps(); if (falls.length) refitFalls();
   },
-  moonStrength, waterMat, water, sun,
+  moonStrength, waterMat, water, waterSides, sun,
   render() { renderer.render(scene, camera); },
   setTime(t) { timeU.value = t; }, get time() { return timeU.value; },
   serialize, deserialize, buildExport, makeZip, undo, redo, refreshWaterData, WATERU, get waterInfo() { return waterInfo; }, syncWaterShow,
