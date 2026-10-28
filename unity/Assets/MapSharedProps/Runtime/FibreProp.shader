@@ -19,8 +19,8 @@ Shader "MapSharedProps/FibreProp" {
    struct A {float4 p:POSITION;float3 n:NORMAL;float2 uv:TEXCOORD0;float4 color:COLOR;};
    struct V {float4 p:SV_POSITION;float3 world:TEXCOORD0;float3 n:TEXCOORD1;float2 uv:TEXCOORD2;float4 color:COLOR;};
    V Vert(A i){V o;VertexPositionInputs p=GetVertexPositionInputs(i.p.xyz);o.p=p.positionCS;o.world=p.positionWS;o.n=TransformObjectToWorldNormal(i.n);o.uv=i.uv;o.color=i.color*_BaseColor;return o;}
-   float3 Detail(float2 uv){if(_FibreKind>.5){float fade=1-smoothstep(.2,1,max(fwidth(uv.x),fwidth(uv.y)*3));float a=6.2831853*(uv.y*3-uv.x),h=sin(a),d=cos(a);return float3(1-.055*fade+.055*h*fade,-6.2831853*d*fade,18.849556*d*fade);}float fade=1-smoothstep(.18,.9,max(fwidth(uv.x*36),fwidth(uv.y*36)));float2 a=uv*226.194671;return float3(1-.012*fade+.012*sin(a.x)*sin(a.y)*fade,226.194671*cos(a.x)*sin(a.y)*fade,226.194671*sin(a.x)*cos(a.y)*fade);}
-   float3 FinishNormal(float3 n,float3 p,float2 uv,float2 gradient){float3 dx=ddx(p),dy=ddy(p);float2 ux=ddx(uv),uy=ddy(uv);float3 tangent=dx*uy.y-dy*ux.y,bitangent=dy*ux.x-dx*uy.x;float det=ux.x*uy.y-ux.y*uy.x,scale=rsqrt(max(max(dot(tangent,tangent),dot(bitangent,bitangent)),1e-12));return normalize(n-(tangent*gradient.x+bitangent*gradient.y)*scale*sign(det)*(_FibreKind>.5?.022:.00035));}
+   float3 Detail(float2 uv){if(_FibreKind>.5){float fade=1-smoothstep(.2,1,max(fwidth(uv.x),fwidth(uv.y)*3));float a=6.2831853*(uv.y*3-uv.x),h=sin(a),d=cos(a);return float3(1-.24*pow(.5-.5*h,3)*fade,-6.2831853*d*fade,18.849556*d*fade);}float fade=1-smoothstep(.18,.9,max(fwidth(uv.x*36),fwidth(uv.y*36)));float2 a=uv*226.194671;return float3(1-.012*fade+.012*sin(a.x)*sin(a.y)*fade,226.194671*cos(a.x)*sin(a.y)*fade,226.194671*sin(a.x)*cos(a.y)*fade);}
+   float3 FinishNormal(float3 n,float3 p,float2 uv,float2 gradient){float3 dx=ddx(p),dy=ddy(p);float2 ux=ddx(uv),uy=ddy(uv);float3 tangent=dx*uy.y-dy*ux.y,bitangent=dy*ux.x-dx*uy.x;float det=ux.x*uy.y-ux.y*uy.x,scale=rsqrt(max(max(dot(tangent,tangent),dot(bitangent,bitangent)),1e-12));return normalize(n-(tangent*gradient.x+bitangent*gradient.y)*scale*sign(det)*(_FibreKind>.5?.030:.00035));}
    half4 Frag(V i):SV_Target {float3 d=Detail(i.uv),n=FinishNormal(normalize(i.n),i.world,i.uv,d.yz);Light light=GetMainLight();float shadow=MainLightRealtimeShadow(TransformWorldToShadowCoord(i.world));return half4(i.color.rgb*d.x*(SampleSH(n)+light.color*max(0,dot(n,light.direction))*shadow),1);}
    ENDHLSL
   }
@@ -55,7 +55,7 @@ Shader "MapSharedProps/FibreProp" {
   #pragma target 3.0
   sampler2D _BaseMap;float4 _BaseColor;float _FibreKind;
   struct Input {float2 uv_BaseMap;float4 color:COLOR;};
-  void Surf(Input i,inout SurfaceOutput o){float2 uv=i.uv_BaseMap;float fade=1-smoothstep(.2,1,max(fwidth(uv.x),fwidth(uv.y)*3));float rope=1-.055*fade+.055*sin(6.2831853*(uv.y*3-uv.x))*fade;float cf=1-smoothstep(.18,.9,max(fwidth(uv.x*36),fwidth(uv.y*36)));float cloth=1-.012*cf+.012*sin(uv.x*226.194671)*sin(uv.y*226.194671)*cf;o.Albedo=i.color.rgb*_BaseColor.rgb*(_FibreKind>.5?rope:cloth);}
+  void Surf(Input i,inout SurfaceOutput o){float2 uv=i.uv_BaseMap;float fade=1-smoothstep(.2,1,max(fwidth(uv.x),fwidth(uv.y)*3));float rope=1-.24*pow(.5-.5*sin(6.2831853*(uv.y*3-uv.x)),3)*fade;float cf=1-smoothstep(.18,.9,max(fwidth(uv.x*36),fwidth(uv.y*36)));float cloth=1-.012*cf+.012*sin(uv.x*226.194671)*sin(uv.y*226.194671)*cf;o.Albedo=i.color.rgb*_BaseColor.rgb*(_FibreKind>.5?rope:cloth);}
   ENDCG
  }
 }

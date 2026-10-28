@@ -1,0 +1,121 @@
+{
+  "baseline": "493cf6b877a479d9a15b7d828a307adcd2cb82c2",
+  "before": {
+    "saveReload": true,
+    "material": {
+      "type": "MeshStandardMaterial",
+      "side": 0,
+      "defines": {
+        "STANDARD": ""
+      }
+    },
+    "colliders": {
+      "cs": 4,
+      "m": {}
+    },
+    "gl": 0,
+    "meshes": [
+      {
+        "id": "coiledrope",
+        "triangles": 520,
+        "bounds": {
+          "isBox3": true,
+          "min": {
+            "x": -0.2810231149196625,
+            "y": 0.004978869576007128,
+            "z": -0.36983200907707214
+          },
+          "max": {
+            "x": 0.24425162374973297,
+            "y": 0.03617352247238159,
+            "z": 0.2229997217655182
+          }
+        },
+        "r": 0,
+        "height": 0.065,
+        "surface": null,
+        "finite": true
+      }
+    ]
+  },
+  "after": {
+    "saveReload": true,
+    "material": {
+      "type": "MeshStandardMaterial",
+      "side": 0,
+      "defines": {
+        "STANDARD": ""
+      }
+    },
+    "colliders": {
+      "cs": 4,
+      "m": {}
+    },
+    "gl": 0,
+    "meshes": [
+      {
+        "id": "coiledrope",
+        "triangles": 1216,
+        "bounds": {
+          "isBox3": true,
+          "min": {
+            "x": -0.2830757200717926,
+            "y": 0.004000000189989805,
+            "z": -0.36983200907707214
+          },
+          "max": {
+            "x": 0.2498372495174408,
+            "y": 0.03680000081658363,
+            "z": 0.22823931276798248
+          }
+        },
+        "r": 0,
+        "height": 0.065,
+        "surface": null,
+        "finite": true
+      }
+    ]
+  },
+  "editor": {
+    "pass": true,
+    "cases": [
+      "before",
+      "after"
+    ],
+    "prefabsPerCase": 43,
+    "placementsPerCase": 1,
+    "nonblockingColliderPreserved": true,
+    "unrelated42MeshesExact": true,
+    "ropeAndClothMaterialKindsSeparate": true,
+    "newTextureBytes": 0,
+    "groundedFibreUvExact": true,
+    "readerSourceUnchanged": true,
+    "playerExecuted": false
+  },
+  "exportAssertions": {
+    "nonRopeAssetsAndInstancesExact": true,
+    "sharedAtlasExact": true,
+    "fireExportExact": true,
+    "groundPartIdentityAndPlacementPreserved": true
+  },
+  "visualReview": {
+    "selected": "coiledrope",
+    "retained": [
+      "tiedsack",
+      "haystack"
+    ],
+    "sameLightingCamera": true,
+    "baselineShader": "original 493cf6b FibreProp, renamed only in isolated review environment",
+    "views": [
+      "Web close and normal distance",
+      "Unity close and opposite light",
+      "actual generated grassland seed71421 normal game camera"
+    ],
+    "assessment": "Clearer strand grooves and less angular coil at close range; restrained improvement at normal distance.",
+    "limits": [
+      "Stylized procedural strand relief, not individually modelled hemp fibres.",
+      "Player/full gameplay/native GPU timing not executed.",
+      "Screenshots retained locally only; no Library upload."
+    ]
+  }
+}
