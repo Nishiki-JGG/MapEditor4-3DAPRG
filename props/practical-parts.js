@@ -21,20 +21,31 @@ window.TDPracticalParts=(()=>{
   p.push(part(new THREE.CylinderGeometry(.215,.215,.018,12),mat4(0,.024,0,1,1,1),wood,true));return p;
  }
  // 底・胴・肩・首・口縁の幅を維持し、肩の折れを連続した曲率へ配分する。
- const vesselProfile=[[0,.03],[.12,0],[.18,.035],[.25,.16],[.29,.32],[.27,.43],[.205,.515],[.16,.55],[.15,.60],[.15,.687],[.17,.705],[.17,.73],[.135,.73],[.125,.68],[.125,.57],[.185,.53],[.235,.44],[.255,.32],[.22,.17],[.12,.07],[0,.07]];
- function vessel(){return new THREE.LatheGeometry(vesselProfile.map(([r,y])=>new THREE.Vector2(r,y)),16);}
+ // A rolled lip, continuous shoulder and hollow foot retain the original envelope.
+ const vesselProfile=[[0,.03],[.116,.002],[.139,.008],[.149,.024],[.153,.044],[.18,.070],[.22,.135],[.257,.205],[.281,.275],[.289,.325],[.279,.397],[.255,.455],[.218,.503],[.181,.537],[.157,.562],[.149,.596],[.149,.674],[.155,.692],[.168,.704],[.170,.716],[.165,.727],[.151,.730],[.139,.724],[.132,.711],[.128,.687],[.126,.602],[.137,.565],[.166,.543],[.198,.513],[.232,.462],[.257,.396],[.266,.326],[.258,.277],[.235,.210],[.201,.145],[.157,.094],[.112,.071],[0,.071]];
+ function vessel(){return new THREE.LatheGeometry(vesselProfile.map(([r,y])=>new THREE.Vector2(r,y)),24);}
  function brokenVessel(){
-  const N=16,v=[],ix=[],top=[.35,.36,.34,.30,.22,.18,.20,.31,.39,.42,.40,.36,.33,.34,.37,.38];
-  // 同間隔の王冠状の先端を避け、まとまって欠けた口と厚い素地をつなぐ。
+  const N=24,v=[],ix=[],top=[.35,.365,.346,.322,.307,.255,.195,.183,.212,.299,.363,.394,.42,.406,.382,.362,.344,.333,.337,.352,.377,.388,.373,.355];
+  // A few deep fractures, small secondary chips and a lighter solid section, not a sawtooth rim.
   for(let j=0;j<N;j++){
-   const a=j/N*Math.PI*2,h=top[j],r=.29-Math.abs(h-.31)*.16;
-   const rings=[[.12,0],[.18,.03],[.245,.13],[r,h],[r-.030,h-.006],[.216,.135],[.12,.065]];
+   const a=j/N*Math.PI*2,h=top[j],r=.29-Math.abs(h-.31)*.16,t=.026+.004*Math.sin(j*1.7),chip=[4,7,16].includes(j)?.007:0;
+   const rings=[[.12,0],[.176,.028],[.220,.09],[.25,.16],[r-.004,h-.016],[r-chip,h],[r-t,h-.004],[r-t-.003,h-.020],[.223,.164],[.196,.10],[.12,.065]];
    for(const[rr,y]of rings)v.push([rr*Math.cos(a),y,rr*Math.sin(a)]);
   }
-  for(let j=0;j<N;j++)for(let k=0;k<6;k++){const a=j*7+k,b=((j+1)%N)*7+k;ix.push(a,a+1,b,b,a+1,b+1);}const b=v.length;v.push([0,0,0],[0,.065,0]);for(let j=0;j<N;j++){const n=(j+1)%N;ix.push(b,n*7,j*7,b+1,j*7+6,n*7+6);}return mesh(v,ix);
+  for(let j=0;j<N;j++)for(let k=0;k<10;k++){const a=j*11+k,b=((j+1)%N)*11+k;ix.push(a,a+1,b,b,a+1,b+1);}const b=v.length;v.push([0,0,0],[0,.065,0]);for(let j=0;j<N;j++){const n=(j+1)%N;ix.push(b,j*11,n*11,b+1,n*11+10,j*11+10);}return mesh(v,ix);
  }
- function ceramic(parts,seed){const g=build(parts,seed),pos=g.attributes.position,c=g.attributes.color;
-  // 曲がった肩に平面ごとの偽陰影を二重に重ねない。陶器2種だけに適用。
-  for(let i=0;i<pos.count;i+=3){const a=new THREE.Vector3().fromBufferAttribute(pos,i),b=new THREE.Vector3().fromBufferAttribute(pos,i+1),v=new THREE.Vector3().fromBufferAttribute(pos,i+2),ny=b.sub(a).cross(v.sub(a)).normalize().y,k=.74+.36*Math.max(ny,-.4);for(let j=i;j<i+3;j++)c.setXYZ(j,c.getX(j)/k,c.getY(j)/k,c.getZ(j)/k);}return g;}
+ function ceramic(parts,seed){
+  // Remove the shared helper's directional colour bake: illumination comes from real normals.
+  parts=parts.map(p=>({...p,j:0}));const g=makeGeo(parts,seed,{ao:.055,smooth:55}),pos=g.attributes.position,c=g.attributes.color,uv=new Float32Array(pos.count*2),q=ATLAS2.uvr('clay'),dark=col(0x9a684a),light=col(0xc49771);
+  for(let i=0;i<pos.count;i+=3){
+   const a=new THREE.Vector3().fromBufferAttribute(pos,i),b=new THREE.Vector3().fromBufferAttribute(pos,i+1),v=new THREE.Vector3().fromBufferAttribute(pos,i+2),n=b.sub(a).cross(v.sub(a)).normalize(),angles=[];
+   for(let j=i;j<i+3;j++)angles.push(Math.atan2(pos.getZ(j),pos.getX(j))/(Math.PI*2)+.5);if(Math.max(...angles)-Math.min(...angles)>.5)for(let k=0;k<3;k++)if(angles[k]<.5)angles[k]+=1;
+   for(let j=i;j<i+3;j++){const x=pos.getX(j),y=pos.getY(j),z=pos.getZ(j),rad=Math.hypot(x,z),wave=Math.sin(x*9+z*5+.7)*Math.cos(y*6-z*4),firing=.46+.13*wave,shade=.84+.16*Math.min(1,y/.075),base=mixc(dark,light,firing),inside=n.x*x+n.z*z<-.04,fracture=seed===807&&y>.17&&n.y>.55,lip=seed===806&&y>.695;
+    for(let k=0;k<3;k++)base[k]*=shade*(inside?.83:1)*(fracture?1.23:lip?1.06:1);c.setXYZ(j,...base);
+    const u=angles[j-i]%1,vt=y/.76;uv[j*2]=q[0]+(q[2]-q[0])*(.025+u*.95);uv[j*2+1]=q[1]+(q[3]-q[1])*(.025+vt*.95);
+   }
+  }
+  g.setAttribute('uv',new THREE.BufferAttribute(uv,2));return g;
+ }
  return{wood,iron,fibre,clay,part,build,grounded,barrel,vessel,brokenVessel,ceramic};
 })();

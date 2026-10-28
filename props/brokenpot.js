@@ -1,4 +1,4 @@
-TDProps.add({id:'brokenpot',name:'割れた壺',r:0,min:1,sc:[.8,1.2],slope:.18,vis:.62,anyGround:true,tags:['ruins','castle'],height:.42,groundSink:.002,material:'carved',build(){
+TDProps.add({id:'brokenpot',name:'割れた壺',r:0,min:1,sc:[.8,1.2],slope:.18,vis:.62,anyGround:true,tags:['ruins','castle'],height:.42,groundSink:.002,material:'cards2',build(){
  const {mat4}=TDGeo,{mesh}=TDSmallParts,P=TDPracticalParts,body=P.brokenVessel(),pos=body.attributes.position,bi=body.index;
  // Close the vessel physically: the old horizontal inner floor faced down.
  for(let i=0;i<bi.count;i+=3){const a=bi.getX(i),b=bi.getX(i+1),c=bi.getX(i+2),y=pos.getY(a);if(Math.abs(y-pos.getY(b))<1e-6&&Math.abs(y-pos.getY(c))<1e-6&&(Math.abs(y)<1e-6||Math.abs(y-.065)<1e-6)){const ny=(pos.getZ(b)-pos.getZ(a))*(pos.getX(c)-pos.getX(a))-(pos.getX(b)-pos.getX(a))*(pos.getZ(c)-pos.getZ(a));if(ny*(y>.03?1:-1)<0){bi.setX(i+1,c);bi.setX(i+2,b);}}}

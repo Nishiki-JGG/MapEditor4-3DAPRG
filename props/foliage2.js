@@ -9,7 +9,7 @@ const W = 1024, H = 512, PAD = 3;
 const RECT = {
   meadow: [0, 0, 512, 256], straw: [512, 0, 256, 256], wood: [768, 0, 256, 256],
   flower0: [0, 256, 128, 128], flower1: [128, 256, 128, 128], flower2: [256, 256, 128, 128], flower3: [384, 256, 128, 128],
-  rosette: [512, 256, 256, 128], white: [768, 256, 64, 64],
+  rosette: [512, 256, 256, 128], white: [768, 256, 64, 64], clay: [832, 256, 128, 128],
 };
 function paint() {
   const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
@@ -85,6 +85,12 @@ function paint() {
       g.save(); g.translate(cx, cy); g.rotate(a); g.beginPath(); g.moveTo(0, 0); g.quadraticCurveTo(len * .5, -wid, len, 0); g.quadraticCurveTo(len * .5, wid, 0, 0);
       g.fillStyle = hsl(100 + (R() - .5) * 20, 40, l); g.fill(); g.strokeStyle = hsl(95, 30, l + 14, .6); g.lineWidth = 1; g.beginPath(); g.moveTo(0, 0); g.lineTo(len * .9, 0); g.stroke(); g.restore();
     }
+  }
+  // Unglazed fired clay occupies previously unused texels. Existing regions are unchanged.
+  {
+    const [x0,y0,w,h]=RECT.clay,im=g.createImageData(w,h),hash=TDGeo.hash2;
+    const noise=(x,y)=>{const a=Math.floor(x),b=Math.floor(y),u=x-a,v=y-b,s=u*u*(3-2*u),t=v*v*(3-2*v);return (1-s)*(1-t)*hash(a+271,b+197)+s*(1-t)*hash(a+272,b+197)+(1-s)*t*hash(a+271,b+198)+s*t*hash(a+272,b+198);};
+    for(let y=0;y<h;y++)for(let x=0;x<w;x++){const i=(y*w+x)*4,n=noise(x/27,y/23),grain=hash(x+931,y+74),turn=Math.sin(y*.32+noise(x/49,y/39)*2),v=Math.round(237+(n-.5)*24+(grain-.5)*10+turn*1.5-(grain<.018?14:0));im.data[i]=v;im.data[i+1]=v-2;im.data[i+2]=v-4;im.data[i+3]=255;}g.putImageData(im,x0,y0);
   }
   g.fillStyle = '#fff'; g.fillRect(...RECT.white);
   const d = g.getImageData(0, 0, W, H).data;

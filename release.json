@@ -1,5 +1,5 @@
 {
-  "release": "coopered-barrel-20261028-98",
+  "release": "unglazed-pots-20261028-99",
   "files": {
     "app.js": "8d6eaba3b40d28ae8297287d543f87534ac78843dc973484ab5c7186b800d888",
     "props/chest-presentation.js": "02d054f76798bdf6599156ffb0655085c919b3df733386a47a11f458d3aa5233",
@@ -18,6 +18,11 @@
     "props/grounding.js": "23b4519947dde1e315c1db1f53db18f3b336155310a336223bff4685fb369c4b",
     "props/shell-surface.js": "d8250789cc78f5fea3f66a12494c63128b73dbdccca861c2b3a2aa7d5025af76",
     "sea.js": "9c929f4f08ac4cf1555ea8f13f58620fd2efaadfb588da56bc64858c5b7d56fb",
-    "props/smallbarrel.js": "7fd520c0a8f009eef421480176c25ca725d3f2afcc6c28785df02caded2b1045"
+    "props/smallbarrel.js": "7fd520c0a8f009eef421480176c25ca725d3f2afcc6c28785df02caded2b1045",
+    "props/foliage2.js": "85410f7ca437c2154f9ab66b70cf06bc35460339cdcda53fcc9933b819b2d1d6",
+    "props/practical-parts.js": "881f1402590d3c41bb236da6b4497a544b3222a91e102bb923d23b4b0739d16b",
+    "props/storagepot.js": "a438c43030411e625765317acecc89ee1cf0e7beec47bcfa7dd7a65296747fe3",
+    "props/brokenpot.js": "a019b0eb7361c61d282ea6b32555df59b432c70e554858dd6439b3072d657a6b",
+    "props/small-prop-export.js": "5cfd6600cd403db22442a582b84948e39211a9435969fd21b838b742c75a9764"
   }
 }

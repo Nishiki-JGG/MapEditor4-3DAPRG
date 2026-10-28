@@ -1,0 +1,173 @@
+{
+  "baseline": "b70cd247",
+  "before": {
+    "saveReload": true,
+    "colliders": {
+      "cs": 4,
+      "m": {}
+    },
+    "gl": 0,
+    "meshes": [
+      {
+        "id": "storagepot",
+        "triangles": 640,
+        "bounds": {
+          "isBox3": true,
+          "min": {
+            "x": -0.28999999165534973,
+            "y": 0,
+            "z": -0.28999999165534973
+          },
+          "max": {
+            "x": 0.28999999165534973,
+            "y": 0.7300000190734863,
+            "z": 0.28999999165534973
+          }
+        },
+        "r": 0.29,
+        "height": 0.73,
+        "surface": null,
+        "finite": true
+      },
+      {
+        "id": "brokenpot",
+        "triangles": 260,
+        "bounds": {
+          "isBox3": true,
+          "min": {
+            "x": -0.3953927755355835,
+            "y": 0,
+            "z": -0.4616714417934418
+          },
+          "max": {
+            "x": 0.4955659806728363,
+            "y": 0.41999998688697815,
+            "z": 0.27559998631477356
+          }
+        },
+        "r": 0,
+        "height": 0.42,
+        "surface": null,
+        "finite": true
+      }
+    ]
+  },
+  "after": {
+    "saveReload": true,
+    "colliders": {
+      "cs": 4,
+      "m": {}
+    },
+    "gl": 0,
+    "meshes": [
+      {
+        "id": "storagepot",
+        "triangles": 1776,
+        "bounds": {
+          "isBox3": true,
+          "min": {
+            "x": -0.289000004529953,
+            "y": 0.0020000000949949026,
+            "z": -0.289000004529953
+          },
+          "max": {
+            "x": 0.289000004529953,
+            "y": 0.7300000190734863,
+            "z": 0.289000004529953
+          }
+        },
+        "r": 0.29,
+        "height": 0.73,
+        "surface": null,
+        "finite": true
+      },
+      {
+        "id": "brokenpot",
+        "triangles": 564,
+        "bounds": {
+          "isBox3": true,
+          "min": {
+            "x": -0.3953927755355835,
+            "y": 0,
+            "z": -0.4616714417934418
+          },
+          "max": {
+            "x": 0.4955659806728363,
+            "y": 0.41999998688697815,
+            "z": 0.2716183364391327
+          }
+        },
+        "r": 0,
+        "height": 0.42,
+        "surface": null,
+        "finite": true
+      }
+    ]
+  },
+  "atlas": {
+    "pass": true,
+    "unrelatedPayloadExact": true,
+    "allExistingAtlasPixelsExact": true,
+    "onlyNewCell": [
+      832,
+      256,
+      128,
+      128
+    ],
+    "changedPixels": 16384,
+    "atlasPngBytes": [
+      489688,
+      514690
+    ],
+    "extraRuntimeTextureBytes": 0
+  },
+  "editor": {
+    "pass": true,
+    "cases": [
+      "before",
+      "after4"
+    ],
+    "prefabsPerCase": 43,
+    "placementsPerCase": 2,
+    "storageColliderExact": true,
+    "brokenPotNonblocking": true,
+    "unrelated41MeshesExact": true,
+    "sharedAtlas": true,
+    "extraRuntimeTextureBytes": 0,
+    "oldReaderPreviouslyPassed": true,
+    "playerExecuted": false
+  },
+  "oldReader": {
+    "pass": true,
+    "cases": [
+      "before",
+      "after2"
+    ],
+    "prefabsPerCase": 43,
+    "placementsPerCase": 2,
+    "storageColliderExact": true,
+    "brokenPotNonblocking": true,
+    "unrelated41MeshesExact": true,
+    "sharedAtlas": true,
+    "extraRuntimeTextureBytes": 0,
+    "readerSourceUnchanged": true,
+    "playerExecuted": false
+  },
+  "visualReview": {
+    "selected": [
+      "storagepot",
+      "brokenpot"
+    ],
+    "sameCameraLighting": true,
+    "views": [
+      "Web close and normal distance",
+      "Unity close and opposite light",
+      "existing grassland seed 71421 normal camera"
+    ],
+    "rejectedTrial": "cards2 export had forced flat normals; fixed for these two types only",
+    "limitations": [
+      "unglazed diffuse clay; no separate PBR roughness or normal map",
+      "Player/full gameplay/native GPU timing not executed"
+    ]
+  }
+}
