@@ -1,0 +1,146 @@
+{
+  "pass": true,
+  "prefabs": 43,
+  "placements": 1,
+  "triangles": 1106,
+  "colliderExact": true,
+  "meshColliderGeometryAndTransformCompared": true,
+  "banner108Rechecked": true,
+  "negativeControls": true,
+  "other42MeshesExact": true,
+  "atlasDimensions": [
+    256,
+    256
+  ],
+  "sharedReferencesChecked": 225,
+  "readerSourceUnchanged": true,
+  "playerExecuted": false,
+  "baseline": "cc812e45666123e6cb174f1b17352a655e996c5f",
+  "web": {
+    "pass": true,
+    "onlySurfacePngChanged": true,
+    "saveReload": true,
+    "actualMapColliderBucketsEqual": true,
+    "allGeometryExact": true,
+    "fireAndChestExact": true
+  },
+  "normalLegacyMixedTypes": 44,
+  "meshAndUvAndNormalsAndColorsExact": true,
+  "triangleCounts": [
+    1106,
+    1106
+  ],
+  "surfaceDimensions": [
+    256,
+    256
+  ],
+  "textureAllocationChangeBytes": 0,
+  "beforeLoad": [
+    {
+      "instances": 9,
+      "each": 9,
+      "samples": 12,
+      "cpuSubmitMedianMs": 6.5,
+      "cpuSubmitP95Ms": 6.799999952316284,
+      "synchronizedMedianMs": 6.5,
+      "synchronizedP95Ms": 6.799999952316284,
+      "gpuMedianMs": 2.419712,
+      "gpuSamples": 12,
+      "memory": {
+        "geometries": 182,
+        "textures": 31
+      },
+      "programs": 97,
+      "render": {
+        "frame": 59,
+        "calls": 4,
+        "triangles": 47586,
+        "points": 0,
+        "lines": 0
+      }
+    },
+    {
+      "instances": 225,
+      "each": 225,
+      "samples": 12,
+      "cpuSubmitMedianMs": 5.899999976158142,
+      "cpuSubmitP95Ms": 6.900000095367432,
+      "synchronizedMedianMs": 5.899999976158142,
+      "synchronizedP95Ms": 6.900000095367432,
+      "gpuMedianMs": 2.944,
+      "gpuSamples": 12,
+      "memory": {
+        "geometries": 182,
+        "textures": 31
+      },
+      "programs": 97,
+      "render": {
+        "frame": 75,
+        "calls": 4,
+        "triangles": 286482,
+        "points": 0,
+        "lines": 0
+      }
+    }
+  ],
+  "afterLoad": [
+    {
+      "instances": 9,
+      "each": 9,
+      "samples": 12,
+      "cpuSubmitMedianMs": 6,
+      "cpuSubmitP95Ms": 7.299999952316284,
+      "synchronizedMedianMs": 6,
+      "synchronizedP95Ms": 7.299999952316284,
+      "gpuMedianMs": 2.774016,
+      "gpuSamples": 12,
+      "memory": {
+        "geometries": 182,
+        "textures": 31
+      },
+      "programs": 97,
+      "render": {
+        "frame": 58,
+        "calls": 4,
+        "triangles": 47586,
+        "points": 0,
+        "lines": 0
+      }
+    },
+    {
+      "instances": 225,
+      "each": 225,
+      "samples": 12,
+      "cpuSubmitMedianMs": 5.5,
+      "cpuSubmitP95Ms": 5.700000047683716,
+      "synchronizedMedianMs": 5.5,
+      "synchronizedP95Ms": 5.700000047683716,
+      "gpuMedianMs": 2.566144,
+      "gpuSamples": 12,
+      "memory": {
+        "geometries": 182,
+        "textures": 31
+      },
+      "programs": 97,
+      "render": {
+        "frame": 74,
+        "calls": 4,
+        "triangles": 286482,
+        "points": 0,
+        "lines": 0
+      }
+    }
+  ],
+  "unityComparison": {
+    "studio": true,
+    "oppositeLight": true,
+    "generatedGrasslandSeed": 71421,
+    "originalSceneModified": false
+  },
+  "limitations": [
+    "Desktop Web and background Editor only; no Player or mobile performance measurement.",
+    "Generated grassland validates production camera/light response, not a marine gameplay session.",
+    "Short unpaired timing samples are diagnostics, not a universal speed claim.",
+    "Net remains a thin stylized cutout rather than volumetric microbranches."
+  ]
+}

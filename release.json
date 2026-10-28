@@ -1,5 +1,5 @@
 {
-  "release": "rowboat-planks-20261028-109",
+  "release": "seafan-net-20261028-111",
   "files": {
     "app.js": "0dec314820be90c84a721dda1fedf7aa5c408502db3d278dca976656af91208e",
     "props/chest-presentation.js": "02d054f76798bdf6599156ffb0655085c919b3df733386a47a11f458d3aa5233",
@@ -29,6 +29,7 @@
     "props/coiledrope.js": "79f301028e149761ad4451a038929e2f55fc2fd8bed97e6062651c06bad22916",
     "props/fibre-finish.js": "47d4d689f148c5398c1afe4d4c45fd5ef069364c061294aad7963683c7217759",
     "props/banner.js": "7deff215438df91f1676848c2eea5e197135ee78f9cd1b0c119448fcc8e4548d",
-    "props/rowboat.js": "bc1da495dc784f81836870e879ec908016e906cac987acc77371a2eac7ecf1c7"
+    "props/rowboat.js": "bc1da495dc784f81836870e879ec908016e906cac987acc77371a2eac7ecf1c7",
+    "props/seafan-surface.js": "3ad1b8c71a2b92f20b3fab9e75d4fa362e6aff183b89fd771431f7daf3e5b612"
   }
 }
