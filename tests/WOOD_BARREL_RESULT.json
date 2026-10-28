@@ -1,0 +1,137 @@
+{
+  "baseline": "2db01c1",
+  "before": {
+    "saveReload": true,
+    "colliders": {
+      "cs": 4,
+      "m": {}
+    },
+    "gl": 0,
+    "meshes": [
+      {
+        "id": "supplycrate",
+        "triangles": 420,
+        "bounds": {
+          "isBox3": true,
+          "min": {
+            "x": -0.44749999046325684,
+            "y": 5.9604645663569045e-09,
+            "z": -0.4194999933242798
+          },
+          "max": {
+            "x": 0.44749999046325684,
+            "y": 0.699999988079071,
+            "z": 0.4194999933242798
+          }
+        },
+        "r": 0.58,
+        "height": 0.7,
+        "surface": null,
+        "finite": true
+      },
+      {
+        "id": "smallbarrel",
+        "triangles": 300,
+        "bounds": {
+          "isBox3": true,
+          "min": {
+            "x": -0.27799999713897705,
+            "y": 0.0020000000949949026,
+            "z": -0.27799999713897705
+          },
+          "max": {
+            "x": 0.27799999713897705,
+            "y": 0.7049999833106995,
+            "z": 0.27799999713897705
+          }
+        },
+        "r": 0.29,
+        "height": 0.72,
+        "surface": null,
+        "finite": true
+      }
+    ]
+  },
+  "after": {
+    "saveReload": true,
+    "colliders": {
+      "cs": 4,
+      "m": {}
+    },
+    "gl": 0,
+    "meshes": [
+      {
+        "id": "supplycrate",
+        "triangles": 420,
+        "bounds": {
+          "isBox3": true,
+          "min": {
+            "x": -0.44749999046325684,
+            "y": 5.9604645663569045e-09,
+            "z": -0.4194999933242798
+          },
+          "max": {
+            "x": 0.44749999046325684,
+            "y": 0.699999988079071,
+            "z": 0.4194999933242798
+          }
+        },
+        "r": 0.58,
+        "height": 0.7,
+        "surface": null,
+        "finite": true
+      },
+      {
+        "id": "smallbarrel",
+        "triangles": 1460,
+        "bounds": {
+          "isBox3": true,
+          "min": {
+            "x": -0.27795496582984924,
+            "y": 0.0020000000949949026,
+            "z": -0.27795496582984924
+          },
+          "max": {
+            "x": 0.27795496582984924,
+            "y": 0.699999988079071,
+            "z": 0.27795496582984924
+          }
+        },
+        "r": 0.29,
+        "height": 0.72,
+        "surface": null,
+        "finite": true
+      }
+    ]
+  },
+  "editor": {
+    "pass": true,
+    "cases": [
+      "before",
+      "after"
+    ],
+    "prefabsPerCase": 43,
+    "placementsPerCase": 2,
+    "colliderExact": true,
+    "unrelatedMeshesExact": true,
+    "sameAtlasObject": true,
+    "newTextureBytes": 0,
+    "readerSourceUnchanged": true,
+    "playerExecuted": false
+  },
+  "visualReview": {
+    "selected": "smallbarrel only",
+    "supplycrate": "retained: existing boards, brace and nails already readable",
+    "sameCameraLighting": true,
+    "views": [
+      "Web close and normal distance",
+      "Unity close and opposite light",
+      "existing grassland seed 71421 normal camera"
+    ],
+    "limits": [
+      "stylized faceted wood and matte iron",
+      "not a photoreal scanned material",
+      "Player/full gameplay/native GPU timing not executed"
+    ]
+  }
+}

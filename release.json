@@ -1,5 +1,5 @@
 {
-  "release": "grave-stone-20261028-97",
+  "release": "coopered-barrel-20261028-98",
   "files": {
     "app.js": "8d6eaba3b40d28ae8297287d543f87534ac78843dc973484ab5c7186b800d888",
     "props/chest-presentation.js": "02d054f76798bdf6599156ffb0655085c919b3df733386a47a11f458d3aa5233",
@@ -17,6 +17,7 @@
     "props/shells.js": "c16f1f1c4c7a60bfcf500d1179b2e668c487c1dd1c39de947a6c6a186929a199",
     "props/grounding.js": "23b4519947dde1e315c1db1f53db18f3b336155310a336223bff4685fb369c4b",
     "props/shell-surface.js": "d8250789cc78f5fea3f66a12494c63128b73dbdccca861c2b3a2aa7d5025af76",
-    "sea.js": "9c929f4f08ac4cf1555ea8f13f58620fd2efaadfb588da56bc64858c5b7d56fb"
+    "sea.js": "9c929f4f08ac4cf1555ea8f13f58620fd2efaadfb588da56bc64858c5b7d56fb",
+    "props/smallbarrel.js": "7fd520c0a8f009eef421480176c25ca725d3f2afcc6c28785df02caded2b1045"
   }
 }
