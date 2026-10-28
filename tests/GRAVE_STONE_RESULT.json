@@ -1,0 +1,141 @@
+{
+  "web": {
+    "baseline": "5b4dbd9",
+    "before": {
+      "saveReload": true,
+      "colliders": {
+        "cs": 4,
+        "m": {}
+      },
+      "gl": 0,
+      "meshes": [
+        {
+          "id": "gravestone",
+          "triangles": 192,
+          "bounds": {
+            "isBox3": true,
+            "min": {
+              "x": -0.4000000059604645,
+              "y": 0,
+              "z": -0.1872694492340088
+            },
+            "max": {
+              "x": 0.4000000059604645,
+              "y": 1.131084680557251,
+              "z": 0.4000000059604645
+            }
+          },
+          "finite": true,
+          "surfaceBytes": 22382,
+          "r": 0.3,
+          "height": 1.13
+        },
+        {
+          "id": "crossgrave",
+          "triangles": 140,
+          "bounds": {
+            "isBox3": true,
+            "min": {
+              "x": -0.3436667323112488,
+              "y": -0.018198655918240547,
+              "z": -0.2150000035762787
+            },
+            "max": {
+              "x": 0.2612810730934143,
+              "y": 1.1765315532684326,
+              "z": -0.08500000089406967
+            }
+          },
+          "finite": true,
+          "surfaceBytes": 22382,
+          "r": 0.3,
+          "height": 1.18
+        }
+      ]
+    },
+    "after": {
+      "saveReload": true,
+      "colliders": {
+        "cs": 4,
+        "m": {}
+      },
+      "gl": 0,
+      "meshes": [
+        {
+          "id": "gravestone",
+          "triangles": 284,
+          "bounds": {
+            "isBox3": true,
+            "min": {
+              "x": -0.4000000059604645,
+              "y": 0,
+              "z": -0.1870308220386505
+            },
+            "max": {
+              "x": 0.4000000059604645,
+              "y": 1.1313246488571167,
+              "z": 0.4000000059604645
+            }
+          },
+          "finite": true,
+          "surfaceBytes": 21026,
+          "r": 0.3,
+          "height": 1.13
+        },
+        {
+          "id": "crossgrave",
+          "triangles": 188,
+          "bounds": {
+            "isBox3": true,
+            "min": {
+              "x": -0.3436667323112488,
+              "y": -0.018198655918240547,
+              "z": -0.2150000035762787
+            },
+            "max": {
+              "x": 0.2612810730934143,
+              "y": 1.1765315532684326,
+              "z": -0.08500000089406967
+            }
+          },
+          "finite": true,
+          "surfaceBytes": 21026,
+          "r": 0.3,
+          "height": 1.18
+        }
+      ]
+    },
+    "pass": true,
+    "unrelatedExact": true
+  },
+  "editor": {
+    "pass": true,
+    "cases": [
+      "before",
+      "after",
+      "absentSurface"
+    ],
+    "prefabsPerCase": 43,
+    "placedPerCase": 2,
+    "colliderVerticesAndIndicesExact": true,
+    "unrelatedMeshesExact": true,
+    "shared128TextureMaterial": true,
+    "readerSourceUnchanged": true,
+    "playerExecuted": false
+  },
+  "visualReview": {
+    "sameCameraLight": true,
+    "views": [
+      "close",
+      "opposite light",
+      "normal Web distance",
+      "existing grassland seed 71421"
+    ],
+    "adopted": "Bevels and carved recesses read at close range; silhouettes remain quiet and stone-like at gameplay distance.",
+    "limits": [
+      "stylized stone rather than photoreal scanning",
+      "Player and complete gameplay not executed",
+      "native GPU timings not measured"
+    ]
+  }
+}

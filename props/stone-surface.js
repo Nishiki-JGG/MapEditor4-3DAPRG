@@ -9,7 +9,7 @@ window.TDSmallPropSurface=(()=>{
     const ctx=canvas.getContext('2d'),image=ctx.createImageData(size,size);let mean=0;
     const noise=(x,y)=>{const ix=Math.floor(x),iy=Math.floor(y),u=x-ix,v=y-iy,s=u*u*(3-2*u),t=v*v*(3-2*v),h=(a,b)=>hash2((a%4+4)%4,(b%4+4)%4),a=h(ix,iy),b=h(ix+1,iy),c=h(ix,iy+1),d=h(ix+1,iy+1);return a+(b-a)*s+(c-a)*t+(a-b-c+d)*s*t;};
     for(let y=0;y<size;y++)for(let x=0;x<size;x++){
-      const h=hash2(x+107,y+53),cloud=noise(x/32,y/32),value=Math.max(194,Math.min(255,Math.round(239+(h-.5)*22+(cloud-.5)*28-(h<.035?26:0)+(h>.985?9:0)))),i=(y*size+x)*4;
+      const h=hash2(x+107,y+53),cloud=noise(x/32,y/32),value=Math.max(194,Math.min(255,Math.round(235+(h-.5)*13+(cloud-.5)*48+(noise(x/16,y/16)-.5)*13-(h<.025?22:0)+(h>.985?7:0)))),i=(y*size+x)*4;
       image.data[i]=image.data[i+1]=image.data[i+2]=value;image.data[i+3]=255;
       const s=value/255;mean+=s<=.04045?s/12.92:Math.pow((s+.055)/1.055,2.4);
     }

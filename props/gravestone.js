@@ -12,7 +12,8 @@ TDProps.add({
     for(let j=1;j<N-1;j++)ix.push(0,j,j+1,16,16+j+1,16+j);
     const parts=[{g:TDSmallParts.mesh(v,ix),m:mat4(0,0,.15,1,1,1),cfn:cf,j:.008}];
     const pose=mat4(0,0,-.05,1,1,1,0,-.06);
-    for(const q of TDMarkerParts.slab(TDMarkerParts.arch(.3,.12,.83,12),.14,cf,{x0:-.18,x1:.18,y0:.30,y1:.72,marks:[[.43,.23],[.58,.19]]})){q.m=pose.clone().multiply(q.m);parts.push(q);}
-    return TDSmallPropSurface.apply(makeGeo(parts,62,{ao:.18,smooth:30}));
+    const slabOutline=TDMarkerParts.arch(.3,.12,.83,16);slabOutline[5][0]*=.965;slabOutline[5][1]-=.012;slabOutline[12][1]-=.008;
+    for(const q of TDMarkerParts.wornSlab(slabOutline,.14,cf,{outline:TDMarkerParts.arch(.19,.29,.64,8),depth:.036,bevel:.012,marks:[[.40,.235],[.51,.21],[.62,.16]]})){q.m=pose.clone().multiply(q.m);parts.push(q);}
+    return TDSmallPropSurface.apply(makeGeo(parts,62,{ao:.18,smooth:8}));
   },
 });

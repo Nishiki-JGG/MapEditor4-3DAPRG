@@ -31,3 +31,20 @@ window.TDMarkerParts = {
     return parts;
   },
 };
+
+// Worn solid stone with real bevelled recesses. The old slab helper remains unchanged.
+TDMarkerParts.wornSlab=function(outline,depth,cf,panel){
+ const {mesh}=TDSmallParts,I=new THREE.Matrix4(),parts=[],n=outline.length;
+ const inset=(p,d)=>p.map((b,j)=>{const a=p[(j+p.length-1)%p.length],c=p[(j+1)%p.length],u=new THREE.Vector2(b[0]-a[0],b[1]-a[1]).normalize(),v=new THREE.Vector2(c[0]-b[0],c[1]-b[1]).normalize(),n1=new THREE.Vector2(-u.y,u.x),n2=new THREE.Vector2(-v.y,v.x),sum=n1.clone().add(n2),den=Math.max(.22,1+n1.dot(n2));return[b[0]+sum.x*d/den,b[1]+sum.y*d/den];});
+ const tint=k=>(...args)=>cf(...args).map(v=>v*k),add=(g,cfn=cf)=>parts.push({g,m:I,cfn,j:.002});
+ const inner=inset(outline,.010),f=depth/2,b=f-.014,points=[],ix=[];
+ for(const[p,z]of[[outline,b],[inner,f],[outline,-b],[inner,-f]])for(const[x,y]of p)points.push([x,y,z]);
+ for(let j=0;j<n;j++){const k=(j+1)%n;ix.push(j,k,n+j,k,n+k,n+j,j,2*n+j,k,k,2*n+j,2*n+k,2*n+j,3*n+j,2*n+k,2*n+k,3*n+j,3*n+k);}
+ add(mesh(points,ix),tint(1.035));
+ const shape=p=>new THREE.Shape(p.map(v=>new THREE.Vector2(...v))),hole=p=>new THREE.Path(p.map(v=>new THREE.Vector2(...v)));
+ const front=shape(inner);if(panel)front.holes.push(hole(panel.outline));add(new THREE.ShapeGeometry(front).translate(0,0,f));
+ const back=new THREE.ShapeGeometry(shape(inner)),bi=back.index.array;for(let j=0;j<bi.length;j+=3)[bi[j+1],bi[j+2]]=[bi[j+2],bi[j+1]];add(back.translate(0,0,-f));
+ function rim(a,z0,c,z1,k){const v=[],ix=[];for(const[p,z]of[[a,z0],[c,z1]])for(const[x,y]of p)v.push([x,y,z]);for(let j=0;j<a.length;j++){const h=(j+1)%a.length;ix.push(j,h,j+a.length,h,h+a.length,j+a.length);}add(mesh(v,ix),tint(k));}
+ if(panel){const p=panel.outline,inner=inset(p,panel.bevel||.009),z=f-(panel.depth||.030);rim(p,f,inner,z,.89);const floor=shape(inner),marks=(panel.marks||[]).map(([y,w])=>[[-w/2,y-.008],[w/2,y-.008],[w/2-.012,y+.008],[-w/2+.006,y+.008]]);for(const q of marks)floor.holes.push(hole(q));add(new THREE.ShapeGeometry(floor).translate(0,0,z),tint(.94));for(const q of marks){const base=inset(q,.004);rim(q,z,base,z-.009,.78);add(new THREE.ShapeGeometry(shape(base)).translate(0,0,z-.009),tint(.68));}}
+ return parts;
+};

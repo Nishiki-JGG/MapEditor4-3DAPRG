@@ -1,5 +1,5 @@
 {
-  "release": "shore-cluster-20261028-96",
+  "release": "grave-stone-20261028-97",
   "files": {
     "app.js": "8d6eaba3b40d28ae8297287d543f87534ac78843dc973484ab5c7186b800d888",
     "props/chest-presentation.js": "02d054f76798bdf6599156ffb0655085c919b3df733386a47a11f458d3aa5233",
@@ -10,10 +10,10 @@
     "props/chest-silver-trim.js": "618ccbf1842f0712ea52956c1c4604b36d03d7b6190ad970b6039cb174936774",
     "props/chest-sanctum-data.js": "cb5e96c1769bce67ef72c6e28dbd7a3e978e26dd277a660d8f747c59f62e1e8c",
     "props/chest-sanctum.js": "55ddc19315035800cf92ef1aaa82f80298f5c7732a6c27295a14c236710c1fdf",
-    "props/gravestone.js": "644b728a667f4ed5bb80b2c5e43cbde3616c036d6b28cf3ada9d78f8087acb15",
-    "props/crossgrave.js": "1a074f3e87ca14e01fcfbe2c906ad928f607fd8f1a9d3617e1afa44b0436c563",
-    "props/stone-surface.js": "c536d402c75ee9a1fc21dba04131d54845d5dacad78bd929a55d01a9abd849db",
-    "props/marker-parts.js": "8f64dc8689771c3ea2b4749d8d4849c90b8d90f9e4fcb160a0c809ed8103ef96",
+    "props/gravestone.js": "0481e45ab815819bf15f28dad6799b3231d8e86f98d682111cf742c6e6e478c6",
+    "props/crossgrave.js": "5b7d0bf7aafd131db0293a97620b6850474bd28802435b4fb2cce9c28ff89ef5",
+    "props/stone-surface.js": "b13d9f8dacad368b4f91aa9a227eef9c68c2d5ead8af91e03a74d59b20049218",
+    "props/marker-parts.js": "4ac17ad5905dd9bdd9d6ffc9724613d9e296df9c28e2dfd4049dee29e2954303",
     "props/shells.js": "c16f1f1c4c7a60bfcf500d1179b2e668c487c1dd1c39de947a6c6a186929a199",
     "props/grounding.js": "23b4519947dde1e315c1db1f53db18f3b336155310a336223bff4685fb369c4b",
     "props/shell-surface.js": "d8250789cc78f5fea3f66a12494c63128b73dbdccca861c2b3a2aa7d5025af76",
