@@ -1,0 +1,102 @@
+{
+  "baseline": "1555d46",
+  "before": {
+    "saveReload": true,
+    "colliders": {
+      "cs": 4,
+      "m": {}
+    },
+    "gl": 0,
+    "meshes": [
+      {
+        "id": "lantern",
+        "triangles": 304,
+        "bounds": {
+          "isBox3": true,
+          "min": {
+            "x": -0.06928203254938126,
+            "y": 8.940696516468449e-10,
+            "z": -0.12020815163850784
+          },
+          "max": {
+            "x": 0.5402081608772278,
+            "y": 1.899999976158142,
+            "z": 0.12020815163850784
+          }
+        },
+        "r": 0.15,
+        "height": 1.9,
+        "surface": null,
+        "finite": true
+      }
+    ]
+  },
+  "after": {
+    "saveReload": true,
+    "colliders": {
+      "cs": 4,
+      "m": {}
+    },
+    "gl": 0,
+    "meshes": [
+      {
+        "id": "lantern",
+        "triangles": 908,
+        "bounds": {
+          "isBox3": true,
+          "min": {
+            "x": -0.06589113175868988,
+            "y": 0,
+            "z": -0.12020815163850784
+          },
+          "max": {
+            "x": 0.5402081608772278,
+            "y": 1.899999976158142,
+            "z": 0.12020815163850784
+          }
+        },
+        "r": 0.15,
+        "height": 1.9,
+        "surface": null,
+        "finite": true
+      }
+    ]
+  },
+  "editor": {
+    "pass": true,
+    "cases": [
+      "before",
+      "after2"
+    ],
+    "prefabsPerCase": 43,
+    "lanternPlacementsPerCase": 1,
+    "firePlacementsPerCase": 2,
+    "colliderExact": true,
+    "unrelated42MeshesExact": true,
+    "lanternLightExact": true,
+    "fireParticlesAndLightsExact": true,
+    "sameShaderAndTexture": true,
+    "readerSourceUnchanged": true,
+    "playerExecuted": false
+  },
+  "webAssertions": {
+    "luminousGlassPositionsNormalsColorsGlowExact": true,
+    "lightAndCollisionMetadataExact": true,
+    "torchBrazierEntireExportExact": true,
+    "allOtherSmallPropPayloadExact": true
+  },
+  "visualReview": {
+    "selected": "lantern only",
+    "retained": "torch and brazier already show fuel cups, logs and supports",
+    "sameCameraLighting": true,
+    "views": [
+      "Web fixture comparison, close and normal distance",
+      "Unity close and opposite light",
+      "existing natural cave seed 71421 normal camera"
+    ],
+    "limits": [
+      "existing carved grain and diffuse metal style retained; no new PBR material",
+      "Player/full gameplay/native GPU timing not executed"
+    ]
+  }
+}

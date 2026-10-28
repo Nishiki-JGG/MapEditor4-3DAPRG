@@ -1,5 +1,5 @@
 {
-  "release": "unglazed-pots-20261028-99",
+  "release": "forged-lantern-20261028-100",
   "files": {
     "app.js": "8d6eaba3b40d28ae8297287d543f87534ac78843dc973484ab5c7186b800d888",
     "props/chest-presentation.js": "02d054f76798bdf6599156ffb0655085c919b3df733386a47a11f458d3aa5233",
@@ -23,6 +23,7 @@
     "props/practical-parts.js": "881f1402590d3c41bb236da6b4497a544b3222a91e102bb923d23b4b0739d16b",
     "props/storagepot.js": "a438c43030411e625765317acecc89ee1cf0e7beec47bcfa7dd7a65296747fe3",
     "props/brokenpot.js": "a019b0eb7361c61d282ea6b32555df59b432c70e554858dd6439b3072d657a6b",
-    "props/small-prop-export.js": "5cfd6600cd403db22442a582b84948e39211a9435969fd21b838b742c75a9764"
+    "props/small-prop-export.js": "5cfd6600cd403db22442a582b84948e39211a9435969fd21b838b742c75a9764",
+    "props/lantern.js": "bbeab0d3138ba12c9d1b9242d0f5c241d8b8d0e476ece144fd727da5a6be3168"
   }
 }
