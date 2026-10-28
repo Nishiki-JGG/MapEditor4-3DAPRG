@@ -394,7 +394,7 @@ ${CUT_GLSL}
 ${TDGround.GLSL}
 ${useBedrock?TDBedrock.GLSL:''}
 uniform float uGroundTrial;
-float gGloss=0.; float gSurfaceHeight=0.; float gPureBlack=0.; vec3 gGlow=vec3(0.);
+float gIce=0.; float gIceRough=.2; float gIceHeight=0.; float gGloss=0.; float gSurfaceHeight=0.; float gPureBlack=0.; vec3 gGlow=vec3(0.);
 ${GLSL_NOISE}
 ${LAVA_SURFACE_GLSL}
 ${PAVING_GLSL}
@@ -512,13 +512,33 @@ vec3 terrainColor(){
     sn+=step(.985,h21(floor(p*9.)))*.25;
     col+=sn*snG;
   }
-  // ice: glassy blue with white cracks
+  // Solid ice: buried fractures shift with the view; frost stays on the surface.
   float icW=vSC.x;
   if(icW>0.){
-    vec3 iv=vor(p*.7); float crk=1.-smoothstep(.0,.04,iv.y-iv.x);
-    vec3 ic=mix(vec3(.45,.68,.80),vec3(.70,.88,.95),fbm(p*.5))*(.9+.15*iv.z);
-    col+=mix(ic,vec3(.93,.97,1.),crk*.8)*icW;
-    gGloss=max(gGloss,icW*.9);
+    vec3 viewIce=normalize(cameraPosition-wp);
+    vec2 below=p-viewIce.xz/max(abs(viewIce.y),.3)*.16;
+    vec2 warpIce=vec2(fbm(below*.65),fbm(below*.65+29.))*.46;
+    vec3 fracture=vor((below+warpIce)*.42);
+    float edge=fracture.y-fracture.x,aaIce=max(fwidth(edge),.002);
+    float mainCrack=(1.-smoothstep(.012-aaIce,.012+aaIce,edge))*smoothstep(.31,.54,fbm(below*.23+9.));
+    vec3 fineIce=vor((below+warpIce)*1.45+7.);
+    float fe=fineIce.y-fineIce.x;
+    float hairIce=(1.-smoothstep(.006,.016+fwidth(fe),fe))*smoothstep(.57,.73,fbm(below*.8+23.));
+    float cloud=fbm(p*.8+vec2(fbm(p*.21),fbm(p*.21+8.))*2.);
+    float frost=smoothstep(.49,.76,cloud)*.8;
+    float depth=fbm(below*.31+17.);
+    vec3 ic=mix(vec3(.12,.29,.37),vec3(.34,.57,.64),depth);
+    ic=mix(ic,vec3(.69,.82,.85),frost);
+    // A dark shoulder beside the bright seam suggests depth, not paving grout.
+    float shoulder=(1.-smoothstep(.018,.085,edge))*(1.-mainCrack)*smoothstep(.31,.54,fbm(below*.23+9.));
+    ic*=1.-shoulder*.10;
+    ic=mix(ic,vec3(.79,.91,.94),max(mainCrack*.8,hairIce*.45));
+    vec2 bubbleCell=floor(below*8.),bubbleUV=fract(below*8.)-.5;
+    float bubble=(1.-smoothstep(.025,.065+fwidth(bubbleUV.x),length(bubbleUV)))*step(.965,h21(bubbleCell))*smoothstep(.35,.66,cloud);
+    ic=mix(ic,vec3(.73,.85,.88),bubble*.35);
+    col+=ic*icW;
+    gIce=icW/paintNorm;gIceRough=mix(.14,.43,frost);
+    gIceHeight=(fbm(p*2.1)-.5)*.0015;
   }
 ${useBedrock?`  // Manually painted continuous bedrock: packed colour and millimetre relief, no geometry.
   if(vSC.y>0.){
@@ -558,7 +578,7 @@ ${useBedrock?`  // Manually painted continuous bedrock: packed colour and millim
     col=mix(col,bed,smoothstep(0.,.6,dpt));
   }
   // snow cover on flat ground above the snow line
-  float snW=uSnow*smoothstep(uSnowLine-.4,uSnowLine+.6,wp.y+(a-.5)*1.2)*(1.-smoothstep(.32,.62,slope))*step(0.,hw);
+  float snW=(1.-clamp(vSC.x,0.,1.))*uSnow*smoothstep(uSnowLine-.4,uSnowLine+.6,wp.y+(a-.5)*1.2)*(1.-smoothstep(.32,.62,slope))*step(0.,hw);
   col=mix(col, mix(vec3(.80,.86,.95),vec3(.97,.98,1.),b)*(.93+.1*c), snW);
   // wet sand at the water's edge (up to the run-up's reach at the sea), going on darkening under the water: no step at the still level
   col*=mix(1.,.74,smoothstep(mix(.18,.5,uSea),-.04,hw+(a-.5)*.08));
@@ -567,6 +587,8 @@ ${useBedrock?`  // Manually painted continuous bedrock: packed colour and millim
   gGloss=max(gGloss,uWet*.6*(1.-snW));
   float otherPaint=max(vSA.z,max(vSB.x,max(vSB.y,max(vSB.z,max(vSB.w,vSC.x)))));
   gSurfaceHeight=(gSurfaceHeight*(1.-rockW)+(rockGrain.x-.5)*.012*rockW+(rockGrain.y-.5)*.006*rockW)*(1.-snW)*(1.-smoothstep(.1,.5,otherPaint));
+  gIce*=1.-rockW;
+  gSurfaceHeight+=gIceHeight*gIce;
   return pow(col,vec3(2.2));
 }`)
     .replace('#include <clipping_planes_fragment>', `#include <clipping_planes_fragment>
@@ -582,7 +604,14 @@ if(cutAway(vWPos,tunCell.g>.5)) discard;`)
     .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
 // Shallow stone bevels affect lighting only; the walking floor is unchanged.
 normal=surfaceNormal(-vViewPosition,normal,gSurfaceHeight);`)
-    .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor=mix(roughnessFactor,.55,gGloss);')
+    .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor=mix(mix(roughnessFactor,.55,gGloss),gIceRough,gIce);')
+    .replace('#include <lights_fragment_end>', `#include <lights_fragment_end>
+#if NUM_HEMI_LIGHTS > 0
+vec3 iceSky=getHemisphereLightIrradiance(hemisphereLights[0],normal);
+float iceFresnel=.025+.18*pow(1.-clamp(dot(normal,normalize(vViewPosition)),0.,1.),5.);
+reflectedLight.indirectSpecular+=iceSky*iceFresnel*gIce*(1.-gIceRough);
+#endif
+`)
     .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance+=pow(gGlow,vec3(2.2))*(1.-.6*uDim);');
   // Apply opaque black after lighting, fog, tone mapping, colour conversion and dithering.
   // Mixed brush edges retain coverage; cliff colour/relief still follows the existing slope.
@@ -594,7 +623,7 @@ normal=surfaceNormal(-vViewPosition,normal,gSurfaceHeight);`)
     sh.fragmentShader=sh.fragmentShader.replace('varying vec3 vSC;','varying vec2 vSC;').replace('+vSC.x+vSC.y;','+vSC.x;').replaceAll('vSC.z','vSC.y');
   }
 };
-terrainMat.customProgramCacheKey = function(){return 'terrain-dryland-v1-black1'+(this.defines?.BEDROCK_FLOOR?'-bedrock':'');};
+terrainMat.customProgramCacheKey = function(){return 'terrain-ice-v1-black1'+(this.defines?.BEDROCK_FLOOR?'-bedrock':'');};
 
 function gridIndex() {
   const ix = new Uint32Array((N - 1) * (N - 1) * 6); let o = 0;
