@@ -5489,6 +5489,7 @@ const _tgt = new THREE.Vector3();
 let fpsAcc = 0, fpsN = 0, fps = 0;
 function update(dt) {
   timeU.value += dt;
+  chestPresentation.updateLights(camera);
   TDPineWind.set(timeU.value,BU.uWind.value.x,-BU.uWind.value.y,BU.uWind.value.z);
   for (const [o, sp] of linkSpin) { if (o.geometry.type === 'PlaneGeometry') o.rotation.z += dt * sp; else { o.rotation.y += dt * sp; o.material.opacity = .42 + Math.sin(timeU.value * 2.2) * .1; } }
   { const c = state.mode === 'edit' ? cam.target : player; WU.uCenter.value.set(c.x, (state.mode === 'edit' ? heightAt(c.x, c.z) : player.y) + 2, c.z); }

@@ -17,17 +17,19 @@ Web と Unity の反射計算は同一ではありません。最終の金属材
 3. シーンに既存 Probe がある場合はその bounds / cubemap /受信範囲を確認します。必要な場合だけ Baked Reflection Probe を置き、周囲を含む bounds と capture position を設定して、そのシーンの反射をベイクします。局所的な屋内では box projection の適否も確認します。導入環境の既存設定を優先してください。
 4. 金の Renderer は BlendProbes と共通 anchor を使用します。Probe の影響下にあることを確認し、通常のプレイ距離と暗所の両方で評価します。ベイクには金箱自身を混ぜず、自己映り込みを避けてください。
 
-**Importer はシーンの光源・環境設定・Reflection Probe を追加・変更しません。** 公開される画像の Probe と照明は隔離した検証用シーンのものです。ゲーム本体シーンや環境設定の原本への正式導入・保存変更は行っていません。
+**Importer はシーンの既存光源・環境設定・Reflection Probe を変更しません。金Prefabには下記の粒子照明を追加します。** 公開される画像の Probe と照明は隔離した検証用シーンのものです。ゲーム本体シーンや環境設定の原本への正式導入・保存変更は行っていません。
 
-## 金の自発光粒子
+## 金の自己発光粒子と周辺照明
 
-金の粒子を 6 粒から **18 粒**へ増やし、上方だけでなく箱の周囲にも配置しました。Unlit 加算描画で、金属本体の環境照度とは独立します。従来も照明を受ける shader ではありませんでしたが、細い星形と寿命・明滅の alpha が通常距離で輝度を弱めていました。金の粒子だけ linear RGB を 5 倍の HDR 発光へ調整し、自然な明滅・距離 fade・遮蔽・既存 tone mapping は維持しました。本体、ルビー、虹の shader 処理は変更していません。
+18個の粒子はUnlit加算描画のまま、金の芯をlinear RGB 8倍のHDR出力にしています。シーンの露出・Bloom・金属本体・ルビー材質は変更していません。
 
-追加ライト・追加テクスチャは 0、FX の描画は 1 のまま、三角形は 12 から 36 です。部屋の Bloom や露出は変更していません。既存草原／洞窟の同 SEED 71421、同カメラ、同照明、保存済み実地 Probe で 0 / 0.8 / 1.6 / 2.4 秒を確認しました。通常距離で独立したきらめきが読み取れ、箱の面を覆う発光塊にはしていません。
+金箱1個に、粒子群を代表する2個のPoint Lightを付けます。範囲2.4m、暖色、強度2.5〜5で位置と明滅を緩やかに変え、床・箱・近くの壁へ実光を当てます。全粒子への個別ライトではありません。近い4箱まで、同時最大8灯、14〜20mで距離fadeします。影は無効なので、薄い遮蔽物の向こうへの漏光を完全に防ぐ用途ではありません。カメラはUnityのMainCamera、Webの描画カメラを基準にします。追加textureは0、FX meshは18quad / 36trianglesのままです。
 
-`chestEffectsV1` の金 6 粒は互換のため従来どおりです。新 Reader は optional な `chestEffectsV2`（version 2、金のみ、最大 32 粒）を優先し、現在の 18 粒を生成します。旧 Reader は未知フィールドを無視して 6 粒の経路を維持します。新 Reader も V2 欠落時には V1 へ戻ります。JSON デコード後の未知version・過大slot・非有限値などの不正V2は、ブロック全体を警告付きで除外し、正常なV1からの取り込みを継続します。必須V1やJSON自体の構文エラーを無条件に無視する処理ではありません。Web と Unity の生成／export に接続済みです。
+Importerが追加するのは金Prefabの子ライトだけです。シーンの既存ライト、環境光、Reflection Probeは変更しません。旧V1の6粒とoptional V2の18粒、保存ID、Collider、金・ルビーの材質は保持します。旧Readerは従来のV1表示で読み込め、新Readerは追加ライトを設定します。JSON schemaの追加変更はありません。
 
-草原の交互測定 CPU Camera.Render 中央値は前 10.79 ms／後 10.42 ms、洞窟の限定測定は前 0.77 ms／後 0.55 msでした。これは小規模な比較で高速化の証明ではありません。GPU 時間は取得できず、全ゲームの FPS や GPU 負荷を保証しません。[比較記録](../validation/chest-release/fx-review-checks.json)と同フォルダーの時刻比較画像を参照してください。
+同じ草原・洞窟SEED71421と通常距離カメラで、同一粒子のライトOFF/ON、および0 / 0.8 / 1.6 / 2.4秒を確認しました。CPU Camera.Render投入中央値は洞窟0.627→0.657ms、草原5.091→5.982ms。GPU時間は取得できず、これは全ゲームのFPS保証ではありません。6箱配置の最大8灯、Web保存再読込・export・削除後消灯・再配置時プール再利用を確認しています。
+
+再現: `node tests/chest-cluster-lights.cjs`（`CHEST_REVIEW_OUT`必須）。Editorでは`tests/unity/ChestClusterLightChecks.cs`を専用Editorフォルダーへ置き、`-executeMethod ChestClusterLightChecks.Run -props-export <export-folder> -props-output <evidence-folder>`を指定します。Playerは生成しません。
 
 ## 互換性と fallback
 

@@ -1,0 +1,14 @@
+{
+    "pass": true,
+    "error": "",
+    "prefabs": 43,
+    "lightsPerGold": 2,
+    "activeLightsWithSixChests": 8,
+    "otherChestLights": 0,
+    "legacySlots": 6,
+    "extendedSlots": 18,
+    "collidersShared": true,
+    "standardLit": true,
+    "rubyPreserved": true,
+    "disabledLightsOff": true
+}

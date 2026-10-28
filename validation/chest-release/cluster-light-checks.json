@@ -1,0 +1,328 @@
+{
+  "pass": true,
+  "baselineCommit": "0d47dc7701378cd0c9bc741797ab1c34a11632ff",
+  "productScope": "Gold FX core and bounded cluster lights only; silver candidate excluded",
+  "frames": [
+    0,
+    0.8,
+    1.6,
+    2.4
+  ],
+  "native": {
+    "Cave": {
+      "timing": {
+        "beforeCpuRenderMedianMs": 0.6273000000000001,
+        "afterCpuRenderMedianMs": 0.657,
+        "gpuFrameMs": 0.0,
+        "gpuTimingAvailable": false,
+        "slotsBefore": 18,
+        "slotsAfter": 18,
+        "trianglesBefore": 36,
+        "trianglesAfter": 36,
+        "drawsBefore": 1,
+        "drawsAfter": 1,
+        "addedLights": 2,
+        "addedTextures": 0,
+        "frames": [
+          0.0,
+          0.800000011920929,
+          1.600000023841858,
+          2.4000000953674316
+        ],
+        "note": "CPU Camera.Render submission time in fixed isolated map, not total gameplay frame time. GPU timing only reported when a positive measurement is returned."
+      },
+      "budget": {
+        "goldChests": 6,
+        "activeLights": 8,
+        "shadowedLights": 0,
+        "range": 2.4
+      },
+      "validationPassed": true
+    },
+    "Field": {
+      "timing": {
+        "beforeCpuRenderMedianMs": 5.0907,
+        "afterCpuRenderMedianMs": 5.982200000000001,
+        "gpuFrameMs": 0.0,
+        "gpuTimingAvailable": false,
+        "slotsBefore": 18,
+        "slotsAfter": 18,
+        "trianglesBefore": 36,
+        "trianglesAfter": 36,
+        "drawsBefore": 1,
+        "drawsAfter": 1,
+        "addedLights": 2,
+        "addedTextures": 0,
+        "frames": [
+          0.0,
+          0.800000011920929,
+          1.600000023841858,
+          2.4000000953674316
+        ],
+        "note": "CPU Camera.Render submission time in fixed isolated map, not total gameplay frame time. GPU timing only reported when a positive measurement is returned."
+      },
+      "budget": {
+        "goldChests": 6,
+        "activeLights": 8,
+        "shadowedLights": 0,
+        "range": 2.4
+      },
+      "validationPassed": true
+    }
+  },
+  "web": {
+    "pass": true,
+    "rows": [
+      {
+        "n": 1,
+        "id": "treasurechest_gold",
+        "ornaments": 1,
+        "motes": 18,
+        "rays": 0,
+        "rims": 0,
+        "slots": 18,
+        "disposed": 0,
+        "activeLights": 2,
+        "lightCapacity": 2,
+        "drawObjects": 2,
+        "capacity": 32
+      },
+      {
+        "n": 6,
+        "id": "treasurechest_gold",
+        "ornaments": 6,
+        "motes": 108,
+        "rays": 0,
+        "rims": 0,
+        "slots": 108,
+        "disposed": 2,
+        "activeLights": 8,
+        "lightCapacity": 8,
+        "drawObjects": 2,
+        "capacity": 128
+      },
+      {
+        "n": 0,
+        "id": "treasurechest_gold",
+        "ornaments": 0,
+        "motes": 0,
+        "rays": 0,
+        "rims": 0,
+        "slots": 0,
+        "disposed": 4,
+        "activeLights": 0,
+        "lightCapacity": 8,
+        "drawObjects": 0,
+        "capacity": 0
+      },
+      {
+        "n": 1,
+        "id": "treasurechest_silver",
+        "ornaments": 1,
+        "motes": 0,
+        "rays": 0,
+        "rims": 0,
+        "slots": 0,
+        "disposed": 4,
+        "activeLights": 0,
+        "lightCapacity": 8,
+        "drawObjects": 1,
+        "capacity": 0
+      },
+      {
+        "n": 1,
+        "id": "treasurechest_rainbow",
+        "ornaments": 1,
+        "motes": 4,
+        "rays": 8,
+        "rims": 4,
+        "slots": 16,
+        "disposed": 5,
+        "activeLights": 0,
+        "lightCapacity": 8,
+        "drawObjects": 2,
+        "capacity": 16
+      },
+      {
+        "n": 6,
+        "id": "treasurechest_gold",
+        "ornaments": 6,
+        "motes": 108,
+        "rays": 0,
+        "rims": 0,
+        "slots": 108,
+        "disposed": 7,
+        "activeLights": 8,
+        "lightCapacity": 8,
+        "drawObjects": 2,
+        "capacity": 128
+      },
+      {
+        "n": 0,
+        "id": "treasurechest_gold",
+        "ornaments": 0,
+        "motes": 0,
+        "rays": 0,
+        "rims": 0,
+        "slots": 0,
+        "disposed": 9,
+        "activeLights": 0,
+        "lightCapacity": 8,
+        "drawObjects": 0,
+        "capacity": 0
+      },
+      {
+        "n": 6,
+        "id": "treasurechest_gold",
+        "ornaments": 6,
+        "motes": 108,
+        "rays": 0,
+        "rims": 0,
+        "slots": 108,
+        "disposed": 9,
+        "activeLights": 8,
+        "lightCapacity": 8,
+        "drawObjects": 2,
+        "capacity": 128
+      },
+      {
+        "n": 0,
+        "id": "treasurechest_gold",
+        "ornaments": 0,
+        "motes": 0,
+        "rays": 0,
+        "rims": 0,
+        "slots": 0,
+        "disposed": 11,
+        "activeLights": 0,
+        "lightCapacity": 8,
+        "drawObjects": 0,
+        "capacity": 0
+      },
+      {
+        "n": 6,
+        "id": "treasurechest_gold",
+        "ornaments": 6,
+        "motes": 108,
+        "rays": 0,
+        "rims": 0,
+        "slots": 108,
+        "disposed": 11,
+        "activeLights": 8,
+        "lightCapacity": 8,
+        "drawObjects": 2,
+        "capacity": 128
+      },
+      {
+        "n": 0,
+        "id": "treasurechest_gold",
+        "ornaments": 0,
+        "motes": 0,
+        "rays": 0,
+        "rims": 0,
+        "slots": 0,
+        "disposed": 13,
+        "activeLights": 0,
+        "lightCapacity": 8,
+        "drawObjects": 0,
+        "capacity": 0
+      }
+    ],
+    "savedRoundtrip": true,
+    "v1": [
+      [
+        "treasurechest_gold",
+        6
+      ],
+      [
+        "treasurechest_rainbow",
+        16
+      ]
+    ],
+    "v2": [
+      [
+        "treasurechest_gold",
+        18
+      ]
+    ],
+    "samples": [
+      [
+        {
+          "position": [
+            -0.425,
+            0.49,
+            0.28000000008077036
+          ],
+          "intensity": 2.5000000001105342
+        },
+        {
+          "position": [
+            0.44135078084769064,
+            0.387837215470208,
+            0.24798369906765366
+          ],
+          "intensity": 4.115145573693937
+        }
+      ],
+      [
+        {
+          "position": [
+            -0.4684918732794378,
+            0.46441119925256924,
+            0.23949548013724753
+          ],
+          "intensity": 3.8402591226899734
+        },
+        {
+          "position": [
+            0.43364823547913217,
+            0.370848822041077,
+            0.29451411543805783
+          ],
+          "intensity": 2.500000050515033
+        }
+      ],
+      [
+        {
+          "position": [
+            -0.5301841098361604,
+            0.4094710210321401,
+            0.2447057833210943
+          ],
+          "intensity": 3.016847824128928
+        },
+        {
+          "position": [
+            0.49925205641219006,
+            0.40431401901145014,
+            0.3246633915715376
+          ],
+          "intensity": 3.712109450265631
+        }
+      ],
+      [
+        {
+          "position": [
+            -0.5125090391026954,
+            0.3720412412839732,
+            0.2897503785385806
+          ],
+          "intensity": 2.5007959445598473
+        },
+        {
+          "position": [
+            0.5344083137195738,
+            0.45968833104130197,
+            0.3044039959597466
+          ],
+          "intensity": 3.107184509286756
+        }
+      ]
+    ],
+    "gl": 0,
+    "errors": []
+  },
+  "playerExecuted": false,
+  "fullGameSession": false,
+  "sceneExposureAndBloomChanged": false
+}
