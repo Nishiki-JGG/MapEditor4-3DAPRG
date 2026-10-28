@@ -1,7 +1,7 @@
 {
   "release": "rowboat-planks-20261028-109",
   "files": {
-    "app.js": "09b4d163dc139977abab59e55194dd0c40946e7307bc8e2d1fa91bbff8f943e6",
+    "app.js": "0dec314820be90c84a721dda1fedf7aa5c408502db3d278dca976656af91208e",
     "props/chest-presentation.js": "02d054f76798bdf6599156ffb0655085c919b3df733386a47a11f458d3aa5233",
     "props/chest-surface.js": "bf7137cd3c64c736bc50d0dbd2a7b62f4fce1c48db73f6473fc6b9522b24f025",
     "props/chest-relief.js": "2f6d152ccd4c0dfd43d34c9867118d5060704b01ea93cfeafcdf826c479e8f94",
