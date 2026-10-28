@@ -1,0 +1,33 @@
+# Collision evidence and cumulative prop cost
+
+## Corrected evidence
+
+Earlier Web tests returned a SpatialHash directly through JSON/CDP. Its Map became `{}`, so those comparisons did not establish bucket equality. Native Collider checks were separate and remain valid. Nine affected Web tests now use `collision-snapshot.cjs`. It preserves sorted Map/Set elements, typed arrays, numeric bounds and enumerable Array metadata such as the owning placement (`prop`). Arrays remain ordered. Unit controls detect radius and placement mutation, ignore Map/Set insertion order, and reject non-finite numbers.
+
+Shape footprints also contain a lazy `fields` Map of derived distance caches. Loading legitimately warms this cache, so comparing its population history caused an additional false mismatch. Only this explicitly identified cache is omitted (with an output marker); the authoritative footprint top grid, bounds, shape transform and complete spatial Map remain compared. A control verifies that changing the top grid is detected while cache warm-up alone is ignored.
+
+The replacement browser regression compares actual buckets for the nine cumulatively changed props and the complete 44-type small-prop/shore contract set. Normal and legacy saves are restored. Baseline ba3c929, published 00a1eae and this candidate agree, with populated blocking buckets and empty nonblocking rope buckets. Nine earlier test scripts were repaired and syntax checked; their complete historical art/export suites were not mechanically rerun against unrelated later edits. The new cumulative regression supersedes their incomplete Web Collider claims. Full snapshots remain local; per-case hashes/counts and measured results are in `tests/PROP_LOAD_RESULT.json`.
+
+## Cost and selected reduction
+
+The nine types are shells, gravestone, crossgrave, smallbarrel, storagepot, brokenpot, lantern, miningtools and coiledrope. Their summed geometry grew from 2,776 to 8,028 triangles. Both desktop Web and background Unity tested 9 and 225 placed objects (one / 25 of each). Web uses 1280x900 with 30 samples after warm-up; available EXT_disjoint_timer_query_webgl2 results are genuine GPU query times. CPU submission and synchronized timings have different meanings. The benchmark uses the chronological application versions; it cannot assign every GPU-time difference solely to geometry. Flat terrain and disabled water are fixed. This is not mobile validation or an FPS guarantee.
+
+Timing variation is material: the initial 225-instance Web GPU medians were 5.64 ms historical / 7.58 ms published, while the final run gave 8.26 / 6.16 / 5.11 ms for historical / published / candidate. The reversal prevents a robust speedup/slowdown conclusion. Unity CPU submission medians at 225 instances were 5.30 / 5.62 / 5.34 ms, with synchronous readback medians 9.94 / 11.08 / 11.66 ms. The safe claims are bounded successful rendering, unchanged draw-call count and deterministic geometry/memory reduction, not proven frame-rate improvement. Desktop hardware was RTX 4070 SUPER; no user workload or GPU clocks were controlled.
+
+The rope is reduced from 72x8 curve/section divisions to 56x6: 1,216 to 720 triangles (-40.8%). The whole nine-type set becomes 7,532 (-6.2% against the published version). Existing strand shading, UV method, nominal diameter, coil/tail, ID, placement, save fields and nonblocking Collider stay unchanged. Web and Unity close/normal/opposite-light images retain the material read. Some close silhouette faceting is accepted; the normal-distance benefit of the previous extra segments was small. No added image texture, light, shader variant or runtime LOD system.
+
+Web currently draws these props with InstancedMesh; this importer does not create LODGroup assets. Adding a new distance-LOD system would broaden this change into rendering/export contracts. The selected reduction lowers the single shared mesh for all instances without a switching artifact. Remaining higher-density props should be optimized only where their silhouette and material can survive; there is no blanket polygon increase policy.
+
+## Unity scope and corrected measurement harness
+
+Unity 6000.5.9f1 / URP17.5 uses the existing isolated generated grassland seed71421, shared production material assets and offscreen Camera.Render. The high-density camera widens to show the grid; it is a stress overview, not the normal gameplay camera. Native timings are CPU camera submission / synchronous readback, not Native GPU time. The historical prefab assets use current compiled shader code. All 225 renderers are visible; texture/material/mesh reference counts do not grow with placement count. Separate Editor checks instantiate 25 copies of each source and assert identical shared mesh/material references.
+
+The first measurement harness repeatedly submitted instanced grass without advancing the Editor frame. Its D3D12 resource failure and timings were discarded. The corrected harness submits grass once and uses 12 samples. It completed all six cases. A final exact memory-byte assertion rejected a 1,296-byte decrease; this was corrected to detect growth, and a separate non-rendering Editor run verified source-reference sharing and recovered the captured rows. These harness failures are not hidden or presented as successful initial runs.
+
+The unchanged baseline Reader generated the candidate's 43 Prefabs; the published Native baseline was reused to avoid duplication. Grounded rope UVs and all 42 unrelated meshes match; no Collider or light appears on rope. Player, full gameplay, Native GPU timing and mobile are untested. Original game scenes, water, chest effects and other adopted props are unchanged. A haystack prototype was held separately and is not part of this publication.
+
+## Reproduction
+
+Run `node tests/collision-snapshot.cjs`. Set PROPS_LOAD_OUT and LOAD_STAGES=before,current,candidate, then run `node tests/prop-collision-load.cjs`. The source defaults to the repository; PROPS_REVIEW_ROOT may override it. Baselines require existing Git objects ba3c929 and 00a1eae. Set ROPE_REVIEW_PROJECT to an isolated review project and run `node tests/rope-reduced.cjs before` / `after` for current/candidate exports and images.
+
+Native helpers under tests/unity consume the existing isolated Imported95, Imported102-after, shore96 and candidate Imported104-after fixtures; no game-project scenes are supplied or overwritten. Run Rope104Checks with an unchanged importer, then use PropsLoad103Review.Compare with an isolated camera and a once-only environment draw callback. The report clearly separates CPU/readback timing from GPU time. Screenshots are retained locally only.

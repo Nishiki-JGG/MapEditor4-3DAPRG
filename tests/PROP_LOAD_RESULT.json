@@ -1,0 +1,936 @@
+{
+  "pass": true,
+  "baseline": "ba3c929",
+  "publicBaseline": "00a1eaeac76c9e6a3d25ff0b821bf0146ac8e343",
+  "web": {
+    "before": {
+      "geometry": [
+        {
+          "id": "shells",
+          "triangles": 220
+        },
+        {
+          "id": "gravestone",
+          "triangles": 192
+        },
+        {
+          "id": "crossgrave",
+          "triangles": 140
+        },
+        {
+          "id": "smallbarrel",
+          "triangles": 300
+        },
+        {
+          "id": "storagepot",
+          "triangles": 640
+        },
+        {
+          "id": "brokenpot",
+          "triangles": 260
+        },
+        {
+          "id": "lantern",
+          "triangles": 304
+        },
+        {
+          "id": "miningtools",
+          "triangles": 200
+        },
+        {
+          "id": "coiledrope",
+          "triangles": 520
+        }
+      ],
+      "rows": [
+        {
+          "instances": 9,
+          "each": 1,
+          "samples": 30,
+          "cpuSubmitMedianMs": 2.200000047683716,
+          "cpuSubmitP95Ms": 2.600000023841858,
+          "synchronizedMedianMs": 2.200000047683716,
+          "synchronizedP95Ms": 2.600000023841858,
+          "gpuMedianMs": 6.59968,
+          "gpuSamples": 30,
+          "memory": {
+            "geometries": 182,
+            "textures": 30
+          },
+          "programs": 94,
+          "render": {
+            "frame": 104,
+            "calls": 21,
+            "triangles": 40408,
+            "points": 0,
+            "lines": 0
+          }
+        },
+        {
+          "instances": 225,
+          "each": 25,
+          "samples": 30,
+          "cpuSubmitMedianMs": 2.600000023841858,
+          "cpuSubmitP95Ms": 3.600000023841858,
+          "synchronizedMedianMs": 2.600000023841858,
+          "synchronizedP95Ms": 3.600000023841858,
+          "gpuMedianMs": 8.256512,
+          "gpuSamples": 30,
+          "memory": {
+            "geometries": 182,
+            "textures": 30
+          },
+          "programs": 94,
+          "render": {
+            "frame": 150,
+            "calls": 21,
+            "triangles": 107032,
+            "points": 0,
+            "lines": 0
+          }
+        }
+      ],
+      "timerAvailable": true,
+      "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 4070 SUPER (0x00002783) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "viewport": [
+        1280,
+        900
+      ],
+      "gl": 0,
+      "limitations": [
+        "Desktop headless Web; not mobile hardware",
+        "Synchronized time includes CPU/driver/GPU wait; not standalone GPU timing",
+        "Full catalog allocated; renderer memory counters are counts, not bytes"
+      ],
+      "collisionProof": {
+        "shells": {
+          "sha256": "d51b47065a32eb2f47847300519da2b254cb2f6fd6e6c358e4c51f364ccf7a1d",
+          "bucketCount": 0,
+          "items": 0,
+          "saveReload": true,
+          "legacyReload": true
+        },
+        "gravestone": {
+          "sha256": "db7993c6fb0d478ed8ecca5062623a12cc6ddfbf176aaab1248033f1f8e55985",
+          "bucketCount": 3,
+          "items": 3,
+          "saveReload": true,
+          "legacyReload": true
+        },
+        "crossgrave": {
+          "sha256": "912e1fc4dac2a81f55c949a7e8a3186ecd630a4572920a0291bf225effb271c8",
+          "bucketCount": 3,
+          "items": 3,
+          "saveReload": true,
+          "legacyReload": true
+        },
+        "smallbarrel": {
+          "sha256": "2663c6803857264b7542083780d4c4cc554f17b4f825a0a52a8f3253700dda93",
+          "bucketCount": 3,
+          "items": 3,
+          "saveReload": true,
+          "legacyReload": true
+        },
+        "storagepot": {
+          "sha256": "e3a522b9571dac4c9214dea7b3e1133f7268bbcc69eb26bbe0231f253717fe13",
+          "bucketCount": 3,
+          "items": 3,
+          "saveReload": true,
+          "legacyReload": true
+        },
+        "brokenpot": {
+          "sha256": "d51b47065a32eb2f47847300519da2b254cb2f6fd6e6c358e4c51f364ccf7a1d",
+          "bucketCount": 0,
+          "items": 0,
+          "saveReload": true,
+          "legacyReload": true
+        },
+        "lantern": {
+          "sha256": "c77c469c567192a6cc9a04f374769deac1e88445cb2d3d5b040da29c518c3d2c",
+          "bucketCount": 3,
+          "items": 3,
+          "saveReload": true,
+          "legacyReload": true
+        },
+        "miningtools": {
+          "sha256": "d51b47065a32eb2f47847300519da2b254cb2f6fd6e6c358e4c51f364ccf7a1d",
+          "bucketCount": 0,
+          "items": 0,
+          "saveReload": true,
+          "legacyReload": true
+        },
+        "coiledrope": {
+          "sha256": "d51b47065a32eb2f47847300519da2b254cb2f6fd6e6c358e4c51f364ccf7a1d",
+          "bucketCount": 0,
+          "items": 0,
+          "saveReload": true,
+          "legacyReload": true
+        },
+        "allContracts": {
+          "sha256": "199c106a8807074577bb35d95b7b94fdd4f6bf4b8c09487ffca23d3cabd6ce0a",
+          "ids": [
+            "bones",
+            "bonepile",
+            "skullpile",
+            "statue",
+            "statue_seated",
+            "statue_damaged",
+            "stele",
+            "gravestone",
+            "brokencol",
+            "brokencol_base",
+            "columnfragment",
+            "lantern",
+            "miningtools",
+            "supplycrate",
+            "smallbarrel",
+            "tiedsack",
+            "coiledrope",
+            "storagepot",
+            "brokenpot",
+            "column",
+            "crossgrave",
+            "banner",
+            "haystack",
+            "obelisk",
+            "gatehouse",
+            "mausoleum",
+            "lighthouse",
+            "tower",
+            "castlewall",
+            "ruinwall",
+            "snowman",
+            "kamakura",
+            "rowboat",
+            "seafan",
+            "pillarcoral",
+            "scallop",
+            "treasurechest",
+            "treasurechest_worn",
+            "treasurechest_reinforced",
+            "treasurechest_ornate",
+            "treasurechest_silver",
+            "treasurechest_gold",
+            "treasurechest_rainbow",
+            "shells"
+          ],
+          "bucketCount": 38,
+          "saveReload": true,
+          "legacyReload": true
+        }
+      }
+    },
+    "current": {
+      "geometry": [
+        {
+          "id": "shells",
+          "triangles": 1216
+        },
+        {
+          "id": "gravestone",
+          "triangles": 284
+        },
+        {
+          "id": "crossgrave",
+          "triangles": 188
+        },
+        {
+          "id": "smallbarrel",
+          "triangles": 1460
+        },
+        {
+          "id": "storagepot",
+          "triangles": 1776
+        },
+        {
+          "id": "brokenpot",
+          "triangles": 564
+        },
+        {
+          "id": "lantern",
+          "triangles": 908
+        },
+        {
+          "id": "miningtools",
+          "triangles": 416
+        },
+        {
+          "id": "coiledrope",
+          "triangles": 1216
+        }
+      ],
+      "rows": [
+        {
+          "instances": 9,
+          "each": 1,
+          "samples": 30,
+          "cpuSubmitMedianMs": 2.899999976158142,
+          "cpuSubmitP95Ms": 3.8000000715255737,
+          "synchronizedMedianMs": 2.899999976158142,
+          "synchronizedP95Ms": 3.9000000953674316,
+          "gpuMedianMs": 5.090304,
+          "gpuSamples": 30,
+          "memory": {
+            "geometries": 182,
+            "textures": 31
+          },
+          "programs": 97,
+          "render": {
+            "frame": 104,
+            "calls": 21,
+            "triangles": 45660,
+            "points": 0,
+            "lines": 0
+          }
+        },
+        {
+          "instances": 225,
+          "each": 25,
+          "samples": 30,
+          "cpuSubmitMedianMs": 2.700000047683716,
+          "cpuSubmitP95Ms": 4,
+          "synchronizedMedianMs": 2.700000047683716,
+          "synchronizedP95Ms": 4,
+          "gpuMedianMs": 6.160384,
+          "gpuSamples": 30,
+          "memory": {
+            "geometries": 182,
+            "textures": 31
+          },
+          "programs": 97,
+          "render": {
+            "frame": 150,
+            "calls": 21,
+            "triangles": 238332,
+            "points": 0,
+            "lines": 0
+          }
+        }
+      ],
+      "timerAvailable": true,
+      "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 4070 SUPER (0x00002783) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "viewport": [
+        1280,
+        900
+      ],
+      "gl": 0,
+      "limitations": [
+        "Desktop headless Web; not mobile hardware",
+        "Synchronized time includes CPU/driver/GPU wait; not standalone GPU timing",
+        "Full catalog allocated; renderer memory counters are counts, not bytes"
+      ],
+      "collisionProof": {
+        "shells": {
+          "sha256": "d51b47065a32eb2f47847300519da2b254cb2f6fd6e6c358e4c51f364ccf7a1d",
+          "bucketCount": 0,
+          "items": 0,
+          "saveReload": true,
+          "legacyReload": true
+        },
+        "gravestone": {
+          "sha256": "db7993c6fb0d478ed8ecca5062623a12cc6ddfbf176aaab1248033f1f8e55985",
+          "bucketCount": 3,
+          "items": 3,
+          "saveReload": true,
+          "legacyReload": true
+        },
+        "crossgrave": {
+          "sha256": "912e1fc4dac2a81f55c949a7e8a3186ecd630a4572920a0291bf225effb271c8",
+          "bucketCount": 3,
+          "items": 3,
+          "saveReload": true,
+          "legacyReload": true
+        },
+        "smallbarrel": {
+          "sha256": "2663c6803857264b7542083780d4c4cc554f17b4f825a0a52a8f3253700dda93",
+          "bucketCount": 3,
+          "items": 3,
+          "saveReload": true,
+          "legacyReload": true
+        },
+        "storagepot": {
+          "sha256": "e3a522b9571dac4c9214dea7b3e1133f7268bbcc69eb26bbe0231f253717fe13",
+          "bucketCount": 3,
+          "items": 3,
+          "saveReload": true,
+          "legacyReload": true
+        },
+        "brokenpot": {
+          "sha256": "d51b47065a32eb2f47847300519da2b254cb2f6fd6e6c358e4c51f364ccf7a1d",
+          "bucketCount": 0,
+          "items": 0,
+          "saveReload": true,
+          "legacyReload": true
+        },
+        "lantern": {
+          "sha256": "c77c469c567192a6cc9a04f374769deac1e88445cb2d3d5b040da29c518c3d2c",
+          "bucketCount": 3,
+          "items": 3,
+          "saveReload": true,
+          "legacyReload": true
+        },
+        "miningtools": {
+          "sha256": "d51b47065a32eb2f47847300519da2b254cb2f6fd6e6c358e4c51f364ccf7a1d",
+          "bucketCount": 0,
+          "items": 0,
+          "saveReload": true,
+          "legacyReload": true
+        },
+        "coiledrope": {
+          "sha256": "d51b47065a32eb2f47847300519da2b254cb2f6fd6e6c358e4c51f364ccf7a1d",
+          "bucketCount": 0,
+          "items": 0,
+          "saveReload": true,
+          "legacyReload": true
+        },
+        "allContracts": {
+          "sha256": "199c106a8807074577bb35d95b7b94fdd4f6bf4b8c09487ffca23d3cabd6ce0a",
+          "ids": [
+            "bones",
+            "bonepile",
+            "skullpile",
+            "statue",
+            "statue_seated",
+            "statue_damaged",
+            "stele",
+            "gravestone",
+            "brokencol",
+            "brokencol_base",
+            "columnfragment",
+            "lantern",
+            "miningtools",
+            "supplycrate",
+            "smallbarrel",
+            "tiedsack",
+            "coiledrope",
+            "storagepot",
+            "brokenpot",
+            "column",
+            "crossgrave",
+            "banner",
+            "haystack",
+            "obelisk",
+            "gatehouse",
+            "mausoleum",
+            "lighthouse",
+            "tower",
+            "castlewall",
+            "ruinwall",
+            "snowman",
+            "kamakura",
+            "rowboat",
+            "seafan",
+            "pillarcoral",
+            "scallop",
+            "treasurechest",
+            "treasurechest_worn",
+            "treasurechest_reinforced",
+            "treasurechest_ornate",
+            "treasurechest_silver",
+            "treasurechest_gold",
+            "treasurechest_rainbow",
+            "shells"
+          ],
+          "bucketCount": 38,
+          "saveReload": true,
+          "legacyReload": true
+        }
+      }
+    },
+    "candidate": {
+      "geometry": [
+        {
+          "id": "shells",
+          "triangles": 1216
+        },
+        {
+          "id": "gravestone",
+          "triangles": 284
+        },
+        {
+          "id": "crossgrave",
+          "triangles": 188
+        },
+        {
+          "id": "smallbarrel",
+          "triangles": 1460
+        },
+        {
+          "id": "storagepot",
+          "triangles": 1776
+        },
+        {
+          "id": "brokenpot",
+          "triangles": 564
+        },
+        {
+          "id": "lantern",
+          "triangles": 908
+        },
+        {
+          "id": "miningtools",
+          "triangles": 416
+        },
+        {
+          "id": "coiledrope",
+          "triangles": 720
+        }
+      ],
+      "rows": [
+        {
+          "instances": 9,
+          "each": 1,
+          "samples": 30,
+          "cpuSubmitMedianMs": 3.100000023841858,
+          "cpuSubmitP95Ms": 4,
+          "synchronizedMedianMs": 3.1999999284744263,
+          "synchronizedP95Ms": 4,
+          "gpuMedianMs": 4.916224,
+          "gpuSamples": 30,
+          "memory": {
+            "geometries": 182,
+            "textures": 31
+          },
+          "programs": 97,
+          "render": {
+            "frame": 104,
+            "calls": 21,
+            "triangles": 45164,
+            "points": 0,
+            "lines": 0
+          }
+        },
+        {
+          "instances": 225,
+          "each": 25,
+          "samples": 30,
+          "cpuSubmitMedianMs": 2.600000023841858,
+          "cpuSubmitP95Ms": 4,
+          "synchronizedMedianMs": 2.600000023841858,
+          "synchronizedP95Ms": 4,
+          "gpuMedianMs": 5.10976,
+          "gpuSamples": 30,
+          "memory": {
+            "geometries": 182,
+            "textures": 31
+          },
+          "programs": 97,
+          "render": {
+            "frame": 150,
+            "calls": 21,
+            "triangles": 225932,
+            "points": 0,
+            "lines": 0
+          }
+        }
+      ],
+      "timerAvailable": true,
+      "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 4070 SUPER (0x00002783) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "viewport": [
+        1280,
+        900
+      ],
+      "gl": 0,
+      "limitations": [
+        "Desktop headless Web; not mobile hardware",
+        "Synchronized time includes CPU/driver/GPU wait; not standalone GPU timing",
+        "Full catalog allocated; renderer memory counters are counts, not bytes"
+      ],
+      "collisionProof": {
+        "shells": {
+          "sha256": "d51b47065a32eb2f47847300519da2b254cb2f6fd6e6c358e4c51f364ccf7a1d",
+          "bucketCount": 0,
+          "items": 0,
+          "saveReload": true,
+          "legacyReload": true
+        },
+        "gravestone": {
+          "sha256": "db7993c6fb0d478ed8ecca5062623a12cc6ddfbf176aaab1248033f1f8e55985",
+          "bucketCount": 3,
+          "items": 3,
+          "saveReload": true,
+          "legacyReload": true
+        },
+        "crossgrave": {
+          "sha256": "912e1fc4dac2a81f55c949a7e8a3186ecd630a4572920a0291bf225effb271c8",
+          "bucketCount": 3,
+          "items": 3,
+          "saveReload": true,
+          "legacyReload": true
+        },
+        "smallbarrel": {
+          "sha256": "2663c6803857264b7542083780d4c4cc554f17b4f825a0a52a8f3253700dda93",
+          "bucketCount": 3,
+          "items": 3,
+          "saveReload": true,
+          "legacyReload": true
+        },
+        "storagepot": {
+          "sha256": "e3a522b9571dac4c9214dea7b3e1133f7268bbcc69eb26bbe0231f253717fe13",
+          "bucketCount": 3,
+          "items": 3,
+          "saveReload": true,
+          "legacyReload": true
+        },
+        "brokenpot": {
+          "sha256": "d51b47065a32eb2f47847300519da2b254cb2f6fd6e6c358e4c51f364ccf7a1d",
+          "bucketCount": 0,
+          "items": 0,
+          "saveReload": true,
+          "legacyReload": true
+        },
+        "lantern": {
+          "sha256": "c77c469c567192a6cc9a04f374769deac1e88445cb2d3d5b040da29c518c3d2c",
+          "bucketCount": 3,
+          "items": 3,
+          "saveReload": true,
+          "legacyReload": true
+        },
+        "miningtools": {
+          "sha256": "d51b47065a32eb2f47847300519da2b254cb2f6fd6e6c358e4c51f364ccf7a1d",
+          "bucketCount": 0,
+          "items": 0,
+          "saveReload": true,
+          "legacyReload": true
+        },
+        "coiledrope": {
+          "sha256": "d51b47065a32eb2f47847300519da2b254cb2f6fd6e6c358e4c51f364ccf7a1d",
+          "bucketCount": 0,
+          "items": 0,
+          "saveReload": true,
+          "legacyReload": true
+        },
+        "allContracts": {
+          "sha256": "199c106a8807074577bb35d95b7b94fdd4f6bf4b8c09487ffca23d3cabd6ce0a",
+          "ids": [
+            "bones",
+            "bonepile",
+            "skullpile",
+            "statue",
+            "statue_seated",
+            "statue_damaged",
+            "stele",
+            "gravestone",
+            "brokencol",
+            "brokencol_base",
+            "columnfragment",
+            "lantern",
+            "miningtools",
+            "supplycrate",
+            "smallbarrel",
+            "tiedsack",
+            "coiledrope",
+            "storagepot",
+            "brokenpot",
+            "column",
+            "crossgrave",
+            "banner",
+            "haystack",
+            "obelisk",
+            "gatehouse",
+            "mausoleum",
+            "lighthouse",
+            "tower",
+            "castlewall",
+            "ruinwall",
+            "snowman",
+            "kamakura",
+            "rowboat",
+            "seafan",
+            "pillarcoral",
+            "scallop",
+            "treasurechest",
+            "treasurechest_worn",
+            "treasurechest_reinforced",
+            "treasurechest_ornate",
+            "treasurechest_silver",
+            "treasurechest_gold",
+            "treasurechest_rainbow",
+            "shells"
+          ],
+          "bucketCount": 38,
+          "saveReload": true,
+          "legacyReload": true
+        }
+      }
+    }
+  },
+  "native": {
+    "pass": true,
+    "editorOnly": true,
+    "gpuTimingMeasured": false,
+    "device": "NVIDIA GeForce RTX 4070 SUPER",
+    "pipeline": "Unity 6000.5.9f1 / URP17.5 isolated generated grassland seed71421",
+    "limitations": [
+      "Six render measurements recovered from completed capture; final exact-byte assertion rejected a 1296-byte texture memory decrease, not growth",
+      "Separate non-rendering Editor validation confirms 25 instances retain source mesh/material references for every type/stage",
+      "Editor submission/readback timings are not Native GPU or Player frame timings; mobile untested",
+      "Initial discarded harness repeated grass draw submissions in one Editor frame and ended in a D3D12 resource error; corrected harness submitted grass once",
+      "Historical imported assets use current compiled shaders; no original game scene or GUI changed"
+    ],
+    "rows": [
+      {
+        "stage": "before",
+        "instances": 9,
+        "each": 1,
+        "samples": 12,
+        "visibleRenderers": 9,
+        "colliders": 5,
+        "lights": 1,
+        "meshTriangles": 2776,
+        "uniqueMeshes": 9,
+        "uniqueMaterials": 7,
+        "uniqueTextures": 2,
+        "sharedMeshBytes": 969744,
+        "sharedTextureBytes": 5772277,
+        "cpuSubmitMedianMs": 4.580100059509277,
+        "cpuSubmitP95Ms": 9.228099822998047,
+        "synchronizedMedianMs": 6.738800048828125,
+        "synchronizedP95Ms": 22.172000885009766
+      },
+      {
+        "stage": "before",
+        "instances": 225,
+        "each": 25,
+        "samples": 12,
+        "visibleRenderers": 225,
+        "colliders": 125,
+        "lights": 25,
+        "meshTriangles": 2776,
+        "uniqueMeshes": 9,
+        "uniqueMaterials": 7,
+        "uniqueTextures": 2,
+        "sharedMeshBytes": 969744,
+        "sharedTextureBytes": 5772277,
+        "cpuSubmitMedianMs": 5.302599906921387,
+        "cpuSubmitP95Ms": 11.483400344848633,
+        "synchronizedMedianMs": 9.942899703979492,
+        "synchronizedP95Ms": 37.683998107910156
+      },
+      {
+        "stage": "current",
+        "instances": 9,
+        "each": 1,
+        "samples": 12,
+        "visibleRenderers": 9,
+        "colliders": 5,
+        "lights": 1,
+        "meshTriangles": 8028,
+        "uniqueMeshes": 9,
+        "uniqueMaterials": 6,
+        "uniqueTextures": 3,
+        "sharedMeshBytes": 2749632,
+        "sharedTextureBytes": 5930381,
+        "cpuSubmitMedianMs": 4.112599849700928,
+        "cpuSubmitP95Ms": 5.009799957275391,
+        "synchronizedMedianMs": 8.634599685668945,
+        "synchronizedP95Ms": 28.048200607299805
+      },
+      {
+        "stage": "current",
+        "instances": 225,
+        "each": 25,
+        "samples": 12,
+        "visibleRenderers": 225,
+        "colliders": 125,
+        "lights": 25,
+        "meshTriangles": 8028,
+        "uniqueMeshes": 9,
+        "uniqueMaterials": 6,
+        "uniqueTextures": 3,
+        "sharedMeshBytes": 2749632,
+        "sharedTextureBytes": 5929085,
+        "cpuSubmitMedianMs": 5.6219000816345215,
+        "cpuSubmitP95Ms": 7.165900230407715,
+        "synchronizedMedianMs": 11.080900192260742,
+        "synchronizedP95Ms": 34.07680130004883
+      },
+      {
+        "stage": "candidate",
+        "instances": 9,
+        "each": 1,
+        "samples": 12,
+        "visibleRenderers": 9,
+        "colliders": 5,
+        "lights": 1,
+        "meshTriangles": 7532,
+        "uniqueMeshes": 9,
+        "uniqueMaterials": 6,
+        "uniqueTextures": 3,
+        "sharedMeshBytes": 2577024,
+        "sharedTextureBytes": 5929085,
+        "cpuSubmitMedianMs": 4.430799961090088,
+        "cpuSubmitP95Ms": 5.185500144958496,
+        "synchronizedMedianMs": 9.596400260925293,
+        "synchronizedP95Ms": 27.788799285888672
+      },
+      {
+        "stage": "candidate",
+        "instances": 225,
+        "each": 25,
+        "samples": 12,
+        "visibleRenderers": 225,
+        "colliders": 125,
+        "lights": 25,
+        "meshTriangles": 7532,
+        "uniqueMeshes": 9,
+        "uniqueMaterials": 6,
+        "uniqueTextures": 3,
+        "sharedMeshBytes": 2577024,
+        "sharedTextureBytes": 5929085,
+        "cpuSubmitMedianMs": 5.339200019836426,
+        "cpuSubmitP95Ms": 7.683899879455566,
+        "synchronizedMedianMs": 11.663299560546875,
+        "synchronizedP95Ms": 37.054500579833984
+      }
+    ]
+  },
+  "ropeImporter": {
+    "pass": true,
+    "cases": [
+      "before",
+      "after"
+    ],
+    "prefabsPerCase": 43,
+    "placementsPerCase": 1,
+    "nonblockingColliderPreserved": true,
+    "unrelated42MeshesExact": true,
+    "ropeAndClothMaterialKindsSeparate": true,
+    "newTextureBytes": 0,
+    "groundedFibreUvExact": true,
+    "readerSourceUnchanged": true,
+    "playerExecuted": false
+  },
+  "normalizerNegativeControls": [
+    "Map entry order",
+    "Set order",
+    "radius mutation",
+    "Array.prop mutation",
+    "reject NaN",
+    "footprint top-grid mutation",
+    "derived footprint cache warm-up ignored explicitly"
+  ],
+  "visualReview": {
+    "ropeTrianglesBefore": 1216,
+    "ropeTrianglesAfter": 720,
+    "assessment": "Normal-distance read and strand grooves retained; close silhouette slightly more faceted, accepted for 40.8% fewer triangles.",
+    "views": [
+      "Web close / normal",
+      "Unity close / opposite / existing grassland normal camera"
+    ],
+    "hayPrototype": "Unadopted; stiff spear-shaped tufts; preserved locally only"
+  },
+  "limitations": [
+    "Native GPU time, Player, full gameplay and mobile hardware unmeasured",
+    "Chronological Web baseline includes other historical renderer changes; timing delta is not attributed solely to mesh count",
+    "Dense grid is a bounded throughput test, not an FPS guarantee",
+    "Local screenshots only"
+  ],
+  "initialWebTiming": {
+    "before": {
+      "rows": [
+        {
+          "instances": 9,
+          "each": 1,
+          "samples": 30,
+          "cpuSubmitMedianMs": 2.700000047683716,
+          "cpuSubmitP95Ms": 5.199999928474426,
+          "synchronizedMedianMs": 2.700000047683716,
+          "synchronizedP95Ms": 5.199999928474426,
+          "gpuMedianMs": 4.897792,
+          "gpuSamples": 30,
+          "memory": {
+            "geometries": 179,
+            "textures": 30
+          },
+          "programs": 88,
+          "render": {
+            "frame": 102,
+            "calls": 21,
+            "triangles": 40408,
+            "points": 0,
+            "lines": 0
+          }
+        },
+        {
+          "instances": 225,
+          "each": 25,
+          "samples": 30,
+          "cpuSubmitMedianMs": 2.600000023841858,
+          "cpuSubmitP95Ms": 4.199999928474426,
+          "synchronizedMedianMs": 2.600000023841858,
+          "synchronizedP95Ms": 4.199999928474426,
+          "gpuMedianMs": 5.643264,
+          "gpuSamples": 30,
+          "memory": {
+            "geometries": 179,
+            "textures": 30
+          },
+          "programs": 88,
+          "render": {
+            "frame": 148,
+            "calls": 21,
+            "triangles": 107032,
+            "points": 0,
+            "lines": 0
+          }
+        }
+      ],
+      "timerAvailable": true,
+      "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 4070 SUPER (0x00002783) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+    },
+    "current": {
+      "rows": [
+        {
+          "instances": 9,
+          "each": 1,
+          "samples": 30,
+          "cpuSubmitMedianMs": 3,
+          "cpuSubmitP95Ms": 4.800000071525574,
+          "synchronizedMedianMs": 3,
+          "synchronizedP95Ms": 4.800000071525574,
+          "gpuMedianMs": 5.535744,
+          "gpuSamples": 30,
+          "memory": {
+            "geometries": 179,
+            "textures": 31
+          },
+          "programs": 92,
+          "render": {
+            "frame": 102,
+            "calls": 21,
+            "triangles": 45660,
+            "points": 0,
+            "lines": 0
+          }
+        },
+        {
+          "instances": 225,
+          "each": 25,
+          "samples": 30,
+          "cpuSubmitMedianMs": 2.799999952316284,
+          "cpuSubmitP95Ms": 4.799999952316284,
+          "synchronizedMedianMs": 2.799999952316284,
+          "synchronizedP95Ms": 4.799999952316284,
+          "gpuMedianMs": 7.580672,
+          "gpuSamples": 30,
+          "memory": {
+            "geometries": 179,
+            "textures": 31
+          },
+          "programs": 92,
+          "render": {
+            "frame": 148,
+            "calls": 21,
+            "triangles": 238332,
+            "points": 0,
+            "lines": 0
+          }
+        }
+      ],
+      "timerAvailable": true,
+      "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 4070 SUPER (0x00002783) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+    }
+  },
+  "timingConclusion": "Measured Web GPU deltas reversed between runs; no statistically supported speedup or slowdown is claimed. Triangle and shared mesh-memory reductions are deterministic."
+}

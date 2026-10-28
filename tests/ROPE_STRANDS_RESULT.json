@@ -117,5 +117,6 @@
       "Player/full gameplay/native GPU timing not executed.",
       "Screenshots retained locally only; no Library upload."
     ]
-  }
+  },
+  "colliderEvidenceCorrection": "Historical direct Map serialization did not compare actual buckets. Superseded by PROP_LOAD_RESULT.json."
 }

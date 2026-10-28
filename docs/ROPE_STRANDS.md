@@ -1,5 +1,7 @@
 # Readable coiled-rope strands
 
+Latest update: the 1,216-triangle iteration below is historical. The shared rope is now 720 triangles; corrected collision evidence and dense-placement measurements are documented in [PROP_LOAD_AND_COLLISION.md](PROP_LOAD_AND_COLLISION.md).
+
 Actual sack, haystack and coiled-rope images were compared. The rope's broad smooth bands read like a hose, so only coiledrope was selected. The sack and haystack are retained. The same 2.8-turn coil, tail, nominal 40mm diameter, flattened section, ID, purpose, scale range, ground offset, nonblocking radius 0 and height metadata 0.065m remain. More evenly sampled curves and an eight-sided section reduce angular corners. Count rises from 520 to 1,216 triangles; there are no separate strand meshes.
 
 The existing arc/section UV and derivative-filtered fibre shader now darken narrow strand valleys instead of weakly modulating the whole section. Normal relief increases modestly. The Web and URP formulas agree; the built-in fallback receives the same colour groove. This is stylized procedural strand detail, not a photographic fibre texture or individually modelled fibres. The cloth branch is byte-identical after the two rope-specific substitutions, and cloth/rope material kinds remain separate. No image texture, material instance per placed object, light, new schema or save field is added.
