@@ -20,8 +20,10 @@ window.TDChestPresentation=(()=>{
   g.setAttribute('chestSurface',new THREE.Float32BufferAttribute(Array(g.attributes.position.count).fill(0),1));
   const merged=new THREE.BufferGeometry();for(const[name,a]of Object.entries(g.attributes)){const values=[];for(const part of[g,...castGeometries]){const field=part.attributes[name];for(let k=0;k<part.attributes.position.count;k++)for(let j=0;j<a.itemSize;j++)values.push(field?field.array[k*a.itemSize+j]:0);}merged.setAttribute(name,new THREE.Float32BufferAttribute(values,a.itemSize));}g.dispose();castGeometries.forEach(x=>x.dispose());const final=exactIndex(merged);final.computeBoundingBox();cache.set(id,final);return final;
  }
- function slots(id){const out=[],rain=id===upper[2],gold=id===upper[1];if(!rain&&!gold)return out;
+ function slots(id,legacy=false){const out=[],rain=id===upper[2],gold=id===upper[1];if(!rain&&!gold)return out;
   for(let k=0;k<(gold?6:4);k++){const a=k*2.399;out.push({kind:gold?0:2,start:[Math.cos(a)*(gold?.26:.055),gold?.82+(k%2)*.055:.77,Math.sin(a)*(gold?.14:.045)],end:[0,0,0],width:[gold?.125+(k%3)*.015:.024,gold?.125+(k%3)*.015:.024],phase:k*.61803398875,color:gold?[1.7,1.15,.38,.68]:[.55,.75,1,.38]});}
+  // Additional bounded gold motes surround the box; no per-particle lights.
+  if(gold&&!legacy)for(let k=0;k<12;k++){const a=k*2.399+.4,w=.105+(k%4)*.013,b=.85+.15*((k*7)%11)/10;out.push({kind:0,start:[Math.cos(a)*(.46+(k%3)*.045),.38+((k*5)%11)*.052,Math.sin(a)*(.27+(k%2)*.065)],end:[0,0,0],width:[w,w],phase:(k*.61803398875+.27)%1,color:[1.7*b,1.15*b,.38*b,.58+(k%3)*.045]});}
   if(rain)for(let k=0;k<8;k++){const side=k>>1,s=k%2?1:-1;let start,end;if(side<2){const z=side===0?.341:-.341;start=[s*.32,.435,z];end=[s*.36,.53,z+Math.sign(z)*.18];}else{const x=side===2?.534:-.534;start=[x,.435,s*.17];end=[x+Math.sign(x)*.18,.53,s*.20];}const c=new THREE.Color().setHSL(k/8,.90,.45);out.push({kind:1,start,end,width:[.16,.38],phase:k*.137,color:[c.r*1.3,c.g*1.3,c.b*1.3,.22]});}
   if(rain)for(let k=0;k<4;k++){const front=k<2,sign=k%2?1:-1;out.push({kind:3,start:front?[-.49,.435,sign*.350]:[sign*.542,.435,-.27],end:front?[.49,.435,sign*.350]:[sign*.542,.435,.27],width:[.15,.15],phase:k*.25,color:[.65,.8,1,.50]});}
   return out;
@@ -34,7 +36,7 @@ else{vec3 d=fxEnd.xyz-fxStart.xyz,t=vKind>2.5?vec3(0.,1.,0.):normalize(vec3(-d.z
 vColor.a*=alpha*(1.-smoothstep(12.,20.,length(mv.xyz)));gl_Position=projectionMatrix*mv;}`;
  const fragment=`uniform float uTime;varying vec2 vUv;varying vec4 vColor;varying float vKind;varying float vPhase;
 float fxSquare(float x){return x*x;}
-void main(){vec2 p=vUv*2.-1.;float edge;if(vKind>2.5)edge=pow(max(0.,1.-abs(p.x)),2.)*smoothstep(0.,.12,vUv.y)*(1.-smoothstep(.88,1.,vUv.y));else if(vKind>.5&&vKind<1.5)edge=pow(max(0.,1.-fxSquare(p.x+.16*sin(vUv.y*3.14159265+vPhase*6.2831853))),2.)*pow(clamp(1.-vUv.y,0.,1.),.7)*smoothstep(0.,.12,vUv.y);else{float star=max(pow(max(0.,1.-abs(p.x)),18.)*pow(max(0.,1.-abs(p.y)),3.),pow(max(0.,1.-abs(p.y)),18.)*pow(max(0.,1.-abs(p.x)),3.));edge=pow(max(0.,1.-dot(p,p)),2.)*(.35+.65*star);}if(vKind<.5){float star=max(pow(max(0.,1.-abs(p.x)),12.)*pow(max(0.,1.-abs(p.y)),2.),pow(max(0.,1.-abs(p.y)),12.)*pow(max(0.,1.-abs(p.x)),2.));edge=.12*pow(max(0.,1.-dot(p,p)),3.)+.88*star;}float a=vColor.a*edge;if(a<.0001)discard;vec3 c=vColor.rgb;if(vKind>.5)c=mix(c,.45+.55*cos(vec3(0.,2.094,4.188)+uTime*.55+vPhase*6.2831853+(vKind>2.5?vUv.y*6.2831853:0.)),vKind>2.5?.8:.28);gl_FragColor=vec4(c,a);
+void main(){vec2 p=vUv*2.-1.;float edge;if(vKind>2.5)edge=pow(max(0.,1.-abs(p.x)),2.)*smoothstep(0.,.12,vUv.y)*(1.-smoothstep(.88,1.,vUv.y));else if(vKind>.5&&vKind<1.5)edge=pow(max(0.,1.-fxSquare(p.x+.16*sin(vUv.y*3.14159265+vPhase*6.2831853))),2.)*pow(clamp(1.-vUv.y,0.,1.),.7)*smoothstep(0.,.12,vUv.y);else{float star=max(pow(max(0.,1.-abs(p.x)),18.)*pow(max(0.,1.-abs(p.y)),3.),pow(max(0.,1.-abs(p.y)),18.)*pow(max(0.,1.-abs(p.x)),3.));edge=pow(max(0.,1.-dot(p,p)),2.)*(.35+.65*star);}if(vKind<.5){float star=max(pow(max(0.,1.-abs(p.x)),12.)*pow(max(0.,1.-abs(p.y)),2.),pow(max(0.,1.-abs(p.y)),12.)*pow(max(0.,1.-abs(p.x)),2.));edge=.12*pow(max(0.,1.-dot(p,p)),3.)+.88*star;}float a=vColor.a*edge;if(a<.0001)discard;vec3 c=vColor.rgb;if(vKind<.5)c*=5.;if(vKind>.5)c=mix(c,.45+.55*cos(vec3(0.,2.094,4.188)+uTime*.55+vPhase*6.2831853+(vKind>2.5?vUv.y*6.2831853:0.)),vKind>2.5?.8:.28);gl_FragColor=vec4(c,a);
 #include <tonemapping_fragment>
 #include <colorspace_fragment>
 }`;
@@ -50,7 +52,8 @@ void main(){vec2 p=vUv*2.-1.;float edge;if(vKind>2.5)edge=pow(max(0.,1.-abs(p.x)
   return{group,sync,get metrics(){return{...stats,drawObjects:decoration.size+(fx?1:0),capacity:fx?.instanceMatrix.count||0};}};
  }
  function exportOrnaments(types){return types.filter(t=>upper.includes(t.id)&&t.assetKey==='tdj/'+t.id).map(t=>({id:t.id,assetKey:t.assetKey,mesh:TDSmallPropExport.geometry(ornaments(t.id,t.geo),false),finish:Array.from(ornaments(t.id).attributes.chestFinish.array)}));}
- function exportEffects(types){return types.filter(t=>slots(t.id).length&&t.assetKey==='tdj/'+t.id).map(t=>({id:t.id,assetKey:t.assetKey,version:1,slots:slots(t.id).map(s=>({...s,start:[s.start[0],s.start[1],-s.start[2]],end:[s.end[0],s.end[1],-s.end[2]]}))}));}
+ function exportEffects(types){return types.filter(t=>slots(t.id).length&&t.assetKey==='tdj/'+t.id).map(t=>({id:t.id,assetKey:t.assetKey,version:1,slots:slots(t.id,true).map(s=>({...s,start:[s.start[0],s.start[1],-s.start[2]],end:[s.end[0],s.end[1],-s.end[2]]}))}));}
+ function exportEffectsV2(types){return types.filter(t=>t.id==='treasurechest_gold'&&t.assetKey==='tdj/'+t.id).map(t=>({id:t.id,assetKey:t.assetKey,version:2,slots:slots(t.id).map(s=>({...s,start:[s.start[0],s.start[1],-s.start[2]],end:[s.end[0],s.end[1],-s.end[2]]}))}));}
  function exportSurfaceModes(types){return types.filter(t=>upper.includes(t.id)&&t.assetKey==='tdj/'+t.id).map(t=>{const g=ornaments(t.id,t.geo);return{id:t.id,assetKey:t.assetKey,vertices:g.attributes.position.count,modes:Array.from(g.attributes.chestSurface.array,Math.round)};});}
- return{upper,ornaments,slots,seed,create,exportOrnaments,exportEffects,exportSurfaceModes};
+ return{upper,ornaments,slots,seed,create,exportOrnaments,exportEffects,exportEffectsV2,exportSurfaceModes};
 })();

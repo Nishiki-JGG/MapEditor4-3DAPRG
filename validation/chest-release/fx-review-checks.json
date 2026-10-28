@@ -1,0 +1,136 @@
+{
+  "cave": {
+    "pass": true,
+    "seed": 71421,
+    "cameraPosition": {
+      "x": -15.0,
+      "y": 10.0,
+      "z": 36.20000076293945
+    },
+    "cameraEuler": {
+      "x": 54.400787353515625,
+      "y": 0.0,
+      "z": 0.0
+    },
+    "fov": 50.0,
+    "placement": {
+      "x": -15.0,
+      "y": 0.0,
+      "z": 45.0
+    },
+    "cells": 648,
+    "changedPixels": 420,
+    "changeBounds": [
+      757,
+      286,
+      844,
+      356
+    ],
+    "timeFrames": [
+      {
+        "seconds": 0.0,
+        "beforePixelsOver20": 81,
+        "afterPixelsOver20": 206
+      },
+      {
+        "seconds": 0.8,
+        "beforePixelsOver20": 110,
+        "afterPixelsOver20": 259
+      },
+      {
+        "seconds": 1.6,
+        "beforePixelsOver20": 88,
+        "afterPixelsOver20": 198
+      },
+      {
+        "seconds": 2.4,
+        "beforePixelsOver20": 67,
+        "afterPixelsOver20": 204
+      }
+    ],
+    "timing": {
+      "beforeCpuRenderMedianMs": 0.7733,
+      "afterCpuRenderMedianMs": 0.547,
+      "gpuFrameMs": 0.0,
+      "gpuTimingAvailable": false,
+      "slotsBefore": 6,
+      "slotsAfter": 18,
+      "trianglesBefore": 12,
+      "trianglesAfter": 36,
+      "drawsBefore": 1,
+      "drawsAfter": 1,
+      "addedLights": 0,
+      "addedTextures": 0,
+      "frames": [
+        0.0,
+        0.800000011920929,
+        1.600000023841858,
+        2.4000000953674316
+      ],
+      "note": "CPU Camera.Render submission time in fixed isolated map, not total gameplay frame time. GPU timing only reported when a positive measurement is returned."
+    },
+    "probe": "Existing validated actual-map baked cubemap reused; no rebake or environment change."
+  },
+  "grassland": {
+    "pass": true,
+    "seed": 71421,
+    "cameraPosition": {
+      "x": 15.0,
+      "y": 12.596500396728516,
+      "z": 51.20000076293945
+    },
+    "cameraEuler": {
+      "x": 54.400787353515625,
+      "y": 0.0,
+      "z": 0.0
+    },
+    "fov": 50.0,
+    "placement": {
+      "x": 17.5,
+      "y": 2.52762508392334,
+      "z": 60.0
+    },
+    "cells": 2207,
+    "timing": {
+      "beforeCpuRenderMedianMs": 10.7896,
+      "afterCpuRenderMedianMs": 10.4154,
+      "gpuFrameMs": 0.0,
+      "gpuTimingAvailable": false,
+      "slotsBefore": 6,
+      "slotsAfter": 18,
+      "trianglesBefore": 12,
+      "trianglesAfter": 36,
+      "drawsBefore": 1,
+      "drawsAfter": 1,
+      "addedLights": 0,
+      "addedTextures": 0,
+      "frames": [
+        0.0,
+        0.800000011920929,
+        1.600000023841858,
+        2.4000000953674316
+      ],
+      "note": "CPU Camera.Render submission time in fixed isolated map, not total gameplay frame time. GPU timing only reported when a positive measurement is returned."
+    },
+    "probe": "Existing validated actual-map baked cubemap reused; no rebake or environment change.",
+    "pixelDeltaMetricValid": false,
+    "pixelDeltaNote": "The preserved grassland presentation has temporal variation outside the chest. Whole-frame subtraction is not treated as particle luminance. Same scene/camera/light settings and visual frame comparison are retained."
+  },
+  "sourceAssetsChecked": 714,
+  "originalFilesChanged": 0,
+  "editorImport": {
+    "prefabs": 43,
+    "legacyReaderGoldSlots": 6,
+    "extendedGoldSlots": 18,
+    "collidersPreserved": true,
+    "goldBodyMeshUnchanged": true,
+    "rainbowFXMeshUnchanged": true,
+    "absentV2Accepted": true,
+    "over32SlotsRejected": true,
+    "shaderCompiled": true
+  },
+  "measurementCorrection": "Initial field CPU sample discarded: review code resubmitted instanced grass within the same Editor frame. Confirmed field sequence submits it once and measures before/after in alternating order.",
+  "playerExecuted": false,
+  "baseCandidate": "de5d97059e907c46913c29e30d93f478416fb5d4",
+  "web": "Current-checkout contract suite after stage passed: 136 catalogue entries, save/reload/export, old 6-slot and optional 18-slot payload, custom exclusion and shared texture counts."
+}

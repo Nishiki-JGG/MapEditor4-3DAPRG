@@ -14,5 +14,7 @@
   "fixedSamplesRegenerated": 0,
   "playerExecuted": false,
   "gameOriginalsModified": false,
-  "compressedAuthoringInputScan": "no personal path or game-name matches"
+  "compressedAuthoringInputScan": "no personal path or game-name matches",
+  "validatedCandidate": "de5d97059e907c46913c29e30d93f478416fb5d4",
+  "laterChanges": "Gold FX extension is validated separately in fx-review-checks.json."
 }
