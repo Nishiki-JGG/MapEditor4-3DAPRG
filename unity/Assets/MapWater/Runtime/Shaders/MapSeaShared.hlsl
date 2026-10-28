@@ -36,15 +36,18 @@ float seaCrest(float u, float st){
 float seaH(float2 p, float s, float d, float2 riv, out float ph, out float brk){
   float bend=(seaFbm(p*.03)-.5)*5.;
   ph=SEA_WK*(max(s,0.)+riv.x)+SEA_WW*seaTime+bend;
-  float u=frac(ph/SEA_TAU), ci=floor(ph/SEA_TAU), crest=.62+.38*frac(sin(ci*12.9898)*43758.5453);
-  float along=.7+.6*seaFbm(p*.06+float2(ci*1.7,ci*.9));
+  // Blend each wave's envelope between crests. At u=1 it equals the next
+  // cycle at u=0; changing the random amplitude abruptly there tore strong waves.
+  float u=frac(ph/SEA_TAU), ci=floor(ph/SEA_TAU), blend=smoothstep(.2,.8,u);
+  float crest=.62+.38*lerp(frac(sin(ci*12.9898)*43758.5453),frac(sin((ci+1.)*12.9898)*43758.5453),blend);
+  float along=.7+.6*lerp(seaFbm(p*.06+float2(ci*1.7,ci*.9)),seaFbm(p*.06+float2((ci+1.)*1.7,(ci+1.)*.9)),blend);
   // against the river's jet: steep and breaking at its front, stopped inside it (no waves run up the river)
   float stop=smoothstep(.5,.9,riv.y), front=smoothstep(.05,.3,riv.y)*(1.-stop);
   float st=max(smoothstep(3.20,1.,d),front); brk=max(smoothstep(1.50,0.75,d),front*.85)*step(0.,s);
   float A=seaWaveH*crest*along*(1.+.8*smoothstep(4.5,1.2,d))*lerp(1.,.5,smoothstep(1.,0.,d))*lerp(1.,.5,smoothstep(14.,40.,s))*(1.+.3*front)*(1.-.9*stop);
   float hw=(seaCrest(u,st)-.3)*A;
   float phl=SEA_WK*riv.x+SEA_WW*seaTime+bend-SEA_WK*1.8*max(-s,0.), ul=frac(phl/SEA_TAU), cl=floor(phl/SEA_TAU);
-  float hl=seaWaveH*(.75+.45*frac(sin(cl*12.9898)*43758.5453))*seaCrest(ul,1.)*exp(-max(-s,0.)/1.40)*(1.-stop)-.05;
+  float hl=seaWaveH*(.75+.45*lerp(frac(sin(cl*12.9898)*43758.5453),frac(sin((cl+1.)*12.9898)*43758.5453),smoothstep(.2,.8,ul)))*seaCrest(ul,1.)*exp(-max(-s,0.)/1.40)*(1.-stop)-.05;
   return lerp(hl,hw,smoothstep(0.,1.6,s));
 }
 // the sea surface at p: returns its slope; h = height above the still level, ph = phase, brk = breaking. Used per vertex
@@ -56,6 +59,10 @@ float2 seaWave(float2 p, float s, float d0, float2 dir, float2 riv, out float h,
   float chop=(seaFbm(p*1.9+float2(seaTime*.5,-seaTime*.4))-.5)*.10*smoothstep(.15,.6,riv.y)*seaWaveH;   // short, confused chop where the river runs out into the sea
   h=seaH(p,s,dd,riv,ph,brk)+lace+chop;
   float h2=seaH(p,s+.3,dd,riv,ph2,b2)+lace+chop;
+  // A trough cannot cut through the submerged bed. Preserve the offshore wave height,
+  // but leave a thin water layer in shallows (the same bound for geometry and normals).
+  // Dry sand uses the separate run-up handling in the surface shader.
+  if(d0>0.){ h=max(h,-d0*.9); h2=max(h2,-d0*.9); }
   return -dir*(h2-h)/.3;   // s grows away from the shore, so the slope points back out to sea
 }
 
