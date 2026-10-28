@@ -4783,8 +4783,8 @@ const PROP_GROUPS = [
   ['草花・低木', ['shortgrass', 'meadowgrass', 'groundlitter', 'grass', 'meadowwhite', 'meadowyellow', 'meadowpink', 'meadowred', 'meadowviolet', 'bush', 'fern', 'bramble', 'ivy', 'sedge', 'foxglove', 'horsetail', 'dock', 'clover', 'reed', 'flowers', 'mushroom', 'glowmush', 'shelfshroom', 'cactus', 'barrelcactus']],
   ['岩・崖', ['drysoil_curl','drysoil_cup','drysoil_flake','scree', 'rock', 'mossrock', 'pebble', 'cliff', 'cliff_split', 'cliff_shoulder', 'cliff_joint', 'cliff_slab', 'cliff_talus', 'rubblepile', 'stalagmite', 'crystal', 'lavarock', 'obsidian', 'fumarole', 'iceblock', 'icespike']],
   ['遺跡・墓', ['column', 'brokencol', 'ruinwall', 'archgate', 'statue', 'statue_seated', 'statue_damaged', 'stele', 'obelisk', 'pyramid', 'gravestone', 'crossgrave', 'mausoleum', 'bones', 'bonepile', 'skullpile', 'magiccircle', 'demonspire']],
-  ['海の生き物', ['braincoral', 'staghorn', 'pillarcoral', 'seafan', 'tablecoral', 'roundcoral', 'scallop', 'cowrie', 'shellbits', 'wrack']],
-  ['建物・道具', ['wall_torch', 'torch', 'brazier', 'lantern', 'banner', 'woodfence', 'ironfence', 'castlewall', 'tower', 'gatehouse', 'lighthouse', 'rowboat', 'haystack', 'miningtools', 'supplycrate', 'treasurechest_worn', 'treasurechest', 'treasurechest_reinforced', 'treasurechest_ornate', 'treasurechest_silver', 'treasurechest_gold', 'treasurechest_rainbow', 'smallbarrel', 'tiedsack', 'coiledrope', 'storagepot', 'brokenpot', 'shells', 'snowman', 'kamakura']],
+  ['海の生き物', ['braincoral', 'staghorn', 'pillarcoral', 'seafan', 'tablecoral', 'roundcoral', 'scallop', 'cowrie', 'shellbits', 'wrack', 'shells']],
+  ['建物・道具', ['wall_torch', 'torch', 'brazier', 'lantern', 'banner', 'woodfence', 'ironfence', 'castlewall', 'tower', 'gatehouse', 'lighthouse', 'rowboat', 'haystack', 'miningtools', 'supplycrate', 'treasurechest_worn', 'treasurechest', 'treasurechest_reinforced', 'treasurechest_ornate', 'treasurechest_silver', 'treasurechest_gold', 'treasurechest_rainbow', 'smallbarrel', 'tiedsack', 'coiledrope', 'storagepot', 'brokenpot', 'snowman', 'kamakura']],
 ];
 // [group name, type indices]; types not in PROP_GROUPS (added later) land in "その他"
 function propGroups() {

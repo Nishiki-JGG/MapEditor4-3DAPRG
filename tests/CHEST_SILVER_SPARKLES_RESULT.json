@@ -1,0 +1,63 @@
+{
+  "web": {
+    "pass": true,
+    "legacyAndGoldRainbowExact": true,
+    "sevenSaveReload": true,
+    "glError": 0,
+    "silverLights1_5_0": [
+      2,
+      8,
+      0
+    ],
+    "category": [
+      [
+        "海の生き物",
+        [
+          "braincoral",
+          "staghorn",
+          "pillarcoral",
+          "seafan",
+          "tablecoral",
+          "roundcoral",
+          "scallop",
+          "cowrie",
+          "shellbits",
+          "wrack",
+          "shells"
+        ]
+      ]
+    ]
+  },
+  "editor": {
+    "pass": true,
+    "prefabsPerCase": 43,
+    "cases": [
+      "normal",
+      "absent",
+      "invalidSilver"
+    ],
+    "silverMotes": 9,
+    "goldMotes": 18,
+    "silverLightPowerRatio": 0.6,
+    "silverGeometryColliderExact": true,
+    "sharedGoldSilverActiveLightCap": 8,
+    "rainbowCapUnchanged": 6,
+    "playerExecuted": false
+  },
+  "visual": {
+    "existingGrassAndCaveSeed": 71421,
+    "sameCameraLighting": true,
+    "timestamps": [
+      0,
+      0.8,
+      1.6,
+      2.4
+    ],
+    "motesSilverGoldRainbow": [
+      9,
+      18,
+      36
+    ],
+    "nativeGpuTimingMeasured": false
+  }
+}

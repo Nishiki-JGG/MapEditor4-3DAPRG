@@ -12,7 +12,7 @@ public sealed class ChestSurfaceBuilder {
  [Serializable]public class RoyalRelief {public RoyalRuby rubyV1;public RoyalFinish finishV1;public int version,size,vertices;public string id,assetKey,normalEncoding,uvOrigin;public Image normal,ao;public float[] tangents,mask;}
  [Serializable]public class WornMesh {public float[] positions,normals,colors;public int[] triangles;}
  [Serializable]public class WornAtlas {public WornMesh mesh;public int version,size,vertices;public string id,assetKey,uvOrigin;public Image colour,roughness;public float[] uv;}
- [Serializable]public class Descriptor {public ChestSanctumBuilder.Descriptor sanctumV1;public WornAtlas wornAtlasV1;public RoyalRelief royalReliefV1;public PartAtlases partAtlasesV1;public GoldAtlas goldAtlasV1;public int version,size;public string id;public Image colour,packed;public float[] woodRect,means;public Binding[] assets;public OrnamentBinding[] ornamentsV1;}
+ [Serializable]public class Descriptor {public ChestPresentationBuilder.Effect silverSparklesV1;public ChestSanctumBuilder.Descriptor sanctumV1;public WornAtlas wornAtlasV1;public RoyalRelief royalReliefV1;public PartAtlases partAtlasesV1;public GoldAtlas goldAtlasV1;public int version,size;public string id;public Image colour,packed;public float[] woodRect,means;public Binding[] assets;public OrnamentBinding[] ornamentsV1;}
  static readonly string[] Ids={"treasurechest_worn","treasurechest","treasurechest_reinforced","treasurechest_ornate","treasurechest_silver","treasurechest_gold","treasurechest_rainbow"};
  readonly WornAtlas worn;readonly Texture2D wornColour,wornRoughness;
  readonly RoyalRelief royal;readonly Texture2D royalNormal,royalAO;readonly RoyalFinish finish;readonly Texture2D finishMap;

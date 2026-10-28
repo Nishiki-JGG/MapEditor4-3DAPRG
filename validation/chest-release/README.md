@@ -1,6 +1,6 @@
 # Selected validation evidence
 
-The adopted product source was validated at local source revision `0b7830ff39aa87e186e67ab6e33f6c52a621e213`. This is a provenance identifier, not a required public checkout. `product-sha256.json` lists the product files included here. The baseline publication candidate retained those runtime bytes except one descriptive recipe-location comment in `chest-part-data.js`. The later gold FX-only change is separately checked in `fx-review-checks.json`; the current hash manifest includes that change.
+The adopted product source was validated at local source revision `0b7830ff39aa87e186e67ab6e33f6c52a621e213`. This is a provenance identifier, not a required public checkout. `product-sha256.json` lists the product files included here. The baseline publication candidate retained those runtime bytes except one descriptive recipe-location comment in `chest-part-data.js`. The later gold FX-only change is separately checked in `fx-review-checks.json`; the hash manifest is maintained for the current release. Historical test results retain their original scope.
 
 - `unity-editor-checks.json`: 243 successful checks, 43 current and frozen-old Reader Prefabs; Unity 6000.5.9f1 / URP 17.5 / Windows DX12. Includes shared texture memory observations, saved scene reload and shader checks.
 - `unity-optional-royal-fallback.json`: actual missing-royal JSON import generated 43 Prefabs; gold legacy shader, royal keyword disabled, Collider retained.
@@ -13,3 +13,5 @@ Editor results are carried forward by exact product-byte parity, not described a
 Gold FX follow-up: `cave-fx-time-comparison.png` and `grassland-fx-time-comparison.png` show four fixed animation times before/after. Crops are enlarged 2x with nearest-neighbour sampling. The full original captures remain in local evidence and Library. Same existing map generation, camera, lighting and baked probes; no new environment. The field whole-frame difference is not a particle metric because the retained environment has temporal variation.
 
 Optional FX correction: `optional-fx-fallback.json` records five actual 43-Prefab imports. Invalid decoded V2 is warned and discarded while valid V1 continues. This supersedes the earlier whole-import exception behavior; merely rejecting an over-limit block is not counted as fallback proof. Rendering of a valid V2 payload is unchanged.
+
+Silver/prismatic follow-up: tests/CHEST_SANCTUM_RESULT.json and tests/CHEST_SILVER_SPARKLES_RESULT.json record the subsequent Web and actual Editor imports. They supersede only the changed presentation paths; the original 243-check record is not claimed as a fresh run. See docs/CHEST_SILVER_SPARKLES.md for the current verification, actual-map visual review and remaining limits.

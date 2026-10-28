@@ -1,4 +1,4 @@
-// 墓石（gravestone）：継ぎ目のない墓標と低い土の裾。
+// Gravestone: worn slab on a low dressed-stone footing.
 TDProps.add({
   id:'gravestone',name:'墓石',r:.3,min:1.1,sc:[.8,1.2],slope:.5,vis:.45,anyGround:true,
   tags:['graveyard'],height:1.13,material:'carved',surface:'grave-stone-grain-v1',

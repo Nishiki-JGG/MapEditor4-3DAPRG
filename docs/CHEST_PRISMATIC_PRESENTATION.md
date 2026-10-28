@@ -1,6 +1,6 @@
 # Prismatic chest presentation
 
-The rainbow chest uses the accepted royal chest structure with a central cut crystal, four smaller crystals and raised crown supports. Rainbow panels, platinum framing and relief remain distinct. Thirty-six HDR motes and three moving, unshadowed point lights per nearby chest produce the requested stronger-than-gold radiance. The shared rainbow light pool serves the nearest two chests, fades over 14–20 metres, and never enables more than six lights. Gold retains its independent eight-light maximum.
+The rainbow chest uses the accepted royal chest structure with a central cut crystal, four smaller crystals and raised crown supports. Rainbow panels, platinum framing and relief remain distinct. Thirty-six HDR motes and three moving, unshadowed point lights per nearby chest produce the requested stronger-than-gold radiance. The shared rainbow light pool serves the nearest two chests, fades over 14–20 metres, and never enables more than six lights. Gold and silver share a separate eight-light maximum.
 
 ## Data and compatibility
 
@@ -20,4 +20,4 @@ Unity 6000.5.9f1 / URP 17.5 compiled and rendered the formal imported prefab. Cl
 
 See `tests/CHEST_SANCTUM_RESULT.json` for measured results. GPU timing is Web-only: 1/5 chests measured 2.28/2.83 ms median over 24 samples, versus 4.07/3.14 ms for the older model. This short sample does not establish a general speed improvement. CPU submission was 3.90/5.20 ms versus 3.30/2.60 ms. Renderer texture count stayed constant when increasing from one to five chests. Native GPU timing, Player builds and complete game sessions remain untested.
 
-Local review candidate only. No push or publication is included. Gold, ruby, gold particles/lights and the confirmed round-silver trim remain unchanged. The separate redesigned silver candidate is not included.
+This presentation is included in the silver/prismatic release. Gold and ruby remain unchanged. See CHEST_SILVER_SPARKLES.md for the later silver FX extension and delivery checks. The separate redesigned silver candidate is not included.

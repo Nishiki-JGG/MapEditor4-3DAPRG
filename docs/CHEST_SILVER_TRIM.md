@@ -6,4 +6,4 @@ The visual root loses 296 triangles and the ornament loses 392. Exported legacy 
 
 Validation: set CHEST_REVIEW_OUT and run tests/chest-silver-trim.cjs. It compares current output against e7baefa, checks seven saved chest types, absent optional maps and identical unrelated descriptors. Unity 6000.5.9f1 / URP 17.5 generated 43 prefabs, preserved the cached silver collider and gold's two lights. Dedicated background Editor renders checked close view and existing seeded grass/cave layouts. Source game scenes were not saved. No Player build or executable was run.
 
-Local review only; publication is pending. The separate rainbow presentation is now integrated as an unpublished optional extension; see CHEST_PRISMATIC_PRESENTATION.md.
+This trim correction is included in the silver/prismatic release. The verification above records the trim-only stage (2b61d5d); subsequent rainbow and silver FX changes are separately validated in CHEST_PRISMATIC_PRESENTATION.md and CHEST_SILVER_SPARKLES.md. The trim-only comparison should be run at its recorded stage, not used to reject later optional extensions.

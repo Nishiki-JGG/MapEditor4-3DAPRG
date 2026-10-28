@@ -1,0 +1,18 @@
+{
+  "release": "silver-rainbow-20261028-95",
+  "files": {
+    "app.js": "47e480d774d1dbf3445fe338f6557e963a057db165cc57552529a3a0326fb25d",
+    "props/chest-presentation.js": "02d054f76798bdf6599156ffb0655085c919b3df733386a47a11f458d3aa5233",
+    "props/chest-surface.js": "bf7137cd3c64c736bc50d0dbd2a7b62f4fce1c48db73f6473fc6b9522b24f025",
+    "props/chest-relief.js": "2f6d152ccd4c0dfd43d34c9867118d5060704b01ea93cfeafcdf826c479e8f94",
+    "props/chest-part-data.js": "1db60b32768e7f47a046f16496c8c302f781d27737b0587f7bdfd3ccf2a68380",
+    "props/chest-part-surface.js": "bf2906a85b978a2c407436d3964767b787ff10ec85b0f0b1c3f3ecad0660c75d",
+    "props/chest-silver-trim.js": "618ccbf1842f0712ea52956c1c4604b36d03d7b6190ad970b6039cb174936774",
+    "props/chest-sanctum-data.js": "cb5e96c1769bce67ef72c6e28dbd7a3e978e26dd277a660d8f747c59f62e1e8c",
+    "props/chest-sanctum.js": "55ddc19315035800cf92ef1aaa82f80298f5c7732a6c27295a14c236710c1fdf",
+    "props/gravestone.js": "644b728a667f4ed5bb80b2c5e43cbde3616c036d6b28cf3ada9d78f8087acb15",
+    "props/crossgrave.js": "1a074f3e87ca14e01fcfbe2c906ad928f607fd8f1a9d3617e1afa44b0436c563",
+    "props/stone-surface.js": "c536d402c75ee9a1fc21dba04131d54845d5dacad78bd929a55d01a9abd849db",
+    "props/marker-parts.js": "8f64dc8689771c3ea2b4749d8d4849c90b8d90f9e4fcb160a0c809ed8103ef96"
+  }
+}

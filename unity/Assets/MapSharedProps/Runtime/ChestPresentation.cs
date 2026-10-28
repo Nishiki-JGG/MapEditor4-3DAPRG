@@ -2,15 +2,16 @@ using System.Collections.Generic;
 using UnityEngine;
 
 namespace MapSharedProps {
-// GPU motes plus two unshadowed light clusters per gold chest, capped at eight active lights.
+// Gold/silver GPU motes and two unshadowed clusters per chest; shared eight-light cap.
 public sealed class ChestPresentation : MonoBehaviour {
  [SerializeField] Renderer effectRenderer;
  [SerializeField] float seed;
  [SerializeField] float timeOverride=-1;
  [SerializeField] Light[] goldLights;
+ [SerializeField] float sparklePower=1;
  static readonly List<ChestPresentation> active=new List<ChestPresentation>();
  MaterialPropertyBlock block;
- public void Configure(Renderer renderer,bool gold=false){effectRenderer=renderer;if(gold&&(goldLights==null||goldLights.Length==0)){goldLights=new Light[2];for(int k=0;k<2;k++){var child=new GameObject("Gold sparkle light cluster "+k);child.transform.SetParent(transform,false);var light=child.AddComponent<Light>();light.type=LightType.Point;light.color=new Color(1,.72f,.24f);light.range=2.4f;light.shadows=LightShadows.None;light.renderMode=LightRenderMode.ForcePixel;goldLights[k]=light;}}Register();Apply();}
+ public void Configure(Renderer renderer,bool gold=false,bool silver=false){effectRenderer=renderer;sparklePower=silver?.6f:1f;if((gold||silver)&&(goldLights==null||goldLights.Length==0)){goldLights=new Light[2];for(int k=0;k<2;k++){var child=new GameObject((silver?"Silver":"Gold")+" sparkle light cluster "+k);child.transform.SetParent(transform,false);var light=child.AddComponent<Light>();light.type=LightType.Point;light.color=silver?new Color(.85f,.95f,1):new Color(1,.72f,.24f);light.range=2.4f;light.shadows=LightShadows.None;light.renderMode=LightRenderMode.ForcePixel;goldLights[k]=light;}}Register();Apply();}
  public static float Seed(string id){uint h=2166136261;unchecked{foreach(char c in id??"")h=(h^c)*16777619;}return (h&65535)/65536f;}
  public void SetSeed(string id){seed=Seed(id);Apply();}
  public void SetTime(float time){timeOverride=time;Apply();}
@@ -34,7 +35,7 @@ public sealed class ChestPresentation : MonoBehaviour {
   }
  }
  public void SetLightVisibility(bool value){if(goldLights!=null)foreach(var light in goldLights)if(light)light.enabled=value;}
- void UpdateLights(float fade){if(goldLights==null)return;float t=timeOverride<0?Time.time:timeOverride;float scale=Mathf.Max(Mathf.Abs(transform.lossyScale.x),Mathf.Abs(transform.lossyScale.z));for(int k=0;k<goldLights.Length;k++){var light=goldLights[k];if(!light)continue;LightState(k,t,seed,out var p,out var power);light.transform.localPosition=p;light.range=2.4f*scale;light.intensity=power*fade;light.enabled=fade>0;}}
+ void UpdateLights(float fade){if(goldLights==null)return;float t=timeOverride<0?Time.time:timeOverride;float scale=Mathf.Max(Mathf.Abs(transform.lossyScale.x),Mathf.Abs(transform.lossyScale.z));for(int k=0;k<goldLights.Length;k++){var light=goldLights[k];if(!light)continue;LightState(k,t,seed,out var p,out var power);light.transform.localPosition=p;light.range=2.4f*scale;light.intensity=power*fade*sparklePower;light.enabled=fade>0;}}
  void Apply(){Register();if(effectRenderer!=null){if(block==null)block=new MaterialPropertyBlock();effectRenderer.GetPropertyBlock(block);block.SetFloat("_ChestSeed",seed);block.SetFloat("_ChestFxTime",timeOverride);effectRenderer.SetPropertyBlock(block);}UpdateLights(isActiveAndEnabled?1:0);}
 }
 }
