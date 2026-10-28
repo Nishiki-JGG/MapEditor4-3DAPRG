@@ -1,0 +1,51 @@
+{
+  "pass": true,
+  "error": "",
+  "cases": [
+    {
+      "name": "missing",
+      "prefabs": 43,
+      "goldSlots": 6,
+      "warnings": 0,
+      "fallback": true,
+      "collider": true,
+      "validGoldMaterial": true
+    },
+    {
+      "name": "valid",
+      "prefabs": 43,
+      "goldSlots": 18,
+      "warnings": 0,
+      "fallback": false,
+      "collider": true,
+      "validGoldMaterial": true
+    },
+    {
+      "name": "unknown-version",
+      "prefabs": 43,
+      "goldSlots": 6,
+      "warnings": 2,
+      "fallback": true,
+      "collider": true,
+      "validGoldMaterial": true
+    },
+    {
+      "name": "too-many-slots",
+      "prefabs": 43,
+      "goldSlots": 6,
+      "warnings": 2,
+      "fallback": true,
+      "collider": true,
+      "validGoldMaterial": true
+    },
+    {
+      "name": "nonfinite-phase",
+      "prefabs": 43,
+      "goldSlots": 6,
+      "warnings": 2,
+      "fallback": true,
+      "collider": true,
+      "validGoldMaterial": true
+    }
+  ]
+}

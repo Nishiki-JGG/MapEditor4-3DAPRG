@@ -22,7 +22,7 @@
   "props/chest-worn-surface.js": "659a5039133546d8e061c63e35c0b9c9a9c883d3eac5db7d4857cf7a0dd095f3",
   "props/small-prop-export.js": "a1d84ea6654eecd3d7a9e9b1056a9cfcfb1f417caaf3c5fd017c1643ee284092",
   "props/wall-torch-source.js": "26b9c2078ffbfa7a000e9dc2fda0720934d4c7a372f75bdd3337153e4814cc9a",
-  "unity/Assets/MapSharedProps/Editor/ChestPresentationBuilder.cs": "09bc801d6f7b6b3c9e27e2ba4d8aad3cd70b475e3a97ce27935ec4f171d69e07",
+  "unity/Assets/MapSharedProps/Editor/ChestPresentationBuilder.cs": "ccd20e0cb4a889799542b5dac302070edc59183aa36ae8ac31132adb06361875",
   "unity/Assets/MapSharedProps/Editor/ChestRoyalLitBuilder.cs": "7c1322d192293a9d555b262b0e00b2bef64021cea8131e4705b78c3607fb8bc8",
   "unity/Assets/MapSharedProps/Editor/ChestRoyalLitBuilder.cs.meta": "a1e1d941aabb19c8f7334e61dc940cb6c9e6243cb11e304d5aa4a59050b6e08d",
   "unity/Assets/MapSharedProps/Editor/ChestRoyalReflectionBuilder.cs": "ffdafe4b3e0ec1debe7e99d9b71205cd0cd3bb853cae9fa9b8d54ef82c67f0cb",

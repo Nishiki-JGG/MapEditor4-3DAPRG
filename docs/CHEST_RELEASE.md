@@ -25,7 +25,7 @@ Web と Unity の反射計算は同一ではありません。最終の金属材
 
 追加ライト・追加テクスチャは 0、FX の描画は 1 のまま、三角形は 12 から 36 です。部屋の Bloom や露出は変更していません。既存草原／洞窟の同 SEED 71421、同カメラ、同照明、保存済み実地 Probe で 0 / 0.8 / 1.6 / 2.4 秒を確認しました。通常距離で独立したきらめきが読み取れ、箱の面を覆う発光塊にはしていません。
 
-`chestEffectsV1` の金 6 粒は互換のため従来どおりです。新 Reader は optional な `chestEffectsV2`（version 2、金のみ、最大 32 粒）を優先し、現在の 18 粒を生成します。旧 Reader は未知フィールドを無視して 6 粒の経路を維持します。新 Reader も V2 欠落時には V1 へ戻ります。Web と Unity の生成／export に接続済みです。
+`chestEffectsV1` の金 6 粒は互換のため従来どおりです。新 Reader は optional な `chestEffectsV2`（version 2、金のみ、最大 32 粒）を優先し、現在の 18 粒を生成します。旧 Reader は未知フィールドを無視して 6 粒の経路を維持します。新 Reader も V2 欠落時には V1 へ戻ります。JSON デコード後の未知version・過大slot・非有限値などの不正V2は、ブロック全体を警告付きで除外し、正常なV1からの取り込みを継続します。必須V1やJSON自体の構文エラーを無条件に無視する処理ではありません。Web と Unity の生成／export に接続済みです。
 
 草原の交互測定 CPU Camera.Render 中央値は前 10.79 ms／後 10.42 ms、洞窟の限定測定は前 0.77 ms／後 0.55 msでした。これは小規模な比較で高速化の証明ではありません。GPU 時間は取得できず、全ゲームの FPS や GPU 負荷を保証しません。[比較記録](../validation/chest-release/fx-review-checks.json)と同フォルダーの時刻比較画像を参照してください。
 
@@ -51,3 +51,5 @@ Web: Node.js と Chromium 系ブラウザーを用意し、リポジトリ root 
 Unity: 専用の URP 17.5 検証プロジェクトに最新 importer を導入し、Web の export を取り込みます。7 種を保存・再読込し、金の標準 Lit と独立 ruby、normal linear / packed R-G-A、元 Collider を確認します。任意 royal ブロックを省いた JSON からも Prefab を生成し、fallback を確認します。通常距離で Probe OFF / ON を撮影します。検証環境以外のシーン設定を上書きしないでください。背景 Editor と offscreen 描画で再現可能で、Player を生成する必要はありません。
 
 制作原稿とマップの抽出は [authoring 手順](../tools/chest-authoring/README.md)、具体的な測定記録は [証拠の説明](../validation/chest-release/README.md)を参照してください。
+
+追加の Editor 再現テストは `tests/unity/ChestOptionalFxFallbackChecks.cs` です。専用プロジェクトの Editor フォルダーへ配置し、`-executeMethod ChestOptionalFxFallbackChecks.Run -props-export <export-folder> -props-output <evidence-folder>` を指定します。正常V2を含む export を入力し、原本を変更せず一時入力を使います。欠落／正常／未知version／33slot／float Infinity の各ケースで43 Prefabを実生成し、6／18粒の選択、警告、Collider、標準Litを確認します。JSON数値 `1e39` が float Infinity になることもテスト自身で確認しています。JSONパーサーが読めない入力（例：double範囲外の `1e999`）はこの意味検証より前に従来どおり拒否されます。
