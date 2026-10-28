@@ -1,7 +1,7 @@
 {
-  "release": "forged-lantern-20261028-100",
+  "release": "grounded-mining-tools-20261028-101",
   "files": {
-    "app.js": "8d6eaba3b40d28ae8297287d543f87534ac78843dc973484ab5c7186b800d888",
+    "app.js": "09b4d163dc139977abab59e55194dd0c40946e7307bc8e2d1fa91bbff8f943e6",
     "props/chest-presentation.js": "02d054f76798bdf6599156ffb0655085c919b3df733386a47a11f458d3aa5233",
     "props/chest-surface.js": "bf7137cd3c64c736bc50d0dbd2a7b62f4fce1c48db73f6473fc6b9522b24f025",
     "props/chest-relief.js": "2f6d152ccd4c0dfd43d34c9867118d5060704b01ea93cfeafcdf826c479e8f94",
@@ -24,6 +24,7 @@
     "props/storagepot.js": "a438c43030411e625765317acecc89ee1cf0e7beec47bcfa7dd7a65296747fe3",
     "props/brokenpot.js": "a019b0eb7361c61d282ea6b32555df59b432c70e554858dd6439b3072d657a6b",
     "props/small-prop-export.js": "5cfd6600cd403db22442a582b84948e39211a9435969fd21b838b742c75a9764",
-    "props/lantern.js": "bbeab0d3138ba12c9d1b9242d0f5c241d8b8d0e476ece144fd727da5a6be3168"
+    "props/lantern.js": "bbeab0d3138ba12c9d1b9242d0f5c241d8b8d0e476ece144fd727da5a6be3168",
+    "props/miningtools.js": "c6c110711d24f5aa00298099790c77c146f94461614964f24bbf599793e09057"
   }
 }

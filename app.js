@@ -1423,6 +1423,8 @@ diffuseColor.rgb *= mix(1., value, woodPixel);
 };
 structWoodMat.customProgramCacheKey = () => 'prop-rock-contact-v7-struct-wood-grain';
 
+// Solid tools use the existing wood atlas without leaf-card lighting or double-sided shadows.
+const miningToolMat=propMat.clone();miningToolMat.map=atlasTex2;miningToolMat.onBeforeCompile=propShader;miningToolMat.customProgramCacheKey=()=> 'solid-mining-tools-v1';
 const PROP_MATS = { wallTorch: TDWallTorch.fixtureMaterial, carved: carvedMat, rock: rockMat, stone: masonMat, cards: cardMat, cards2: cardMat2, foliage: foliageMat, ice: iceMat, snow: snowMat, gloss: glossMat };
 const CAP = 8000;
 // plants with touch: true bend away from the hero in walk mode (per-instance attribute 'touch', see updateTouch)
@@ -1444,7 +1446,7 @@ function touchMat(base) {
   return touchMats.get(base);
 }
 const propMeshes = PROP.map(t => {
-  const source = t.sharedAsset ? TDSharedProps.material(t.sharedAsset) : PROP_MATS[t.material] || propMat;
+  const source = t.sharedAsset ? TDSharedProps.material(t.sharedAsset) : t.id==='miningtools'?miningToolMat:PROP_MATS[t.material] || propMat;
   const base = TDChestSurface.ids.includes(t.id)?TDChestSurface.material(source,t.id,timeU,hemi) : t.surface ? TDSmallPropSurface.material(source,t.surface) : TDFibreFinish.ids.includes(t.id)?TDFibreFinish.material(source,t.id) : t.material==='chestmetal' ? TDChestSeries.material(t.id,timeU,hemi) : source;
   const m = new THREE.InstancedMesh(t.geo, t.touch ? touchMat(base) : base, CAP);
   if(t.sharedAsset&&TDSharedProps.asset(t.sharedAsset).rootGrounding){m.userData.rootSlope=new THREE.InstancedBufferAttribute(new Float32Array(CAP*2),2);t.geo.setAttribute('rootSlope',m.userData.rootSlope);m.userData.rootTerrain=new THREE.InstancedBufferAttribute(new Float32Array(CAP*4),4);t.geo.setAttribute('rootTerrain',m.userData.rootTerrain);}
@@ -1558,7 +1560,7 @@ function groundedParts(p){return propGrounding.get(p,PROP[p[0]].geo,PROP[p[0]].g
 function groundedMeshes(type,ghost,needed){
  const map=ghost?groundedGhost:groundedNormal,old=map.get(type);if(old&&old[0].instanceMatrix.count>=needed)return old;
  const capacity=Math.min(ghost?256:CAP,Math.max(16,2**Math.ceil(Math.log2(needed)))),t=PROP[type];
- const meshes=TDPropGrounding.parts(t.geo).map((part,i)=>{const m=new THREE.InstancedMesh(part.geometry,t.surface?TDSmallPropSurface.material(ghost?ghostMat:PROP_MATS[t.material]||propMat,t.surface):ghost?ghostMat:TDFibreFinish.material(PROP_MATS[t.material]||propMat,t.id),capacity);m.instanceColor=new THREE.InstancedBufferAttribute(new Float32Array(capacity*3),3);m.frustumCulled=false;m.count=0;m.castShadow=m.receiveShadow=!ghost;m.renderOrder=ghost?8:0;if(old){m.instanceMatrix.array.set(old[i].instanceMatrix.array);m.instanceColor.array.set(old[i].instanceColor.array);scene.remove(old[i]);old[i].dispose();}scene.add(m);return m;});map.set(type,meshes);return meshes;
+ const meshes=TDPropGrounding.parts(t.geo).map((part,i)=>{const m=new THREE.InstancedMesh(part.geometry,t.surface?TDSmallPropSurface.material(ghost?ghostMat:PROP_MATS[t.material]||propMat,t.surface):ghost?ghostMat:TDFibreFinish.material(t.id==='miningtools'?miningToolMat:PROP_MATS[t.material]||propMat,t.id),capacity);m.instanceColor=new THREE.InstancedBufferAttribute(new Float32Array(capacity*3),3);m.frustumCulled=false;m.count=0;m.castShadow=m.receiveShadow=!ghost;m.renderOrder=ghost?8:0;if(old){m.instanceMatrix.array.set(old[i].instanceMatrix.array);m.instanceColor.array.set(old[i].instanceColor.array);scene.remove(old[i]);old[i].dispose();}scene.add(m);return m;});map.set(type,meshes);return meshes;
 }
 function rebuildProps(visualOnly = false) {
   refreshCliffFits(visualOnly);

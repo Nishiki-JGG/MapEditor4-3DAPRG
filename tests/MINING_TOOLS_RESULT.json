@@ -1,0 +1,129 @@
+{
+  "baseline": "52bfcfe5646fca3c9b39d92c109ce2fa3ed96c12",
+  "before": {
+    "saveReload": true,
+    "colliders": {
+      "cs": 4,
+      "m": {}
+    },
+    "gl": 0,
+    "meshes": [
+      {
+        "id": "miningtools",
+        "triangles": 200,
+        "bounds": {
+          "isBox3": true,
+          "min": {
+            "x": -0.36234748363494873,
+            "y": -9.090953545509706e-10,
+            "z": -0.9506756663322449
+          },
+          "max": {
+            "x": 0.4343809187412262,
+            "y": 0.12035036087036133,
+            "z": 0.4515725374221802
+          }
+        },
+        "r": 0,
+        "height": 0.16,
+        "surface": null,
+        "finite": true
+      }
+    ]
+  },
+  "after": {
+    "saveReload": true,
+    "material": {
+      "type": "MeshStandardMaterial",
+      "side": 0,
+      "defines": {
+        "STANDARD": ""
+      }
+    },
+    "colliders": {
+      "cs": 4,
+      "m": {}
+    },
+    "gl": 0,
+    "meshes": [
+      {
+        "id": "miningtools",
+        "triangles": 416,
+        "bounds": {
+          "isBox3": true,
+          "min": {
+            "x": -0.36234748363494873,
+            "y": -7.427153336792003e-10,
+            "z": -0.9506756663322449
+          },
+          "max": {
+            "x": 0.4343809187412262,
+            "y": 0.12035036087036133,
+            "z": 0.45182469487190247
+          }
+        },
+        "r": 0,
+        "height": 0.16,
+        "surface": null,
+        "finite": true
+      }
+    ]
+  },
+  "editor": {
+    "pass": true,
+    "cases": [
+      "before",
+      "after3"
+    ],
+    "prefabsPerCase": 43,
+    "placementsPerCase": 1,
+    "nonblockingColliderPreserved": true,
+    "unrelated42MeshesExact": true,
+    "existingAtlasSharedWithBarrel": true,
+    "newTextureBytes": 0,
+    "groundedAtlasUvExact": true,
+    "oldReaderGenerated43": true,
+    "playerExecuted": false
+  },
+  "oldReader": {
+    "pass": true,
+    "cases": [
+      "before",
+      "after2"
+    ],
+    "prefabsPerCase": 43,
+    "placementsPerCase": 1,
+    "nonblockingColliderPreserved": true,
+    "unrelated42MeshesExact": true,
+    "existingAtlasSharedWithBarrel": true,
+    "newTextureBytes": 0,
+    "readerSourceUnchanged": true,
+    "playerExecuted": false,
+    "readerSha256": "1b417d47c22d7728f78503e6d01434eb378e2fd16fc2ecf198ead85fd605bf26"
+  },
+  "exportAssertions": {
+    "allNonToolPayloadExact": true,
+    "atlasPngExact": true,
+    "fireExportExact": true,
+    "finalExportEqualsNativeTestedPayload": true,
+    "groundedPartNamesAndPlacementPreserved": true
+  },
+  "visualReview": {
+    "selected": "miningtools: pick and shovel",
+    "retained": [
+      "tiedsack",
+      "haystack",
+      "coiledrope"
+    ],
+    "views": [
+      "Web close and normal distance",
+      "Unity close and opposite light",
+      "existing generated grassland seed71421 normal camera"
+    ],
+    "limits": [
+      "Normal-distance improvement is subtle; strongest at close range.",
+      "Web thin-blade self-shadow bands remain; ineffective shadow-bias trials rejected.",
+      "Player/full gameplay/native GPU timing not executed."
+    ]
+  }
+}
