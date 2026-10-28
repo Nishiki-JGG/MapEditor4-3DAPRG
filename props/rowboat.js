@@ -6,9 +6,9 @@ TDProps.add({
   build() {
     const { col, mixc, mat4, makeGeo, ATLAS2 } = TDGeo;
     // a planked hull lofted from cross-sections (pointed bow and stern, round bilge), grain along the planks,
-    // with gunwales, thwarts and an oar resting across (atlas 2 wood; the hull is one surface seen from both sides)
+    // with gunwales, thwarts and an oar resting across (atlas 2 wood; the hull has separate outer/inner faces and a closed top edge)
     const wood = (y, ny, R, pr) => mixc(col(0xb09878), col(0xe0ccac), pr);
-    const N=14,M=9,L=1.35,width=t=>.64*Math.pow(Math.max(0,1-Math.pow(Math.abs(t),2.6)),.55),sheer=t=>.5+.1*t*t;
+    const N=12,M=9,L=1.35,width=t=>.64*Math.pow(Math.max(0,1-Math.pow(Math.abs(t),2.6)),.55),sheer=t=>.5+.1*t*t;
     // Keep the outer footprint; only deepen the bilge to meet the existing .05 sink.
     const at=(i,j,inner=false)=>{const t=i/N*2-1,th=(j/M-.5)*Math.PI,w=width(t),depth=(.5-.05)/Math.cos(Math.PI/18)*(1-.35*t*t);return[t*L,sheer(t)-depth*Math.cos(th)+(inner?.035*Math.cos(th):0),Math.max(0,w-(inner?.035:0))*Math.sin(th)];};
     const hull=()=>{
@@ -21,7 +21,20 @@ TDProps.add({
       for(const j of [0,M])for(let i=0;i<N;i++){const a=at(i,j),b=at(i+1,j),c=at(i+1,j,true),d=at(i,j,true),u=[0,0];if(j===0){tri(a,c,b,u,u,u);tri(a,d,c,u,u,u);}else{tri(a,b,c,u,u,u);tri(a,c,d,u,u,u);}}
       const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(P,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(U,2));return g;
     };
-    const parts=[{g:hull(),m:new THREE.Matrix4(),cfn:wood,uvr:ATLAS2.uvr('wood'),j:.04}];
+    const parts=[{g:hull(),m:new THREE.Matrix4(),cfn:(y,ny,R,pr)=>mixc(col(0xd2b58d),col(0xe2cba9),pr),uvr:ATLAS2.uvr('boatplanks'),j:.008}];
+    // Two bent frames follow the inside hull. Their undersides sit inside the skin,
+    // while the top and sides have real thickness; no exterior footprint changes.
+    for(const x of [-.65,.55]){
+      const vertices=[],indices=[],tex=[],t=x/L,i=(t+1)*N/2;
+      for(let j=0;j<=M;j++){
+        const th=(j/M-.5)*Math.PI,q=at(i,j,true),ny=Math.cos(th),nz=-Math.sin(th);
+        for(const [dx,h]of [[-.026,-.003],[.026,-.003],[.026,.023],[-.026,.023]]){vertices.push([q[0]+dx,q[1]+ny*h,q[2]+nz*h]);tex.push((dx+.026)/.052,j/M);}
+      }
+      for(let j=0;j<M;j++)for(const edge of [1,2,3]){const a=j*4+edge,b=j*4+(edge+1)%4;indices.push(a,b,a+4,b,b+4,a+4);}
+      indices.push(0,2,1,0,3,2,M*4,M*4+1,M*4+2,M*4,M*4+2,M*4+3);
+      const frame=TDSmallParts.mesh(vertices,indices);frame.setAttribute('uv',new THREE.Float32BufferAttribute(tex,2));
+      parts.push({g:frame,m:new THREE.Matrix4(),c:col(0xb79a70),uvr:ATLAS2.uvr('wood'),j:.015});
+    }
     for(const side of [-1,1]){const points=[];for(let i=0;i<=N;i++){const t=i/N*2-1;points.push([t*1.325,sheer(t)-.016,side*Math.max(0,width(t)-.008)]);}parts.push({g:TDSmallParts.tube(points,points.map(()=>.025),4),m:new THREE.Matrix4(),c:col(0x5a4632)});}
     for(const [x,w]of [[-.55,.54],[.35,.58]])parts.push({g:new THREE.BoxGeometry(.2,.04,w*2),m:mat4(x,.4,0,1,1,1),cfn:wood,uvr:ATLAS2.uvr('wood')});
     const oar=mat4(.05,.4925,.12,1,1,1,.32,0,Math.PI/2+.08);

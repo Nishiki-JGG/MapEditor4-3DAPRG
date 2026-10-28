@@ -142,5 +142,11 @@
     "Unity 225-instance check confirms shared resources, not frame-time performance.",
     "Actual generated field uses representative seed and normal camera settings; not a complete interactive gameplay session.",
     "Main visual benefit is close material finish; normal-distance difference is modest."
-  ]
+  ],
+  "colliderValidationCorrection": {
+    "originalCapsuleOnlyComparisonInvalid": true,
+    "actualMeshColliderRecheckedInBatch": 109,
+    "typeGeometryTransformSettingsExact": true,
+    "negativeControlsPass": true
+  }
 }

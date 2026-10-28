@@ -1,5 +1,5 @@
 {
-  "release": "banner-cloth-20261028-108",
+  "release": "rowboat-planks-20261028-109",
   "files": {
     "app.js": "09b4d163dc139977abab59e55194dd0c40946e7307bc8e2d1fa91bbff8f943e6",
     "props/chest-presentation.js": "02d054f76798bdf6599156ffb0655085c919b3df733386a47a11f458d3aa5233",
@@ -19,7 +19,7 @@
     "props/shell-surface.js": "d8250789cc78f5fea3f66a12494c63128b73dbdccca861c2b3a2aa7d5025af76",
     "sea.js": "9c929f4f08ac4cf1555ea8f13f58620fd2efaadfb588da56bc64858c5b7d56fb",
     "props/smallbarrel.js": "7fd520c0a8f009eef421480176c25ca725d3f2afcc6c28785df02caded2b1045",
-    "props/foliage2.js": "77212252a346a57c751e4cc4762db1045927a9ec00c0bbaf0d9b3013441083ce",
+    "props/foliage2.js": "c6fe188ee25ddc96abf87ceaf6046bd862b6c5060efb2939b09b64769e41bf25",
     "props/practical-parts.js": "881f1402590d3c41bb236da6b4497a544b3222a91e102bb923d23b4b0739d16b",
     "props/storagepot.js": "a438c43030411e625765317acecc89ee1cf0e7beec47bcfa7dd7a65296747fe3",
     "props/brokenpot.js": "a019b0eb7361c61d282ea6b32555df59b432c70e554858dd6439b3072d657a6b",
@@ -28,6 +28,7 @@
     "props/miningtools.js": "c6c110711d24f5aa00298099790c77c146f94461614964f24bbf599793e09057",
     "props/coiledrope.js": "79f301028e149761ad4451a038929e2f55fc2fd8bed97e6062651c06bad22916",
     "props/fibre-finish.js": "47d4d689f148c5398c1afe4d4c45fd5ef069364c061294aad7963683c7217759",
-    "props/banner.js": "7deff215438df91f1676848c2eea5e197135ee78f9cd1b0c119448fcc8e4548d"
+    "props/banner.js": "7deff215438df91f1676848c2eea5e197135ee78f9cd1b0c119448fcc8e4548d",
+    "props/rowboat.js": "bc1da495dc784f81836870e879ec908016e906cac987acc77371a2eac7ecf1c7"
   }
 }

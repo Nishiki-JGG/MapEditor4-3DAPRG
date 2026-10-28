@@ -1,0 +1,23 @@
+# Rowboat planks and bent frames
+
+Candidate comparison included the wooden and iron fences. Their existing rail/post structure was readable; the rowboat had a larger material problem: the inner hull appeared as one sheet with stretched oversized wood knots. The new finish separates longitudinal strakes and adds two bent internal frames supporting the shell. The boat outline, two thwarts, oar, original ID, scale range, radius, three collision offsets and grounding are retained.
+
+The hull's longitudinal samples decrease from 14 to 12 while its cross-section and endpoints remain intact. Two open-bottom rectangular frame strips sit inside the shell. Overall triangles change from 872 to 876 (+0.46%). The visible footprint stays at X +/-1.35 m, Z +/-0.657 m, lowest Y 0.05 m; peak height differs by less than 0.000006 m because the deterministic helper samples fewer vertices. There is no gameplay or water change.
+
+The 128 by 128 hull tile uses unused (896,384) space in the same 1024 by 512 atlas. Its strakes and fine longitudinal grain follow the hull UV, with restrained seams instead of oversized knots. All atlas pixels outside that tile are exact. Seats, oar and rims retain their existing finish. No additional texture allocation, material pass or light is introduced.
+
+## Verification and reproduction
+
+Set ROWBOAT_REVIEW_PROJECT to a dedicated evidence directory/project and run `node tests/rowboat-planks.cjs before`, then `node tests/rowboat-planks.cjs after`. Baseline is 3ba4c45. It records close/normal images and old/new importer input, compares actual collision Map/Set contents, metadata, all unrelated native asset payloads, fire/light data and atlas pixels. Set PROPS_LOAD_OUT and run `node tests/rowboat-planks-load.cjs` for rotated/scaled normal and legacy saves, 44 mixed types and bounded 9/225 placements.
+
+Use a dedicated Unity 6000.5.9f1 / URP17.5 project with the unchanged importer. Keep the published baseline prefab/cache set in Assets/Imported108-after-v3, and export Input109-after from the Web test. Copy Boat109Checks.cs and ColliderSnapshot109.cs to an Editor folder. Background Editor `-batchmode -executeMethod Boat109Checks.Run` imports 43 prefabs to Assets/Imported109-after-v3; if that completed output already exists, it only rechecks it. Retain Imported104-after for the additional banner108 regression. No Player build is required. Boat109Review.Compare accepts the isolated camera/placement for same-condition offscreen renders.
+
+The Collider helper compares actual types, counts, state, local transforms, physics properties and MeshCollider vertices/indices/topology. It rejects an empty target. Negative controls move a collider, disable it, mutate mesh geometry, replace the mesh and remove all colliders. The boat's cache asset GUID changes because the existing circle-proxy cache key includes the full visual asset JSON; the collision geometry SHA-256 and behavior settings are exact. Identity is recorded separately rather than confused with a collision change. The retained before/after banner108 MeshCollider also passes this strengthened comparison, correcting the earlier empty CapsuleCollider comparison. The test scan found that Capsule-only comparison in Banner108Checks and replaced it; explicit zero-collider assertions for nonblocking props remain intentional.
+
+## Review and cost
+
+Unity close and opposite-light views show hull planks and frames without changing the oar or seats. The existing isolated generated grassland seed 71421, normal camera offset (0,9,-6.3) and original light/post-processing settings show the plank construction at normal play distance. The hull is lighter than the old stretched wood texture, while the darker rim and frames retain depth. This is a small stylized structural/material refinement; no detailed ship modelling or sailing behavior is included.
+
+9/225 Web placements retain four draw calls, 31 textures and 182 allocated geometries in the full-catalog harness. Unpaired browser runs gave inconsistent GPU timings and are retained as diagnostic evidence, not a performance conclusion. A same-page ABBA test with the exact same atlas and rendering settings was used after the dedicated Editor exited: set PROPS_LOAD_OUT, LOAD_STAGES=current and run `node tests/rowboat-planks-paired.cjs`. It switches only the old/new boat mesh, verifies the selected triangle count and samples twelve frames per round. Results are in validation/rowboat-planks/results.json. This is desktop evidence only; no mobile, Player or full gameplay performance claim is made.
+
+Screenshots and large exports remain local. Original game scenes, concurrent water changes, chests and all previous prop improvements are preserved.

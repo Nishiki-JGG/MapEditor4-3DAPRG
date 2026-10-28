@@ -19,3 +19,7 @@ Unity studio and opposite-light captures show wood grain, restrained hems and fo
 Web 9/225 placements retain 4 calls, 31 textures and 182 allocated geometries in the full-catalog harness. Twelve-sample median GPU times were 7.10/8.63 ms before and 7.06/9.07 ms after. This is not evidence of a speedup; sample count and desktop scheduling limit the comparison. Mobile performance, standalone Player, full gameplay and Unity frame time were not validated. Unity's 225 check measures resource sharing only. Screenshots and large native export payloads are local evidence, not repository assets.
 
 Chest, grave, shore, lantern, pottery, rope and concurrent water sources are unchanged. No texture regeneration of fixed rock samples, ID migration, gameplay or lighting change is included.
+
+## Collider test correction (109)
+
+The first 108 test compared only CapsuleCollider components, while the actual imported banner uses MeshCollider. Its non-empty Collider check did not make that comparison valid. The helper now delegates to ColliderSnapshot109, which requires real targets and compares type, state, local transforms, physics settings and mesh vertices/indices. Boat109Checks explicitly rechecked the retained before/after banner prefabs and negative controls; the actual collider geometry and settings are unchanged. Copy ColliderSnapshot109.cs alongside Banner108Checks.cs when reproducing. The original 108 empty CapsuleCollider comparison is superseded, not used as proof.

@@ -9,7 +9,7 @@ const W = 1024, H = 512, PAD = 3;
 const RECT = {
   meadow: [0, 0, 512, 256], straw: [512, 0, 256, 256], wood: [768, 0, 256, 256],
   flower0: [0, 256, 128, 128], flower1: [128, 256, 128, 128], flower2: [256, 256, 128, 128], flower3: [384, 256, 128, 128],
-  rosette: [512, 256, 256, 128], white: [768, 256, 64, 64], clay: [832, 256, 128, 128], bannercloth: [768, 384, 128, 128],
+  rosette: [512, 256, 256, 128], white: [768, 256, 64, 64], clay: [832, 256, 128, 128], bannercloth: [768, 384, 128, 128], boatplanks: [896, 384, 128, 128],
 };
 function paint() {
   const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
@@ -113,6 +113,18 @@ function paint() {
     const emblem=[[.5,.245],[.64,.36],[.5,.475],[.36,.36]];
     g.fillStyle='#d8b040';g.beginPath();emblem.forEach(([u,t],i)=>{const x=x0+PAD+u*(w-2*PAD),y=y0+PAD+t*(h-2*PAD);i?g.lineTo(x,y):g.moveTo(x,y);});g.closePath();g.fill();
     g.restore();
+  }
+  // Hull strakes run along the boat length (V); seams run along U boundaries.
+  // Independent pixel generation leaves the existing atlas regions unchanged.
+  {
+    const [x0,y0,w,h]=RECT.boatplanks,im=g.createImageData(w,h),S=rng(20261031),boards=Array.from({length:9},()=>200+S()*18);
+    for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+      const u=Math.max(0,Math.min(.999999,(x-PAD)/(w-2*PAD))),board=Math.floor(u*9),f=u*9-board,
+        edge=Math.min(f,1-f)*(w-2*PAD)/9,grain=Math.sin(x*2.2+Math.sin(y*.045+x*.11)*.45)*3+Math.sin(x*.8+y*.012)*2,
+        join=edge<.7?.53:edge<1.4?.85:1,weather=3*Math.sin(y*.061+board*.9),v=Math.round((boards[board]+grain+weather)*join),k=(y*w+x)*4;
+      im.data[k]=v;im.data[k+1]=v-2;im.data[k+2]=v-5;im.data[k+3]=255;
+    }
+    g.putImageData(im,x0,y0);
   }
   g.fillStyle = '#fff'; g.fillRect(...RECT.white);
   const d = g.getImageData(0, 0, W, H).data;

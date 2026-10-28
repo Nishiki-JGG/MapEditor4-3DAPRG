@@ -1,0 +1,249 @@
+{
+  "pass": true,
+  "prefabs": 43,
+  "placements": 1,
+  "triangles": 876,
+  "colliderExact": true,
+  "meshColliderGeometryAndTransformCompared": true,
+  "banner108Rechecked": true,
+  "negativeControls": true,
+  "other42MeshesExact": true,
+  "atlasDimensions": [
+    1024,
+    512
+  ],
+  "sharedReferencesChecked": 225,
+  "readerSourceUnchanged": true,
+  "playerExecuted": false,
+  "baseline": "3ba4c459460d1abc69a20ad86472c241ffbba936",
+  "webNormalAndLegacySave": true,
+  "mixedTypes": 44,
+  "actualWebBucketsCompared": true,
+  "atlasOutsideBoatTileExact": true,
+  "otherNativePayloadsExact": true,
+  "fireLightPayloadExact": true,
+  "beforeTriangles": 872,
+  "afterTriangles": 876,
+  "colliderMeshHashBefore": "6D781A0FE3EB83899C37373550AFD3F8320CE3A2628CBD288133044D580F51D3",
+  "colliderMeshHashAfter": "6D781A0FE3EB83899C37373550AFD3F8320CE3A2628CBD288133044D580F51D3",
+  "colliderAssetIdentitySame": false,
+  "colliderAssetIdentityReason": "Existing circle-proxy cache key includes the complete visual asset JSON; vertices and triangles of collision mesh remain exact.",
+  "webLoad": {
+    "before": [
+      {
+        "instances": 9,
+        "each": 9,
+        "samples": 12,
+        "cpuSubmitMedianMs": 6.200000047683716,
+        "cpuSubmitP95Ms": 7.200000047683716,
+        "synchronizedMedianMs": 6.200000047683716,
+        "synchronizedP95Ms": 7.200000047683716,
+        "gpuMedianMs": 3.708928,
+        "gpuSamples": 12,
+        "memory": {
+          "geometries": 182,
+          "textures": 31
+        },
+        "programs": 97,
+        "render": {
+          "frame": 58,
+          "calls": 4,
+          "triangles": 45480,
+          "points": 0,
+          "lines": 0
+        }
+      },
+      {
+        "instances": 225,
+        "each": 225,
+        "samples": 12,
+        "cpuSubmitMedianMs": 5.700000047683716,
+        "cpuSubmitP95Ms": 6.700000047683716,
+        "synchronizedMedianMs": 5.700000047683716,
+        "synchronizedP95Ms": 6.700000047683716,
+        "gpuMedianMs": 6.575104,
+        "gpuSamples": 12,
+        "memory": {
+          "geometries": 182,
+          "textures": 31
+        },
+        "programs": 97,
+        "render": {
+          "frame": 74,
+          "calls": 4,
+          "triangles": 233832,
+          "points": 0,
+          "lines": 0
+        }
+      }
+    ],
+    "after": [
+      {
+        "instances": 9,
+        "each": 9,
+        "samples": 12,
+        "cpuSubmitMedianMs": 4.699999928474426,
+        "cpuSubmitP95Ms": 6.200000047683716,
+        "synchronizedMedianMs": 4.699999928474426,
+        "synchronizedP95Ms": 6.300000071525574,
+        "gpuMedianMs": 7.50592,
+        "gpuSamples": 12,
+        "memory": {
+          "geometries": 182,
+          "textures": 31
+        },
+        "programs": 97,
+        "render": {
+          "frame": 58,
+          "calls": 4,
+          "triangles": 45516,
+          "points": 0,
+          "lines": 0
+        }
+      },
+      {
+        "instances": 225,
+        "each": 225,
+        "samples": 12,
+        "cpuSubmitMedianMs": 5.200000047683716,
+        "cpuSubmitP95Ms": 5.899999976158142,
+        "synchronizedMedianMs": 5.300000071525574,
+        "synchronizedP95Ms": 5.899999976158142,
+        "gpuMedianMs": 11.078656,
+        "gpuSamples": 12,
+        "memory": {
+          "geometries": 182,
+          "textures": 31
+        },
+        "programs": 97,
+        "render": {
+          "frame": 74,
+          "calls": 4,
+          "triangles": 234732,
+          "points": 0,
+          "lines": 0
+        }
+      }
+    ],
+    "unpairedTimingNotUsedForPerformanceConclusion": true
+  },
+  "paired225": {
+    "sequence": "ABBA, same page, same atlas, old/new geometry switched",
+    "rows": [
+      {
+        "variant": "before",
+        "instances": 225,
+        "each": 225,
+        "samples": 12,
+        "cpuSubmitMedianMs": 4.600000023841858,
+        "cpuSubmitP95Ms": 6,
+        "synchronizedMedianMs": 4.600000023841858,
+        "synchronizedP95Ms": 6,
+        "gpuMedianMs": 5.791744,
+        "gpuSamples": 12,
+        "memory": {
+          "geometries": 183,
+          "textures": 31
+        },
+        "programs": 97,
+        "render": {
+          "frame": 62,
+          "calls": 4,
+          "triangles": 233832,
+          "points": 0,
+          "lines": 0
+        }
+      },
+      {
+        "variant": "after",
+        "instances": 225,
+        "each": 225,
+        "samples": 12,
+        "cpuSubmitMedianMs": 4.5,
+        "cpuSubmitP95Ms": 5,
+        "synchronizedMedianMs": 4.5,
+        "synchronizedP95Ms": 5.099999904632568,
+        "gpuMedianMs": 5.039104,
+        "gpuSamples": 12,
+        "memory": {
+          "geometries": 183,
+          "textures": 31
+        },
+        "programs": 97,
+        "render": {
+          "frame": 82,
+          "calls": 4,
+          "triangles": 234732,
+          "points": 0,
+          "lines": 0
+        }
+      },
+      {
+        "variant": "after",
+        "instances": 225,
+        "each": 225,
+        "samples": 12,
+        "cpuSubmitMedianMs": 3.9000000953674316,
+        "cpuSubmitP95Ms": 4.399999976158142,
+        "synchronizedMedianMs": 3.9000000953674316,
+        "synchronizedP95Ms": 4.399999976158142,
+        "gpuMedianMs": 4.637696,
+        "gpuSamples": 12,
+        "memory": {
+          "geometries": 183,
+          "textures": 31
+        },
+        "programs": 97,
+        "render": {
+          "frame": 102,
+          "calls": 4,
+          "triangles": 234732,
+          "points": 0,
+          "lines": 0
+        }
+      },
+      {
+        "variant": "before",
+        "instances": 225,
+        "each": 225,
+        "samples": 12,
+        "cpuSubmitMedianMs": 3.700000047683716,
+        "cpuSubmitP95Ms": 4.600000023841858,
+        "synchronizedMedianMs": 3.700000047683716,
+        "synchronizedP95Ms": 4.600000023841858,
+        "gpuMedianMs": 4.765696,
+        "gpuSamples": 12,
+        "memory": {
+          "geometries": 183,
+          "textures": 31
+        },
+        "programs": 97,
+        "render": {
+          "frame": 122,
+          "calls": 4,
+          "triangles": 233832,
+          "points": 0,
+          "lines": 0
+        }
+      }
+    ],
+    "samplesPerCondition": 12,
+    "editorRunning": false
+  },
+  "unityImages": {
+    "studioAndOppositeLight": true,
+    "actualGeneratedGrasslandSeed": 71421,
+    "normalCameraOffset": [
+      0,
+      9,
+      -6.3
+    ],
+    "originalSceneModified": false
+  },
+  "limits": [
+    "Desktop headless Web and dedicated Editor; no Player, mobile hardware or full interactive session.",
+    "Short GPU measurements cannot establish a general speedup or universal device budget.",
+    "Unity 225-instance check verifies shared resources, not frame timing.",
+    "Grassland generated from production sources in isolation; original scenes and water untouched."
+  ]
+}

@@ -1,6 +1,6 @@
 {
   "app.js": "09b4d163dc139977abab59e55194dd0c40946e7307bc8e2d1fa91bbff8f943e6",
-  "index.html": "3659c7d19d091fc634d5520ec9b98af7cc2cd7710539d2f44c397870dbd12535",
+  "index.html": "850f7bbbcf843036b4a703ca6134da5c72dd9ebdd6082358bfdd412652464424",
   "props/brokenpot.js": "a019b0eb7361c61d282ea6b32555df59b432c70e554858dd6439b3072d657a6b",
   "props/chest-gold-data.js": "2270c479053cbd000cdcf8d1c2bda1f84756b56d48526edf889302155b3ccd2a",
   "props/chest-gold-surface.js": "217f899d88375e1de7c986e3f35614a22b361aa29839e3a3297ad8e11e19504b",
@@ -28,7 +28,7 @@
   "props/coiledrope.js": "79f301028e149761ad4451a038929e2f55fc2fd8bed97e6062651c06bad22916",
   "props/crossgrave.js": "5b7d0bf7aafd131db0293a97620b6850474bd28802435b4fb2cce9c28ff89ef5",
   "props/fibre-finish.js": "47d4d689f148c5398c1afe4d4c45fd5ef069364c061294aad7963683c7217759",
-  "props/foliage2.js": "77212252a346a57c751e4cc4762db1045927a9ec00c0bbaf0d9b3013441083ce",
+  "props/foliage2.js": "c6fe188ee25ddc96abf87ceaf6046bd862b6c5060efb2939b09b64769e41bf25",
   "props/gravestone.js": "0481e45ab815819bf15f28dad6799b3231d8e86f98d682111cf742c6e6e478c6",
   "props/grounding.js": "23b4519947dde1e315c1db1f53db18f3b336155310a336223bff4685fb369c4b",
   "props/lantern.js": "bbeab0d3138ba12c9d1b9242d0f5c241d8b8d0e476ece144fd727da5a6be3168",
@@ -42,7 +42,7 @@
   "props/stone-surface.js": "b13d9f8dacad368b4f91aa9a227eef9c68c2d5ead8af91e03a74d59b20049218",
   "props/storagepot.js": "a438c43030411e625765317acecc89ee1cf0e7beec47bcfa7dd7a65296747fe3",
   "props/wall-torch-source.js": "26b9c2078ffbfa7a000e9dc2fda0720934d4c7a372f75bdd3337153e4814cc9a",
-  "release.json": "339f5826e3df3d1b27f9eadf33616bc7326705f8398309fed10d4c73b674d697",
+  "release.json": "31a58be955f81af5de7fb573fed95ab8bb8fef2d390e7fe8ae91de4298c6e19c",
   "sea.js": "9c929f4f08ac4cf1555ea8f13f58620fd2efaadfb588da56bc64858c5b7d56fb",
   "unity/Assets/MapSharedProps/Editor/ChestPresentationBuilder.cs": "4266b553a28dd80b1dd7f8eee401325e9b7cf5e0957b8a842c3909cf48d84cbf",
   "unity/Assets/MapSharedProps/Editor/ChestRoyalLitBuilder.cs": "4a7eac30ed8966eac116b421a4d6acd0dbda9d8d40e54bb961e33a1cc95ac939",
@@ -63,5 +63,6 @@
   "unity/Assets/MapSharedProps/Runtime/ChestSurface.hlsl": "54a7852fd53a80839e8098e325ce3d8de129066ff8197172ee495578fa0cec9d",
   "unity/Assets/MapSharedProps/Runtime/ChestWood.shader": "238ff89d58a30675d9e714853173e5f88ebe40f1f4188d02dc9a725afef0bdad",
   "unity/Assets/MapWater/Runtime/Shaders/MapSeaShared.hlsl": "a1e8a4abb4582fab5ccf622223d82f376a23a886a54e0fb519f9200a1815d51f",
-  "props/banner.js": "7deff215438df91f1676848c2eea5e197135ee78f9cd1b0c119448fcc8e4548d"
+  "props/banner.js": "7deff215438df91f1676848c2eea5e197135ee78f9cd1b0c119448fcc8e4548d",
+  "props/rowboat.js": "bc1da495dc784f81836870e879ec908016e906cac987acc77371a2eac7ecf1c7"
 }
