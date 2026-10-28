@@ -49,7 +49,7 @@ namespace MapSharedProps.EditorTools
             AssetDatabase.CreateAsset(m, path); return m;
         }
 
-        static Texture2D Packed(byte[] aoBytes)
+        public static Texture2D Packed(byte[] aoBytes)
         {
             var decoded = new Texture2D(2, 2, TextureFormat.RGBA32, false, true);
             try
@@ -84,7 +84,7 @@ namespace MapSharedProps.EditorTools
             finally { UnityEngine.Object.DestroyImmediate(decoded); }
         }
 
-        static Texture2D Normal(byte[] bytes)
+        public static Texture2D Normal(byte[] bytes)
         {
             if (!AssetDatabase.IsValidFolder(SharedImportCache.Root)) AssetDatabase.CreateFolder("Assets", "MapSharedAssetCache");
             string path = SharedImportCache.Root + "/royal-lit-normal-" + SharedAssetFiles.Hash(bytes) + ".png";

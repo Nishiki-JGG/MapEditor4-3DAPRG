@@ -1,0 +1,251 @@
+{
+  "status": "ready for visual review; unpublished",
+  "base": "2b61d5d1c45ff6ab453045011142a52136751440",
+  "editor": "6000.5.9f1",
+  "urp": "17.5",
+  "native": {
+    "pass": true,
+    "prefabs": 43,
+    "fallbackCases": [
+      "absent:43",
+      "version:43",
+      "index:43",
+      "nonfinite:43"
+    ],
+    "colliderExact": true,
+    "silverExact": true,
+    "goldLights": 2,
+    "lightCounts": [
+      3,
+      6,
+      6,
+      6,
+      6
+    ],
+    "maxPool": 6,
+    "poolCleanup": true,
+    "sharedNormalPacked": true,
+    "playerExecuted": false
+  },
+  "web": {
+    "pass": true,
+    "legacyPayloadIdentical": true,
+    "save7": true,
+    "beforePerformance": {
+      "timerAvailable": true,
+      "rows": [
+        {
+          "chests": 1,
+          "cpuSubmitMedianMs": 3.3000000715255737,
+          "gpuMedianMs": 4.071424,
+          "gpuSamples": 24,
+          "memory": {
+            "geometries": 171,
+            "textures": 31
+          },
+          "render": {
+            "frame": 56,
+            "calls": 6,
+            "triangles": 15963,
+            "points": 0,
+            "lines": 0
+          },
+          "metrics": {
+            "ornaments": 1,
+            "motes": 4,
+            "rays": 8,
+            "rims": 4,
+            "slots": 16,
+            "disposed": 10,
+            "activeLights": 0,
+            "lightCapacity": 2,
+            "drawObjects": 2,
+            "capacity": 32
+          }
+        },
+        {
+          "chests": 5,
+          "cpuSubmitMedianMs": 2.600000023841858,
+          "gpuMedianMs": 3.144704,
+          "gpuSamples": 24,
+          "memory": {
+            "geometries": 171,
+            "textures": 31
+          },
+          "render": {
+            "frame": 93,
+            "calls": 6,
+            "triangles": 41415,
+            "points": 0,
+            "lines": 0
+          },
+          "metrics": {
+            "ornaments": 5,
+            "motes": 20,
+            "rays": 40,
+            "rims": 20,
+            "slots": 80,
+            "disposed": 12,
+            "activeLights": 0,
+            "lightCapacity": 2,
+            "drawObjects": 2,
+            "capacity": 128
+          }
+        }
+      ]
+    },
+    "afterPerformance": {
+      "timerAvailable": true,
+      "rows": [
+        {
+          "chests": 1,
+          "cpuSubmitMedianMs": 3.899999976158142,
+          "gpuMedianMs": 2.281472,
+          "gpuSamples": 24,
+          "memory": {
+            "geometries": 170,
+            "textures": 30
+          },
+          "render": {
+            "frame": 103,
+            "calls": 5,
+            "triangles": 14820,
+            "points": 0,
+            "lines": 0
+          },
+          "metrics": {
+            "ornaments": 0,
+            "motes": 0,
+            "rays": 0,
+            "rims": 0,
+            "slots": 0,
+            "disposed": 5,
+            "activeLights": 0,
+            "lightCapacity": 2,
+            "drawObjects": 0,
+            "capacity": 0,
+            "sanctumChests": 1,
+            "sanctumMotes": 36,
+            "sanctumActiveLights": 3,
+            "sanctumLightCapacity": 6,
+            "sanctumFxCapacity": 256
+          }
+        },
+        {
+          "chests": 5,
+          "cpuSubmitMedianMs": 5.199999928474426,
+          "gpuMedianMs": 2.832384,
+          "gpuSamples": 24,
+          "memory": {
+            "geometries": 170,
+            "textures": 30
+          },
+          "render": {
+            "frame": 140,
+            "calls": 5,
+            "triangles": 35700,
+            "points": 0,
+            "lines": 0
+          },
+          "metrics": {
+            "ornaments": 0,
+            "motes": 0,
+            "rays": 0,
+            "rims": 0,
+            "slots": 0,
+            "disposed": 5,
+            "activeLights": 0,
+            "lightCapacity": 2,
+            "drawObjects": 0,
+            "capacity": 0,
+            "sanctumChests": 5,
+            "sanctumMotes": 180,
+            "sanctumActiveLights": 6,
+            "sanctumLightCapacity": 6,
+            "sanctumFxCapacity": 256
+          }
+        }
+      ]
+    }
+  },
+  "visual": {
+    "Evidence94Studio": {
+      "pass": true,
+      "seed": null,
+      "camera": [
+        1.32,
+        1.09,
+        -1.76
+      ],
+      "integration": {
+        "pass": true,
+        "formalPrefab": true,
+        "motes": 36,
+        "activeLights": 3,
+        "poolCapacity": 3,
+        "reflectionProbes": 0,
+        "comparison": "candidate93 to formal94",
+        "crystal": "opaque pseudo internal cuts, no refraction",
+        "playerExecuted": false
+      }
+    },
+    "Evidence94Field": {
+      "pass": true,
+      "seed": 71421,
+      "camera": {
+        "x": 15.0,
+        "y": 12.596500396728516,
+        "z": 51.20000076293945
+      },
+      "integration": {
+        "pass": true,
+        "formalPrefab": true,
+        "motes": 36,
+        "activeLights": 3,
+        "poolCapacity": 3,
+        "reflectionProbes": 1,
+        "comparison": "candidate93 to formal94",
+        "crystal": "opaque pseudo internal cuts, no refraction",
+        "playerExecuted": false
+      }
+    },
+    "Evidence94Cave": {
+      "pass": true,
+      "seed": 71421,
+      "camera": {
+        "x": -15.0,
+        "y": 10.0,
+        "z": 36.20000076293945
+      },
+      "integration": {
+        "pass": true,
+        "formalPrefab": true,
+        "motes": 36,
+        "activeLights": 3,
+        "poolCapacity": 3,
+        "reflectionProbes": 1,
+        "comparison": "candidate93 to formal94",
+        "crystal": "opaque pseudo internal cuts, no refraction",
+        "playerExecuted": false
+      }
+    }
+  },
+  "data": {
+    "vertices": 10323,
+    "triangles": 5148,
+    "jsBytes": 938551,
+    "gzipBytes": 80110,
+    "dataSha256": "cb5e96c1769bce67ef72c6e28dbd7a3e978e26dd277a660d8f747c59f62e1e8c",
+    "newTextureMaps": 0,
+    "sharedGoldReliefMaps": 2,
+    "nativeMeshVertexIndexBytesEstimate": 681156
+  },
+  "limitations": [
+    "Pseudo internal crystal cuts; no physical refraction.",
+    "Dedicated background Editor/offscreen only; Player and complete game sessions not run.",
+    "Web GPU timer is a short representative sample, not a Unity GPU performance guarantee.",
+    "Original game scene/environment assets unchanged. Runtime requires the receiving scene lighting and reflection probes.",
+    "Gold light budget remains independent (up to eight); rainbow adds at most six active point lights.",
+    "Unpublished silver replacement candidate excluded."
+  ]
+}
