@@ -1,7 +1,7 @@
 {
-  "release": "silver-rainbow-20261028-95",
+  "release": "shore-cluster-20261028-96",
   "files": {
-    "app.js": "47e480d774d1dbf3445fe338f6557e963a057db165cc57552529a3a0326fb25d",
+    "app.js": "5241e816ba232458a2090fa6a8903eb3020811316e8f817b3de142b4221ee274",
     "props/chest-presentation.js": "02d054f76798bdf6599156ffb0655085c919b3df733386a47a11f458d3aa5233",
     "props/chest-surface.js": "bf7137cd3c64c736bc50d0dbd2a7b62f4fce1c48db73f6473fc6b9522b24f025",
     "props/chest-relief.js": "2f6d152ccd4c0dfd43d34c9867118d5060704b01ea93cfeafcdf826c479e8f94",
@@ -13,6 +13,9 @@
     "props/gravestone.js": "644b728a667f4ed5bb80b2c5e43cbde3616c036d6b28cf3ada9d78f8087acb15",
     "props/crossgrave.js": "1a074f3e87ca14e01fcfbe2c906ad928f607fd8f1a9d3617e1afa44b0436c563",
     "props/stone-surface.js": "c536d402c75ee9a1fc21dba04131d54845d5dacad78bd929a55d01a9abd849db",
-    "props/marker-parts.js": "8f64dc8689771c3ea2b4749d8d4849c90b8d90f9e4fcb160a0c809ed8103ef96"
+    "props/marker-parts.js": "8f64dc8689771c3ea2b4749d8d4849c90b8d90f9e4fcb160a0c809ed8103ef96",
+    "props/shells.js": "c16f1f1c4c7a60bfcf500d1179b2e668c487c1dd1c39de947a6c6a186929a199",
+    "props/grounding.js": "23b4519947dde1e315c1db1f53db18f3b336155310a336223bff4685fb369c4b",
+    "props/shell-surface.js": "d8250789cc78f5fea3f66a12494c63128b73dbdccca861c2b3a2aa7d5025af76"
   }
 }

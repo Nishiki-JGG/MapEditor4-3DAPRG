@@ -38,7 +38,7 @@ function fitParts(geometry,p,sample,sink=.001){
  const list=parts(geometry),matrices=list.map(part=>fit(part,p,sample,sink)),heights=new Map();
  // ヒトデの腕は傾斜へ沿わせても付け根を離さない。各支持面の高い側へ揃えて埋没を避ける。
  list.forEach((part,i)=>{if(part.joint)heights.set(part.joint,Math.max(heights.get(part.joint)??-Infinity,matrices[i].elements[13]));});
- list.forEach((part,i)=>{if(part.joint)matrices[i].elements[13]=heights.get(part.joint);});return matrices;
+ list.forEach((part,i)=>{if(part.joint)matrices[i].elements[13]=heights.get(part.joint);});for(const joint of geometry.userData.rigidGroundJoints||[]){const group=list.filter(p=>p.joint===joint);if(!group.length)continue;const whole={pivot:group[0].pivot,support:group.flatMap(p=>p.support)};const m=fit(whole,p,sample,sink);list.forEach((part,i)=>{if(part.joint===joint)matrices[i]=m.clone();});}return matrices;
 }
 function createCache(H,N,cell,half){
  const versions=new Uint32Array(N*N),cache=new WeakMap(),stats={fits:0,hits:0,samples:0};
@@ -52,7 +52,7 @@ function createCache(H,N,cell,half){
  }
  return{get,stats,changed:k=>{versions[k]++;}};
 }
-function exportAsset(type){return{id:type.id,assetKey:type.assetKey,parts:parts(type.geo).map(p=>{const g=p.geometry,P=g.attributes.position,N=g.attributes.normal,C=g.attributes.color,positions=[],normals=[],triangles=[];for(let i=0;i<P.count;i++){positions.push(P.getX(i),P.getY(i),-P.getZ(i));normals.push(N.getX(i),N.getY(i),-N.getZ(i));}for(let i=0;i<P.count;i+=3)triangles.push(i,i+2,i+1);return{id:p.id,positions,normals,colors:Array.from(C.array),triangles};})};}
+function exportAsset(type){return{id:type.id,assetKey:type.assetKey,...(type.id==='shells'&&type.surface?{surface:TDSmallPropSurface.export(type.surface)}:{}),parts:parts(type.geo).map(p=>{const g=p.geometry,P=g.attributes.position,N=g.attributes.normal,C=g.attributes.color,positions=[],normals=[],triangles=[];for(let i=0;i<P.count;i++){positions.push(P.getX(i),P.getY(i),-P.getZ(i));normals.push(N.getX(i),N.getY(i),-N.getZ(i));}for(let i=0;i<P.count;i+=3)triangles.push(i,i+2,i+1);return{id:p.id,positions,normals,colors:Array.from(C.array),triangles,...(type.id==='shells'&&type.surface?{uv:Array.from(g.attributes.uv.array)}:{})};})};}
 function exportPose(matrix,offset=new THREE.Vector3()){const p=new THREE.Vector3(),q=new THREE.Quaternion(),s=new THREE.Vector3();matrix.decompose(p,q,s);return{position:[p.x+offset.x,p.y+offset.y,-p.z+offset.z],rotation:[-q.x,-q.y,q.z,q.w],scale:s.toArray()};}
 window.TDPropGrounding={parts,surface,fit,fitParts,createCache,exportAsset,exportPose};
 })();

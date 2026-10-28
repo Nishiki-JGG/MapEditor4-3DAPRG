@@ -1479,7 +1479,7 @@ function groundedParts(p){return propGrounding.get(p,PROP[p[0]].geo,PROP[p[0]].g
 function groundedMeshes(type,ghost,needed){
  const map=ghost?groundedGhost:groundedNormal,old=map.get(type);if(old&&old[0].instanceMatrix.count>=needed)return old;
  const capacity=Math.min(ghost?256:CAP,Math.max(16,2**Math.ceil(Math.log2(needed)))),t=PROP[type];
- const meshes=TDPropGrounding.parts(t.geo).map((part,i)=>{const m=new THREE.InstancedMesh(part.geometry,ghost?ghostMat:TDFibreFinish.material(PROP_MATS[t.material]||propMat,t.id),capacity);m.instanceColor=new THREE.InstancedBufferAttribute(new Float32Array(capacity*3),3);m.frustumCulled=false;m.count=0;m.castShadow=m.receiveShadow=!ghost;m.renderOrder=ghost?8:0;if(old){m.instanceMatrix.array.set(old[i].instanceMatrix.array);m.instanceColor.array.set(old[i].instanceColor.array);scene.remove(old[i]);old[i].dispose();}scene.add(m);return m;});map.set(type,meshes);return meshes;
+ const meshes=TDPropGrounding.parts(t.geo).map((part,i)=>{const m=new THREE.InstancedMesh(part.geometry,t.surface?TDSmallPropSurface.material(ghost?ghostMat:PROP_MATS[t.material]||propMat,t.surface):ghost?ghostMat:TDFibreFinish.material(PROP_MATS[t.material]||propMat,t.id),capacity);m.instanceColor=new THREE.InstancedBufferAttribute(new Float32Array(capacity*3),3);m.frustumCulled=false;m.count=0;m.castShadow=m.receiveShadow=!ghost;m.renderOrder=ghost?8:0;if(old){m.instanceMatrix.array.set(old[i].instanceMatrix.array);m.instanceColor.array.set(old[i].instanceColor.array);scene.remove(old[i]);old[i].dispose();}scene.add(m);return m;});map.set(type,meshes);return meshes;
 }
 function rebuildProps(visualOnly = false) {
   refreshCliffFits(visualOnly);
@@ -5183,7 +5183,7 @@ const preview = new THREE.Mesh(PROP[0].geo, new THREE.MeshStandardMaterial({ ver
 preview.visible = false; preview.renderOrder = 9; scene.add(preview);
 const groundPreview=new THREE.Group(),previewGroundPose=[];groundPreview.visible=false;scene.add(groundPreview);
 function setGroundPreview(type,x,z,yaw,scale){
- const t=PROP[type];if(groundPreview.userData.type!==type){groundPreview.clear();TDPropGrounding.parts(t.geo).forEach(part=>{const m=new THREE.Mesh(part.geometry,preview.material);m.matrixAutoUpdate=false;m.frustumCulled=false;m.renderOrder=9;groundPreview.add(m);});groundPreview.userData.type=type;groundPreview.userData.fit=null;}
+ const t=PROP[type];if(groundPreview.userData.type!==type){groundPreview.clear();TDPropGrounding.parts(t.geo).forEach(part=>{const m=new THREE.Mesh(part.geometry,t.surface?TDSmallPropSurface.material(preview.material,t.surface):preview.material);m.matrixAutoUpdate=false;m.frustumCulled=false;m.renderOrder=9;groundPreview.add(m);});groundPreview.userData.type=type;groundPreview.userData.fit=null;}
  previewGroundPose.splice(0,previewGroundPose.length,type,x,z,yaw,scale,0,1,null);const fit=groundedParts(previewGroundPose);if(groundPreview.userData.fit!==fit){groundPreview.children.forEach((m,i)=>m.matrix.copy(fit.matrices[i]));groundPreview.userData.fit=fit;}groundPreview.visible=true;
 }
 // nearest deletable thing under the cursor

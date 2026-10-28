@@ -1,0 +1,235 @@
+{
+  "web": {
+    "pass": true,
+    "baseline": "ba3c929",
+    "unrelatedSmallPropsExact": true,
+    "results": {
+      "before": {
+        "parts": [
+          "starfish0",
+          "starfish1",
+          "starfish2",
+          "starfish3",
+          "starfish4",
+          "shell0",
+          "shell1",
+          "shell2",
+          "shell3"
+        ],
+        "triangles": 220,
+        "bounds": {
+          "min": [
+            -0.15076714754104614,
+            1.836970237518721e-18,
+            -0.18495848774909973
+          ],
+          "max": [
+            0.4963885247707367,
+            0.032499998807907104,
+            0.23557525873184204
+          ]
+        },
+        "uvRange": null,
+        "textureBytes": 0,
+        "colliders": {
+          "cs": 4,
+          "m": {}
+        },
+        "render": {
+          "frame": 43,
+          "calls": 12,
+          "triangles": 9820,
+          "points": 0,
+          "lines": 0
+        },
+        "saveReload": true,
+        "minSupportGap": -0.0010000000000000009,
+        "joinMatrixSpread": 0.04272756124378607,
+        "volumes": [
+          0.0002315742090904411,
+          0.00014175001102840134,
+          0.0001417500170688878,
+          0.00014175001387768508,
+          0.00014175001670657387,
+          0.00022688995414428512,
+          0.0002268899510644133,
+          0.00022688998273420375,
+          0.0002268899622597335
+        ],
+        "gl": 0
+      },
+      "after": {
+        "parts": [
+          "starfish0",
+          "starfish1",
+          "starfish2",
+          "starfish3",
+          "starfish4",
+          "shell0",
+          "shell1",
+          "shell2",
+          "shell3"
+        ],
+        "triangles": 1216,
+        "bounds": {
+          "min": [
+            -0.13753288984298706,
+            0.0010000000474974513,
+            -0.19210931658744812
+          ],
+          "max": [
+            0.461343377828598,
+            0.029999999329447746,
+            0.24074362218379974
+          ]
+        },
+        "uvRange": [
+          0.019999999552965164,
+          0.9800000190734863
+        ],
+        "textureBytes": 20180,
+        "colliders": {
+          "cs": 4,
+          "m": {}
+        },
+        "render": {
+          "frame": 43,
+          "calls": 12,
+          "triangles": 10816,
+          "points": 0,
+          "lines": 0
+        },
+        "saveReload": true,
+        "minSupportGap": -0.0010000000000000148,
+        "joinMatrixSpread": 0,
+        "volumes": [
+          0.00010495005553801149,
+          0.0001049500531571598,
+          0.00010495005521519791,
+          0.00010495005513777509,
+          0.00010495005275120678,
+          0.0001299977695206486,
+          0.0001299977874862122,
+          0.00012999777706042325,
+          0.00012999777697500194
+        ],
+        "gl": 0
+      }
+    }
+  },
+  "load": {
+    "rows": [
+      {
+        "count": 1,
+        "rebuildMs": 3.5,
+        "cpuSubmitMedianMs": 2,
+        "calls": 13,
+        "triangles": 10834,
+        "textures": 31,
+        "sharedMaterials": 1,
+        "sharedMaps": 1
+      },
+      {
+        "count": 50,
+        "rebuildMs": 13.299999952316284,
+        "cpuSubmitMedianMs": 2,
+        "calls": 13,
+        "triangles": 70418,
+        "textures": 31,
+        "sharedMaterials": 1,
+        "sharedMaps": 1
+      },
+      {
+        "count": 0,
+        "rebuildMs": 0.5,
+        "cpuSubmitMedianMs": 1.899999976158142,
+        "calls": 4,
+        "triangles": 9618,
+        "textures": 31,
+        "sharedMaterials": 1,
+        "sharedMaps": 1
+      },
+      {
+        "count": 50,
+        "rebuildMs": 8.199999928474426,
+        "cpuSubmitMedianMs": 1.899999976158142,
+        "calls": 13,
+        "triangles": 70418,
+        "textures": 31,
+        "sharedMaterials": 1,
+        "sharedMaps": 1
+      }
+    ],
+    "gl": 0
+  },
+  "coast": {
+    "pass": true,
+    "rows": {
+      "before": {
+        "coastTool": "makeCoast",
+        "from": [
+          -2,
+          0
+        ],
+        "to": [
+          6,
+          0
+        ],
+        "water": 0.8,
+        "placement": {
+          "x": 0,
+          "z": 0,
+          "h": 1.0534186363220215,
+          "d": 0
+        },
+        "gl": 0
+      },
+      "after": {
+        "coastTool": "makeCoast",
+        "from": [
+          -2,
+          0
+        ],
+        "to": [
+          6,
+          0
+        ],
+        "water": 0.8,
+        "placement": {
+          "x": 0,
+          "z": 0,
+          "h": 1.0534186363220215,
+          "d": 0
+        },
+        "gl": 0
+      }
+    }
+  },
+  "editor": {
+    "pass": true,
+    "cases": [
+      "before",
+      "after",
+      "absent",
+      "badUV",
+      "badPNG",
+      "oldReader"
+    ],
+    "nineStableParts": true,
+    "oneRenderer": true,
+    "colliders": 0,
+    "worldPoseToleranceMetres": 2e-05,
+    "triangles": 1216,
+    "textureRuntimeBytes": 157192,
+    "textureShared": true,
+    "playerExecuted": false
+  },
+  "visual": {
+    "closeAndOppositeLight": true,
+    "actualGrasslandSeed": 71421,
+    "scale": 1,
+    "originalScenesUnchanged": true,
+    "playerExecuted": false,
+    "gpuTimingMeasured": false
+  }
+}
