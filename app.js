@@ -1372,6 +1372,7 @@ const propMeshes = PROP.map(t => {
   if (t.touch) { m.userData.touch = new THREE.InstancedBufferAttribute(new Float32Array(CAP * 3), 3).setUsage(THREE.DynamicDrawUsage); t.geo.setAttribute('touch', m.userData.touch); }
   m.castShadow = m.receiveShadow = true; m.frustumCulled = false; m.count = 0;
   if(t.sharedAsset&&(t.sharedAsset==='pine'||TDSharedProps.asset(t.sharedAsset).wind)){m.customDepthMaterial=TDPineWind.shadowMaterial(m.material);m.customDistanceMaterial=TDPineWind.shadowMaterial(m.material,true);}
+  if(t.id==='treasurechest_gold'){m.customDepthMaterial=TDChestSurface.shadowMaterial(t.id);m.customDistanceMaterial=TDChestSurface.shadowMaterial(t.id,false,true);}
   if (t.canopy) m.receiveShadow = false;   // lumpy canopies shadow themselves in patches; their soft normals already shade them (and it is cheaper)
   m.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(CAP * 3), 3);
   if (m.material === rockMat) { m.userData.cliffI = new THREE.InstancedBufferAttribute(new Float32Array(CAP), 1); t.geo.setAttribute('cliffI', m.userData.cliffI); }

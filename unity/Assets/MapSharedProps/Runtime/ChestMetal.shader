@@ -9,6 +9,10 @@ Shader "MapSharedProps/ChestMetal" {
  }
  SubShader {
   Tags {"RenderPipeline"="UniversalPipeline" "RenderType"="Opaque"} Cull [_Cull]
+  HLSLINCLUDE
+  // Presentation only; root geometry and collider remain unchanged.
+  float3 ChestSeamPosition(float3 p,float marked,float variant){if(variant>4.5&&variant<5.5&&marked>.5&&p.y>.43&&abs(abs(p.x)-.20)<.0076)p.x=sign(p.x)*.20+(p.x-sign(p.x)*.20)*.20;return p;}
+  ENDHLSL
   Pass {
    Tags {"LightMode"="UniversalForward"}
    HLSLPROGRAM
@@ -34,7 +38,15 @@ Shader "MapSharedProps/ChestMetal" {
    #endif
    };
    struct V {float4 positionCS:SV_POSITION;float3 positionWS:TEXCOORD0;float3 normalWS:TEXCOORD1;float3 positionOS:TEXCOORD2;float4 color:COLOR;float glow:TEXCOORD3;float finish:TEXCOORD4;float ink:TEXCOORD5;float3 surface:TEXCOORD6;};
-   V Vert(A v){UNITY_SETUP_INSTANCE_ID(v);V o;VertexPositionInputs p=GetVertexPositionInputs(v.positionOS.xyz);o.positionCS=p.positionCS;o.positionWS=p.positionWS;o.normalWS=TransformObjectToWorldNormal(v.normalOS);o.positionOS=v.positionOS.xyz;o.color=v.color*_BaseColor;o.glow=v.glow;o.finish=0;o.ink=1-step(-3,v.uv.x);o.surface=0;
+   V Vert(A v){UNITY_SETUP_INSTANCE_ID(v);
+   #if defined(CHEST_SURFACE)
+    float seamMark=1-step(-3,v.uv.x);
+    #if defined(CHEST_ORNAMENT)
+    seamMark=max(seamMark,v.finish);
+    #endif
+    v.positionOS.xyz=ChestSeamPosition(v.positionOS.xyz,seamMark,_ChestVariant);
+   #endif
+   V o;VertexPositionInputs p=GetVertexPositionInputs(v.positionOS.xyz);o.positionCS=p.positionCS;o.positionWS=p.positionWS;o.normalWS=TransformObjectToWorldNormal(v.normalOS);o.positionOS=v.positionOS.xyz;o.color=v.color*_BaseColor;o.glow=v.glow;o.finish=0;o.ink=1-step(-3,v.uv.x);o.surface=0;
    #if defined(CHEST_SURFACE)
    #if defined(CHEST_ORNAMENT)
    o.surface=ChestOrnamentUV(v.positionOS.xyz,v.surfaceMode,v.glow);
@@ -74,6 +86,8 @@ Shader "MapSharedProps/ChestMetal" {
    Name "ShadowCaster" Tags {"LightMode"="ShadowCaster"} ZWrite On ColorMask 0
    HLSLPROGRAM
    #pragma target 3.0
+   #pragma shader_feature_local _ CHEST_SURFACE
+   #pragma shader_feature_local _ CHEST_ORNAMENT
    #pragma vertex ShadowVert
    #pragma multi_compile_instancing
    #pragma fragment ShadowFrag
@@ -84,9 +98,21 @@ Shader "MapSharedProps/ChestMetal" {
     float4 _BaseColor,_ChestWoodRect,_ChestMean0,_ChestMean1,_ChestMean2,_ChestMean3;float _Rainbow,_ChestTime,_Cutoff,_Cull,_ChestVariant;
    CBUFFER_END
    float3 _LightDirection;float3 _LightPosition;
-   struct SA {float4 p:POSITION;float3 normalOS:NORMAL;UNITY_VERTEX_INPUT_INSTANCE_ID};
+   struct SA {float4 p:POSITION;float3 normalOS:NORMAL;float2 uv:TEXCOORD0;
+   #if defined(CHEST_ORNAMENT)
+   float finish:TEXCOORD3;
+   #endif
+   UNITY_VERTEX_INPUT_INSTANCE_ID};
    float4 ShadowVert(SA i):SV_POSITION {
-    UNITY_SETUP_INSTANCE_ID(i);float3 positionWS=TransformObjectToWorld(i.p.xyz),normalWS=TransformObjectToWorldNormal(i.normalOS);
+    UNITY_SETUP_INSTANCE_ID(i);
+    #if defined(CHEST_SURFACE)
+    float seamMark=1-step(-3,i.uv.x);
+    #if defined(CHEST_ORNAMENT)
+    seamMark=max(seamMark,i.finish);
+    #endif
+    i.p.xyz=ChestSeamPosition(i.p.xyz,seamMark,_ChestVariant);
+    #endif
+    float3 positionWS=TransformObjectToWorld(i.p.xyz),normalWS=TransformObjectToWorldNormal(i.normalOS);
     #if _CASTING_PUNCTUAL_LIGHT_SHADOW
     float3 direction=normalize(_LightPosition-positionWS);
     #else
