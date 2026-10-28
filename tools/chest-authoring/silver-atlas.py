@@ -31,6 +31,8 @@ for mesh,mode in [(body,None),(orn['mesh'],np.array(modes))]:
  n=np.array(mesh['normals']).reshape(-1,3);n[:,2]*=-1
  uv=np.array(mesh['uv']).reshape(-1,2);glow=np.array(mesh['glow'])
  for tri in np.array(mesh['triangles']).reshape(-1,3):
+  # Removed thin lid straps must not remain painted into the intrinsic atlas.
+  if mode is None and np.all(uv[tri,0]<-3):continue
   pts=p[tri];mid=pts.mean(0);normal=n[tri].mean(0)
   if np.max(glow[tri])>.001:continue
   face=(2 if mid[0]<0 else 3) if abs(mid[0])>.48 and abs(normal[0])>.65 else 4 if mid[1]>.433 else 0 if mid[2]>=0 else 1

@@ -158,6 +158,10 @@ float3 ChestRubyDirect(float3 n,float3 v,float3 l,float3 radiance,float2 q,float
     cl=normalize(mul((float3x3)UNITY_MATRIX_V,light.direction));
     #endif
     float3 mainRadiance=light.color*light.distanceAttenuation*light.shadowAttenuation;
+    #if defined(CHEST_PART_ATLAS) && !defined(CHEST_ORNAMENT)
+    float silverBand=(_ChestVariant>3.5&&_ChestVariant<4.5)?(1-step(.023,abs(abs(i.positionOS.x)-.40)))*step(.08,i.positionOS.y)*max(step(.433,i.positionOS.y),step(.321,abs(i.positionOS.z))):0;
+    finishColour=lerp(finishColour,float3(.133,.179,.233),silverBand);detail.b=lerp(detail.b,.27,silverBand);
+    #endif
     float cs=pow(max(0,dot(nv,normalize(cl+cv))),lerp(lerp(80,160,i.finish),lerp(180,18,detail.b),surfaceMask)),cr=pow(1-max(0,dot(nv,cv)),3),t=_ChestTime<0?_Time.y:_ChestTime;
     cs*=lerp(1,lerp(1.12,.42,detail.b),surfaceMask);
     float3 refl=reflect(-cv,nv);float env=.14+.45*smoothstep(-.10,.55,refl.y)+.65*pow(max(0,1-abs(refl.y-.4)),lerp(16,lerp(48,6,detail.b),surfaceMask));

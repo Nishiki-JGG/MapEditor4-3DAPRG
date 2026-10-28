@@ -18,6 +18,9 @@ window.TDChestPartSurface=(()=>{
   }catch(e){a.status='fallback';a.error=e.message;}finally{notify();}})();
   function get(){return a;}
  const helpers=`
+ uniform float uSilverTrim;
+ float silverBand(){vec3 p=vChestSurfaceLocal;return uSilverTrim*(1.-step(.023,abs(abs(p.x)-.40)))*step(.08,p.y)*max(step(.433,p.y),step(.321,abs(p.z)));}
+
  float chestGoldFace(){vec3 p=vChestSurfaceLocal;return abs(p.x)>.48&&abs(vChestGoldNormal.x)>.65?(p.x<0.?2.:3.):p.y>.433?4.:p.z>=0.?0.:1.;}
  vec2 chestGoldUV(){vec3 p=vChestSurfaceLocal;float f=chestGoldFace();vec2 q;vec4 r;
  if(f<.5){q=vec2((p.x+.55)/1.1,p.y/.433);r=vec4(0.,0.,256.,192.);}
@@ -27,12 +30,12 @@ window.TDChestPartSurface=(()=>{
  else{q=vec2((p.x+.55)/1.1,atan(p.y-.435,-p.z)/3.14159265);r=vec4(0.,320.,512.,192.);}
  return(r.xy+4.+clamp(q,vec2(0.),vec2(1.))*(r.zw-9.)+.5)/512.;}
  vec4 chestGoldMean(){return uChestGoldMeans[int(chestGoldFace()+.1)];}
- vec4 chestGoldPackedRaw(){vec4 a=texture2D(uChestPacked,chestGoldUV());float f=chestSurfaceFade();a.b=mix(chestGoldMean().a,a.b,f);a.xy=mix(vec2(.5),a.xy,f);a.a=1.;return a;}
- vec3 chestGoldColour(){return mix(chestGoldMean().rgb,texture2D(uChestColour,chestGoldUV()).rgb,chestSurfaceFade());}
+ vec4 chestGoldPackedRaw(){vec4 a=texture2D(uChestPacked,chestGoldUV());float f=chestSurfaceFade();a.b=mix(chestGoldMean().a,a.b,f);a.xy=mix(vec2(.5),a.xy,f);a.a=1.;a.b=mix(a.b,.27,silverBand());return a;}
+ vec3 chestGoldColour(){return mix(mix(chestGoldMean().rgb,texture2D(uChestColour,chestGoldUV()).rgb,chestSurfaceFade()),vec3(.133,.179,.233),silverBand());}
  float chestGoldKeyhole(){vec3 p=vChestSurfaceLocal;return step(.3867,p.z)*(1.-step(.006,abs(p.x)))*(1.-step(.014,abs(p.y-.321)));}
  `;
  function replaceOnce(text,from,to){if(text.split(from).length!==2)throw Error('Gold shader hook changed: '+from);return text.replace(from,to);}
- function configure(sh){const a=get();if(!a.ready)return;sh.uniforms.uChestColour.value=a.textures[0];sh.uniforms.uChestPacked.value=a.textures[1];sh.uniforms.uChestSurfaceReady={get value(){return a.ready?1:0;}};sh.uniforms.uChestGoldMeans={value:Array.from({length:5},(_,i)=>new THREE.Vector4(...a.descriptor.means.slice(i*4,i*4+4)))};
+ function configure(sh,ornament=false){sh.uniforms.uSilverTrim={value:id==='treasurechest_silver'&&!ornament?1:0};const a=get();if(!a.ready)return;sh.uniforms.uChestColour.value=a.textures[0];sh.uniforms.uChestPacked.value=a.textures[1];sh.uniforms.uChestSurfaceReady={get value(){return a.ready?1:0;}};sh.uniforms.uChestGoldMeans={value:Array.from({length:5},(_,i)=>new THREE.Vector4(...a.descriptor.means.slice(i*4,i*4+4)))};
   sh.vertexShader=replaceOnce(sh.vertexShader,'#include <common>','#include <common>\nvarying vec3 vChestGoldNormal;');sh.vertexShader=replaceOnce(sh.vertexShader,'#include <begin_vertex>','#include <begin_vertex>\nvChestGoldNormal=normal;');
   sh.fragmentShader=replaceOnce(sh.fragmentShader,'#include <common>','#include <common>\nvarying vec3 vChestGoldNormal;uniform vec4 uChestGoldMeans[5];vec2 chestGoldUV();vec4 chestGoldMean();vec4 chestGoldPackedRaw();vec3 chestGoldColour();float chestGoldKeyhole();');
   sh.fragmentShader=replaceOnce(sh.fragmentShader,'#include <clipping_planes_pars_fragment>','#include <clipping_planes_pars_fragment>\n'+helpers);
@@ -47,7 +50,7 @@ window.TDChestPartSurface=(()=>{
   for(const id of TDChestPartAtlasContract.ids){const a=surface(id).get();if(a.ready)candidates.push(TDChestPartAtlasContract.fromSurface(id,a.descriptor));}
   return TDChestPartAtlasContract.create(candidates,assets);
  }
- return{get:id=>surface(id)?.get(),watch:(m,id)=>surface(id)?.watch(m),configure:(sh,id)=>surface(id)?.configure(sh),export:descriptor,
+ return{get:id=>surface(id)?.get(),watch:(m,id)=>surface(id)?.watch(m),configure:(sh,id,ornament)=>surface(id)?.configure(sh,ornament),export:descriptor,
  prepare:()=>Promise.all(TDChestPartAtlasContract.ids.map(id=>surface(id).get().readyPromise)),
  stats:()=>Object.fromEntries(TDChestPartAtlasContract.ids.map(id=>{const a=surface(id).get();return[id,{status:a.status,error:a.error,textures:a.textures.length}];}))};
 })();

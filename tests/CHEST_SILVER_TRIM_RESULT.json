@@ -1,0 +1,81 @@
+{
+  "web": {
+    "pass": true,
+    "allLegacyRootAssetsByteEquivalent": true,
+    "unrelatedDescriptorsIdentical": true,
+    "removedOrnamentTriangles": 392,
+    "rows": {
+      "before": {
+        "roundtrip": true,
+        "count": 7,
+        "inkTriangles": 296,
+        "removed": 0,
+        "gl": 0,
+        "lights": 2,
+        "parts": {
+          "treasurechest_silver": {
+            "status": "ready",
+            "error": null,
+            "textures": 2
+          },
+          "treasurechest_rainbow": {
+            "status": "ready",
+            "error": null,
+            "textures": 2
+          }
+        }
+      },
+      "after": {
+        "roundtrip": true,
+        "count": 7,
+        "inkTriangles": 0,
+        "removed": 296,
+        "gl": 0,
+        "lights": 2,
+        "parts": {
+          "treasurechest_silver": {
+            "status": "ready",
+            "error": null,
+            "textures": 2
+          },
+          "treasurechest_rainbow": {
+            "status": "ready",
+            "error": null,
+            "textures": 2
+          }
+        }
+      },
+      "absent": {
+        "roundtrip": true,
+        "count": 7,
+        "inkTriangles": 0,
+        "removed": 296,
+        "gl": 0,
+        "lights": 2,
+        "parts": {
+          "treasurechest_silver": {
+            "status": "absent",
+            "error": null,
+            "textures": 0
+          },
+          "treasurechest_rainbow": {
+            "status": "absent",
+            "error": null,
+            "textures": 0
+          }
+        }
+      }
+    }
+  },
+  "editor": {
+    "pass": true,
+    "prefabs": 43,
+    "colliderPreserved": true,
+    "beforeTriangles": 2092,
+    "afterTriangles": 1796,
+    "goldLights": 2
+  },
+  "unity": "6000.5.9f1",
+  "urp": "17.5",
+  "playerExecuted": false
+}
