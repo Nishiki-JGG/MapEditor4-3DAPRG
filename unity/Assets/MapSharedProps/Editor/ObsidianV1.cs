@@ -21,7 +21,7 @@ public static class ObsidianV1 {
    ArrayOf(a.positions,360);ArrayOf(a.normals,360);ArrayOf(a.colors,360);ArrayOf(a.uv,240);ArrayOf(a.glow,120);
    Require(a.triangles!=null&&a.triangles.Length==120&&a.triangles.Distinct().Count()==120&&a.triangles.All(i=>i>=0&&i<120),"40 independent triangles");
    Require(a.positions.All(v=>Mathf.Abs(v)<4)&&a.normals.All(v=>Mathf.Abs(v)<=1.001f)&&a.colors.All(v=>v>=0&&v<=1)&&a.glow.All(v=>v==0),"mesh values");
-   Require(Finite(a.radius)&&Mathf.Abs(a.radius-.4f)<.000001f&&Finite(a.height)&&Mathf.Abs(a.height-1.58f)<.000001f&&Finite(a.groundSink)&&Mathf.Abs(a.groundSink-.05f)<.000001f&&a.shape,"placement contract");
+   Require(Finite(a.radius)&&a.radius>=0&&Finite(a.height)&&a.height>0&&Finite(a.groundSink)&&Mathf.Abs(a.groundSink-.05f)<.000001f&&a.shape,"placement contract");
    Require(a.light==null||a.light.Length==0,"non-emissive");return d;
   }catch(Exception e)when(e is InvalidDataException||e is NullReferenceException){Debug.LogWarning("Optional obsidian ignored; core assets retained: "+e.Message);return null;}
  }
@@ -37,7 +37,7 @@ public static class ObsidianV1 {
   var source=SmallPropsV1.MeshOf(a.positions,a.normals,a.colors,a.triangles,a.glow);source.name="obsidian collision";source=SharedImportCache.StoreMesh(source,"obsidian-collision/1\n"+JsonUtility.ToJson(a));
   var visual=UnityEngine.Object.Instantiate(source);var atlas=ColourAtlas(visual);visual.name="obsidian";visual=SharedImportCache.StoreMesh(visual,"obsidian-visual/1\n"+JsonUtility.ToJson(a));
   var shader=Shader.Find("Universal Render Pipeline/Lit");Require(shader&&shader.isSupported,"URP/Lit required");var material=new Material(shader){name="obsidian-glass",enableInstancing=true};material.SetTexture("_BaseMap",atlas);material.SetColor("_BaseColor",Color.white);material.SetFloat("_Metallic",.1f);material.SetFloat("_Smoothness",.9f);material.SetFloat("_Cull",2);material.SetFloat("_EnvironmentReflections",1);material.DisableKeyword("_ENVIRONMENTREFLECTIONS_OFF");material.DisableKeyword("_EMISSION");AssetDatabase.CreateAsset(material,folder+"/small-obsidian.mat");
-  var root=new GameObject("obsidian");root.AddComponent<MeshFilter>().sharedMesh=visual;var renderer=root.AddComponent<MeshRenderer>();renderer.sharedMaterial=material;renderer.reflectionProbeUsage=ReflectionProbeUsage.BlendProbes;renderer.lightProbeUsage=LightProbeUsage.BlendProbes;renderer.shadowCastingMode=ShadowCastingMode.On;root.AddComponent<MeshCollider>().sharedMesh=source;
+  var root=new GameObject("obsidian");root.AddComponent<MeshFilter>().sharedMesh=visual;var renderer=root.AddComponent<MeshRenderer>();renderer.sharedMaterial=material;renderer.reflectionProbeUsage=ReflectionProbeUsage.BlendProbes;renderer.lightProbeUsage=LightProbeUsage.BlendProbes;renderer.shadowCastingMode=ShadowCastingMode.On;if(a.radius>0)root.AddComponent<MeshCollider>().sharedMesh=source;
   var prefab=PrefabUtility.SaveAsPrefabAsset(root,folder+"/small-obsidian.prefab");prefabs.Add(a.id,prefab);UnityEngine.Object.DestroyImmediate(root);
   int placed=0;foreach(var line in File.ReadAllLines(Path.Combine(directory,"props.csv"))){var row=line.Split(',');if(row.Length!=11||row[1]!=a.id||row[2]!=a.assetKey)continue;var tint=Array.Find(data.instances??new SmallPropsV1.Tint[0],t=>t.instanceId==row[0]);
    // Absence of the new placement record is the legacy omission fallback.

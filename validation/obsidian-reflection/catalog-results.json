@@ -1,0 +1,112 @@
+{
+  "baseline": "5ba56ea2b3014255038070553ba037047c2abdeb",
+  "native": {
+    "pass": true,
+    "old43Exact": true,
+    "playerExecuted": false,
+    "reproduced": 3,
+    "cases": [
+      {
+        "tag": "default",
+        "prefabs": 44,
+        "placed": 1,
+        "obsidianColliders": 1
+      },
+      {
+        "tag": "custom",
+        "prefabs": 44,
+        "placed": 1,
+        "obsidianColliders": 1
+      },
+      {
+        "tag": "zero",
+        "prefabs": 44,
+        "placed": 1,
+        "obsidianColliders": 0
+      },
+      {
+        "tag": "nonsolid",
+        "prefabs": 44,
+        "placed": 1,
+        "obsidianColliders": 0
+      },
+      {
+        "tag": "missing",
+        "prefabs": 43,
+        "placed": 0,
+        "obsidianColliders": 0
+      },
+      {
+        "tag": "version",
+        "prefabs": 43,
+        "placed": 0,
+        "obsidianColliders": 0
+      },
+      {
+        "tag": "nonfinite",
+        "prefabs": 43,
+        "placed": 0,
+        "obsidianColliders": 0
+      },
+      {
+        "tag": "oversized",
+        "prefabs": 43,
+        "placed": 0,
+        "obsidianColliders": 0
+      },
+      {
+        "tag": "negativeRadius",
+        "prefabs": 43,
+        "placed": 0,
+        "obsidianColliders": 0
+      },
+      {
+        "tag": "zeroHeight",
+        "prefabs": 43,
+        "placed": 0,
+        "obsidianColliders": 0
+      }
+    ]
+  },
+  "web": {
+    "pass": true,
+    "formalExport": true,
+    "geometryExact": true,
+    "cases": [
+      {
+        "tag": "default",
+        "radius": 0.4,
+        "height": 1.58,
+        "savedCatalog": true,
+        "visible": true
+      },
+      {
+        "tag": "custom",
+        "radius": 0.75,
+        "height": 2.4,
+        "savedCatalog": true,
+        "visible": true
+      },
+      {
+        "tag": "zero",
+        "radius": 0,
+        "height": 1.9,
+        "savedCatalog": true,
+        "visible": true
+      },
+      {
+        "tag": "nonsolid",
+        "radius": 0,
+        "height": 2.4,
+        "savedCatalog": true,
+        "visible": true
+      }
+    ]
+  },
+  "productChange": "Accept finite radius >= 0 and height > 0; only create mesh collider for positive radius. All bounded mesh checks unchanged.",
+  "legacyScope": "Previous reader source control flow check from batch114, not an old binary execution; optional schema unchanged.",
+  "limits": [
+    "Player/mobile/full gameplay not executed",
+    "Default visual/material/reflection source unchanged; no new visual tuning"
+  ]
+}
