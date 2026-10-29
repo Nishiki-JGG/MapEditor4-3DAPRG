@@ -54,3 +54,8 @@ Unityの`tests/unity/Rail128Checks.cs`は、テスト専用プロジェクトの
 `node tests/mine-rail-input-boundary.cjs`が三件（右／中を別々に検証するため計4ケース）を検査する。修正前は全4ケース不合格、修正後は全4ケース合格。`mine-rail-drag.cjs`、`mine-rails-placement.cjs`、`placement-shortcuts.cjs`も再実行して合格。manifest監査も通過。
 
 今回の差分は入力と案内・テスト・記録のみ。Nativeソース・mesh・材質・export契約は変更せず、再回帰で出した6部品の配置値も128と完全一致したため、完了済みUnity生成／保存検証は再実行していない。独立再レビューと公開前手順は引き続き必要。
+
+
+## 公開準備130
+
+bf697a27の独立機能再レビューは合格。キャッシュURLを各製品scriptのSHAへ同期し、固定sampleはキーのみ更新した。復号した完成データはキー以外完全一致、岩再生成0。生成を禁止した実読込でも2bundleとも読込・通行再利用に成功した。未合格岩壁bff626b3は祖先でなく、terrain・水面・氷床の差分はない。公開後はrelease.jsonのhashと実入力のドラッグ・取消・タッチ・保存再読込を照合する。
