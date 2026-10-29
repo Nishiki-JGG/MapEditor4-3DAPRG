@@ -1475,32 +1475,49 @@ function touchMat(base) {
   }
   return touchMats.get(base);
 }
-const propMeshes = PROP.map(t => {
+const propMeshes = new Array(PROP.length);
+function createPropMesh(t, capacity) {
   const source = t.mineSpoil ? TDMineSpoil.material() : t.mineCutRock ? TDMineCutRock.material() : t.mineCart ? TDMineCart.material() : t.mineRail ? TDMineRails.material() : t.sharedAsset ? TDSharedProps.material(t.sharedAsset) : t.id==='miningtools'?miningToolMat:PROP_MATS[t.material] || propMat;
   const base = t.id==='obsidian'?TDObsidianReflection.material(source):TDChestSurface.ids.includes(t.id)?TDChestSurface.material(source,t.id,timeU,hemi) : t.surface ? TDSmallPropSurface.material(source,t.surface) : TDFibreFinish.ids.includes(t.id)?TDFibreFinish.material(source,t.id) : t.material==='chestmetal' ? TDChestSeries.material(t.id,timeU,hemi) : source;
-  const m = new THREE.InstancedMesh(t.geo, t.touch ? touchMat(base) : base, CAP);
-  if(t.sharedAsset&&TDSharedProps.asset(t.sharedAsset).rootGrounding){m.userData.rootSlope=new THREE.InstancedBufferAttribute(new Float32Array(CAP*2),2);t.geo.setAttribute('rootSlope',m.userData.rootSlope);m.userData.rootTerrain=new THREE.InstancedBufferAttribute(new Float32Array(CAP*4),4);t.geo.setAttribute('rootTerrain',m.userData.rootTerrain);}
-  if (t.touch) { m.userData.touch = new THREE.InstancedBufferAttribute(new Float32Array(CAP * 3), 3).setUsage(THREE.DynamicDrawUsage); t.geo.setAttribute('touch', m.userData.touch); }
-  m.castShadow = m.receiveShadow = true; m.frustumCulled = false; m.count = 0;
+  const m = new THREE.InstancedMesh(t.geo, t.touch ? touchMat(base) : base, capacity);
+  if(t.sharedAsset&&TDSharedProps.asset(t.sharedAsset).rootGrounding){m.userData.rootSlope=new THREE.InstancedBufferAttribute(new Float32Array(capacity*2),2);t.geo.setAttribute('rootSlope',m.userData.rootSlope);m.userData.rootTerrain=new THREE.InstancedBufferAttribute(new Float32Array(capacity*4),4);t.geo.setAttribute('rootTerrain',m.userData.rootTerrain);}
+  if (t.touch) { m.userData.touch = new THREE.InstancedBufferAttribute(new Float32Array(capacity * 3), 3).setUsage(THREE.DynamicDrawUsage); t.geo.setAttribute('touch', m.userData.touch); }
+  m.castShadow = m.receiveShadow = true; m.frustumCulled = false; m.count = 0; m.renderOrder = dimU.value > .01 ? 7 : 0;
   if(t.sharedAsset&&(t.sharedAsset==='pine'||TDSharedProps.asset(t.sharedAsset).wind)){m.customDepthMaterial=TDPineWind.shadowMaterial(m.material);m.customDistanceMaterial=TDPineWind.shadowMaterial(m.material,true);}
   if(t.id==='treasurechest_gold'){m.customDepthMaterial=TDChestSurface.shadowMaterial(t.id);m.customDistanceMaterial=TDChestSurface.shadowMaterial(t.id,false,true);}
   if (t.canopy) m.receiveShadow = false;   // lumpy canopies shadow themselves in patches; their soft normals already shade them (and it is cheaper)
-  m.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(CAP * 3), 3);
-  if (m.material === rockMat) { m.userData.cliffI = new THREE.InstancedBufferAttribute(new Float32Array(CAP), 1); t.geo.setAttribute('cliffI', m.userData.cliffI); }
+  m.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(capacity * 3), 3);
+  if (m.material === rockMat) { m.userData.cliffI = new THREE.InstancedBufferAttribute(new Float32Array(capacity), 1); t.geo.setAttribute('cliffI', m.userData.cliffI); }
   scene.add(m); return m;
-});
+}
 const ghostMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .88, metalness: 0, flatShading: true, transparent: true, opacity: .28, depthWrite: false });
 // faded cards: the cut-out test runs after the fade (opacity .28), so it must sit below .42 × .28 or every leaf would vanish
 const ghostCardMat = ghostMat.clone(); ghostCardMat.map = atlasTex; ghostCardMat.alphaTest = .1; ghostCardMat.side = THREE.DoubleSide;
 const ghostCardMat2 = ghostCardMat.clone(); ghostCardMat2.map = atlasTex2;
-const ghostMeshes = PROP.map(t => {
+const ghostMeshes = new Array(PROP.length);
+function createGhostMesh(t, capacity) {
   const root=t.sharedAsset&&TDSharedProps.asset(t.sharedAsset).rootGrounding,g=root?(()=>{const g=new THREE.BufferGeometry();g.setIndex(t.geo.index);for(const[name,a]of Object.entries(t.geo.attributes))g.setAttribute(name,a);g.boundingBox=t.geo.boundingBox;g.boundingSphere=t.geo.boundingSphere;return g;})():t.geo;
-  const m = new THREE.InstancedMesh(g, t.sharedAsset ? TDSharedProps.material(t.sharedAsset, true) : t.material === 'cards' ? ghostCardMat : t.material === 'cards2' ? ghostCardMat2 : t.surface ? TDSmallPropSurface.material(ghostMat,t.surface) : ghostMat, 256);
-  if(root){m.userData.rootSlope=new THREE.InstancedBufferAttribute(new Float32Array(256*2),2);g.setAttribute('rootSlope',m.userData.rootSlope);m.userData.rootTerrain=new THREE.InstancedBufferAttribute(new Float32Array(256*4),4);g.setAttribute('rootTerrain',m.userData.rootTerrain);}
+  const m = new THREE.InstancedMesh(g, t.sharedAsset ? TDSharedProps.material(t.sharedAsset, true) : t.material === 'cards' ? ghostCardMat : t.material === 'cards2' ? ghostCardMat2 : t.surface ? TDSmallPropSurface.material(ghostMat,t.surface) : ghostMat, capacity);
+  if(root){m.userData.rootSlope=new THREE.InstancedBufferAttribute(new Float32Array(capacity*2),2);g.setAttribute('rootSlope',m.userData.rootSlope);m.userData.rootTerrain=new THREE.InstancedBufferAttribute(new Float32Array(capacity*4),4);g.setAttribute('rootTerrain',m.userData.rootTerrain);}
   m.frustumCulled = false; m.count = 0; m.renderOrder = 8;
-  m.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(256 * 3), 3);
+  m.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(capacity * 3), 3);
   scene.add(m); return m;
-});
+}
+// Allocate only placed types, with spare capacity for editing; no 8,000-instance reservation per catalogue entry.
+function preparePropMeshes() {
+  const normal = new Uint32Array(PROP.length), faded = new Uint32Array(PROP.length);
+  for (const p of props) { normal[p[0]]++; if (ghosts.has(p)) faded[p[0]]++; }
+  for (const [pool, counts, limit, create] of [[propMeshes, normal, CAP, createPropMesh], [ghostMeshes, faded, 256, createGhostMesh]]) {
+    for (let i = 0; i < PROP.length; i++) {
+      const needed = PROP[i].geo.userData.groundParts ? 0 : Math.min(limit, counts[i]);
+      const old = pool[i];
+      if (old && (!needed || old.instanceMatrix.count < needed)) {
+        scene.remove(old); old.dispose(); old.geometry.dispose(); delete pool[i];
+      }
+      if (needed && !pool[i]) pool[i] = create(PROP[i], Math.min(limit, Math.max(16, 2 ** Math.ceil(Math.log2(needed)))));
+    }
+  }
+}
 let ghosts = new Set();   // props currently faded because the player is inside them
 const VIS_R = PROP.map(t => t.vis);
 // 'common' parts appear under every biome in the palette
@@ -1595,6 +1612,7 @@ function groundedMeshes(type,ghost,needed){
 function rebuildProps(visualOnly = false) {
   if(!visualOnly)TDMineRails.invalidate();
   refreshCliffFits(visualOnly);
+  preparePropMeshes();
   glowTick = 0;
   const cnt = PROP.map(() => 0), gcnt = PROP.map(() => 0);
   touchIdx.clear(); touchProps = [];touchGrid.clear();
@@ -1618,7 +1636,7 @@ function rebuildProps(visualOnly = false) {
     if (!ghost && mesh.userData.touch) { touchIdx.set(p, c[t]); touchProps.push(p);indexTouch(p); }
     c[t]++;
   }
-  for (const m of propMeshes) if (m.userData.touch) { m.userData.touch.array.fill(0); m.userData.touch.needsUpdate = true; }
+  for (const m of propMeshes) if (m?.userData.touch) { m.userData.touch.array.fill(0); m.userData.touch.needsUpdate = true; }
   for (const [p, st] of touchState) if (touchIdx.has(p)) writeTouch(p, st); else touchState.delete(p);
   propMeshes.forEach((m, t) => { m.count = PROP[t].geo.userData.groundParts?0:cnt[t]; m.instanceMatrix.needsUpdate = true; m.instanceColor.needsUpdate = true; if (m.userData.cliffI) m.userData.cliffI.needsUpdate = true; });
   ghostMeshes.forEach((m, t) => { m.count = PROP[t].geo.userData.groundParts?0:gcnt[t]; m.instanceMatrix.needsUpdate = true; m.instanceColor.needsUpdate = true; });
@@ -3104,7 +3122,7 @@ function applyDim(v) {
     m.opacity = 1 - .55 * v;
   }
   // draw props after the overlay so the colours show through them
-  for (const m of propMeshes) m.renderOrder = see ? 7 : 0;
+  for (const m of propMeshes) if (m) m.renderOrder = see ? 7 : 0;
 }
 function setWalkView(on) {
   state.showWalk = on; walkOverlay.visible = on; $('walkView').classList.toggle('on', on);
