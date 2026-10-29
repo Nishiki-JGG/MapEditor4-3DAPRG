@@ -695,18 +695,19 @@ function rebuildCliffRelief(){
   clearTimeout(cliffReliefTimer);cliffReliefTimer=0;
   // Reconstruct only steep cells and their shoulder ring; never change editable H.
   const oldSurface=terrain.geometry;
-  const visual=TDCliffShoulder.build(tGeo,N,CELL,{mask:shoulderMask()});
+  const visual=TDCliffShoulder.build(tGeo,N,CELL,{mask:shoulderMask(),waterLevel:state.water});
   terrain.geometry=visual;if(oldSurface!==tGeo)oldSurface.dispose();
+  rebuildSmoothWater(visual);
   const geometry=TDCliffRelief.build(visual,heightAt,HALF,fallReliefMask);cliffRelief.geometry.dispose();cliffRelief.geometry=geometry;
   cliffRelief.visible=geometry.index.count>0;
 }
-// Suppress height interpolation near links, water, the rim and fitted rocks.
+// Suppress height interpolation near links, the rim and fitted rocks.
+// Water uses the same derived surface, so its shoreline and the beach cannot separate.
 function shoulderMask(){
  const memo=new Map(),rocks=new SpatialHash(4);
  for(const p of props)if(cliffFits?.valid(p))rocks.add(p,p[1],p[2]);
  return(x,z)=>{const key=Math.round(x*32)+','+Math.round(z*32);if(memo.has(key))return memo.get(key);let m=1;
   m*=sstep(0,.5,HALF-Math.max(Math.abs(x),Math.abs(z)));
-  m*=sstep(.12,.45,Math.abs(heightAt(x,z)-state.water));
   const keep=(distance,radius)=>{m=Math.min(m,sstep(radius,radius+.4,distance));};
   for(const b of bridges)keep(distToPolyline(x,z,[[b.x1,b.z1],[b.x2,b.z2]]),b.w/2+.4);
   for(const st of stairs)keep(distToPolyline(x,z,[[st.x1,st.z1],[st.x2,st.z2]]),st.w/2+.4);
@@ -1056,6 +1057,19 @@ const waterMat = new THREE.ShaderMaterial({
       #include <colorspace_fragment>
     }`,
 });
+// Share the refined beach contour with the water's depth field. Only wet/shore
+// triangles are submitted; dry cliff subdivisions add no water draw work.
+function rebuildSmoothWater(surface){
+ const p=surface.attributes.position,ids=surface.index.array,tri=[],used=[],remap=new Map();
+ const vertex=id=>{if(!remap.has(id)){remap.set(id,used.length);used.push(id);}return remap.get(id);};
+ for(let k=0;k<ids.length;k+=3)if(state.water-Math.min(p.getY(ids[k]),p.getY(ids[k+1]),p.getY(ids[k+2]))> -1.5)tri.push(vertex(ids[k]),vertex(ids[k+1]),vertex(ids[k+2]));
+ const positions=new Float32Array(used.length*3),depth=new Float32Array(used.length),shore=new Float32Array(used.length*4),shore2=new Float32Array(used.length*2);
+ const sample=(attr,x,z,out,k)=>{const fx=clamp((x+HALF)/CELL,0,N-1),fz=clamp((z+HALF)/CELL,0,N-1),i=Math.min(N-2,Math.floor(fx)),j=Math.min(N-2,Math.floor(fz)),u=fx-i,v=fz-j,a=attr.array,m=attr.itemSize;
+  for(let c=0;c<m;c++)out[k*m+c]=lerp(lerp(a[(j*N+i)*m+c],a[(j*N+i+1)*m+c],u),lerp(a[((j+1)*N+i)*m+c],a[((j+1)*N+i+1)*m+c],u),v);};
+ for(let k=0;k<used.length;k++){const id=used[k],x=p.getX(id),z=p.getZ(id);positions[k*3]=x;positions[k*3+2]=z;depth[k]=state.water-p.getY(id);sample(wGeo.attributes.shore,x,z,shore,k);sample(wGeo.attributes.shore2,x,z,shore2,k);}
+ const g=new THREE.BufferGeometry();for(const [name,array,size]of [['position',positions,3],['depth',depth,1],['shore',shore,4],['shore2',shore2,2]])g.setAttribute(name,new THREE.BufferAttribute(array,size));g.setIndex(tri);g.computeBoundingSphere();
+ if(water.geometry!==wGeo)water.geometry.dispose();water.geometry=g;
+}
 const water = new THREE.Mesh(wGeo, waterMat);
 water.renderOrder = 2;
 scene.add(water);
@@ -1302,6 +1316,7 @@ function updateTerrain() {
   tGeo.computeVertexNormals();
   const slopeField=tGeo.attributes.reliefSlope;for(let k=0;k<N*N;k++)slopeField.array[k]=1-tGeo.attributes.normal.getY(k);slopeField.needsUpdate=true;
   if(terrain.geometry!==tGeo){terrain.geometry.dispose();terrain.geometry=tGeo;}
+  if(water.geometry!==wGeo){water.geometry.dispose();water.geometry=wGeo;}
   tGeo.computeBoundingSphere(); tGeo.computeBoundingBox();
   scheduleCliffRelief();
   const spos = sGeo.attributes.position.array;

@@ -9,14 +9,19 @@ function cubic(a,b,c,d,t){
 function build(source,n,cell,options={}){
  const p=source.attributes.position,half=(n-1)*cell/2,maxDelta=options.maxDelta??.15,mask=options.mask||(()=>1),attrs=source.attributes;
  const H=(i,j)=>p.getY(clamp(j,0,n-1)*n+clamp(i,0,n-1));
+ // Remove the grid-frequency zigzag before interpolation, with a bounded visual-only
+ // correction. A cubic through the unfiltered grid preserves every stair-step corner.
+ const filtered=new Float32Array(n*n);
+ for(let j=0;j<n;j++)for(let i=0;i<n;i++){let sum=0;for(let dz=-1;dz<=1;dz++)for(let dx=-1;dx<=1;dx++)sum+=H(i+dx,j+dz)*(dx===0?2:1)*(dz===0?2:1);filtered[j*n+i]=H(i,j)+(sum/16-H(i,j))*.65;}
+ const Q=(i,j)=>filtered[clamp(j,0,n-1)*n+clamp(i,0,n-1)];
  const at=(x,z)=>{const fx=clamp((x+half)/cell,0,n-1),fz=clamp((z+half)/cell,0,n-1),i=Math.min(n-2,Math.floor(fx)),j=Math.min(n-2,Math.floor(fz)),u=fx-i,v=fz-j;
- const rows=[];for(let k=-1;k<=2;k++)rows.push(cubic(H(i-1,j+k),H(i,j+k),H(i+1,j+k),H(i+2,j+k),u));
+ const rows=[];for(let k=-1;k<=2;k++)rows.push(cubic(Q(i-1,j+k),Q(i,j+k),Q(i+1,j+k),Q(i+2,j+k),u));
  const smooth=cubic(...rows,v),linear=(H(i,j)*(1-u)+H(i+1,j)*u)*(1-v)+(H(i,j+1)*(1-u)+H(i+1,j+1)*u)*v;
  return linear+clamp(smooth-linear,-maxDelta,maxDelta)*mask(x,z);};
  // One continuous slope field controls grass/rock coverage. Relief normals light the stone only.
  const frame=(x,z)=>{const e=cell*.5,dx=(at(x+e,z)-at(x-e,z))/(2*e),dz=(at(x,z+e)-at(x,z-e))/(2*e),l=Math.hypot(dx,1,dz);return[-dx/l,1/l,-dz/l];};
  const M=n-1,core=new Uint8Array(M*M),fine=new Uint8Array(M*M);let refined=0;
- for(let j=0;j<M;j++)for(let i=0;i<M;i++){const a=[H(i,j),H(i+1,j),H(i,j+1),H(i+1,j+1)];if(Math.max(...a)-Math.min(...a)>.20)core[j*M+i]=1;}
+ for(let j=0;j<M;j++)for(let i=0;i<M;i++){const a=[H(i,j),H(i+1,j),H(i,j+1),H(i+1,j+1)];if(Math.max(...a)-Math.min(...a)>.20||(Number.isFinite(options.waterLevel)&&Math.min(...a)<options.waterLevel+.16&&Math.max(...a)>options.waterLevel-.16&&Math.max(...a)-Math.min(...a)>.00001))core[j*M+i]=1;}
  for(let j=0;j<M;j++)for(let i=0;i<M;i++){for(let dz=-1;dz<=1;dz++)for(let dx=-1;dx<=1;dx++)if(i+dx>=0&&i+dx<M&&j+dz>=0&&j+dz<M&&core[(j+dz)*M+i+dx])fine[j*M+i]=1;if(fine[j*M+i])refined++;}
  const steps=refined>18000?1:refined>4000?2:4;
  const arrays={},sizes={};for(const [key,a]of Object.entries(attrs)){sizes[key]=a.itemSize;arrays[key]=[];}if(!arrays.reliefSlope){arrays.reliefSlope=[];sizes.reliefSlope=1;}
