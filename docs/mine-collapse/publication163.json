@@ -1,0 +1,566 @@
+{
+  "pass": true,
+  "baseMain": "d9ed98e54fe53d28a28fb51540508619bee1e022",
+  "acceptedCandidate": "f560355542d50eb77d992c265c0b6ef523745697",
+  "independentScore": 91,
+  "scoreBreakdown": [
+    26,
+    17,
+    19,
+    20,
+    9
+  ],
+  "web": {
+    "pass": true,
+    "geometry": {
+      "triangles": 162,
+      "vertices": 486,
+      "bounds": [
+        [
+          -1.1200000047683716,
+          0,
+          -0.5529999732971191
+        ],
+        [
+          1.1931240558624268,
+          1.7799999713897705,
+          1.726967453956604
+        ]
+      ],
+      "manifold": true,
+      "types": 163,
+      "caveDecor": 20,
+      "last": "mine_collapsed_wall"
+    },
+    "save": {
+      "loaded": true,
+      "props": true,
+      "collider": true
+    },
+    "load": {
+      "rows": [
+        {
+          "count": 0,
+          "calls": 4,
+          "triangles": 5010,
+          "textures": 11,
+          "meshCount": 0,
+          "sharedMaterial": true,
+          "textureReferences": 0,
+          "cpuSubmissionMedianMs": 0.10000002384185791
+        },
+        {
+          "count": 9,
+          "calls": 5,
+          "triangles": 6468,
+          "textures": 11,
+          "meshCount": 9,
+          "sharedMaterial": true,
+          "textureReferences": 3,
+          "cpuSubmissionMedianMs": 0.10000002384185791
+        },
+        {
+          "count": 225,
+          "calls": 5,
+          "triangles": 41460,
+          "textures": 11,
+          "meshCount": 225,
+          "sharedMaterial": true,
+          "textureReferences": 3,
+          "cpuSubmissionMedianMs": 0.10000002384185791
+        }
+      ],
+      "gpuMeasured": false
+    },
+    "oldOptionalUnchanged": true,
+    "caveDecor20Exported": true,
+    "extensionBytes": 1127301,
+    "errors": []
+  },
+  "loading": {
+    "pass": true,
+    "rows": [
+      {
+        "mode": "pending",
+        "before": {
+          "status": "loading",
+          "error": null
+        },
+        "status": "ready",
+        "hasOptional": true,
+        "assets": 1,
+        "previewShares": true,
+        "bufferChanged": true,
+        "exportAssets": 19,
+        "errors": []
+      },
+      {
+        "mode": "unsupported",
+        "before": {
+          "status": "fallback",
+          "error": "rock PBR decompressor unavailable"
+        },
+        "status": "fallback",
+        "hasOptional": true,
+        "assets": 1,
+        "previewShares": true,
+        "bufferChanged": false,
+        "exportAssets": 19,
+        "errors": []
+      }
+    ]
+  },
+  "cache": {
+    "pass": true,
+    "rows": [
+      {
+        "kind": "sample",
+        "keyMatches": true,
+        "profileMatches": true
+      },
+      {
+        "kind": "sample2",
+        "keyMatches": true,
+        "profileMatches": true
+      }
+    ],
+    "offlineFile": {
+      "status": "ready",
+      "error": null
+    },
+    "bundlesByteIdentical": true,
+    "entriesIdentical": true,
+    "fixedRockRegenerated": 0
+  },
+  "placement": {
+    "pass": true,
+    "placed": {
+      "count": 2,
+      "id": "mine_collapsed_wall",
+      "pose": [
+        0.04000010381433672,
+        1.0000001985293068,
+        0,
+        1,
+        0,
+        1,
+        0
+      ],
+      "previewY": 0,
+      "previewMaterial": "mine-collapsed-fractured-rock"
+    },
+    "scaledRotation": true,
+    "underground": {
+      "id": "mine_collapsed_wall",
+      "y": 0,
+      "terrain": 3.5,
+      "count": 2
+    },
+    "saved": true,
+    "legacy": {
+      "loaded": true,
+      "ids": [
+        "mine_rail_straight",
+        "mine_spoil",
+        "cnd020"
+      ]
+    },
+    "privateHeadless": true,
+    "guiUsed": false
+  },
+  "railDrag": {
+    "pass": true,
+    "pure": [
+      "three straights",
+      "replace provisional tail with -1 turn",
+      "actual mesh port -1",
+      "actual mesh port -1",
+      "actual mesh port -1",
+      "actual mesh port -1",
+      "actual mesh port -1",
+      "actual mesh port -1",
+      "continuous -1 1",
+      "continuous -1 2",
+      "replace provisional tail with 1 turn",
+      "actual mesh port 1",
+      "actual mesh port 1",
+      "actual mesh port 1",
+      "actual mesh port 1",
+      "actual mesh port 1",
+      "actual mesh port 1",
+      "continuous 1 1",
+      "continuous 1 2",
+      "two successive bends",
+      "four curves closed loop",
+      "closed loop stable on pointer release",
+      "retract to earlier endpoint",
+      "existing start sets outward tangent",
+      "finish at matching existing port",
+      "perpendicular end rejected",
+      "end scale mismatch rejected",
+      "end height mismatch rejected",
+      "duplicate/interior overlap rejected",
+      "occupied start rejected",
+      "uneven ground rejected",
+      "impossible short sideways move rejected",
+      "scale and QE heading",
+      "bounded stroke",
+      "map bounds rejected",
+      "225 existing rail scene"
+    ],
+    "final": [
+      [
+        136,
+        2.184924952075562e-08,
+        -1.5200453340469267e-07,
+        0,
+        1,
+        0,
+        1,
+        0
+      ],
+      [
+        136,
+        2.184924952075562e-08,
+        1.9999998479954666,
+        0,
+        1,
+        0,
+        1,
+        0
+      ],
+      [
+        136,
+        2.184924952075562e-08,
+        3.9999998479954666,
+        0,
+        1,
+        0,
+        1,
+        0
+      ],
+      [
+        137,
+        2.184924952075562e-08,
+        5.999999847995467,
+        0,
+        1,
+        0,
+        1,
+        0
+      ],
+      [
+        136,
+        2.0000000218492495,
+        7.999999847995467,
+        1.5707963267948966,
+        1,
+        0,
+        1,
+        0
+      ],
+      [
+        136,
+        4.0000000218492495,
+        7.999999847995467,
+        1.5707963267948966,
+        1,
+        0,
+        1,
+        0
+      ]
+    ],
+    "reload": {
+      "success": true,
+      "equal": true,
+      "count": 6
+    },
+    "cancelModes": [
+      "escape",
+      "cancel",
+      "blur",
+      "type",
+      "tool",
+      "mode",
+      "capture"
+    ],
+    "oneStrokeOneUndo": true,
+    "dragScaleHeadingLocked": true,
+    "ordinaryPropUnchanged": true,
+    "undergroundFloor": true,
+    "timing": {
+      "existing": 225,
+      "maxStroke": 64,
+      "updateMedianMs": 0.6000000238418579,
+      "updateMaxMs": 1.2000000476837158,
+      "gpuMeasured": false
+    },
+    "errors": [],
+    "privateHeadless": true,
+    "gui": false
+  },
+  "railInputBoundary": {
+    "pass": true,
+    "cases": [
+      {
+        "name": "touch curve preview equals committed geometry and pose",
+        "pass": true,
+        "before": {
+          "geometryMatches": true,
+          "position": [
+            7.370881949242403e-08,
+            0,
+            -2.7849011985381367e-09
+          ],
+          "rotation": 1.5707963267948966,
+          "scale": 1,
+          "visible": true
+        },
+        "placed": [
+          {
+            "id": "mine_rail_curve",
+            "position": [
+              7.370881949242403e-08,
+              0,
+              -2.7849011985381367e-09
+            ],
+            "rotation": 1.5707963267948966,
+            "scale": 1
+          }
+        ]
+      },
+      {
+        "name": "left + right chord cancels and hands off camera",
+        "pass": true,
+        "canceled": true,
+        "cameraMoved": true,
+        "stoppedAfterButtonRelease": true,
+        "count": 0,
+        "onlyFirstDown": true,
+        "trace": [
+          {
+            "type": "pointermove",
+            "button": -1,
+            "buttons": 0,
+            "pointerType": "mouse"
+          },
+          {
+            "type": "pointerdown",
+            "button": 0,
+            "buttons": 1,
+            "pointerType": "mouse"
+          },
+          {
+            "type": "pointermove",
+            "button": -1,
+            "buttons": 1,
+            "pointerType": "mouse"
+          },
+          {
+            "type": "pointermove",
+            "button": 2,
+            "buttons": 3,
+            "pointerType": "mouse"
+          },
+          {
+            "type": "pointermove",
+            "button": -1,
+            "buttons": 3,
+            "pointerType": "mouse"
+          },
+          {
+            "type": "pointermove",
+            "button": 2,
+            "buttons": 1,
+            "pointerType": "mouse"
+          },
+          {
+            "type": "pointermove",
+            "button": -1,
+            "buttons": 1,
+            "pointerType": "mouse"
+          },
+          {
+            "type": "pointerup",
+            "button": 0,
+            "buttons": 0,
+            "pointerType": "mouse"
+          }
+        ]
+      },
+      {
+        "name": "left + middle chord cancels and hands off camera",
+        "pass": true,
+        "canceled": true,
+        "cameraMoved": true,
+        "stoppedAfterButtonRelease": true,
+        "count": 0,
+        "onlyFirstDown": true,
+        "trace": [
+          {
+            "type": "pointermove",
+            "button": -1,
+            "buttons": 0,
+            "pointerType": "mouse"
+          },
+          {
+            "type": "pointerdown",
+            "button": 0,
+            "buttons": 1,
+            "pointerType": "mouse"
+          },
+          {
+            "type": "pointermove",
+            "button": -1,
+            "buttons": 1,
+            "pointerType": "mouse"
+          },
+          {
+            "type": "pointermove",
+            "button": 1,
+            "buttons": 5,
+            "pointerType": "mouse"
+          },
+          {
+            "type": "pointermove",
+            "button": -1,
+            "buttons": 5,
+            "pointerType": "mouse"
+          },
+          {
+            "type": "pointermove",
+            "button": 1,
+            "buttons": 1,
+            "pointerType": "mouse"
+          },
+          {
+            "type": "pointermove",
+            "button": -1,
+            "buttons": 1,
+            "pointerType": "mouse"
+          },
+          {
+            "type": "pointerup",
+            "button": 0,
+            "buttons": 0,
+            "pointerType": "mouse"
+          }
+        ]
+      },
+      {
+        "name": "stationary pointer with WASD movement cancels pending rails",
+        "pass": true,
+        "motion": {
+          "active": false,
+          "target": [
+            -1.4813185282075498,
+            0,
+            -2.058090119500677
+          ],
+          "previewCount": 0
+        },
+        "count": 0
+      }
+    ],
+    "errors": [],
+    "privateHeadless": true,
+    "gui": false
+  },
+  "demandAllocation": {
+    "allTypes": 163,
+    "allocatedTypes": 160,
+    "serializationUnchanged": true,
+    "growth": [
+      16,
+      32,
+      128
+    ],
+    "reload": 65,
+    "gl": 0,
+    "errors": []
+  },
+  "shortcuts": {
+    "pass": true,
+    "cases": [
+      "Ctrl wheel changes scale without preview or camera zoom",
+      "scale slider and readout synchronized",
+      "Q wraps 0 to345",
+      "E wraps345 to0",
+      "held E repeats on existing15 degree grid",
+      "placement Q/E does not turn camera",
+      "scale upper clamp",
+      "Ctrl wheel still consumed at maximum",
+      "scale lower clamp",
+      "horizontal wheel fallback",
+      "zero delta stable",
+      "type switch preserves settings",
+      "body Ctrl wheel scales placement and cancels browser zoom",
+      "UI Ctrl wheel shrinks placement: menuBtn",
+      "UI Ctrl wheel shrinks placement: placeScale",
+      "UI Ctrl wheel shrinks placement: placeScaleV",
+      "Ctrl takes priority over Shift for placement",
+      "ordinary wheel retains camera zoom",
+      "Shift wheel brush radius retained",
+      "focused input keeps typing",
+      "focused textarea keeps typing",
+      "focused select keeps typing",
+      "focused div keeps typing",
+      "modified keys and IME do not rotate placement",
+      "other tool leaves Ctrl zoom unconsumed",
+      "other edit tool Q rotates camera",
+      "mode switch while Q held does not rotate place camera",
+      "walk E retains view rotation",
+      "walk Ctrl wheel is not intercepted",
+      "walk ordinary wheel retains zoom"
+    ],
+    "uiBefore": {
+      "dpr": 1,
+      "width": 1280,
+      "scale": 1,
+      "button": 30,
+      "placement": 1.25,
+      "dist": 12
+    },
+    "uiAfter": {
+      "dpr": 1,
+      "width": 1280,
+      "scale": 1,
+      "button": 30,
+      "placement": 1.3,
+      "dist": 12
+    },
+    "preview": {
+      "scale": 1.25,
+      "rotation": 45,
+      "previewScale": 1.25,
+      "previewAngle": 0.7853981633974483,
+      "expectedScale": 1.25,
+      "geometry": true,
+      "dist": 12,
+      "viewportScale": 1
+    },
+    "placed": {
+      "count": 1,
+      "scale": 1.25,
+      "angle": 0.7853981633974483,
+      "id": "smallbarrel"
+    },
+    "ground": {
+      "parts": 9,
+      "match": true,
+      "scale": 0.9600000000000002,
+      "angle": 6.021385919380437
+    },
+    "saved": {
+      "randomPreserved": true,
+      "propsExact": true,
+      "props": 3,
+      "gl": 0
+    },
+    "privateHeadless": true,
+    "guiUsed": false,
+    "uploads": 0
+  },
+  "acceptedProductBytesUnchanged": true,
+  "nativeEvidence": "Reuse162: identical product sources and exported PNG hashes; no new Editor execution in163. Legacy optional cases144 reused. Player/old Reader binary/GPU/mobile/full session unexecuted."
+}

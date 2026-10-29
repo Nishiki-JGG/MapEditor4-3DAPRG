@@ -1,0 +1,508 @@
+{
+  "web": {
+    "pass": true,
+    "geometry": {
+      "triangles": 162,
+      "vertices": 486,
+      "bounds": [
+        [
+          -1.1200000047683716,
+          0,
+          -0.5529999732971191
+        ],
+        [
+          1.1931240558624268,
+          1.7799999713897705,
+          1.726967453956604
+        ]
+      ],
+      "manifold": true,
+      "types": 163,
+      "caveDecor": 20,
+      "last": "mine_collapsed_wall"
+    },
+    "save": {
+      "loaded": true,
+      "props": true,
+      "collider": true
+    },
+    "load": {
+      "rows": [
+        {
+          "count": 0,
+          "calls": 4,
+          "triangles": 9618,
+          "textures": 47,
+          "meshCount": 0,
+          "sharedMaterial": true,
+          "textureReferences": 3,
+          "cpuSubmissionMedianMs": 4.699999928474426
+        },
+        {
+          "count": 9,
+          "calls": 5,
+          "triangles": 11076,
+          "textures": 47,
+          "meshCount": 9,
+          "sharedMaterial": true,
+          "textureReferences": 3,
+          "cpuSubmissionMedianMs": 5.200000047683716
+        },
+        {
+          "count": 225,
+          "calls": 5,
+          "triangles": 46068,
+          "textures": 47,
+          "meshCount": 225,
+          "sharedMaterial": true,
+          "textureReferences": 3,
+          "cpuSubmissionMedianMs": 5
+        }
+      ],
+      "gpuMeasured": false
+    },
+    "oldOptionalUnchanged": true,
+    "caveDecor20Exported": true,
+    "extensionBytes": 1127301,
+    "errors": []
+  },
+  "fracture": {
+    "pass": true,
+    "twoMajorJointPlanes": true,
+    "maximumJointErrorM": 2.220446049250313e-16,
+    "uniqueContactVertices": 3,
+    "mainContactAreaM2": 0.26247382151368914,
+    "triangles": 162,
+    "closedOutwardVolumes": 8,
+    "volumes": [
+      2.097069486324123,
+      0.25721276603711446,
+      0.03419261005244815,
+      0.0006619576936688844,
+      0.001398385674149047,
+      0.000569697325412664,
+      0.0004021394444587463,
+      0.00022299706914204886
+    ],
+    "matchedFracturePoints": 10,
+    "originalCoordinateUV": true,
+    "nondegenerateUV": true,
+    "mainContactPlaneY": 0,
+    "mainContactVertices": 14
+  },
+  "loader": {
+    "pass": true,
+    "rows": [
+      {
+        "mode": "valid",
+        "pending": "loading",
+        "status": "ready",
+        "error": null,
+        "sharedTextures": 3
+      },
+      {
+        "mode": "missing",
+        "pending": "fallback",
+        "status": "fallback",
+        "error": null,
+        "sharedTextures": 3
+      },
+      {
+        "mode": "badHeader",
+        "pending": "fallback",
+        "status": "fallback",
+        "error": "rock PBR header/bounds",
+        "sharedTextures": 3
+      },
+      {
+        "mode": "badData",
+        "pending": "loading",
+        "status": "fallback",
+        "error": "TypeError",
+        "sharedTextures": 3
+      },
+      {
+        "mode": "noDecoder",
+        "pending": "fallback",
+        "status": "fallback",
+        "error": "rock PBR decompressor unavailable",
+        "sharedTextures": 3
+      },
+      {
+        "mode": "overrun",
+        "pending": "loading",
+        "status": "fallback",
+        "error": "rock PBR expanded bound",
+        "sharedTextures": 3
+      }
+    ],
+    "geometryUnchanged": true,
+    "uvChanged": true,
+    "offlineInlinePayload": true,
+    "networkRequests": 0
+  },
+  "browser": {
+    "pass": true,
+    "rows": [
+      {
+        "mode": "pending",
+        "before": {
+          "status": "loading",
+          "error": null
+        },
+        "status": "ready",
+        "hasOptional": true,
+        "assets": 1,
+        "previewShares": true,
+        "bufferChanged": true,
+        "exportAssets": 19,
+        "errors": []
+      },
+      {
+        "mode": "unsupported",
+        "before": {
+          "status": "fallback",
+          "error": "rock PBR decompressor unavailable"
+        },
+        "status": "fallback",
+        "hasOptional": true,
+        "assets": 1,
+        "previewShares": true,
+        "bufferChanged": false,
+        "exportAssets": 19,
+        "errors": []
+      }
+    ]
+  },
+  "cache": {
+    "pass": true,
+    "rows": [
+      {
+        "kind": "sample",
+        "keyMatches": true,
+        "profileMatches": true
+      },
+      {
+        "kind": "sample2",
+        "keyMatches": true,
+        "profileMatches": true
+      }
+    ],
+    "offlineFile": {
+      "status": "ready",
+      "error": null
+    },
+    "bundlesByteIdentical": true,
+    "entriesIdentical": true,
+    "fixedRockRegenerated": 0
+  },
+  "native": {
+    "pass": true,
+    "cases": [
+      {
+        "tag": "valid",
+        "savedReload": "passed save-destroy-reinstantiate",
+        "prefabs": 51,
+        "placed": 2,
+        "old50Preserved": true
+      }
+    ],
+    "error": "",
+    "limitations": [
+      "Background Editor only; Player/mobile/GPU timing not measured.",
+      "Old Reader binary not executed; unknown optional field follows previous source control flow.",
+      "Independent collapsed wall prop; no original terrain or fixed rock samples replaced."
+    ]
+  },
+  "load": {
+    "cases": [
+      {
+        "placed": 9,
+        "visible": 9,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 3,
+        "meshBytes": 73512,
+        "textureBytes": 4022549,
+        "cpuRenderMedianMs": 0.8729,
+        "gpuMeasured": false
+      },
+      {
+        "placed": 225,
+        "visible": 225,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 3,
+        "meshBytes": 73512,
+        "textureBytes": 4022549,
+        "cpuRenderMedianMs": 1.3749,
+        "gpuMeasured": false
+      }
+    ],
+    "limitation": "CPU Render submission, not GPU or game-frame guarantee"
+  },
+  "mine": {
+    "pass": true,
+    "source": "Product mine tunnel generator: 14m line, width2.4m, height2.8m, terrain3.5m",
+    "formalTunnelImporter": true,
+    "formalRailPrefabs": 2,
+    "formalCollapsedWallPrefab": true,
+    "centralCorridorClear": true,
+    "existingLights": 2,
+    "originalGameSceneChanged": false,
+    "player": false,
+    "limitation": "Authored product mine test map. CollapsedWall scale0.30 beside 2.4m-wide rail corridor; full-size mound belongs in wider alcoves. Separate actual game cave review retained."
+  },
+  "cave": {
+    "pass": true,
+    "seed": 71421,
+    "cells": 648,
+    "torches": 21,
+    "placement": {
+      "x": -6.25,
+      "y": 0.0,
+      "z": 46.849998474121094
+    },
+    "cameraPosition": {
+      "x": -6.25,
+      "y": 9.0,
+      "z": 39.95000076293945
+    },
+    "cameraEuler": {
+      "x": 53.77506637573242,
+      "y": 0.0,
+      "z": 0.0
+    },
+    "fov": 50.0,
+    "nearestTorchDistance": 5.333827972412109
+  },
+  "status": "review candidate; not independently accepted or published",
+  "selfScore": {
+    "visual": 26,
+    "material": 17,
+    "structure": 19,
+    "webUnity": 20,
+    "lightness": 9,
+    "total": 91
+  },
+  "protectedFiles": [
+    {
+      "path": "prepared/sample-64-7-20e41c31af17.js",
+      "sha256": "3d86894829ac3a1953c1b35280df19a15820474525254ac6fe76818fb4c6e171"
+    },
+    {
+      "path": "prepared/sample-64-7-8dd662146443.js",
+      "sha256": "06fe3f8f63cdbfdb01cf3f32649c049761707a3c408b14a4d14a65d65f7147bb"
+    },
+    {
+      "path": "prepared/sample-64-7-da62656b0ab9.js",
+      "sha256": "38c1fcfdabe6e9724705e592f374f9069a3a444156fff6b6eaa93ce942dffd7b"
+    },
+    {
+      "path": "prepared/sample-64-7-dabae8cefccc.js",
+      "sha256": "7c895bcb4fa6c008610297f410955c7430a919d40d7f46ee6001fa3b517e84a2"
+    },
+    {
+      "path": "prepared/sample2-48-11-0c35164e2e96.js",
+      "sha256": "d3f1dafe0d6b8638e81b6e4dd167ae086e8052a3e2561e47e52ec14de1389c7d"
+    },
+    {
+      "path": "prepared/sample2-48-11-120b6b123ed7.js",
+      "sha256": "5dcbb80d8f5436a6a6ecb11915b743ab6b57e2cce16e7084d7c1708e9c153404"
+    },
+    {
+      "path": "prepared/sample2-48-11-64c3ed35b328.js",
+      "sha256": "c3aec44b1c41072f91d564633e3936779a613774faeebfbcb628b5b707e534df"
+    },
+    {
+      "path": "prepared/sample2-48-11-b9ee80d8b56c.js",
+      "sha256": "460e2752afc7406547526e440a9a4aadaeda1990aa260999559f860653d444e6"
+    },
+    {
+      "path": "props/cave-decor.js",
+      "sha256": "abf74ab0b78918409e80854060e0291cda33f30ed758a7c4d46a29e12ddaead1"
+    },
+    {
+      "path": "props/cave-save-compat.js",
+      "sha256": "d28de753a80c2e76b7401d145f5f35ce810cc06eb5d5136a39ea6c90d067a8bf"
+    },
+    {
+      "path": "props/iceblock.js",
+      "sha256": "7cdfc6c9236924d9cbc2b0bb0e46cde0ff43480a92f994622008bc9bb7794828"
+    },
+    {
+      "path": "props/icespike.js",
+      "sha256": "7a900acaa72166b1ce8669f8c7abfc1acafb2a5d90f8b10a6ac2c514962b6949"
+    },
+    {
+      "path": "props/mine-cut-rock.js",
+      "sha256": "249b6979eeec4ce30fa181b60004094bc7296f6de1783fa4d1e275b64b960b3b"
+    },
+    {
+      "path": "props/mine-rail-drag.js",
+      "sha256": "7103ee81b1d164a608c14c0701e3fc728f060a0ed0034bb76fd4c92ed3d5241a"
+    },
+    {
+      "path": "props/mine-rails.js",
+      "sha256": "a64ac22e284c820939cd7e33b26e44f933e5455365b2709fa07387a99b018bde"
+    },
+    {
+      "path": "props/mine-spoil.js",
+      "sha256": "efdde095fd8c6636b89522a56e7cd739efc49574c0ba89c82635217e4dec9078"
+    },
+    {
+      "path": "props/rock.js",
+      "sha256": "5611624e81867d7ef0b1cc02bae782fa188359e28265ef02c81ca368fc7bafd1"
+    },
+    {
+      "path": "props/shared/cave-decor-data.js",
+      "sha256": "5939db717735b0bc3400f5decf360bc3e6aaec12c75f0abbbb26c616269ba57c"
+    },
+    {
+      "path": "props/shared/cave-save-compat.js",
+      "sha256": "00e6a024ff9666cb5e10024571ec606cae769a7e0b7b36dd7d0c6acaadb42520"
+    },
+    {
+      "path": "props/shared/rock-surface.js",
+      "sha256": "8c98b6282d5995ecfb9653d2eb8cb7a32dda541fa99de94f703a94b319ca63fc"
+    },
+    {
+      "path": "terrain/bedrock-data.js",
+      "sha256": "2e7f935a1e9e689954d9d902e3e1dc6c1df1d6075881df651f4a998f3a146ed2"
+    },
+    {
+      "path": "terrain/bedrock.js",
+      "sha256": "518cb64939de1c02e191cf83b4b9a5fdb3d38104fbd080f7186958b97798eace"
+    },
+    {
+      "path": "water.js",
+      "sha256": "2ef9c8a0a5098aec15787eb50fdfc51c3bfc7cbf60dd86b8c8463042e7fad8ab"
+    },
+    {
+      "path": "props/small-prop-export.js",
+      "sha256": "75dee5f9730c578420a310eba54d8831a913b9b7e66ddf4a509ba893a3631483"
+    },
+    {
+      "path": "unity/Assets/MapSharedProps/Editor/SmallPropsV1.cs",
+      "sha256": "94a2ac8d285f629e4864f7afbcd14ab2fa50200f7fd82bee2af9240d7a78e66d"
+    },
+    {
+      "path": "unity/Assets/MapSharedProps/Editor/MineCollapseV1.cs",
+      "sha256": "1df8252d14d02122170d6e0ff67e6e0cd13292cab14086e8f8c86793bf3d6cfd"
+    }
+  ],
+  "manifest": "only source audit hashes updated; entries, keys and completed bundles unchanged",
+  "fixedRockRegenerated": 0,
+  "sourceHashes": {
+    "app.js": {
+      "bytes": 517396,
+      "sha256": "efc944d2110246cdeec2c4bab5d56b8984e95fd91aec29e553e13f277d5f83b4"
+    },
+    "index.html": {
+      "bytes": 31761,
+      "sha256": "c64a49e8605029e2c3bb3bc7f9b66b0d5ec6dbd53a6b7e4040ee125bf0347ef1"
+    },
+    "props/mine-collapse.js": {
+      "bytes": 15243,
+      "sha256": "49ff2562ce9a97766c4f664c3b283d0f25762b9edb6df370308c150769baafd8"
+    },
+    "props/mine-collapse-pbr.js": {
+      "bytes": 962970,
+      "sha256": "e90181e4ba56831e286649539dcc05197180e32199a07c675fb5d4da0630a6cd"
+    },
+    "tools/build-mine-collapse-pbr.py": {
+      "bytes": 3645,
+      "sha256": "4bd85014e7c9fe99876cfbc23c77a79fc0483d110725a1189ce26f71d47cf9e9"
+    },
+    "prepared/manifest.js": {
+      "bytes": 3558,
+      "sha256": "3b5e1b2ed9c91bdf718efa0a3b8d08ac832ff3cf42b6c9b86d910f4027ad753c"
+    }
+  },
+  "images": {
+    "Evidence156Cave/lit-normal.png": {
+      "bytes": 1356579,
+      "sha256": "683756aa5d474e487ddd1ce6f47ee7b5a7070d70fbeb2623c808b6e57a8879e4"
+    },
+    "Evidence156Cave/lit-close.png": {
+      "bytes": 1247448,
+      "sha256": "fa7aae7bb428b017aa8b88024284ba882df05185fc2381af7cca8276d4cf1031"
+    },
+    "Evidence161Native/close.png": {
+      "bytes": 650038,
+      "sha256": "6c89a498895d2e79152e10a677034648ba7a6ed3d943b3a15b643832da9b195a"
+    },
+    "Evidence161Native/opposite.png": {
+      "bytes": 750255,
+      "sha256": "96224c9c2014579fe34f25e3c0c17b57bfa32c4bc2a26de5f38f1d03827fc1c3"
+    },
+    "Evidence161Cave/lit-normal.png": {
+      "bytes": 1379413,
+      "sha256": "875d5c484f202960a6811662700475c6468a1813425b33a4b2b945c54fd6da3f"
+    },
+    "Evidence162Native/close.png": {
+      "bytes": 638183,
+      "sha256": "ae1e5226abb44c9e6a31eecc5b8653c497dd2cb2c4cdf653c19baf169c993e81"
+    },
+    "Evidence162Native/opposite.png": {
+      "bytes": 735866,
+      "sha256": "70ad5b2da4fb85279236724c55aab12cc3e6ee49db3ace58421090c4cd80532f"
+    },
+    "Evidence162Native/back.png": {
+      "bytes": 629992,
+      "sha256": "013b8c150cdfff8086cf276837a4cd16c781cc4c99894341293b47e5437a048c"
+    },
+    "Evidence162Cave/lit-normal.png": {
+      "bytes": 1377573,
+      "sha256": "98047fcc5d60c8f5ce16f302a17a1e515aeb6b35cc9138d1c95e604a1bf54b07"
+    },
+    "Evidence162Cave/lit-close.png": {
+      "bytes": 1375131,
+      "sha256": "25497869535f1fd5472d5af05c2545938583ca6bb903f91b12203863c9621e22"
+    },
+    "Evidence162Cave/lit-side.png": {
+      "bytes": 1370871,
+      "sha256": "246e8e74b3e00288422159495c0813606ccc651afdd28f4747b854cd0ae021af"
+    },
+    "Evidence162Cave/dark-normal.png": {
+      "bytes": 1399110,
+      "sha256": "f867ccb538c7965f10ff821583ff42150993f7d4fa4cfb76810f7b44cd702ce6"
+    },
+    "Evidence162Mine/normal.png": {
+      "bytes": 74896,
+      "sha256": "d7dcf51df0087b419590e5bcafc99565073b5a7986b694d24c035f22370052af"
+    },
+    "Evidence162Mine/close.png": {
+      "bytes": 432427,
+      "sha256": "8129090b1c6a7fd02872baaafc83334315e06e05f6bb7f65073e74d60f72a5f6"
+    },
+    "Evidence162Web/normal-view.png": {
+      "bytes": 1122100,
+      "sha256": "0f7c063bdef63e04fa985b7de90d57218c4bae54deff872106821648c4bcc683"
+    },
+    "Evidence162Web/close.png": {
+      "bytes": 1097866,
+      "sha256": "80a95930fe058ecef72a2c35c9313ef11c29a01fdaf193f909a71fc6464dfc5d"
+    },
+    "Evidence162Web/opposite.png": {
+      "bytes": 1125631,
+      "sha256": "de25f97a23f654c6e6ccb2da57ca159e6e896312ce8e74bae6e9052f10be69bd"
+    },
+    "Evidence162Web/dark.png": {
+      "bytes": 914863,
+      "sha256": "c32f7cec8a041d999af92b836f093398836c314f18319fbfc885a341e2a8998e"
+    },
+    "Evidence162Web/colour.png": {
+      "bytes": 265006,
+      "sha256": "4a81e430443f7d67c98c57e53b5f2d34ad48ee2c33ea577ed2e8c35f19d99509"
+    },
+    "Evidence162Web/normal.png": {
+      "bytes": 317175,
+      "sha256": "dfa22bc6c537d6ecb4cc3be20e2c8d9d3320406e74278f14a97b80c35369cc76"
+    },
+    "Evidence162Web/packed.png": {
+      "bytes": 205534,
+      "sha256": "382abe737a3427237d90765c8d62b47ee93d640b252f7fc0c6fc83322fa0b30f"
+    }
+  }
+}

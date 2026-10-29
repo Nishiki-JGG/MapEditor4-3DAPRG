@@ -1,0 +1,70 @@
+{
+  "entries": [
+    {
+      "key": "sample:5cad9177fe02d4d01ff7aa5f4c766964a054ad43311ca4dd4e47e4fa07e669d3",
+      "kind": "sample",
+      "seed": 7,
+      "size": 64,
+      "profile": {
+        "splatChannels": 11,
+        "biome": "forest",
+        "agent": {
+          "radius": 0.3,
+          "height": 1.8,
+          "maxSlopeDeg": 51.3,
+          "maxWaterDepth": 0.9,
+          "maxStep": 0.5,
+          "arrivalClearance": 0.5
+        },
+        "cliffStyle": "standard",
+        "catalog": {
+          "types": {},
+          "floorLinks": {}
+        }
+      },
+      "rawBytes": 23438337,
+      "props": 5761,
+      "fits": 552,
+      "file": "sample-64-7-63953be40eab.js",
+      "sha256": "63953be40eab5a99ac489e9d50ad1ebb02bf0ab587edcf27bf92c5f48814b8f5",
+      "gzipBytes": 5930805,
+      "scriptBytes": 7907802,
+      "httpGzipBytes": 5944344
+    },
+    {
+      "key": "sample:797f15490047a9eb21e7dbe8a7eec33a6b63a9c388f7525e64f4e6dc31891aab",
+      "kind": "sample2",
+      "seed": 11,
+      "size": 48,
+      "profile": {
+        "splatChannels": 11,
+        "biome": "ruins",
+        "agent": {
+          "radius": 0.3,
+          "height": 1.8,
+          "maxSlopeDeg": 51.3,
+          "maxWaterDepth": 0.9,
+          "maxStep": 0.5,
+          "arrivalClearance": 0.5
+        },
+        "cliffStyle": "standard",
+        "catalog": {
+          "types": {},
+          "floorLinks": {}
+        }
+      },
+      "rawBytes": 9953273,
+      "props": 536,
+      "fits": 226,
+      "file": "sample2-48-11-12fa28949d2e.js",
+      "sha256": "12fa28949d2e7d674171207e1da8e6321b04389e19c61f08d87a3f9d1d323db3",
+      "gzipBytes": 2415108,
+      "scriptBytes": 3220208,
+      "httpGzipBytes": 2419367
+    }
+  ],
+  "scriptHashes": {
+    "sample-64-7-63953be40eab.js": "900a18b8ed97538fa0d6553f0017ad28532424509d80eef1e721c5294f624eff",
+    "sample2-48-11-12fa28949d2e.js": "28bd549f16c43084d0bc1cba0e58b687c58cea67fcd844cf3f0eb658970f1afb"
+  }
+}
