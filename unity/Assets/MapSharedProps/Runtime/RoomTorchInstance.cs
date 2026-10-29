@@ -21,6 +21,7 @@ namespace MapSharedProps
         public bool IsPooledLamp => pooledLamp;
         public void ConfigureLamp(Vector3 origin, float power, float range, string key) { pooledLamp=true; lampOrigin=origin; lampPower=power; lampRange=range; seedKey=key; particles=Array.Empty<ParticleSystem>(); }
         public void BorrowLight(Light light) { borrowedLight=light; }
+        public void ReleaseLight(Light owned) { if(borrowedLight==owned)borrowedLight=null; }
         public void UpdateLamp(float time) { if(!pooledLamp || !borrowedLight)return; borrowedLight.transform.position=transform.TransformPoint(lampOrigin); borrowedLight.type=LightType.Point; borrowedLight.color=lampColor; borrowedLight.range=lampRange*Mathf.Abs(transform.lossyScale.x); borrowedLight.intensity=lampPower*Mathf.Abs(transform.lossyScale.x)*(.93f+.07f*Mathf.Sin(time*9f+ChestPresentation.Seed(seedKey)*6.2831853f)); }
         private MethodInfo initialize;
         private float[] rates;

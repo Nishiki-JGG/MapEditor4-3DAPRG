@@ -20,7 +20,17 @@ namespace MapSharedProps
         private readonly Light[] pooledLampLights = new Light[MaxLights];
         public int PooledLampLightCount { get { int n=0; foreach(var light in pooledLampLights)if(light)n++; return n; } }
         private Light LampLight(int slot) { if(pooledLampLights[slot])return pooledLampLights[slot]; var go=new GameObject("Shared lamp light "+slot); go.hideFlags=HideFlags.DontSave; go.transform.SetParent(transform,false); var light=go.AddComponent<Light>();light.enabled=false;light.renderMode=LightRenderMode.ForcePixel;light.shadowCustomResolution=256;light.shadowBias=.03f;light.shadowNormalBias=.015f;pooledLampLights[slot]=light;return light; }
-        private void OnDisable() { foreach(var light in pooledLampLights)if(light)light.enabled=false; foreach(var f in fixtures)if(f&&f.IsPooledLamp)f.BorrowLight(null); }
+        // Slot owns its pooled light; a moving fixture may already borrow another slot's light.
+        private void ReleaseSlot(int slot)
+        {
+            var fixture=slots[slot];
+            var owned=pooledLampLights[slot];
+            if(owned)owned.enabled=false;
+            if(!fixture)return;
+            if(fixture.IsPooledLamp)fixture.ReleaseLight(owned);
+            else if(fixture.SourceLight)fixture.SourceLight.enabled=false;
+        }
+        private void OnDisable() { for(int i=0;i<MaxLights;i++)ReleaseSlot(i); ActiveLights=0; }
         private void OnDestroy() { foreach(var light in pooledLampLights)if(light){if(Application.isPlaying)Destroy(light.gameObject);else DestroyImmediate(light.gameObject);} }
         public float TimeOverride {get;set;} = -1f;
         public int ActiveLights { get; private set; }
@@ -36,7 +46,7 @@ namespace MapSharedProps
         private void OnEnable() => ResetBudget();
         private void ResetBudget()
         {
-            foreach(var light in pooledLampLights)if(light)light.enabled=false;
+            for(int i=0;i<MaxLights;i++)ReleaseSlot(i);
             order = new int[fixtures.Length]; distances = new float[fixtures.Length]; particleFades = new float[fixtures.Length];
             Array.Clear(slots, 0, slots.Length); Array.Clear(targets, 0, targets.Length); Array.Clear(gains, 0, gains.Length);
             for (int i = 0; i < fixtures.Length; i++) { order[i] = i; if (fixtures[i] != null && fixtures[i].SourceLight != null) fixtures[i].SourceLight.enabled = false; }
@@ -82,12 +92,12 @@ namespace MapSharedProps
                 if (slots[i] != targets[i] && gains[i] > .002f) gains[i] *= Mathf.Exp(-Mathf.Max(0f, dt) * 14f);
                 else
                 {
-                    if (slots[i] != targets[i] && slots[i] != null) { if(slots[i].SourceLight != null) slots[i].SourceLight.enabled = false; if(slots[i].IsPooledLamp)slots[i].BorrowLight(null); }
+                    if (slots[i] != targets[i]) ReleaseSlot(i);
                     slots[i] = targets[i]; gains[i] = Mathf.Lerp(gains[i], slots[i] != null ? 1f : 0f, 1f - Mathf.Exp(-Mathf.Max(0f, dt) * 7f));
                 }
                 if (slots[i] != null && slots[i].IsPooledLamp) { slots[i].BorrowLight(LampLight(i)); slots[i].UpdateLamp(TimeOverride>=0?TimeOverride:Time.time); }
                 if (slots[i] == null || slots[i].SourceLight == null) continue;
-                Light light = slots[i].SourceLight; light.enabled = gains[i] > .001f;
+                Light light = slots[i].IsPooledLamp ? pooledLampLights[i] : slots[i].SourceLight; light.enabled = gains[i] > .001f;
                 light.shadows = (slots[i].IsPooledLamp || i < shadowedLights) && i < 2 ? LightShadows.Soft : LightShadows.None;
                 // 原本Updateの光量をLateUpdateでフェードする。元の明滅式・色・範囲は保持。
                 light.intensity *= gains[i]; if (light.enabled) ActiveLights++;
