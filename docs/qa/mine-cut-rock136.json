@@ -1,0 +1,254 @@
+{
+  "candidate": 136,
+  "published": false,
+  "gate": "自己評価91点の独立レビュー候補。親の合格判定前には公開しない。",
+  "base": "d610f60a54a71fd6325776911c6a547550b1a0f3",
+  "score": {
+    "appearance": 26,
+    "material": 17,
+    "structurePlacement": 19,
+    "webFormalUnity": 20,
+    "lightness": 9,
+    "total": 91
+  },
+  "deductions": {
+    "appearance": "通常距離で工具打点は弱い。壁との輪郭が完全に消える素材ではなく、手動配置が必要。",
+    "material": "近景の工具痕/新しい剥離面は読めるが、既存洞窟壁とは色と表面性状が異なる。",
+    "structurePlacement": "実壁面の高さ/向き/埋込みを配置者が合わせる必要がある。",
+    "lightness": "GPU/モバイル未測定。CPU送信時間をフレーム性能保証にはしない。"
+  },
+  "web": {
+    "pass": true,
+    "tests": {
+      "rows": [
+        "manual-only closed solid",
+        "under1000 triangles",
+        "finite geometry",
+        "ground base and closed back",
+        "bounded nonmetal texture",
+        "shared material",
+        "closed manifold after position welding",
+        "front faces present and consistently outward",
+        "central foot has outward contact faces without an underside bevel",
+        "shallow collision bounds contain visual"
+      ],
+      "unitNormals": 1116,
+      "triangles": 372,
+      "vertices": 1116,
+      "bounds": [
+        [
+          -0.8999999761581421,
+          0,
+          -0.05999999865889549
+        ],
+        [
+          0.8799999952316284,
+          1.8799999952316284,
+          0.147586390376091
+        ]
+      ]
+    },
+    "legacy": {
+      "first": {
+        "success": true,
+        "count": 0,
+        "stats": {
+          "kind": "load",
+          "seed": 0,
+          "cacheHit": false,
+          "persistent": false,
+          "persistentStored": false,
+          "preparedSource": "generated",
+          "bundleBytes": 0,
+          "walkReused": false,
+          "elapsedMs": 24.5,
+          "firstRenderMs": 13.700000047683716,
+          "props": 0,
+          "fits": 0,
+          "fitStats": null
+        }
+      },
+      "second": {
+        "success": true,
+        "count": 2,
+        "stats": {
+          "kind": "load",
+          "seed": 0,
+          "cacheHit": false,
+          "persistent": false,
+          "persistentStored": false,
+          "preparedSource": "generated",
+          "bundleBytes": 0,
+          "walkReused": false,
+          "elapsedMs": 30.699999928474426,
+          "firstRenderMs": 12.100000023841858,
+          "props": 2,
+          "fits": 0,
+          "fitStats": null
+        }
+      }
+    },
+    "oldTypes": {
+      "loaded": true,
+      "ids": [
+        "mine_rail_straight",
+        "minecart"
+      ],
+      "withoutNewType": true
+    },
+    "save": {
+      "loaded": true,
+      "save": true,
+      "collider": true
+    },
+    "stats": {
+      "gl": 0,
+      "calls": 4,
+      "triangles": 10344,
+      "textures": 40
+    },
+    "extensionBytes": 683378
+  },
+  "unity": {
+    "pass": true,
+    "cases": [
+      {
+        "tag": "valid",
+        "savedReload": "passed save-destroy-reinstantiate",
+        "prefabs": 49,
+        "placed": 2,
+        "old48Preserved": true
+      }
+    ],
+    "error": "",
+    "limitations": [
+      "Background Editor only; Player/mobile/GPU timing not measured.",
+      "Old Reader binary not executed; unknown optional field follows previous source control flow.",
+      "Standalone facing; no original walls or fixed rock samples replaced."
+    ]
+  },
+  "sharedLoad": {
+    "cases": [
+      {
+        "placed": 9,
+        "visible": 9,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 3,
+        "meshBytes": 166752,
+        "textureBytes": 4088753,
+        "cpuRenderMedianMs": 0.6798000000000001,
+        "gpuMeasured": false
+      },
+      {
+        "placed": 225,
+        "visible": 225,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 3,
+        "meshBytes": 166752,
+        "textureBytes": 4088753,
+        "cpuRenderMedianMs": 0.9608000000000001,
+        "gpuMeasured": false
+      }
+    ],
+    "limitation": "CPU Render submission, not GPU or game-frame guarantee"
+  },
+  "cave": {
+    "pass": true,
+    "seed": 71421,
+    "cells": 648,
+    "torches": 21,
+    "sameCameraLightingPoseBeforeAfter": true,
+    "originalSceneSaved": false
+  },
+  "productMine": {
+    "pass": true,
+    "scale": 0.8,
+    "position": [
+      13.12,
+      0,
+      11.13
+    ],
+    "clearOfPosts": true
+  },
+  "textureBytesUnchangedFrom134": true,
+  "centralFootFaces": {
+    "count": 12,
+    "beforeNormalYRange": [
+      -0.8511834468,
+      -0.7065078469
+    ],
+    "afterNormalYRange": [
+      0.0102152478,
+      0.2820578501
+    ],
+    "predicate": "front triangle maximum Y<0.16m, centroid |X|<0.5m; real geometry normals"
+  },
+  "placementContract": {
+    "floor": "原点Yを実際の歩行床高へ。地表や壁上端へ合わせない。",
+    "wall": "scale1で原点を壁面の手前0〜0.02m。背面を約0.04〜0.06m埋込み、上左右の薄い外周を壁で受ける。",
+    "maximumVisibleProjectionMetres": 0.1676,
+    "supportGap": "Collider幅1.82×scaleに余裕が必要。幅1.54mの支柱間ではscale0.8で確認。",
+    "automaticWallFit": false
+  },
+  "validationReuse": "optional欠落/不正/custom/compactは131最終10ケースを再利用。Importer契約は不変更。136の正式valid49/旧48実mesh・Collider/保存破棄再instantiateは再実行。",
+  "restrictions": {
+    "push": false,
+    "gui": false,
+    "player": false,
+    "imageUpload": false,
+    "fixedRockRegeneration": 0
+  },
+  "sourceHashes": {
+    "props/mine-cut-rock.js": "b25c96dadd3aad04df7a2d3928501826f7bfab1eddef4e74a3b017596b513394",
+    "tests/mine-cut-rock.cjs": "b93dd1ed1e372bfe2a178af343cc1c7e79ce45b7be635dfa6558668e37a22ea9",
+    "tests/unity/Rock136Checks.cs": "fd78ba0063c269637817bf0e2cde8a55fb194f6da0e914ca0ab3426f951d0134"
+  },
+  "evidence": {
+    "Evidence136Cave/lit-baseline-close.png": {
+      "bytes": 1227578,
+      "sha256": "27bb9331e38bcb56ac735b95b7602600a69b8f54b1cff9f1f532dbb3beb63c5e"
+    },
+    "Evidence136Cave/lit-close.png": {
+      "bytes": 1229398,
+      "sha256": "c21616a07087924b89a5bd3fd20b65e8e8715f9805c8dc30690da42966371bba"
+    },
+    "Evidence136Cave/lit-baseline-normal.png": {
+      "bytes": 1351261,
+      "sha256": "829b63bb757271ddb103159a9a18af28389831b2b5647b8d621d16f9b5c0890d"
+    },
+    "Evidence136Cave/lit-normal.png": {
+      "bytes": 1351497,
+      "sha256": "8193d197771fb1f060af88b3904b5dde5ee16d6628a78d3f28d17996a19335c9"
+    },
+    "Evidence136Cave/lit-side.png": {
+      "bytes": 1171361,
+      "sha256": "88e52f4323b4d37325d449f8c859b183d808096c48ac96801dba919f14ccf0d9"
+    },
+    "Evidence136Cave/dark-normal.png": {
+      "bytes": 1374452,
+      "sha256": "7e341fe1105dc7936445a5a043a68794b17961e8d3a87663ec751dd251ca4779"
+    },
+    "Evidence136Mine/close.png": {
+      "bytes": 532620,
+      "sha256": "ff1183d3a0ec8a7da35cd6c037445faff47cc0d04da78a3e4fa051afc94d2f2a"
+    },
+    "Evidence136Mine/normal.png": {
+      "bytes": 75731,
+      "sha256": "b715e07c5e0a403bed1a1edd030776ce6e869ff6be9b848175ecbac9b93222b9"
+    },
+    "Evidence136Web/front-close.png": {
+      "bytes": 1014252,
+      "sha256": "647d9d9bd1a02e753347a5021b3f171e97080bccfd99a8838300bb7515b651d7"
+    },
+    "Evidence136Web/opposite-light.png": {
+      "bytes": 967098,
+      "sha256": "42a651002e978c3debfe99e547930aa83306ae44c10f06aab0f8aba2d33aff12"
+    },
+    "Evidence136Web/night.png": {
+      "bytes": 21539,
+      "sha256": "fc90077d347a6a6d0c479cc841f7ef69ddef3d8e935f43d4609e90422ce4e1e1"
+    }
+  }
+}

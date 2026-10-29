@@ -22,7 +22,7 @@ window.TDMineCutRock=(()=>{
  const left=[-.85,-.87,-.88,-.88,-.83,-.82,-.81,-.86,-.90,-.87,-.83,-.76,-.70],right=[.87,.88,.88,.84,.77,.76,.79,.83,.84,.81,.75,.68,.58],top=[1.64,1.81,1.86,1.85,1.82,1.67,1.74,1.88,1.85,1.72,1.56],bottom=[0,0,0,0,0,.01,.04,.02,0,0,0];
  const uy=[0,.07,.14,.22,.30,.38,.46,.55,.64,.72,.81,.90,1];
  for(let y=0;y<=ny;y++)for(let x=0;x<=nx;x++){let u=x/nx,v=uy[y];if(x>0&&x<nx)u+=(noise(x,y)-.5)*.04;if(y>0&&y<ny)v+=(noise(y,x+71)-.5)*.025;
- const xx=left[y]+u*(right[y]-left[y]),yy=bottom[x]*(1-v)+top[x]*v,gu=(xx+.9)/1.8,gv=yy/1.92,q=sample(gu,gv),edge=Math.max(clamp((.13-u)/.13),clamp((u-.87)/.13),clamp((v-.88)/.12),clamp((.06-v)/.06));
+ const xx=left[y]+u*(right[y]-left[y]),yy=bottom[x]*(1-v)+top[x]*v,gu=(xx+.9)/1.8,gv=yy/1.92,q=sample(gu,gv),edge=Math.max(clamp((.13-u)/.13),clamp((u-.87)/.13),clamp((v-.88)/.12));
  const exposed=(u>.72&&v>.86)||(u<.12&&v>.49&&v<.65),outer=-.035+(exposed?.065:0),plane=.14+.015*xx-.012*yy-q.depth*.6,z=plane*(1-edge)+outer*edge;
  p.push(xx,yy,z);uv.push((3+gu*378)/512,(3+gv*250)/256);}
 
