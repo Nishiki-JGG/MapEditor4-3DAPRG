@@ -35,6 +35,9 @@ Shader "MapSharedProps/Lit" {
    #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE
    #pragma multi_compile_fragment _ _SHADOWS_SOFT
    #pragma multi_compile _ _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHTS
+   #pragma multi_compile_fragment _ _ADDITIONAL_LIGHT_SHADOWS
+   #pragma multi_compile _ _CLUSTER_LIGHT_LOOP
+   #pragma shader_feature_local _ SMALL_PROP_LOCAL_LIGHTS
    #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
    #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
    TEXTURE2D(_BaseMap); SAMPLER(sampler_BaseMap);
@@ -65,6 +68,9 @@ float2 rootMask:TEXCOORD3;
 #endif
 float4 color:COLOR; };
    struct Varyings { float4 positionCS:SV_POSITION; float3 positionWS:TEXCOORD0; half3 directF:TEXCOORD1; float2 uv:TEXCOORD2; half3 directB:TEXCOORD3; half3 ambientF:TEXCOORD4; half3 ambientB:TEXCOORD5;
+#ifdef SMALL_PROP_LOCAL_LIGHTS
+ half3 localNormal:TEXCOORD8;
+#endif
 #ifdef SHARED_GLOW
 half2 glow:TEXCOORD6;
 #endif
@@ -93,12 +99,31 @@ n=normalize(lerp(n,float3(0,1,0),RootNormalBlend(o.rootSurface.z,v.rootMask.y)))
 #ifdef ROOT_GROUND
 n=normalize(n-float3(_TDRootSlope.x,0,_TDRootSlope.y)*n.y*v.rootMask.x);
 #endif
+#ifdef SMALL_PROP_LOCAL_LIGHTS
+ o.localNormal=n;
+#endif
  Light light=GetMainLight(); o.directF=light.color*max(0,dot(n,light.direction)); o.directB=light.color*max(0,dot(-n,light.direction)); o.ambientF=SampleSH(n); o.ambientB=SampleSH(-n);
 #ifdef SHARED_BUSH_LEAF
  if(v.bushLeaf.x>.5){n=n.y<0?-n:n;half ndl=dot(n,light.direction);o.directF=o.directB=light.color*max(ndl,-ndl*.35);o.ambientF=o.ambientB=SampleSH(n);}
 #endif
  o.uv=TRANSFORM_TEX(v.uv,_BaseMap); o.color=v.color; return o;
    }
+#ifdef SMALL_PROP_LOCAL_LIGHTS
+   half3 SmallPropLocalTerm(Light light,half3 n){return light.color*(light.distanceAttenuation*light.shadowAttenuation*saturate(dot(n,light.direction)));}
+   half3 SmallPropLocal(Varyings i,half3 n){half3 result=0;
+   #if defined(_ADDITIONAL_LIGHTS) || defined(_ADDITIONAL_LIGHTS_VERTEX) || USE_CLUSTER_LIGHT_LOOP
+    InputData inputData=(InputData)0;inputData.positionWS=i.positionWS;inputData.normalizedScreenSpaceUV=GetNormalizedScreenSpaceUV(i.positionCS);
+    #if USE_CLUSTER_LIGHT_LOOP
+     UNITY_LOOP for(uint lightIndex=0;lightIndex<min(URP_FP_DIRECTIONAL_LIGHTS_COUNT,MAX_VISIBLE_LIGHTS);lightIndex++)result+=SmallPropLocalTerm(GetAdditionalLight(lightIndex,i.positionWS,half4(1,1,1,1)),n);
+    #endif
+    uint count=GetAdditionalLightsCount();
+    LIGHT_LOOP_BEGIN(count)
+     result+=SmallPropLocalTerm(GetAdditionalLight(lightIndex,i.positionWS,half4(1,1,1,1)),n);
+    LIGHT_LOOP_END
+   #endif
+    return result;
+   }
+#endif
    half4 Frag(Varyings i, FRONT_FACE_TYPE front:FRONT_FACE_SEMANTIC):SV_Target {
     half4 c=SAMPLE_TEXTURE2D(_BaseMap,sampler_BaseMap,i.uv)*_BaseColor*i.color; clip(c.a-_Cutoff);
 #ifdef ROOT_SURFACE
@@ -111,7 +136,11 @@ n=normalize(n-float3(_TDRootSlope.x,0,_TDRootSlope.y)*n.y*v.rootMask.x);
 #ifdef SHARED_GLOW
     emission=c.rgb*i.glow.x*(.85+.15*sin(_TDPineWind.w*9.+i.glow.y*13.));
 #endif
-    return half4(c.rgb*(ambient+direct*shadow)+emission,1);
+    half3 local=0;
+#ifdef SMALL_PROP_LOCAL_LIGHTS
+    local=SmallPropLocal(i,normalize(IS_FRONT_VFACE(front,i.localNormal,-i.localNormal)));
+#endif
+    return half4(c.rgb*(ambient+direct*shadow+local)+emission,1);
    }
    ENDHLSL
   }

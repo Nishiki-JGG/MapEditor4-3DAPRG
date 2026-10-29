@@ -1,0 +1,25 @@
+# Shared small-prop local lighting (URP)
+
+In Unity 6000.5.9f1 / URP17.5.0, the shared small-prop shader declared additional-light variants but never accumulated their light. It rendered main directional light, SH ambient and authored glow only. Thirty-four of the existing 44 formal Prefabs use this shader, including wood, stone, clay, alpha-card props and lantern fittings. The full list is in validation/shared-prop-local-light/results.json.
+
+SmallPropsV1 now enables SMALL_PROP_LOCAL_LIGHTS only when creating MapSharedProps/Lit materials. The shader adds the normal URP visible-light loop with per-pixel world position/normal, distance attenuation and shadow attenuation. Forward+ also handles its non-main directional light list. No all-scene custom light iteration, new lights or per-instance materials are added. Main diffuse, SH ambient, authored emission, alpha clip, shadow caster, texture/UV and geometry paths remain unchanged. There is no second ambient addition and no non-emissive brightness floor. The shader remains diffuse-only, with no new reflection/BRDF. Other importers using the shared shader do not enable the new keyword, keeping nature, standalone grounded-shell materials and unrelated scenes outside this correction.
+
+The ten separate material-path assets (seven chests, two fibre props and obsidian) retain exact material serialization. All 44 formal reimports match baseline mesh geometry, UV, normals, colours, Collider contents/counts and Light parameters. Existing chest/ruby/reflection/FX shader and source files are unchanged. The previous reader source control flow still creates its 43 Prefabs; no schema changed and no old executable was run. That reader's materials keep the legacy keyword-off behavior.
+
+## Consuming Unity project
+
+Update both `Runtime/SharedPropLit.shader` and `Editor/SmallPropsV1.cs`, then reimport to a fresh output folder. Existing materials do not acquire an opt-in simply by updating the shader. Review the newly generated Prefabs before replacing existing scene instances. This work does not modify a game scene or change its pipeline/lighting. Publishing the Web editor cannot update an already imported Unity project by itself.
+
+## Evidence
+
+Representatives are smallbarrel, gravestone, storagepot, seafan and lantern. Actual Forward and Forward+ per-pixel-light renders cover all-off, ambient-only, main-only, near/far point light, spot inside/outside, point shadow and spot shadow. The new shader responds to local light and fades with distance; blockers remove point/spot light. Main-only, ambient-only, all-off and spot-outside PNGs are byte-identical before/after, including the lantern's authored glow. The narrow lantern has less projected surface than the other props; its positive whole-image mean increase was 0.000667, below the initial generic 0.001 test threshold. Actual images showed the formerly black post and frame becoming visible while the glow remained. Its test threshold was adjusted to 0.0001 without changing product illumination. This is recorded rather than claiming a product failure was fixed by increasing brightness.
+
+The original baseline shader is compiled under a review-only name. The first attempt could not resolve relative includes from the review folder; only review include paths were corrected. The already generated 44 Prefabs were reused and rechecked. No product include change was needed.
+
+The existing isolated cave generator (seed71421, authored21 torches) supplies normal-distance and close A/B with unchanged scene lights and camera offset. Wood, stone and clay receive warm light near an existing torch, while shadowed faces remain dark. The far placement is about6.19m from its closest torch; the validated nearer floor cell is about2.24m away. The surrounding scene pixels remain outside the changed prop bounds. Source scenes were not saved; images stay local with hashes recorded.
+
+At 9/225 barrel placements and three unshadowed local lights, short Forward+ Camera.Render CPU median samples changed from 0.486/0.560ms to 0.553/0.632ms. These are diagnostic Editor submission timings, not GPU or mobile guarantees. Geometry/textures/lights are not added. Additional-light vertex mode is not independently rendered. Player, mobile and complete gameplay sessions remain untested.
+
+## Reproduction
+
+Set SHARED_LIGHT_REVIEW_PROJECT to the existing dedicated review environment. Run `node tests/shared-prop-local-light.cjs` for unchanged Web local-light response, save/reload and normalized Map/Set Collider checks. Run `python tests/prepare-shared-prop-local-light.py` then `Shared117Checks.Run` in background Editor batchmode. Existing Input114-after export, Imported116 baseline Prefabs, ColliderSnapshot109, LegacySmallProps114 and PC_RPAsset/PC_Renderer test assets are required. Completed Imported117 Prefabs may be reloaded after a render-test interruption; all44 are rechecked. The legacy output folder must be fresh. `Shared117Review.Compare` is the offscreen visual helper for the isolated existing scene harness; game-specific generator code is not published here.

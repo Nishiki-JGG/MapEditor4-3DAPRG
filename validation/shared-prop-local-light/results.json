@@ -1,0 +1,803 @@
+{
+  "baseline": "2affe3c5571b6b97eed5a9c299ae94b9b82d4492",
+  "unity": "6000.5.9f1",
+  "urp": "17.5.0",
+  "native": {
+    "pass": true,
+    "prefabs": 44,
+    "legacyPrefabs": 43,
+    "optedIds": [
+      "banner",
+      "bonepile",
+      "bones",
+      "brokencol",
+      "brokencol_base",
+      "brokenpot",
+      "castlewall",
+      "column",
+      "columnfragment",
+      "crossgrave",
+      "gatehouse",
+      "gravestone",
+      "haystack",
+      "kamakura",
+      "lantern",
+      "lighthouse",
+      "mausoleum",
+      "miningtools",
+      "obelisk",
+      "pillarcoral",
+      "rowboat",
+      "ruinwall",
+      "scallop",
+      "seafan",
+      "skullpile",
+      "smallbarrel",
+      "snowman",
+      "statue",
+      "statue_damaged",
+      "statue_seated",
+      "stele",
+      "storagepot",
+      "supplycrate",
+      "tower"
+    ],
+    "rows": [
+      {
+        "mode": "0",
+        "id": "smallbarrel",
+        "light": "off",
+        "before": 0.0,
+        "after": 0.0
+      },
+      {
+        "mode": "0",
+        "id": "smallbarrel",
+        "light": "ambient",
+        "before": 0.00531022297218442,
+        "after": 0.00531022297218442
+      },
+      {
+        "mode": "0",
+        "id": "smallbarrel",
+        "light": "point",
+        "before": 0.0,
+        "after": 0.019740452989935875
+      },
+      {
+        "mode": "0",
+        "id": "smallbarrel",
+        "light": "far",
+        "before": 0.0,
+        "after": 0.0029017566703259945
+      },
+      {
+        "mode": "0",
+        "id": "smallbarrel",
+        "light": "spot",
+        "before": 0.0,
+        "after": 0.019740452989935875
+      },
+      {
+        "mode": "0",
+        "id": "smallbarrel",
+        "light": "spotOutside",
+        "before": 0.0,
+        "after": 0.0
+      },
+      {
+        "mode": "0",
+        "id": "smallbarrel",
+        "light": "pointShadow",
+        "before": 0.0,
+        "after": 0.0
+      },
+      {
+        "mode": "0",
+        "id": "smallbarrel",
+        "light": "spotShadow",
+        "before": 0.0,
+        "after": 0.0
+      },
+      {
+        "mode": "0",
+        "id": "smallbarrel",
+        "light": "day",
+        "before": 0.03461134061217308,
+        "after": 0.03461134061217308
+      },
+      {
+        "mode": "0",
+        "id": "gravestone",
+        "light": "off",
+        "before": 0.0,
+        "after": 0.0
+      },
+      {
+        "mode": "0",
+        "id": "gravestone",
+        "light": "ambient",
+        "before": 0.0059248595498502254,
+        "after": 0.0059248595498502254
+      },
+      {
+        "mode": "0",
+        "id": "gravestone",
+        "light": "point",
+        "before": 0.0,
+        "after": 0.02591896988451481
+      },
+      {
+        "mode": "0",
+        "id": "gravestone",
+        "light": "far",
+        "before": 0.0,
+        "after": 0.002947447821497917
+      },
+      {
+        "mode": "0",
+        "id": "gravestone",
+        "light": "spot",
+        "before": 0.0,
+        "after": 0.02591896988451481
+      },
+      {
+        "mode": "0",
+        "id": "gravestone",
+        "light": "spotOutside",
+        "before": 0.0,
+        "after": 0.0
+      },
+      {
+        "mode": "0",
+        "id": "gravestone",
+        "light": "pointShadow",
+        "before": 0.0,
+        "after": 0.0
+      },
+      {
+        "mode": "0",
+        "id": "gravestone",
+        "light": "spotShadow",
+        "before": 0.0,
+        "after": 0.0
+      },
+      {
+        "mode": "0",
+        "id": "gravestone",
+        "light": "day",
+        "before": 0.04425869509577751,
+        "after": 0.04425869509577751
+      },
+      {
+        "mode": "0",
+        "id": "storagepot",
+        "light": "off",
+        "before": 0.0,
+        "after": 0.0
+      },
+      {
+        "mode": "0",
+        "id": "storagepot",
+        "light": "ambient",
+        "before": 0.006427060812711716,
+        "after": 0.006427060812711716
+      },
+      {
+        "mode": "0",
+        "id": "storagepot",
+        "light": "point",
+        "before": 0.0,
+        "after": 0.021501369774341583
+      },
+      {
+        "mode": "0",
+        "id": "storagepot",
+        "light": "far",
+        "before": 0.0,
+        "after": 0.0035710937809199095
+      },
+      {
+        "mode": "0",
+        "id": "storagepot",
+        "light": "spot",
+        "before": 0.0,
+        "after": 0.021501369774341583
+      },
+      {
+        "mode": "0",
+        "id": "storagepot",
+        "light": "spotOutside",
+        "before": 0.0,
+        "after": 0.0
+      },
+      {
+        "mode": "0",
+        "id": "storagepot",
+        "light": "pointShadow",
+        "before": 0.0,
+        "after": 0.0
+      },
+      {
+        "mode": "0",
+        "id": "storagepot",
+        "light": "spotShadow",
+        "before": 0.0,
+        "after": 0.0
+      },
+      {
+        "mode": "0",
+        "id": "storagepot",
+        "light": "day",
+        "before": 0.03518260642886162,
+        "after": 0.03518260642886162
+      },
+      {
+        "mode": "0",
+        "id": "seafan",
+        "light": "off",
+        "before": 0.0,
+        "after": 0.0
+      },
+      {
+        "mode": "0",
+        "id": "seafan",
+        "light": "ambient",
+        "before": 0.002175699220970273,
+        "after": 0.002175699220970273
+      },
+      {
+        "mode": "0",
+        "id": "seafan",
+        "light": "point",
+        "before": 0.0,
+        "after": 0.0057871961034834385
+      },
+      {
+        "mode": "0",
+        "id": "seafan",
+        "light": "far",
+        "before": 0.0,
+        "after": 0.0012204899685457349
+      },
+      {
+        "mode": "0",
+        "id": "seafan",
+        "light": "spot",
+        "before": 0.0,
+        "after": 0.0057871961034834385
+      },
+      {
+        "mode": "0",
+        "id": "seafan",
+        "light": "spotOutside",
+        "before": 0.0,
+        "after": 0.0
+      },
+      {
+        "mode": "0",
+        "id": "seafan",
+        "light": "pointShadow",
+        "before": 0.0,
+        "after": 0.0
+      },
+      {
+        "mode": "0",
+        "id": "seafan",
+        "light": "spotShadow",
+        "before": 0.0,
+        "after": 0.0
+      },
+      {
+        "mode": "0",
+        "id": "seafan",
+        "light": "day",
+        "before": 0.013609984889626503,
+        "after": 0.013609984889626503
+      },
+      {
+        "mode": "0",
+        "id": "lantern",
+        "light": "off",
+        "before": 0.0007633594213984907,
+        "after": 0.0007633594213984907
+      },
+      {
+        "mode": "0",
+        "id": "lantern",
+        "light": "ambient",
+        "before": 0.0009942433098331094,
+        "after": 0.0009942433098331094
+      },
+      {
+        "mode": "0",
+        "id": "lantern",
+        "light": "point",
+        "before": 0.0007633594213984907,
+        "after": 0.0014301622286438942
+      },
+      {
+        "mode": "0",
+        "id": "lantern",
+        "light": "far",
+        "before": 0.0007633594213984907,
+        "after": 0.000940881494898349
+      },
+      {
+        "mode": "0",
+        "id": "lantern",
+        "light": "spot",
+        "before": 0.0007633594213984907,
+        "after": 0.0014301622286438942
+      },
+      {
+        "mode": "0",
+        "id": "lantern",
+        "light": "spotOutside",
+        "before": 0.0007633594213984907,
+        "after": 0.0007633594213984907
+      },
+      {
+        "mode": "0",
+        "id": "lantern",
+        "light": "pointShadow",
+        "before": 0.0007633594213984907,
+        "after": 0.0007633594213984907
+      },
+      {
+        "mode": "0",
+        "id": "lantern",
+        "light": "spotShadow",
+        "before": 0.0007633594213984907,
+        "after": 0.0007633594213984907
+      },
+      {
+        "mode": "0",
+        "id": "lantern",
+        "light": "day",
+        "before": 0.0029827223625034094,
+        "after": 0.0029827223625034094
+      },
+      {
+        "mode": "2",
+        "id": "smallbarrel",
+        "light": "off",
+        "before": 0.0,
+        "after": 0.0
+      },
+      {
+        "mode": "2",
+        "id": "smallbarrel",
+        "light": "ambient",
+        "before": 0.00531022297218442,
+        "after": 0.00531022297218442
+      },
+      {
+        "mode": "2",
+        "id": "smallbarrel",
+        "light": "point",
+        "before": 0.0,
+        "after": 0.019740452989935875
+      },
+      {
+        "mode": "2",
+        "id": "smallbarrel",
+        "light": "far",
+        "before": 0.0,
+        "after": 0.0029017566703259945
+      },
+      {
+        "mode": "2",
+        "id": "smallbarrel",
+        "light": "spot",
+        "before": 0.0,
+        "after": 0.019740452989935875
+      },
+      {
+        "mode": "2",
+        "id": "smallbarrel",
+        "light": "spotOutside",
+        "before": 0.0,
+        "after": 0.0
+      },
+      {
+        "mode": "2",
+        "id": "smallbarrel",
+        "light": "pointShadow",
+        "before": 0.0,
+        "after": 0.0
+      },
+      {
+        "mode": "2",
+        "id": "smallbarrel",
+        "light": "spotShadow",
+        "before": 0.0,
+        "after": 0.0
+      },
+      {
+        "mode": "2",
+        "id": "smallbarrel",
+        "light": "day",
+        "before": 0.03461134061217308,
+        "after": 0.03461134061217308
+      },
+      {
+        "mode": "2",
+        "id": "gravestone",
+        "light": "off",
+        "before": 0.0,
+        "after": 0.0
+      },
+      {
+        "mode": "2",
+        "id": "gravestone",
+        "light": "ambient",
+        "before": 0.0059248595498502254,
+        "after": 0.0059248595498502254
+      },
+      {
+        "mode": "2",
+        "id": "gravestone",
+        "light": "point",
+        "before": 0.0,
+        "after": 0.02591896988451481
+      },
+      {
+        "mode": "2",
+        "id": "gravestone",
+        "light": "far",
+        "before": 0.0,
+        "after": 0.002947447821497917
+      },
+      {
+        "mode": "2",
+        "id": "gravestone",
+        "light": "spot",
+        "before": 0.0,
+        "after": 0.02591896988451481
+      },
+      {
+        "mode": "2",
+        "id": "gravestone",
+        "light": "spotOutside",
+        "before": 0.0,
+        "after": 0.0
+      },
+      {
+        "mode": "2",
+        "id": "gravestone",
+        "light": "pointShadow",
+        "before": 0.0,
+        "after": 0.0
+      },
+      {
+        "mode": "2",
+        "id": "gravestone",
+        "light": "spotShadow",
+        "before": 0.0,
+        "after": 0.0
+      },
+      {
+        "mode": "2",
+        "id": "gravestone",
+        "light": "day",
+        "before": 0.04425869509577751,
+        "after": 0.04425869509577751
+      },
+      {
+        "mode": "2",
+        "id": "storagepot",
+        "light": "off",
+        "before": 0.0,
+        "after": 0.0
+      },
+      {
+        "mode": "2",
+        "id": "storagepot",
+        "light": "ambient",
+        "before": 0.006427060812711716,
+        "after": 0.006427060812711716
+      },
+      {
+        "mode": "2",
+        "id": "storagepot",
+        "light": "point",
+        "before": 0.0,
+        "after": 0.021501369774341583
+      },
+      {
+        "mode": "2",
+        "id": "storagepot",
+        "light": "far",
+        "before": 0.0,
+        "after": 0.0035710937809199095
+      },
+      {
+        "mode": "2",
+        "id": "storagepot",
+        "light": "spot",
+        "before": 0.0,
+        "after": 0.021501369774341583
+      },
+      {
+        "mode": "2",
+        "id": "storagepot",
+        "light": "spotOutside",
+        "before": 0.0,
+        "after": 0.0
+      },
+      {
+        "mode": "2",
+        "id": "storagepot",
+        "light": "pointShadow",
+        "before": 0.0,
+        "after": 0.0
+      },
+      {
+        "mode": "2",
+        "id": "storagepot",
+        "light": "spotShadow",
+        "before": 0.0,
+        "after": 0.0
+      },
+      {
+        "mode": "2",
+        "id": "storagepot",
+        "light": "day",
+        "before": 0.03518260642886162,
+        "after": 0.03518260642886162
+      },
+      {
+        "mode": "2",
+        "id": "seafan",
+        "light": "off",
+        "before": 0.0,
+        "after": 0.0
+      },
+      {
+        "mode": "2",
+        "id": "seafan",
+        "light": "ambient",
+        "before": 0.002175699220970273,
+        "after": 0.002175699220970273
+      },
+      {
+        "mode": "2",
+        "id": "seafan",
+        "light": "point",
+        "before": 0.0,
+        "after": 0.0057871961034834385
+      },
+      {
+        "mode": "2",
+        "id": "seafan",
+        "light": "far",
+        "before": 0.0,
+        "after": 0.0012204899685457349
+      },
+      {
+        "mode": "2",
+        "id": "seafan",
+        "light": "spot",
+        "before": 0.0,
+        "after": 0.0057871961034834385
+      },
+      {
+        "mode": "2",
+        "id": "seafan",
+        "light": "spotOutside",
+        "before": 0.0,
+        "after": 0.0
+      },
+      {
+        "mode": "2",
+        "id": "seafan",
+        "light": "pointShadow",
+        "before": 0.0,
+        "after": 0.0
+      },
+      {
+        "mode": "2",
+        "id": "seafan",
+        "light": "spotShadow",
+        "before": 0.0,
+        "after": 0.0
+      },
+      {
+        "mode": "2",
+        "id": "seafan",
+        "light": "day",
+        "before": 0.013609984889626503,
+        "after": 0.013609984889626503
+      },
+      {
+        "mode": "2",
+        "id": "lantern",
+        "light": "off",
+        "before": 0.0007633594213984907,
+        "after": 0.0007633594213984907
+      },
+      {
+        "mode": "2",
+        "id": "lantern",
+        "light": "ambient",
+        "before": 0.0009942433098331094,
+        "after": 0.0009942433098331094
+      },
+      {
+        "mode": "2",
+        "id": "lantern",
+        "light": "point",
+        "before": 0.0007633594213984907,
+        "after": 0.0014301622286438942
+      },
+      {
+        "mode": "2",
+        "id": "lantern",
+        "light": "far",
+        "before": 0.0007633594213984907,
+        "after": 0.000940881494898349
+      },
+      {
+        "mode": "2",
+        "id": "lantern",
+        "light": "spot",
+        "before": 0.0007633594213984907,
+        "after": 0.0014301622286438942
+      },
+      {
+        "mode": "2",
+        "id": "lantern",
+        "light": "spotOutside",
+        "before": 0.0007633594213984907,
+        "after": 0.0007633594213984907
+      },
+      {
+        "mode": "2",
+        "id": "lantern",
+        "light": "pointShadow",
+        "before": 0.0007633594213984907,
+        "after": 0.0007633594213984907
+      },
+      {
+        "mode": "2",
+        "id": "lantern",
+        "light": "spotShadow",
+        "before": 0.0007633594213984907,
+        "after": 0.0007633594213984907
+      },
+      {
+        "mode": "2",
+        "id": "lantern",
+        "light": "day",
+        "before": 0.0029827223625034094,
+        "after": 0.0029827223625034094
+      }
+    ],
+    "timings": [
+      {
+        "instances": 9,
+        "stage": "before",
+        "cpuMedianMs": 0.48600000000000004
+      },
+      {
+        "instances": 9,
+        "stage": "after",
+        "cpuMedianMs": 0.553
+      },
+      {
+        "instances": 225,
+        "stage": "before",
+        "cpuMedianMs": 0.5601
+      },
+      {
+        "instances": 225,
+        "stage": "after",
+        "cpuMedianMs": 0.6323000000000001
+      }
+    ],
+    "limits": [
+      "Source reader control flow only; old binary not run",
+      "Forward/Forward+ per-pixel local-light setting only; vertex mode untested",
+      "CPU Camera.Render timings are short samples, not GPU/mobile benchmarks",
+      "Offscreen Editor only; Player/full gameplay not run"
+    ]
+  },
+  "web": {
+    "pass": true,
+    "rows": [
+      {
+        "on": false,
+        "mean": 0,
+        "gl": 0
+      },
+      {
+        "on": true,
+        "mean": 0.026439799060119916,
+        "gl": 0
+      }
+    ],
+    "saved": {
+      "save": true,
+      "collision": true
+    },
+    "productWebCodeChanged": false
+  },
+  "actualCave": {
+    "seed": 71421,
+    "cells": 648,
+    "torches": 21,
+    "originalNearestTorchDistance": 6.190696716308594,
+    "near": {
+      "placement": {
+        "x": -11.25,
+        "y": 0.0,
+        "z": 48.75
+      },
+      "light": {
+        "x": -10.524999618530273,
+        "y": 1.7100000381469727,
+        "z": 50.0
+      },
+      "distance": 2.238800048828125,
+      "intensity": 2.854231834411621,
+      "range": 8.0
+    },
+    "images": {
+      "normal": {
+        "changedBounds": [
+          720,
+          282,
+          881,
+          373
+        ],
+        "beforeSha256": "9af956115e940bc7c64686813a0b39e0c55eb05027f86c2ea8ef4f7e0bff4994",
+        "afterSha256": "19c570a8a975425ca4bcbb91293d4af9487c20ec0a2dae403b0f7bcefc0cda41"
+      },
+      "close": {
+        "changedBounds": [
+          570,
+          203,
+          1084,
+          582
+        ],
+        "beforeSha256": "a131d17e1e58e0b03c6e87257f742ab2a1547f05c1709677c97a13fb5f4e538c",
+        "afterSha256": "1a4e7f0555d0a0dc37ffdd4574a4162f70d03fb37bd966efb099dc7f52085671"
+      },
+      "near-existing-torch/normal": {
+        "changedBounds": [
+          720,
+          282,
+          881,
+          368
+        ],
+        "beforeSha256": "e39eb541edd664a83b2953daa26197bd6a292195b60b8f78a95418b02661e43a",
+        "afterSha256": "299a3da4ee50854d05b7e1153d9dd2517778d98fe3421e824626e0554b1baef7"
+      },
+      "near-existing-torch/close": {
+        "changedBounds": [
+          570,
+          202,
+          1084,
+          578
+        ],
+        "beforeSha256": "801fe6d7be1a8fe94eb7f7106c760c616a6c57c42336ecdfb2aaacc207307235",
+        "afterSha256": "8197d100edb803aab768d059e0a7f1a4fff497cfd86a7423b4b143461cee7ccd"
+      }
+    }
+  },
+  "all44GeometryUvNormalsColoursCollidersAndLightsExact": true,
+  "protectedAssetCount": 10,
+  "protectedMaterialSerializationExact": true,
+  "scope": "Only SmallPropsV1-generated MapSharedProps/Lit materials opt into SMALL_PROP_LOCAL_LIGHTS; 34 of 44 assets. Other importers/nature/grounded-shell materials remain unchanged.",
+  "newLights": 0,
+  "newTextures": 0,
+  "newGeometry": 0,
+  "visualReview": "Near the existing cave torch, barrel wood, stone edging/base and clay rim receive warm incident light. Shade remains dark; existing distant position has restrained change. No scene-light/exposure modifications.",
+  "limits": [
+    "Old reader source control flow only, old binary unexecuted; old reader materials do not gain the new opt-in automatically",
+    "Forward and Forward+ per-pixel additional lights rendered; vertex mode untested",
+    "Short Editor Camera.Render CPU medians are not GPU or mobile benchmarks",
+    "Player/full gameplay untested"
+  ]
+}
