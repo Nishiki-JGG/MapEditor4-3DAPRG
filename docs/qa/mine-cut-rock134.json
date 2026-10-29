@@ -1,0 +1,213 @@
+{
+  "candidate": 134,
+  "published": false,
+  "gate": "未合格。自己評価89点、独立レビュー前。",
+  "base": "cda2597d7118a655ce177d61a0b0ac7852b86f82",
+  "score": {
+    "appearance": 26,
+    "material": 17,
+    "structurePlacement": 17,
+    "webFormalUnity": 20,
+    "lightness": 9,
+    "total": 89
+  },
+  "web": {
+    "pass": true,
+    "tests": {
+      "rows": [
+        "manual-only closed solid",
+        "under1000 triangles",
+        "finite geometry",
+        "ground base and closed back",
+        "bounded nonmetal texture",
+        "shared material",
+        "closed manifold after position welding",
+        "front faces present and consistently outward",
+        "shallow collision bounds contain visual"
+      ],
+      "unitNormals": 1116,
+      "triangles": 372,
+      "vertices": 1116,
+      "bounds": [
+        [
+          -0.8999999761581421,
+          0,
+          -0.05999999865889549
+        ],
+        [
+          0.8799999952316284,
+          1.8799999952316284,
+          0.14687250554561615
+        ]
+      ]
+    },
+    "legacy": {
+      "first": {
+        "success": true,
+        "count": 0,
+        "stats": {
+          "kind": "load",
+          "seed": 0,
+          "cacheHit": false,
+          "persistent": false,
+          "persistentStored": false,
+          "preparedSource": "generated",
+          "bundleBytes": 0,
+          "walkReused": false,
+          "elapsedMs": 23.899999976158142,
+          "firstRenderMs": 14.5,
+          "props": 0,
+          "fits": 0,
+          "fitStats": null
+        }
+      },
+      "second": {
+        "success": true,
+        "count": 2,
+        "stats": {
+          "kind": "load",
+          "seed": 0,
+          "cacheHit": false,
+          "persistent": false,
+          "persistentStored": false,
+          "preparedSource": "generated",
+          "bundleBytes": 0,
+          "walkReused": false,
+          "elapsedMs": 30.200000047683716,
+          "firstRenderMs": 12.100000023841858,
+          "props": 2,
+          "fits": 0,
+          "fitStats": null
+        }
+      }
+    },
+    "oldTypes": {
+      "loaded": true,
+      "ids": [
+        "mine_rail_straight",
+        "minecart"
+      ],
+      "withoutNewType": true
+    },
+    "save": {
+      "loaded": true,
+      "save": true,
+      "collider": true
+    },
+    "stats": {
+      "gl": 0,
+      "calls": 4,
+      "triangles": 10344,
+      "textures": 40
+    },
+    "extensionBytes": 683202
+  },
+  "nativeFinal": {
+    "pass": true,
+    "cases": [
+      {
+        "tag": "valid",
+        "savedReload": "passed save-destroy-reinstantiate",
+        "prefabs": 49,
+        "placed": 2,
+        "old48Preserved": true
+      }
+    ],
+    "error": "",
+    "limitations": [
+      "Background Editor only; Player/mobile/GPU timing not measured.",
+      "Old Reader binary not executed; unknown optional field follows previous source control flow.",
+      "Standalone facing; no original walls or fixed rock samples replaced."
+    ]
+  },
+  "sharedLoad": {
+    "cases": [
+      {
+        "placed": 9,
+        "visible": 9,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 3,
+        "meshBytes": 166752,
+        "textureBytes": 4088753,
+        "cpuRenderMedianMs": 0.5933,
+        "gpuMeasured": false
+      },
+      {
+        "placed": 225,
+        "visible": 225,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 3,
+        "meshBytes": 166752,
+        "textureBytes": 4088753,
+        "cpuRenderMedianMs": 0.8443,
+        "gpuMeasured": false
+      }
+    ],
+    "limitation": "CPU Render submission, not GPU or game-frame guarantee"
+  },
+  "cave": {
+    "pass": true,
+    "seed": 71421,
+    "sameCameraLightingPoseBaseline131": true,
+    "originalSceneSaved": false
+  },
+  "productMine": {
+    "pass": true,
+    "baselineAndCandidateScale": 0.8,
+    "baselineAndCandidatePosition": [
+      13.12,
+      0,
+      11.13
+    ],
+    "reason": "既存支柱間へ収める配置。前回の黒い遮蔽は支柱との重なり。"
+  },
+  "unchangedContractTests": "131最終の10ケースを再利用。134は形状/マップのみ変更、正式valid49生成・旧48mesh/Collider不変・保存破棄再instantiateは新たに実行。",
+  "remaining": [
+    "薄い外周と少数の破断面は改善。通常距離では周囲と異なる面材を貼った印象が残る。",
+    "実洞窟の下端に暗い境界が残る。支柱遮蔽とは別の形状/接地の美術課題として未解決。",
+    "短い打点は近景で読めるが、通常距離で手掘りの壁と識別する力はまだ弱い。",
+    "旧Reader実バイナリ、Player、スマホ、GPU時間は未検証。"
+  ],
+  "rejectedTrial133": "一律35%平滑/65%面法線で三角形の格子が目立ったため不採用。134は面積加重・35度の破断角で平滑化の範囲を制限。",
+  "sourceSha256": "55782e79cd7d52ca46bfa412c6cfa7c8900a2a869a99b1393a69e9d8ada02ea7",
+  "evidence": {
+    "Evidence134Cave/lit-baseline-close.png": {
+      "bytes": 1264295,
+      "sha256": "5f4320a1ae54ec07884cb6334d9ddd753471180cef4b7e8e4e3361d6a1bd49ae"
+    },
+    "Evidence134Cave/lit-close.png": {
+      "bytes": 1227174,
+      "sha256": "55c751a6e72482d13e96be1edef0c1b535c73bc0d585c15d7c49806dd84f4fd8"
+    },
+    "Evidence134Cave/lit-baseline-normal.png": {
+      "bytes": 1352600,
+      "sha256": "33c3f70152b647e1bc948c5a7a96ea7c31688d2d74073f8d555199cf54f400c7"
+    },
+    "Evidence134Cave/lit-normal.png": {
+      "bytes": 1351261,
+      "sha256": "829b63bb757271ddb103159a9a18af28389831b2b5647b8d621d16f9b5c0890d"
+    },
+    "Evidence134Cave/lit-side.png": {
+      "bytes": 1170357,
+      "sha256": "90e37a2b67420969db6306a4410cef401fe2d8b4ef4ddff71621d81f6b813dc7"
+    },
+    "Evidence134Cave/dark-normal.png": {
+      "bytes": 1374047,
+      "sha256": "11bf37308eb927ce99a9688cb21347cd2ac037ac4a11d6273c2ecfebd2171f60"
+    },
+    "Evidence134Mine/close.png": {
+      "bytes": 520032,
+      "sha256": "58b72d3183c7f8da36f2810c6d1c52723bad502b6b73d31f05c35c2a59eb6cce"
+    },
+    "Evidence134Mine/normal.png": {
+      "bytes": 75490,
+      "sha256": "ca307dacf74220f4f05a592e7e7eaa75276a922f80088fff66c1cff362f94c79"
+    },
+    "Evidence134Web/front-close.png": {
+      "bytes": 1014247,
+      "sha256": "36c500cebd00323478fc8571b8a0391b9c2b39117d3a0ea4f6939bd2f285a129"
+    }
+  }
+}
