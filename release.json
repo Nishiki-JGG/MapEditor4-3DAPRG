@@ -1,7 +1,7 @@
 {
-  "release": "cave-decoration-label-20261030",
+  "release": "brush-visibility-20261030",
   "files": {
-    "app.js": "6b984137161762d43d2b525f5e3b0cf7e700fbfd783bccf8e7d83dbccbf3b8b3",
+    "app.js": "edd565bf930fc04758b6efae151374b216ce38f2aa966ba30b5b6f9ca79d09f9",
     "props/chest-presentation.js": "02d054f76798bdf6599156ffb0655085c919b3df733386a47a11f458d3aa5233",
     "props/chest-surface.js": "bf7137cd3c64c736bc50d0dbd2a7b62f4fce1c48db73f6473fc6b9522b24f025",
     "props/chest-relief.js": "2f6d152ccd4c0dfd43d34c9867118d5060704b01ea93cfeafcdf826c479e8f94",
@@ -42,10 +42,10 @@
     "unity/Assets/MapSharedProps/Editor/MineSpoilV1.cs": "18413514bdf454f98e9acc696b736cce2bf9017894b0b901ece2f597573f463e",
     "props/cave-decor.js": "abf74ab0b78918409e80854060e0291cda33f30ed758a7c4d46a29e12ddaead1",
     "props/shared/cave-decor-data.js": "5939db717735b0bc3400f5decf360bc3e6aaec12c75f0abbbb26c616269ba57c",
-    "index.html": "7171bee3d348263da51494f0b4c57a2a439a817f1edb5d3cf37f3ddec31a6908",
-    "prepared/manifest.js": "8b9af0e31d1f5e3cdb35c04a8f6f880335bed2338f7d2c8fd654765229f49d49",
+    "index.html": "f71bd3601925d663b2eb385b3f4ec8ade19e09ca76256653b325eddafaf43d88",
+    "prepared/manifest.js": "2ba703de7477335e71f31b4d55a4eeb7957e096ad18ff597a42039a6881155c2",
     "terrain/cliff-shoulder.js": "71e49d1ee7d85f2164431f9a23bde42d1c07daf472c4f6960124d98c3ee91094"
   },
-  "sourceCandidate": "0e2ac4c633f326882f8974c45daf576bf9e96c81",
-  "integratedMain": "0e2ac4c633f326882f8974c45daf576bf9e96c81"
+  "sourceCandidate": "1b8197433de03c8ef6de3671b2d66c421fe5592a",
+  "integratedMain": "1b8197433de03c8ef6de3671b2d66c421fe5592a"
 }

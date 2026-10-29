@@ -1,0 +1,20 @@
+const fs=require('fs'),path=require('path'),http=require('http'),assert=require('assert/strict');
+const root=path.resolve(__dirname,'..'),label='after',{withPage}=require('./cdp'),out=process.env.BRUSH_TEST_OUT||path.join(root,'output/brush-visibility');fs.mkdirSync(out,{recursive:true});
+const server=http.createServer((q,r)=>{const url=new URL(q.url,'http://x').pathname,f=path.resolve(root,'.'+url);if(!f.startsWith(root+path.sep))return r.writeHead(403).end();fs.readFile(f,(e,b)=>{if(!e&&url==='/app.js')b=Buffer.from(b.toString().replace('window.__app = {','window.__brushTest={ring,railDragGuide,updateRing,setHit:(x,z)=>{hit=new THREE.Vector3(x,heightAt(x,z),z);}};window.__app = {'));r.writeHead(e?404:200,{'Content-Type':f.endsWith('.js')?'text/javascript':f.endsWith('.html')?'text/html':'application/octet-stream'});r.end(e?'404':b);});});
+(async()=>{await new Promise(r=>server.listen(0,'127.0.0.1',r));try{
+const result=await withPage('http://127.0.0.1:'+server.address().port+'/index.html#size=96',async p=>{
+await p.eval('(async()=>{while(!window.__app)await new Promise(r=>setTimeout(r,100));await __app.bootReady;})()');
+await p.eval('window.requestAnimationFrame=()=>0; new Promise(r=>setTimeout(r,100))');
+const stats=await p.eval(`(()=>{const a=__app,t=__brushTest;window.requestAnimationFrame=()=>0;a.setPanel(false);a.state.tool='grass';a.state.radius=3;let drawn=0;t.ring.onBeforeRender=()=>drawn++;
+ const move=(x,z)=>{a.camera.position.set(x,18,z+12);a.camera.lookAt(x,0,z);a.camera.updateMatrixWorld(true);t.setHit(x,z);t.updateRing();drawn=0;a.render();return drawn;};
+ const first=move(-34,-34),moved=move(34,34),bounds=t.ring.geometry.boundingSphere?.center.toArray();
+ window.brushResult={first,moved,bounds,frustumCulled:t.ring.frustumCulled,depthWrite:t.ring.material.depthWrite,order:t.ring.renderOrder};return brushResult;})()`);
+await p.screenshot(path.join(out,label+'-moved.png'));
+const priority=await p.eval(`(()=>{const a=__app,t=__brushTest,scene=t.ring.parent,order=[];const veil=new THREE.Mesh(new THREE.PlaneGeometry(100,100),new THREE.MeshBasicMaterial({color:0x224466,transparent:true,opacity:1,depthTest:false,depthWrite:false}));veil.position.set(34,4,34);veil.quaternion.copy(a.camera.quaternion);veil.frustumCulled=false;veil.renderOrder=20;scene.add(veil);t.ring.onBeforeRender=()=>order.push('brush');veil.onBeforeRender=()=>order.push('weather');t.ring.frustumCulled=false;a.render();const result={order:[...order],rail:{order:t.railDragGuide.renderOrder,transparent:t.railDragGuide.material.transparent,depthWrite:t.railDragGuide.material.depthWrite}};window.brushVeil=veil;return result;})()`);
+await p.screenshot(path.join(out,label+'-overlay.png'));
+if(label==='after'){assert.equal(stats.first,1);assert.equal(stats.moved,1);assert.equal(stats.frustumCulled,false);assert.equal(stats.depthWrite,false);assert.deepEqual(priority.order,['weather','brush']);assert(priority.rail.order>20&&priority.rail.transparent&&!priority.rail.depthWrite);
+ const shapes=await p.eval(`(()=>{const a=__app,t=__brushTest;brushVeil.parent.remove(brushVeil);brushVeil.geometry.dispose();brushVeil.material.dispose();const values=[];for(const shape of ['circle','square'])for(const radius of [.5,16]){a.state.brushShape=shape;a.state.radius=radius;t.setHit(-30,30);t.updateRing();a.camera.position.set(-30,20,42);a.camera.lookAt(-30,0,30);a.camera.updateMatrixWorld(true);let n=0;t.ring.onBeforeRender=()=>n++;a.render();values.push({shape,radius,drawn:n,finite:[...t.ring.geometry.attributes.position.array].every(Number.isFinite)});}return values;})()`);assert(shapes.every(s=>s.drawn===1&&s.finite));stats.shapes=shapes;}
+assert.deepEqual(p.errors,[]);return{...stats,priority,errors:p.errors};
+},{hardware:true,wait:500,w:1000,h:700,initScript:"sessionStorage.setItem('me_pending','flat');"});
+fs.writeFileSync(path.join(out,label+'.json'),JSON.stringify(result,null,2));console.log(JSON.stringify(result));
+}finally{server.close();}})().catch(e=>{console.error(e);process.exitCode=1;});

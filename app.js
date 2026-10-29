@@ -5277,10 +5277,15 @@ function setMode(m,prepared=false) {
   resize(); hud(); canvas.focus();
 }
 
+// Editor guides belong above scene transparency (including the weather veil).
+const EDITOR_GUIDE_ORDER = 1000;
 // brush ring
 const RING_N = 72;
-const ring = new THREE.LineLoop(new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(new Float32Array(RING_N * 3), 3)), new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: .85, depthTest: false }));
-ring.renderOrder = 5; scene.add(ring);
+const ring = new THREE.LineLoop(new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(new Float32Array(RING_N * 3), 3)), new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: .85, depthTest: false, depthWrite: false, toneMapped: false }));
+// Vertices move in world space every frame; a cached sphere would stay at the
+// first cursor position and wrongly cull later positions. This guide has only 72 vertices.
+ring.frustumCulled = false;
+ring.renderOrder = EDITOR_GUIDE_ORDER; scene.add(ring);
 function updateRing() {
   groundPreview.visible=false;
   preview.visible = false;
@@ -5362,7 +5367,7 @@ function setGroundPreview(type,x,z,yaw,scale){
 // A separate preview group never enters props, snapshots, saves or exports.
 const railDragGroup=new THREE.Group();scene.add(railDragGroup);
 const railDragMaterial=railPreviewMat.clone();
-const railDragGuide=new THREE.Line(new THREE.BufferGeometry().setAttribute('position',new THREE.BufferAttribute(new Float32Array(6),3)),new THREE.LineBasicMaterial({color:0xff5555,depthTest:false}));railDragGuide.visible=false;railDragGuide.frustumCulled=false;railDragGuide.renderOrder=10;scene.add(railDragGuide);
+const railDragGuide=new THREE.Line(new THREE.BufferGeometry().setAttribute('position',new THREE.BufferAttribute(new Float32Array(6),3)),new THREE.LineBasicMaterial({color:0xff5555,transparent:true,depthTest:false,depthWrite:false,toneMapped:false}));railDragGuide.visible=false;railDragGuide.frustumCulled=false;railDragGuide.renderOrder=EDITOR_GUIDE_ORDER;scene.add(railDragGuide);
 const railDragStatus=document.createElement('div');railDragStatus.id='railDragStatus';railDragStatus.hidden=true;
 railDragStatus.setAttribute('role','status');railDragStatus.style.cssText='position:fixed;bottom:52px;left:50%;transform:translateX(-50%);padding:8px 12px;background:#14202eee;color:white;border:1px solid #77ddaa;border-radius:6px;pointer-events:none;z-index:30;max-width:80vw';document.body.appendChild(railDragStatus);
 function railDragLock(on){for(const id of ['placeScale','placeRot','placeRandom'])$(id).disabled=on;}
