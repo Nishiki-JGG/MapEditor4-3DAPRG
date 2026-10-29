@@ -1,7 +1,7 @@
 {
-  "release": "rail-drag-20261029-130",
+  "release": "mine-cut-rock-20261029-138",
   "files": {
-    "app.js": "d594017eabb9f3c1c880999d92822f9245f6f3e4fe6583d1c75d2ccdd4995e75",
+    "app.js": "c8e4b9787aa09a458373492b495b9a765f6a94955bd8415c403a68326cb15a99",
     "props/chest-presentation.js": "02d054f76798bdf6599156ffb0655085c919b3df733386a47a11f458d3aa5233",
     "props/chest-surface.js": "bf7137cd3c64c736bc50d0dbd2a7b62f4fce1c48db73f6473fc6b9522b24f025",
     "props/chest-relief.js": "2f6d152ccd4c0dfd43d34c9867118d5060704b01ea93cfeafcdf826c479e8f94",
@@ -23,7 +23,7 @@
     "props/practical-parts.js": "881f1402590d3c41bb236da6b4497a544b3222a91e102bb923d23b4b0739d16b",
     "props/storagepot.js": "a438c43030411e625765317acecc89ee1cf0e7beec47bcfa7dd7a65296747fe3",
     "props/brokenpot.js": "a019b0eb7361c61d282ea6b32555df59b432c70e554858dd6439b3072d657a6b",
-    "props/small-prop-export.js": "745e39eebd333cb619b05c091fc4373d0d797713694ad5974f86a14b853c1a83",
+    "props/small-prop-export.js": "bac33288b4af899413ffd491a7e8ef575c03fcbd6bdfc9f895677fc6b4f638a9",
     "props/lantern.js": "bbeab0d3138ba12c9d1b9242d0f5c241d8b8d0e476ece144fd727da5a6be3168",
     "props/miningtools.js": "c6c110711d24f5aa00298099790c77c146f94461614964f24bbf599793e09057",
     "props/coiledrope.js": "79f301028e149761ad4451a038929e2f55fc2fd8bed97e6062651c06bad22916",
@@ -34,7 +34,10 @@
     "props/obsidian-reflection.js": "db926e0da7a344f731911d299ae2ee2353db95c387efdd6d8934ac7683d23ee0",
     "props/mine-rails.js": "a64ac22e284c820939cd7e33b26e44f933e5455365b2709fa07387a99b018bde",
     "props/minecart.js": "d81638fa5dcfb05644e0ed7d21660968c682402372dde884d21f9fa4c191c336",
-    "props/mine-rail-drag.js": "7103ee81b1d164a608c14c0701e3fc728f060a0ed0034bb76fd4c92ed3d5241a"
+    "props/mine-rail-drag.js": "7103ee81b1d164a608c14c0701e3fc728f060a0ed0034bb76fd4c92ed3d5241a",
+    "props/mine-cut-rock.js": "249b6979eeec4ce30fa181b60004094bc7296f6de1783fa4d1e275b64b960b3b",
+    "unity/Assets/MapSharedProps/Editor/MineCutRockV1.cs": "192558bef384f83dd23fdb3550070eefa7626a156371deaf47f0b4f1292c280e",
+    "unity/Assets/MapSharedProps/Editor/SmallPropsV1.cs": "0eeb280daa04f760cab2252207cb02ea39b56c6e09b8db1d73f9cb949f306e93"
   },
-  "sourceCandidate": "bf697a27cf7f5c4f991eddad44ab0c080b364781"
+  "sourceCandidate": "d4d12b50646530b74f1ce47ca7996f32b363f3c9"
 }
