@@ -1,0 +1,254 @@
+{
+  "candidateBase": "65d27a6883748d6e707591c1d8a62e29b4f092eb",
+  "published": false,
+  "web": {
+    "pass": true,
+    "pure": [
+      "three straights",
+      "replace provisional tail with -1 turn",
+      "actual mesh port -1",
+      "actual mesh port -1",
+      "actual mesh port -1",
+      "actual mesh port -1",
+      "actual mesh port -1",
+      "actual mesh port -1",
+      "continuous -1 1",
+      "continuous -1 2",
+      "replace provisional tail with 1 turn",
+      "actual mesh port 1",
+      "actual mesh port 1",
+      "actual mesh port 1",
+      "actual mesh port 1",
+      "actual mesh port 1",
+      "actual mesh port 1",
+      "continuous 1 1",
+      "continuous 1 2",
+      "two successive bends",
+      "four curves closed loop",
+      "closed loop stable on pointer release",
+      "retract to earlier endpoint",
+      "existing start sets outward tangent",
+      "finish at matching existing port",
+      "perpendicular end rejected",
+      "end scale mismatch rejected",
+      "end height mismatch rejected",
+      "duplicate/interior overlap rejected",
+      "occupied start rejected",
+      "uneven ground rejected",
+      "impossible short sideways move rejected",
+      "scale and QE heading",
+      "bounded stroke",
+      "map bounds rejected",
+      "225 existing rail scene"
+    ],
+    "final": [
+      [
+        136,
+        2.184924952075562e-08,
+        -1.5200453340469267e-07,
+        0,
+        1,
+        0,
+        1,
+        0
+      ],
+      [
+        136,
+        2.184924952075562e-08,
+        1.9999998479954666,
+        0,
+        1,
+        0,
+        1,
+        0
+      ],
+      [
+        136,
+        2.184924952075562e-08,
+        3.9999998479954666,
+        0,
+        1,
+        0,
+        1,
+        0
+      ],
+      [
+        137,
+        2.184924952075562e-08,
+        5.999999847995467,
+        0,
+        1,
+        0,
+        1,
+        0
+      ],
+      [
+        136,
+        2.0000000218492495,
+        7.999999847995467,
+        1.5707963267948966,
+        1,
+        0,
+        1,
+        0
+      ],
+      [
+        136,
+        4.0000000218492495,
+        7.999999847995467,
+        1.5707963267948966,
+        1,
+        0,
+        1,
+        0
+      ]
+    ],
+    "reload": {
+      "success": true,
+      "equal": true,
+      "count": 6
+    },
+    "cancelModes": [
+      "escape",
+      "cancel",
+      "blur",
+      "type",
+      "tool",
+      "mode",
+      "capture"
+    ],
+    "oneStrokeOneUndo": true,
+    "dragScaleHeadingLocked": true,
+    "ordinaryPropUnchanged": true,
+    "undergroundFloor": true,
+    "timing": {
+      "existing": 225,
+      "maxStroke": 64,
+      "updateMedianMs": 0.2999999523162842,
+      "updateMaxMs": 0.40000009536743164,
+      "gpuMeasured": false
+    },
+    "errors": [],
+    "privateHeadless": true,
+    "gui": false
+  },
+  "touch": {
+    "pass": true,
+    "joint": {
+      "count": 2,
+      "dx": 0,
+      "dz": 2,
+      "scales": [
+        1,
+        1
+      ],
+      "rot": [
+        0,
+        0
+      ],
+      "ys": [
+        0,
+        0
+      ],
+      "stateRot": 0
+    },
+    "distinct": [
+      0.04999993352045262,
+      4.050000010895439,
+      0,
+      0.8,
+      0,
+      1,
+      0
+    ],
+    "saved": {
+      "equal": true,
+      "ids": [
+        "mine_rail_straight",
+        "mine_rail_curve",
+        "mine_rail_end"
+      ]
+    },
+    "stage": {
+      "unevenRejected": true,
+      "gauge": {
+        "railCentres": 0.84,
+        "clearGauge": 0.79,
+        "runningHeight": 0.14,
+        "wheelCentres": [
+          -0.42,
+          0.42
+        ],
+        "bodyWidth": 1,
+        "bodyLength": 1.4,
+        "bodyHeight": 1.1
+      }
+    },
+    "underground": {
+      "count": 1,
+      "x": -1.2476156641128e-07,
+      "z": -0.9999998151853546,
+      "y": 0,
+      "terrain": 3.5,
+      "previewCorrect": true,
+      "previewY": 0
+    },
+    "midBumpRejected": true,
+    "privateHeadless": true,
+    "guiUsed": false
+  },
+  "native": {
+    "pass": true,
+    "old48Preserved": true,
+    "savedReinstantiated": true,
+    "sceneReloaded": true,
+    "sharedMaterial": true,
+    "prefabs": 48,
+    "placements": 6,
+    "joints": 5,
+    "error": "",
+    "limitations": [
+      "Dedicated background Editor/offscreen only. No Player or user GUI.",
+      "Placement-only change; native source and mesh/material payload unchanged from public baseline.",
+      "Old binary not run; existing optional reader contract unchanged."
+    ]
+  },
+  "fixed": {
+    "pass": true,
+    "rows": [
+      {
+        "kind": "sample",
+        "source": "bundle",
+        "fitCalls": 0,
+        "walkReused": true,
+        "props": 5761,
+        "railCount": 0,
+        "key": "sample:25df0ce81fad64999cea20b5251e6c8dd8d9be51a67da3102112f06b0c6f201e"
+      },
+      {
+        "kind": "sample2",
+        "source": "bundle",
+        "fitCalls": 0,
+        "walkReused": true,
+        "props": 536,
+        "railCount": 0,
+        "key": "sample:9bce7c1d84c718612f264dd6f30eef85190828ad9d37abe01eb311504f15dfa3"
+      }
+    ]
+  },
+  "sourceHashes": {
+    "app.js": "80647944f02491213855929be03e7680b04d580c7d9b658f05f41a89302ad777",
+    "index.html": "fc9bd04beb1825931b283699daa3c1cb6f53be9b3c8929ab5fa30f1153770aec",
+    "props/mine-rails.js": "a64ac22e284c820939cd7e33b26e44f933e5455365b2709fa07387a99b018bde",
+    "props/mine-rail-drag.js": "59e4122c07952291f144dbc32aea5b61067d8b38f5df959b28c54cd5c1db6333",
+    "prepared/manifest.js": "9b98bba0ee0bd476b22b549a9a63d0633ec5ad339919965ca9ad1db0a77434d5",
+    "tests/mine-rail-drag.cjs": "de1ebabb0fef0fb1e6fc86e1f143db6f7878127b8dea309c1206b1fd60b013c9",
+    "tests/mine-rails-placement.cjs": "28c841c7dc6a246d9290f819699ac0038673134eacd02b79651a6cac9ee3f0ff",
+    "tests/unity/Rail128Checks.cs": "1cda52b82b2c208486a7f7854f3190312c1ac658bb9184cd0e311040c97efc80"
+  },
+  "limitations": [
+    "独立レビュー待ち。公開用キャッシュURL同期は採用後。",
+    "旧Readerバイナリ・Player・スマホ・GPU時間は未実行。",
+    "GUI操作・画像アップロード・固定岩再生成なし。"
+  ]
+}

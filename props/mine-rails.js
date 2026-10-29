@@ -46,8 +46,8 @@ window.TDMineRails=(()=>{
   const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setAttribute('normal',new THREE.Float32BufferAttribute(norm,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));g.setAttribute('color',new THREE.Float32BufferAttribute(new Float32Array(pos.length).fill(1),3));g.setAttribute('glow',new THREE.Float32BufferAttribute(new Float32Array(pos.length/3),1));g.setIndex(tri);g.computeBoundingBox();g.computeBoundingSphere();return g;
  }
  function worldEnds(def,p){const c=Math.cos(p.rot),s=Math.sin(p.rot);return def.ends.map(e=>({p:[p.x+(e[0]*c+e[2]*s)*p.scale,p.y+e[1]*p.scale,p.z+(-e[0]*s+e[2]*c)*p.scale],d:[e[3]*c+e[5]*s,0,-e[3]*s+e[5]*c]}));}
- let placementCache;
- function invalidate(){placementCache=null;}
+ let placementCache,placementRevision=0;
+ function invalidate(){placementCache=null;placementRevision++;}
  function placementIndex(placed,types,heightAt){
   if(placementCache&&placementCache.placed===placed)return placementCache.cells;
   const cells=new Map(),ends=[];
@@ -64,5 +64,5 @@ window.TDMineRails=(()=>{
  function png(bytes){const t=maps(),c=document.createElement('canvas');c.width=t.w;c.height=t.h;c.getContext('2d').putImageData(new ImageData(new Uint8ClampedArray(bytes),t.w,t.h),0,0);return c.toDataURL('image/png').split(',')[1];}
  function exportData(types){const t=maps();return{version:1,units:'metres',axes:'Unity X/Y/Z',runningHeight:spec.runningHeight,railCentres:spec.centres,textures:{width:t.w,height:t.h,colour:png(t.colour),packed:png(t.packed),normal:png(t.normal)},assets:types.filter(t=>ids.includes(t.id)&&t.assetKey==='tdj/'+t.id).map(t=>({id:t.id,assetKey:t.assetKey,radius:t.r,height:t.height,shape:!!t.shape,groundSink:0,material:'mineRail',...(!t.shape&&t.r>0?{circleColliders:(t.offs||[[0,0]]).map(o=>({center:[o[0],0,-o[1]],radius:t.r,height:t.height}))}:{}),...TDSmallPropExport.geometry(t.geo),ends:definitions.find(d=>d.id===t.id).ends.map(e=>({position:[e[0],e[1],-e[2]],direction:[e[3],e[4],-e[5]]}))}))};}
  for(const d of definitions)TDProps.add({id:d.id,name:d.name,r:d.id===ids[2]?.65:0,collisionGeo:d.id===ids[2]?new THREE.BoxGeometry(1.2,.49,.19).translate(0,.245,1.78):undefined,min:2,sc:[1,1],slope:.1,vis:d.curve?2.7:2.1,height:d.id===ids[2]?.49:.14,groundSink:0,anyGround:true,manualOnly:true,shape:d.id===ids[2],tags:['cave','ruins'],material:'mineRail',mineRail:true,build:()=>geometry(d)});
- return{ids,spec,definitions,material,maps,invalidate,placement,worldEnds,export:exportData};
+ return{get revision(){return placementRevision;},ids,spec,definitions,material,maps,invalidate,placement,worldEnds,fitsGround,export:exportData};
 })();
