@@ -1,6 +1,6 @@
 {
-  "app.js": "55fe5fa5a71339b0d60e96e4fd0d50828aba3c9309dafc60bf8fe2e83be13e76",
-  "index.html": "6284fd17dca567f303490b721c0b62ff60e5b1198052e71e51d8ba240f9b1b18",
+  "app.js": "e977dbad320a87950f4d2383c2d3b96a3043987e45d9b53a080eb81aeab74ebd",
+  "index.html": "fe74c663e4ceada3eb52920c1ca3e362fcc00fac39f68c2cd6e8acb6a414f104",
   "props/brokenpot.js": "a019b0eb7361c61d282ea6b32555df59b432c70e554858dd6439b3072d657a6b",
   "props/chest-gold-data.js": "2270c479053cbd000cdcf8d1c2bda1f84756b56d48526edf889302155b3ccd2a",
   "props/chest-gold-surface.js": "217f899d88375e1de7c986e3f35614a22b361aa29839e3a3297ad8e11e19504b",
@@ -37,12 +37,12 @@
   "props/practical-parts.js": "881f1402590d3c41bb236da6b4497a544b3222a91e102bb923d23b4b0739d16b",
   "props/shell-surface.js": "d8250789cc78f5fea3f66a12494c63128b73dbdccca861c2b3a2aa7d5025af76",
   "props/shells.js": "c16f1f1c4c7a60bfcf500d1179b2e668c487c1dd1c39de947a6c6a186929a199",
-  "props/small-prop-export.js": "dd3c465181de5dacee0b45dcfdec77de6ea9f86550b17e832cd1b04b5435efb4",
+  "props/small-prop-export.js": "745e39eebd333cb619b05c091fc4373d0d797713694ad5974f86a14b853c1a83",
   "props/smallbarrel.js": "7fd520c0a8f009eef421480176c25ca725d3f2afcc6c28785df02caded2b1045",
   "props/stone-surface.js": "b13d9f8dacad368b4f91aa9a227eef9c68c2d5ead8af91e03a74d59b20049218",
   "props/storagepot.js": "a438c43030411e625765317acecc89ee1cf0e7beec47bcfa7dd7a65296747fe3",
   "props/wall-torch-source.js": "26b9c2078ffbfa7a000e9dc2fda0720934d4c7a372f75bdd3337153e4814cc9a",
-  "release.json": "65cf5bb77d5ebef5a3a40843e2af2b918a55690559727c9fc373d25b3da00d2f",
+  "release.json": "4bd163eb43385e9beeb6972b51e84d27824f7d6699ae7edd123b741cc9c2ded1",
   "sea.js": "9c929f4f08ac4cf1555ea8f13f58620fd2efaadfb588da56bc64858c5b7d56fb",
   "unity/Assets/MapSharedProps/Editor/ChestPresentationBuilder.cs": "4266b553a28dd80b1dd7f8eee401325e9b7cf5e0957b8a842c3909cf48d84cbf",
   "unity/Assets/MapSharedProps/Editor/ChestRoyalLitBuilder.cs": "4a7eac30ed8966eac116b421a4d6acd0dbda9d8d40e54bb961e33a1cc95ac939",
@@ -52,7 +52,7 @@
   "unity/Assets/MapSharedProps/Editor/ChestSanctumBuilder.cs.meta": "7f8b30d85367ea4b0613a2222a2484dd78132d7f39bcb345d791b8984420336f",
   "unity/Assets/MapSharedProps/Editor/ChestSurfaceBuilder.cs": "c8bcfab4d4cdb15ccc9a71361e10bca8c63d7011d789630ee1080f4d417f3689",
   "unity/Assets/MapSharedProps/Editor/GroundedPropsV1.cs": "87a5a5640c12463a83762421dd2eb262d26156e75ced89a6cdee263870740454",
-  "unity/Assets/MapSharedProps/Editor/SmallPropsV1.cs": "08ce3ee0de729def488e6eb57b58fbd3f999ae7af514011c4349b592cd55d4a5",
+  "unity/Assets/MapSharedProps/Editor/SmallPropsV1.cs": "aaa235c47533316049d241a13042595eb766f1a211ecb36256e3d3ddee785bfb",
   "unity/Assets/MapSharedProps/Runtime/ChestFx.shader": "1c8a58558f897b6cb734f66e9d573ffe4d58a399eea2e656b88d795b7f18d705",
   "unity/Assets/MapSharedProps/Runtime/ChestMetal.shader": "92a414d23d84999f75c84d723f6587ba2541aa3bfdd993ee85dfacdbdbb6ce11",
   "unity/Assets/MapSharedProps/Runtime/ChestPresentation.cs": "57ad8439e1d3d1ccd9ba2668b5380437d696133552c6e26aaca3d24e437bc6ed",
@@ -74,5 +74,8 @@
   "props/mine-rails.js": "9f3dfc0f40cbe0cffe3d3e2f48065077a7fce2ed3f191d880816c201a7b315ae",
   "unity/Assets/MapSharedProps/Editor/MineRailsV1.cs": "d05a2b47d8c8e79ff1ca698caa83b8c410195ace27ee0df8a07e3d744f2ac92d",
   "unity/Assets/MapSharedProps/Editor/MineRailsV1.cs.meta": "e4ed41bebba6e0c52c068647d17d10cfcc507c04bcabe27759ac4afc1ab13f5d",
-  "prepared/manifest.js": "728583c934cdfdb35ffe82a30e07e4bbc5d5d301573b983489233a573e9111cb"
+  "prepared/manifest.js": "5184da5f9f2008d0542a9d584707dac59bf40ac30b5c06cc00f72ecc3ca7752b",
+  "props/minecart.js": "d81638fa5dcfb05644e0ed7d21660968c682402372dde884d21f9fa4c191c336",
+  "unity/Assets/MapSharedProps/Editor/MineCartV1.cs": "36102981b3b524dd1cbbd141f8ad0c12d83057179e9216323f7001002ae52e06",
+  "unity/Assets/MapSharedProps/Editor/MineCartV1.cs.meta": "6dad0a17cfba973610d25932b1fcfc100945df37eac5cbaf28b8ca19ebf20348"
 }

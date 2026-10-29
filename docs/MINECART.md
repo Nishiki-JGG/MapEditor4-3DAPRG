@@ -54,3 +54,7 @@ Player/mobile/GPUは未検証。GUI、Player、AV設定変更、画像upload、p
 Unity用 `tests/unity/Cart125Checks.cs` は既存の専用検証ハーネス（Shared117Review/ColliderSnapshot109）、Input125と比較元Imported123-validを使う。Input125は通常exportのsmall_props.json/props.csv/asset_catalog.jsonで、curve1＋cart1配置が前提。前者に既存47種、任意拡張に新1種を含める。実ゲームの隔離コピーと生成コードは製品公開物に含めない。
 
 公開準備時のキャッシュURL・release.json同期は独立採用後に別途行う。今回の候補では公開URLを変更していない。manifestの生成元hash2件だけ同期し、キー・保存済みbundle・地形内容は不変。
+
+## 独立レビューと公開準備126
+
+候補f1c026bは独立評価92点、当該P1/P2なしで合格。汚れの規則性と暗所の素材差の減点は残る。ローカル公開準備では3スクリプトのキャッシュURL、固定サンプルのキー、release記録を同期した。完成済みサンプルをdecodeしてkeyだけ変更し、key以外の全データの深い一致を検証。旧bundleは保全、岩再生成0。外部push・main・Pages・次品制作は今回の明示承認待ち。

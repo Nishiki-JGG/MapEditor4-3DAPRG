@@ -1,0 +1,92 @@
+{
+  "acceptedCandidate": "f1c026b763a1ce3e4bfb5bb13cf1725b843afb68",
+  "remoteMain": "e32d8240e962c626812b5545fc308e1e264aa850",
+  "remoteWorkBranch": "e32d8240e962c626812b5545fc308e1e264aa850",
+  "approvedProductCodeUnchanged": true,
+  "cacheURLs": 3,
+  "release": "minecart-20261029-126",
+  "scriptHashes": 33,
+  "productHashes": 79,
+  "rekey": {
+    "pass": true,
+    "rockRegeneration": 0,
+    "result": [
+      {
+        "kind": "sample",
+        "oldFile": "sample-64-7-8dd662146443.js",
+        "newFile": "sample-64-7-4c2ad59b8e75.js",
+        "oldKey": "sample:78ae77d0d5ed4f2cc5668f3c348e0109da2065daaee16cd5f30ef2dc17b4682e",
+        "newKey": "sample:25df0ce81fad64999cea20b5251e6c8dd8d9be51a67da3102112f06b0c6f201e",
+        "completedDataUnchanged": true,
+        "oldFilePreserved": true,
+        "gzipBytes": 5930809
+      },
+      {
+        "kind": "sample2",
+        "oldFile": "sample2-48-11-120b6b123ed7.js",
+        "newFile": "sample2-48-11-fac881704041.js",
+        "oldKey": "sample:243bfe77ac4e5b15fe81fe6294ed2f73ea1ba60e21ddf8f4127d257446e00f53",
+        "newKey": "sample:9bce7c1d84c718612f264dd6f30eef85190828ad9d37abe01eb311504f15dfa3",
+        "completedDataUnchanged": true,
+        "oldFilePreserved": true,
+        "gzipBytes": 2415114
+      }
+    ]
+  },
+  "fixedSamples": {
+    "pass": true,
+    "rows": [
+      {
+        "kind": "sample",
+        "source": "bundle",
+        "fitCalls": 0,
+        "walkReused": true,
+        "props": 5761,
+        "railCount": 0,
+        "key": "sample:25df0ce81fad64999cea20b5251e6c8dd8d9be51a67da3102112f06b0c6f201e"
+      },
+      {
+        "kind": "sample2",
+        "source": "bundle",
+        "fitCalls": 0,
+        "walkReused": true,
+        "props": 536,
+        "railCount": 0,
+        "key": "sample:9bce7c1d84c718612f264dd6f30eef85190828ad9d37abe01eb311504f15dfa3"
+      }
+    ]
+  },
+  "published": false,
+  "pushAttempted": false,
+  "mainModified": false,
+  "nextAssetStarted": false,
+  "state": "Local preparation only; branch/main publication authorization pending",
+  "localCacheURLSmoke": {
+    "pass": true,
+    "placed": {
+      "count": 2,
+      "id": "minecart",
+      "pose": [
+        0,
+        1.0000001985293068,
+        0,
+        1,
+        0,
+        1,
+        0.14
+      ],
+      "previewY": 0.14,
+      "previewMaterial": "ore-cart-steel"
+    },
+    "scaleMismatchRejected": true,
+    "underground": {
+      "id": "minecart",
+      "y": 0.14,
+      "terrain": 3.5,
+      "count": 2
+    },
+    "saved": true,
+    "privateHeadless": true,
+    "guiUsed": false
+  }
+}
