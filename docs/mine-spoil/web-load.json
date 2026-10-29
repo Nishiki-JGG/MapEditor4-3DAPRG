@@ -1,0 +1,45 @@
+{
+  "pass": true,
+  "rows": [
+    {
+      "count": 0,
+      "calls": 4,
+      "triangles": 9618,
+      "rendererTextures": 43,
+      "meshReferences": 1,
+      "materialReferences": 1,
+      "distinctTextures": 3,
+      "textureBaseBytes": 1572864,
+      "cpuRenderMedianMs": 3,
+      "gl": 0
+    },
+    {
+      "count": 9,
+      "calls": 5,
+      "triangles": 13218,
+      "rendererTextures": 43,
+      "meshReferences": 1,
+      "materialReferences": 1,
+      "distinctTextures": 3,
+      "textureBaseBytes": 1572864,
+      "cpuRenderMedianMs": 4.100000023841858,
+      "gl": 0
+    },
+    {
+      "count": 225,
+      "calls": 5,
+      "triangles": 99618,
+      "rendererTextures": 43,
+      "meshReferences": 1,
+      "materialReferences": 1,
+      "distinctTextures": 3,
+      "textureBaseBytes": 1572864,
+      "cpuRenderMedianMs": 3.899999976158142,
+      "gl": 0
+    }
+  ],
+  "drawDelta": 1,
+  "triangleDelta": 90000,
+  "gpuMeasured": false,
+  "limitation": "CPU submission only; GPU/game/mobile frame time not measured"
+}

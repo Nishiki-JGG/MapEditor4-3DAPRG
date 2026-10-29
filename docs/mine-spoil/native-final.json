@@ -1,0 +1,18 @@
+{
+    "pass": true,
+    "cases": [
+        {
+            "tag": "valid",
+            "savedReload": "passed save-destroy-reinstantiate",
+            "prefabs": 50,
+            "placed": 2,
+            "old49Preserved": true
+        }
+    ],
+    "error": "",
+    "limitations": [
+        "Background Editor only; Player/mobile/GPU timing not measured.",
+        "Old Reader binary not executed; unknown optional field follows previous source control flow.",
+        "Independent excavated soil prop; no original terrain or fixed rock samples replaced."
+    ]
+}

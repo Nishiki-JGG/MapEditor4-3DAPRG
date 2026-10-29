@@ -1,0 +1,148 @@
+{
+  "pass": true,
+  "tests": {
+    "rows": [
+      "manual-only default circular collider",
+      "under1000 triangles",
+      "finite geometry",
+      "ground base and bounded height",
+      "bounded nonmetal texture",
+      "shared material",
+      "closed manifold after position welding",
+      "mound top/bottom outward winding",
+      "no below-floor mesh",
+      "circular collider encloses horizontal mesh"
+    ],
+    "unitNormals": 1200,
+    "triangles": 400,
+    "vertices": 1200,
+    "bounds": [
+      [
+        -1.0095735788345337,
+        0,
+        -0.8854576349258423
+      ],
+      [
+        1.1150521039962769,
+        0.41833338141441345,
+        0.7546449303627014
+      ]
+    ]
+  },
+  "legacy": {
+    "first": {
+      "success": true,
+      "count": 0,
+      "stats": {
+        "kind": "load",
+        "seed": 0,
+        "cacheHit": false,
+        "persistent": false,
+        "persistentStored": false,
+        "preparedSource": "generated",
+        "bundleBytes": 0,
+        "walkReused": false,
+        "elapsedMs": 29,
+        "firstRenderMs": 17,
+        "props": 0,
+        "fits": 0,
+        "fitStats": null
+      }
+    },
+    "second": {
+      "success": true,
+      "count": 2,
+      "stats": {
+        "kind": "load",
+        "seed": 0,
+        "cacheHit": false,
+        "persistent": false,
+        "persistentStored": false,
+        "preparedSource": "generated",
+        "bundleBytes": 0,
+        "walkReused": false,
+        "elapsedMs": 34.200000047683716,
+        "firstRenderMs": 14.100000023841858,
+        "props": 2,
+        "fits": 0,
+        "fitStats": null
+      }
+    }
+  },
+  "oldTypes": {
+    "loaded": true,
+    "ids": [
+      "mine_rail_straight",
+      "minecart"
+    ],
+    "withoutNewType": true
+  },
+  "save": {
+    "loaded": true,
+    "save": true,
+    "collider": true,
+    "snapshot": {
+      "cs": 4,
+      "m": {
+        "$map": [
+          [
+            0,
+            [
+              {
+                "$array": [
+                  0,
+                  0,
+                  1.15,
+                  0,
+                  0.55
+                ],
+                "properties": {
+                  "prop": [
+                    140,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    1,
+                    0,
+                    "prop_0001"
+                  ]
+                }
+              },
+              {
+                "$array": [
+                  3,
+                  0,
+                  0.9199999999999999,
+                  0.2,
+                  0.6400000000000001
+                ],
+                "properties": {
+                  "prop": [
+                    140,
+                    3,
+                    0,
+                    1.5707963267948966,
+                    0.8,
+                    0,
+                    1,
+                    0.2,
+                    "prop_0002"
+                  ]
+                }
+              }
+            ]
+          ]
+        ]
+      }
+    }
+  },
+  "stats": {
+    "gl": 0,
+    "calls": 4,
+    "triangles": 10400,
+    "textures": 43
+  },
+  "extensionBytes": 1106624
+}

@@ -1,0 +1,88 @@
+{
+    "pass": true,
+    "cases": [
+        {
+            "tag": "valid",
+            "savedReload": "passed save-destroy-reinstantiate",
+            "prefabs": 50,
+            "placed": 2,
+            "old49Preserved": true
+        },
+        {
+            "tag": "missing",
+            "savedReload": "not applicable: rejected/missing optional",
+            "prefabs": 49,
+            "placed": 0,
+            "old49Preserved": true
+        },
+        {
+            "tag": "badVersion",
+            "savedReload": "not applicable: rejected/missing optional",
+            "prefabs": 49,
+            "placed": 0,
+            "old49Preserved": true
+        },
+        {
+            "tag": "badIndex",
+            "savedReload": "not applicable: rejected/missing optional",
+            "prefabs": 49,
+            "placed": 0,
+            "old49Preserved": true
+        },
+        {
+            "tag": "badPng",
+            "savedReload": "not applicable: rejected/missing optional",
+            "prefabs": 49,
+            "placed": 0,
+            "old49Preserved": true
+        },
+        {
+            "tag": "nonfinite",
+            "savedReload": "not applicable: rejected/missing optional",
+            "prefabs": 49,
+            "placed": 0,
+            "old49Preserved": true
+        },
+        {
+            "tag": "nonSolid",
+            "savedReload": "passed save-destroy-reinstantiate",
+            "prefabs": 50,
+            "placed": 2,
+            "old49Preserved": true
+        },
+        {
+            "tag": "compact",
+            "savedReload": "passed save-destroy-reinstantiate",
+            "prefabs": 50,
+            "placed": 2,
+            "old49Preserved": true
+        },
+        {
+            "tag": "customCircle",
+            "savedReload": "passed save-destroy-reinstantiate",
+            "prefabs": 50,
+            "placed": 2,
+            "old49Preserved": true
+        },
+        {
+            "tag": "customHeight",
+            "savedReload": "passed save-destroy-reinstantiate",
+            "prefabs": 50,
+            "placed": 2,
+            "old49Preserved": true
+        },
+        {
+            "tag": "customShape",
+            "savedReload": "passed save-destroy-reinstantiate",
+            "prefabs": 50,
+            "placed": 2,
+            "old49Preserved": true
+        }
+    ],
+    "error": "",
+    "limitations": [
+        "Background Editor only; Player/mobile/GPU timing not measured.",
+        "Old Reader binary not executed; unknown optional field follows previous source control flow.",
+        "Independent excavated soil prop; no original terrain or fixed rock samples replaced."
+    ]
+}

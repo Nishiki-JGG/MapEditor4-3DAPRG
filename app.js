@@ -1475,7 +1475,7 @@ function touchMat(base) {
   return touchMats.get(base);
 }
 const propMeshes = PROP.map(t => {
-  const source = t.mineCutRock ? TDMineCutRock.material() : t.mineCart ? TDMineCart.material() : t.mineRail ? TDMineRails.material() : t.sharedAsset ? TDSharedProps.material(t.sharedAsset) : t.id==='miningtools'?miningToolMat:PROP_MATS[t.material] || propMat;
+  const source = t.mineSpoil ? TDMineSpoil.material() : t.mineCutRock ? TDMineCutRock.material() : t.mineCart ? TDMineCart.material() : t.mineRail ? TDMineRails.material() : t.sharedAsset ? TDSharedProps.material(t.sharedAsset) : t.id==='miningtools'?miningToolMat:PROP_MATS[t.material] || propMat;
   const base = t.id==='obsidian'?TDObsidianReflection.material(source):TDChestSurface.ids.includes(t.id)?TDChestSurface.material(source,t.id,timeU,hemi) : t.surface ? TDSmallPropSurface.material(source,t.surface) : TDFibreFinish.ids.includes(t.id)?TDFibreFinish.material(source,t.id) : t.material==='chestmetal' ? TDChestSeries.material(t.id,timeU,hemi) : source;
   const m = new THREE.InstancedMesh(t.geo, t.touch ? touchMat(base) : base, CAP);
   if(t.sharedAsset&&TDSharedProps.asset(t.sharedAsset).rootGrounding){m.userData.rootSlope=new THREE.InstancedBufferAttribute(new Float32Array(CAP*2),2);t.geo.setAttribute('rootSlope',m.userData.rootSlope);m.userData.rootTerrain=new THREE.InstancedBufferAttribute(new Float32Array(CAP*4),4);t.geo.setAttribute('rootTerrain',m.userData.rootTerrain);}
@@ -1612,7 +1612,7 @@ function rebuildProps(visualOnly = false) {
     mesh.setMatrixAt(c[t], _m);
     if(mesh.userData.rootSlope){const v=rootSlopeAt(p);mesh.userData.rootSlope.setXY(c[t],v[0],v[1]);mesh.userData.rootSlope.needsUpdate=true;mesh.userData.rootTerrain.setXYZW(c[t],...rootTerrainAt(p));mesh.userData.rootTerrain.needsUpdate=true;}
     const v = .86 + .28 * hash2(x * 97 | 0, z * 89 | 0);
-    mesh.setColorAt(c[t], (shared || PROP[t].mineCutRock || PROP[t].mineCart || PROP[t].mineRail || PROP[t].roomTorch || PROP[t].fireEffect) ? _c.setRGB(1, 1, 1) : savedCliffTint(p)?_c.fromArray(savedCliffTint(p)):_c.setRGB(v * (.95 + .1 * hash2(x * 13 | 0, 7)), v, v * (.95 + .1 * hash2(3, z * 17 | 0))));
+    mesh.setColorAt(c[t], (shared || PROP[t].mineSpoil || PROP[t].mineCutRock || PROP[t].mineCart || PROP[t].mineRail || PROP[t].roomTorch || PROP[t].fireEffect) ? _c.setRGB(1, 1, 1) : savedCliffTint(p)?_c.fromArray(savedCliffTint(p)):_c.setRGB(v * (.95 + .1 * hash2(x * 13 | 0, 7)), v, v * (.95 + .1 * hash2(3, z * 17 | 0))));
     if (!ghost && mesh.userData.cliffI) mesh.userData.cliffI.array[c[t]] = cliffIndexNear(x, z);
     if (!ghost && mesh.userData.touch) { touchIdx.set(p, c[t]); touchProps.push(p);indexTouch(p); }
     c[t]++;
@@ -4896,7 +4896,7 @@ const PROP_GROUPS = [
   ['岩・崖', ['drysoil_curl','drysoil_cup','drysoil_flake','scree', 'rock', 'mossrock', 'pebble', 'cliff', 'cliff_split', 'cliff_shoulder', 'cliff_joint', 'cliff_slab', 'cliff_talus', 'rubblepile', 'stalagmite', 'crystal', 'lavarock', 'obsidian', 'fumarole', 'iceblock', 'icespike']],
   ['遺跡・墓', ['column', 'brokencol', 'ruinwall', 'archgate', 'statue', 'statue_seated', 'statue_damaged', 'stele', 'obelisk', 'pyramid', 'gravestone', 'crossgrave', 'mausoleum', 'bones', 'bonepile', 'skullpile', 'magiccircle', 'demonspire']],
   ['海の生き物', ['braincoral', 'staghorn', 'pillarcoral', 'seafan', 'tablecoral', 'roundcoral', 'scallop', 'cowrie', 'shellbits', 'wrack', 'shells']],
-  ['坑道小物', ['mine_rail_straight','mine_rail_curve','mine_rail_end','minecart','mine_cut_rock']],
+  ['坑道小物', ['mine_rail_straight','mine_rail_curve','mine_rail_end','minecart','mine_cut_rock','mine_spoil']],
   ['建物・道具', ['wall_torch', 'torch', 'brazier', 'lantern', 'banner', 'woodfence', 'ironfence', 'castlewall', 'tower', 'gatehouse', 'lighthouse', 'rowboat', 'haystack', 'miningtools', 'supplycrate', 'treasurechest_worn', 'treasurechest', 'treasurechest_reinforced', 'treasurechest_ornate', 'treasurechest_silver', 'treasurechest_gold', 'treasurechest_rainbow', 'smallbarrel', 'tiedsack', 'coiledrope', 'storagepot', 'brokenpot', 'snowman', 'kamakura']],
 ];
 // [group name, type indices]; types not in PROP_GROUPS (added later) land in "その他"
@@ -5281,11 +5281,11 @@ function updateRing() {
   }
   if (state.tool === 'place') {
     const t = state.variant.place, s0 = (PROP[t].sc[0] + PROP[t].sc[1]) / 2 * state.placeScale;
-    preview.material=PROP[t].caveDecor?TDSharedProps.material(PROP[t].sharedAsset,true):PROP[t].mineCutRock?cutRockPreviewMat:PROP[t].mineCart?cartPreviewMat:PROP[t].mineRail?railPreviewMat:standardPreviewMat;
+    preview.material=PROP[t].caveDecor?TDSharedProps.material(PROP[t].sharedAsset,true):PROP[t].mineSpoil?spoilPreviewMat:PROP[t].mineCutRock?cutRockPreviewMat:PROP[t].mineCart?cartPreviewMat:PROP[t].mineRail?railPreviewMat:standardPreviewMat;
     if(PROP[t].mineRail&&PROP[t].id!=='mine_rail_end'&&state.mode==='edit'&&placementPointerType!=='touch'){const q=TDMineRailDrag.begin(hit.x,hit.z,state.placeRot*Math.PI/180,s0,props,PROP,floorAt),p=q.start;preview.geometry=PROP[TYPE('mine_rail_straight')].geo;preview.visible=true;preview.position.set(p.x,p.y,p.z);preview.rotation.y=p.rot;preview.scale.setScalar(s0);outline(circle(p.x,p.z,.14),q.startReason?0xff5555:q.snapped?0x68ffb0:0xffd27a,.18);return;}
     if(PROP[t].mineRail){preview.geometry=PROP[t].geo;const p=TDMineRails.placement(PROP[t].id,hit.x,hit.z,state.placeRot*Math.PI/180,s0,props,PROP,floorAt);preview.visible=true;preview.position.set(p.x,p.y,p.z);preview.rotation.y=p.rot;preview.scale.setScalar(s0);outline(circle(p.x,p.z,.14),!p.valid?0xff5555:p.snapped?0x68ffb0:0xffd27a,.18);return;}
     if(PROP[t].caveDecor){preview.visible=true;preview.position.set(hit.x,TDCaveDecor.baseY(PROP[t],heightAt(hit.x,hit.z),s0,+$('caveDecorHeight').value),hit.z);preview.rotation.y=state.placeRot*Math.PI/180;preview.scale.setScalar(s0);return;}
-    if(PROP[t].mineCutRock){preview.visible=true;preview.position.set(hit.x,floorAt(hit.x,hit.z),hit.z);preview.rotation.y=state.placeRot*Math.PI/180;preview.scale.setScalar(s0);return;}
+    if(PROP[t].mineCutRock||PROP[t].mineSpoil){preview.visible=true;preview.position.set(hit.x,floorAt(hit.x,hit.z),hit.z);preview.rotation.y=state.placeRot*Math.PI/180;preview.scale.setScalar(s0);return;}
     if(PROP[t].mineCart){const p=TDMineCart.placement(hit.x,hit.z,state.placeRot*Math.PI/180,s0,props,PROP,floorAt);preview.visible=true;preview.position.set(p.x,p.y,p.z);preview.rotation.y=p.rot;preview.scale.setScalar(s0);outline(circle(p.x,p.z,.6*s0),!p.valid?0xff5555:p.snapped?0x68ffb0:0xffd27a,.18);return;}
     if(PROP[t].geo.userData.groundParts){setGroundPreview(t,hit.x,hit.z,state.placeRot*Math.PI/180,s0);preview.visible=false;}else{preview.visible = true; preview.position.set(hit.x, heightAt(hit.x, hit.z) + (PROP[t].roomTorch ? TDWallTorchSource.defaultMountHeight : 0), hit.z); preview.rotation.y = state.placeRot * Math.PI / 180; preview.scale.setScalar(s0);}
     outline(circle(hit.x, hit.z, VIS_R[t] * s0 * .75 + .15), 0x9cff8a, .15);
@@ -5316,6 +5316,7 @@ function updateRing() {
 
 const preview = new THREE.Mesh(PROP[0].geo, new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, transparent: true, opacity: .6, depthWrite: false }));
 const standardPreviewMat=preview.material,railPreviewMat=TDMineRails.material().clone();railPreviewMat.transparent=true;railPreviewMat.opacity=.65;railPreviewMat.depthWrite=false;
+const spoilPreviewMat=TDMineSpoil.material().clone();spoilPreviewMat.transparent=true;spoilPreviewMat.opacity=.65;spoilPreviewMat.depthWrite=false;
 const cutRockPreviewMat=TDMineCutRock.material().clone();cutRockPreviewMat.transparent=true;cutRockPreviewMat.opacity=.65;cutRockPreviewMat.depthWrite=false;
 const cartPreviewMat=TDMineCart.material().clone();cartPreviewMat.onBeforeRender=TDMineCart.material().onBeforeRender;cartPreviewMat.transparent=true;cartPreviewMat.opacity=.65;cartPreviewMat.depthWrite=false;
 preview.visible = false; preview.renderOrder = 9; scene.add(preview);
@@ -5379,7 +5380,7 @@ function pick(cx, cy) {
   ray.setFromCamera(mouse, camera);
   // Rail placement targets the actual tunnel floor even while the terrain roof is visible.
   // Other tools keep their existing terrain picking behavior.
-  if(state.tool==='place'&&(PROP[state.variant.place]?.mineRail||PROP[state.variant.place]?.mineCart||PROP[state.variant.place]?.mineCutRock)){let nearest=null,distance=Infinity;const hitPoint=new THREE.Vector3();for(const t of tunnels)for(let i=0;i+1<t.pts.length;i++){const a=t.pts[i],b=t.pts[i+1],length=Math.hypot(b.x-a.x,b.z-a.z);if(length<1e-6)continue;const nx=-(b.z-a.z)/length*t.w*.5,nz=(b.x-a.x)/length*t.w*.5,corners=[new THREE.Vector3(a.x+nx,a.y,a.z+nz),new THREE.Vector3(b.x+nx,b.y,b.z+nz),new THREE.Vector3(b.x-nx,b.y,b.z-nz),new THREE.Vector3(a.x-nx,a.y,a.z-nz)];for(const ids of [[0,1,2],[0,2,3]])if(ray.ray.intersectTriangle(corners[ids[0]],corners[ids[1]],corners[ids[2]],false,hitPoint)){const d=ray.ray.origin.distanceToSquared(hitPoint);if(d<distance){distance=d;nearest=hitPoint.clone();}}}if(nearest)return nearest;}
+  if(state.tool==='place'&&(PROP[state.variant.place]?.mineRail||PROP[state.variant.place]?.mineCart||PROP[state.variant.place]?.mineCutRock||PROP[state.variant.place]?.mineSpoil)){let nearest=null,distance=Infinity;const hitPoint=new THREE.Vector3();for(const t of tunnels)for(let i=0;i+1<t.pts.length;i++){const a=t.pts[i],b=t.pts[i+1],length=Math.hypot(b.x-a.x,b.z-a.z);if(length<1e-6)continue;const nx=-(b.z-a.z)/length*t.w*.5,nz=(b.x-a.x)/length*t.w*.5,corners=[new THREE.Vector3(a.x+nx,a.y,a.z+nz),new THREE.Vector3(b.x+nx,b.y,b.z+nz),new THREE.Vector3(b.x-nx,b.y,b.z-nz),new THREE.Vector3(a.x-nx,a.y,a.z-nz)];for(const ids of [[0,1,2],[0,2,3]])if(ray.ray.intersectTriangle(corners[ids[0]],corners[ids[1]],corners[ids[2]],false,hitPoint)){const d=ray.ray.origin.distanceToSquared(hitPoint);if(d<distance){distance=d;nearest=hitPoint.clone();}}}if(nearest)return nearest;}
   const h = ray.intersectObject(terrain, false)[0];
   return h ? h.point : null;
 }
@@ -5395,10 +5396,10 @@ function beginStroke(e) {
   stroke.active = true; stroke.base = heightAt(hit.x, hit.z); stroke.lower = e.shiftKey; stroke.lastStamp = null;
   if (state.tool === 'place') {
     stroke.active = false;
-    const t = state.variant.place, s0 = (PROP[t].sc[0] + PROP[t].sc[1]) / 2 * state.placeScale * (state.placeRandom && !PROP[t].mineRail && !PROP[t].mineCart && !PROP[t].mineCutRock ? .9 + Math.random() * .2 : 1);
+    const t = state.variant.place, s0 = (PROP[t].sc[0] + PROP[t].sc[1]) / 2 * state.placeScale * (state.placeRandom && !PROP[t].mineRail && !PROP[t].mineCart && !PROP[t].mineCutRock && !PROP[t].mineSpoil ? .9 + Math.random() * .2 : 1);
     if(PROP[t].mineRail){const p=TDMineRails.placement(PROP[t].id,hit.x,hit.z,state.placeRot*Math.PI/180,s0,props,PROP,floorAt);if(!p.valid){toast('レールの両端が同じ高さになる平らな場所に置いてください');return;}props.push([t,p.x,p.z,p.rot,s0,0,1,p.y]);rebuildProps();toast(PROP[t].name+(p.snapped?'を端点に接続しました':'を置きました'));return;}
     if(PROP[t].mineCart){const p=TDMineCart.placement(hit.x,hit.z,state.placeRot*Math.PI/180,s0,props,PROP,floorAt);if(!p.valid){toast(p.reason==='scale'?'レールと同じサイズにしてください':p.reason==='track'?'車輪を支えるレールと車止めの余裕を確保してください':'平らな場所に置いてください');return;}props.push([t,p.x,p.z,p.rot,s0,0,1,p.y]);rebuildProps();toast(PROP[t].name+(p.snapped?'をレール上に置きました':'を置きました'));return;}
-    if(PROP[t].mineCutRock){props.push([t,hit.x,hit.z,state.placeRot*Math.PI/180,s0,0,1,floorAt(hit.x,hit.z)]);rebuildProps();return;}
+    if(PROP[t].mineCutRock||PROP[t].mineSpoil){props.push([t,hit.x,hit.z,state.placeRot*Math.PI/180,s0,0,1,floorAt(hit.x,hit.z)]);rebuildProps();return;}
     const placement=[t,hit.x,hit.z,state.placeRot*Math.PI/180,s0,0];
     if(PROP[t].caveDecor) {placement[6]=1;placement[7]=TDCaveDecor.baseY(PROP[t],heightAt(hit.x,hit.z),s0,+$('caveDecorHeight').value);}
     props.push(placement); rebuildProps();

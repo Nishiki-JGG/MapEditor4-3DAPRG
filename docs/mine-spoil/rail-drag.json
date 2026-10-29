@@ -1,0 +1,131 @@
+{
+  "pass": true,
+  "pure": [
+    "three straights",
+    "replace provisional tail with -1 turn",
+    "actual mesh port -1",
+    "actual mesh port -1",
+    "actual mesh port -1",
+    "actual mesh port -1",
+    "actual mesh port -1",
+    "actual mesh port -1",
+    "continuous -1 1",
+    "continuous -1 2",
+    "replace provisional tail with 1 turn",
+    "actual mesh port 1",
+    "actual mesh port 1",
+    "actual mesh port 1",
+    "actual mesh port 1",
+    "actual mesh port 1",
+    "actual mesh port 1",
+    "continuous 1 1",
+    "continuous 1 2",
+    "two successive bends",
+    "four curves closed loop",
+    "closed loop stable on pointer release",
+    "retract to earlier endpoint",
+    "existing start sets outward tangent",
+    "finish at matching existing port",
+    "perpendicular end rejected",
+    "end scale mismatch rejected",
+    "end height mismatch rejected",
+    "duplicate/interior overlap rejected",
+    "occupied start rejected",
+    "uneven ground rejected",
+    "impossible short sideways move rejected",
+    "scale and QE heading",
+    "bounded stroke",
+    "map bounds rejected",
+    "225 existing rail scene"
+  ],
+  "final": [
+    [
+      136,
+      2.184924952075562e-8,
+      -1.5200453340469267e-7,
+      0,
+      1,
+      0,
+      1,
+      0
+    ],
+    [
+      136,
+      2.184924952075562e-8,
+      1.9999998479954666,
+      0,
+      1,
+      0,
+      1,
+      0
+    ],
+    [
+      136,
+      2.184924952075562e-8,
+      3.9999998479954666,
+      0,
+      1,
+      0,
+      1,
+      0
+    ],
+    [
+      137,
+      2.184924952075562e-8,
+      5.999999847995467,
+      0,
+      1,
+      0,
+      1,
+      0
+    ],
+    [
+      136,
+      2.0000000218492495,
+      7.999999847995467,
+      1.5707963267948966,
+      1,
+      0,
+      1,
+      0
+    ],
+    [
+      136,
+      4.0000000218492495,
+      7.999999847995467,
+      1.5707963267948966,
+      1,
+      0,
+      1,
+      0
+    ]
+  ],
+  "reload": {
+    "success": true,
+    "equal": true,
+    "count": 6
+  },
+  "cancelModes": [
+    "escape",
+    "cancel",
+    "blur",
+    "type",
+    "tool",
+    "mode",
+    "capture"
+  ],
+  "oneStrokeOneUndo": true,
+  "dragScaleHeadingLocked": true,
+  "ordinaryPropUnchanged": true,
+  "undergroundFloor": true,
+  "timing": {
+    "existing": 225,
+    "maxStroke": 64,
+    "updateMedianMs": 0.3999999761581421,
+    "updateMaxMs": 1.5,
+    "gpuMeasured": false
+  },
+  "errors": [],
+  "privateHeadless": true,
+  "gui": false
+}

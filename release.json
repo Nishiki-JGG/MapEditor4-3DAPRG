@@ -1,7 +1,7 @@
 {
-  "release": "mine-cut-rock-20261029-138",
+  "release": "mine-spoil-20261029-142",
   "files": {
-    "app.js": "c8e4b9787aa09a458373492b495b9a765f6a94955bd8415c403a68326cb15a99",
+    "app.js": "66d1a09de8728f737847ef94653322d619a5077b2c232ced5c8bd67e34dbbc58",
     "props/chest-presentation.js": "02d054f76798bdf6599156ffb0655085c919b3df733386a47a11f458d3aa5233",
     "props/chest-surface.js": "bf7137cd3c64c736bc50d0dbd2a7b62f4fce1c48db73f6473fc6b9522b24f025",
     "props/chest-relief.js": "2f6d152ccd4c0dfd43d34c9867118d5060704b01ea93cfeafcdf826c479e8f94",
@@ -23,7 +23,7 @@
     "props/practical-parts.js": "881f1402590d3c41bb236da6b4497a544b3222a91e102bb923d23b4b0739d16b",
     "props/storagepot.js": "a438c43030411e625765317acecc89ee1cf0e7beec47bcfa7dd7a65296747fe3",
     "props/brokenpot.js": "a019b0eb7361c61d282ea6b32555df59b432c70e554858dd6439b3072d657a6b",
-    "props/small-prop-export.js": "bac33288b4af899413ffd491a7e8ef575c03fcbd6bdfc9f895677fc6b4f638a9",
+    "props/small-prop-export.js": "2730c74a3d5c46e106e2e2790d52c6f0b285eefa43b8229bb36df1df870736d4",
     "props/lantern.js": "bbeab0d3138ba12c9d1b9242d0f5c241d8b8d0e476ece144fd727da5a6be3168",
     "props/miningtools.js": "c6c110711d24f5aa00298099790c77c146f94461614964f24bbf599793e09057",
     "props/coiledrope.js": "79f301028e149761ad4451a038929e2f55fc2fd8bed97e6062651c06bad22916",
@@ -37,7 +37,14 @@
     "props/mine-rail-drag.js": "7103ee81b1d164a608c14c0701e3fc728f060a0ed0034bb76fd4c92ed3d5241a",
     "props/mine-cut-rock.js": "249b6979eeec4ce30fa181b60004094bc7296f6de1783fa4d1e275b64b960b3b",
     "unity/Assets/MapSharedProps/Editor/MineCutRockV1.cs": "192558bef384f83dd23fdb3550070eefa7626a156371deaf47f0b4f1292c280e",
-    "unity/Assets/MapSharedProps/Editor/SmallPropsV1.cs": "0eeb280daa04f760cab2252207cb02ea39b56c6e09b8db1d73f9cb949f306e93"
+    "unity/Assets/MapSharedProps/Editor/SmallPropsV1.cs": "25e5984f8411080651d970cd5ba1b239f752151525a05719e38bdb5e65ea07f0",
+    "props/mine-spoil.js": "efdde095fd8c6636b89522a56e7cd739efc49574c0ba89c82635217e4dec9078",
+    "unity/Assets/MapSharedProps/Editor/MineSpoilV1.cs": "18413514bdf454f98e9acc696b736cce2bf9017894b0b901ece2f597573f463e",
+    "props/cave-decor.js": "abf74ab0b78918409e80854060e0291cda33f30ed758a7c4d46a29e12ddaead1",
+    "props/shared/cave-decor-data.js": "5939db717735b0bc3400f5decf360bc3e6aaec12c75f0abbbb26c616269ba57c",
+    "index.html": "2b1de1bee8b5fe5b4b7b9e5e931d52ffbc7dfc19df788de8bbbdcc40e25ecc0a",
+    "prepared/manifest.js": "d8357970fa7fa6635755d8a8855a33d6108d46dc9c7961db843ec607d4fb57b7"
   },
-  "sourceCandidate": "d4d12b50646530b74f1ce47ca7996f32b363f3c9"
+  "sourceCandidate": "75505f10a7afd01dd6abd49a2a0b42f2447a1a8d",
+  "integratedMain": "f57d05b09e66898d6ebffc7723bafd26f3c28cf7"
 }

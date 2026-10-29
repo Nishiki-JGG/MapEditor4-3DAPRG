@@ -12,6 +12,7 @@ window.TDSmallPropExport=(()=>{
   const data=buildCore(types,grounded,instances);
   if(window.TDMineRails)data.mineRailsV1=TDMineRails.export(types);
   if(window.TDMineCutRock)data.mineCutRockV1=TDMineCutRock.export(types);
+  if(window.TDMineSpoil)data.mineSpoilV1=TDMineSpoil.export(types);
   if(window.TDMineCart)data.mineCartV1=TDMineCart.export(types);
   data.additionalAssets=types.filter(t=>additionalIds.includes(t.id)&&t.assetKey==='tdj/'+t.id).map(t=>({
    id:t.id,assetKey:t.assetKey,source:'editor-procedural-mesh',radius:t.r,height:t.height,groundSink:t.groundSink??.05,shape:!!t.shape,light:t.light||null,material:t.material||'default',...(t.surface?{surface:TDSmallPropSurface.export(t.surface)}:{}),
