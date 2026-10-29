@@ -44,5 +44,5 @@ vec3 sanctumTint=diffuseColor.rgb;vec3 p=vSanctumLocal,viewOS=normalize(vSanctum
  }
  const build=TDProps.build;TDProps.build=()=>build().map(t=>t.id===id&&enabled()?{...t,collisionGeo:t.collisionGeo||t.geo,geo:mesh()}:t);
  const legacyCreate=TDChestPresentation.create;TDChestPresentation.create=(scene,time)=>wrapCreate(legacyCreate,scene,time);
- return{id,enabled,validate,geometry:mesh,material,export:descriptor,slots,lightState,stats:()=>({enabled:enabled(),error,vertices:data?data.groups.reduce((n,g)=>n+g.positions.length/3,0):0,motes:36,lightsPerChest:3,maxActiveLights:6})};
+ return{id,enabled,validate,geometry:mesh,material,reflectionEnvironment:()=>mat?.envMap||null,export:descriptor,slots,lightState,stats:()=>({enabled:enabled(),error,vertices:data?data.groups.reduce((n,g)=>n+g.positions.length/3,0):0,motes:36,lightsPerChest:3,maxActiveLights:6})};
 })();

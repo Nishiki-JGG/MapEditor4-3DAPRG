@@ -1,0 +1,149 @@
+{
+  "baseline": "cb2859d9cf5a011816f3160cf96eb20486444c0e",
+  "native": {
+    "pass": true,
+    "prefabs": 44,
+    "other43MeshAndColliderExact": true,
+    "original40Triangles": true,
+    "normalsColoursExact": true,
+    "nonemptyColliderNegativeControls": true,
+    "sharedReferences": 225,
+    "missingInvalidVersionNonfiniteOversizedKeep43": true,
+    "libraryReference": true,
+    "legacyLogicKeeps43": true,
+    "playerExecuted": false
+  },
+  "web": {
+    "pass": true,
+    "all43AssetsExact": true,
+    "mainAtlasExact": true,
+    "optionalObsidianVersion": 1,
+    "originalGeometry40Triangles": true
+  },
+  "mixedNormalLegacySavedTypes": 45,
+  "reflectionFallback": {
+    "fallback": true,
+    "zeroAmbientZeroReflection": true,
+    "sharedEnvironment": true
+  },
+  "beforeLoad": [
+    {
+      "instances": 9,
+      "each": 9,
+      "samples": 12,
+      "cpuSubmitMedianMs": 5.899999976158142,
+      "cpuSubmitP95Ms": 6.900000095367432,
+      "synchronizedMedianMs": 5.899999976158142,
+      "synchronizedP95Ms": 6.900000095367432,
+      "gpuMedianMs": 2.64192,
+      "gpuSamples": 12,
+      "memory": {
+        "geometries": 182,
+        "textures": 31
+      },
+      "programs": 98,
+      "render": {
+        "frame": 58,
+        "calls": 4,
+        "triangles": 37992,
+        "points": 0,
+        "lines": 0
+      }
+    },
+    {
+      "instances": 225,
+      "each": 225,
+      "samples": 12,
+      "cpuSubmitMedianMs": 5.100000023841858,
+      "cpuSubmitP95Ms": 5.700000047683716,
+      "synchronizedMedianMs": 5.100000023841858,
+      "synchronizedP95Ms": 5.800000071525574,
+      "gpuMedianMs": 2.799616,
+      "gpuSamples": 12,
+      "memory": {
+        "geometries": 182,
+        "textures": 31
+      },
+      "programs": 98,
+      "render": {
+        "frame": 74,
+        "calls": 4,
+        "triangles": 46632,
+        "points": 0,
+        "lines": 0
+      }
+    }
+  ],
+  "afterLoad": [
+    {
+      "instances": 9,
+      "each": 9,
+      "samples": 12,
+      "cpuSubmitMedianMs": 4.600000023841858,
+      "cpuSubmitP95Ms": 5.600000023841858,
+      "synchronizedMedianMs": 4.600000023841858,
+      "synchronizedP95Ms": 5.600000023841858,
+      "gpuMedianMs": 1.824768,
+      "gpuSamples": 12,
+      "memory": {
+        "geometries": 182,
+        "textures": 31
+      },
+      "programs": 100,
+      "render": {
+        "frame": 62,
+        "calls": 4,
+        "triangles": 37992,
+        "points": 0,
+        "lines": 0
+      }
+    },
+    {
+      "instances": 225,
+      "each": 225,
+      "samples": 12,
+      "cpuSubmitMedianMs": 4.700000047683716,
+      "cpuSubmitP95Ms": 6.399999976158142,
+      "synchronizedMedianMs": 4.700000047683716,
+      "synchronizedP95Ms": 6.399999976158142,
+      "gpuMedianMs": 1.728512,
+      "gpuSamples": 12,
+      "memory": {
+        "geometries": 182,
+        "textures": 31
+      },
+      "programs": 100,
+      "render": {
+        "frame": 78,
+        "calls": 4,
+        "triangles": 46632,
+        "points": 0,
+        "lines": 0
+      }
+    }
+  ],
+  "triangles": [
+    40,
+    40
+  ],
+  "webTextureCounts": [
+    31,
+    31
+  ],
+  "nativeColourAtlasSize": [
+    128,
+    128
+  ],
+  "nativeColourAtlasApproxMipBytes": 87381,
+  "newNormalOrRoughnessMap": false,
+  "newLight": false,
+  "webNewEnvironmentAllocation": false,
+  "actualFieldSeed": 71421,
+  "formalPrefabProbeOffOn": true,
+  "limits": [
+    "Desktop headless Web and dedicated offscreen Editor; Player/mobile/full gameplay untested.",
+    "Short unpaired timing samples vary; do not infer a speedup from after being lower.",
+    "Previous reader control flow is compiled from baseline with shared DTO aliases for dependent builders. It ignores the new field; this is not an old player binary test.",
+    "URP standard Lit needs a reflection probe or scene environment supplied by the destination scene. No game scene settings are changed."
+  ]
+}

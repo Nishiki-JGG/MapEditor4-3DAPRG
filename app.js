@@ -1476,7 +1476,7 @@ function touchMat(base) {
 }
 const propMeshes = PROP.map(t => {
   const source = t.sharedAsset ? TDSharedProps.material(t.sharedAsset) : t.id==='miningtools'?miningToolMat:PROP_MATS[t.material] || propMat;
-  const base = TDChestSurface.ids.includes(t.id)?TDChestSurface.material(source,t.id,timeU,hemi) : t.surface ? TDSmallPropSurface.material(source,t.surface) : TDFibreFinish.ids.includes(t.id)?TDFibreFinish.material(source,t.id) : t.material==='chestmetal' ? TDChestSeries.material(t.id,timeU,hemi) : source;
+  const base = t.id==='obsidian'?TDObsidianReflection.material(source):TDChestSurface.ids.includes(t.id)?TDChestSurface.material(source,t.id,timeU,hemi) : t.surface ? TDSmallPropSurface.material(source,t.surface) : TDFibreFinish.ids.includes(t.id)?TDFibreFinish.material(source,t.id) : t.material==='chestmetal' ? TDChestSeries.material(t.id,timeU,hemi) : source;
   const m = new THREE.InstancedMesh(t.geo, t.touch ? touchMat(base) : base, CAP);
   if(t.sharedAsset&&TDSharedProps.asset(t.sharedAsset).rootGrounding){m.userData.rootSlope=new THREE.InstancedBufferAttribute(new Float32Array(CAP*2),2);t.geo.setAttribute('rootSlope',m.userData.rootSlope);m.userData.rootTerrain=new THREE.InstancedBufferAttribute(new Float32Array(CAP*4),4);t.geo.setAttribute('rootTerrain',m.userData.rootTerrain);}
   if (t.touch) { m.userData.touch = new THREE.InstancedBufferAttribute(new Float32Array(CAP * 3), 3).setUsage(THREE.DynamicDrawUsage); t.geo.setAttribute('touch', m.userData.touch); }
@@ -4816,7 +4816,7 @@ revision・書き出し日時・ファイルごとの SHA-256・contentHash は 
     ...(groundedInstances.length?[{name:'grounded_props.json',data:JSON.stringify(groundedData)}]:[]),
     { name: 'shared_props.json', data: (()=>{const d=JSON.parse(TDSharedProps.exportJson());d.sourceLibraryVersion=d.libraryVersion;d.libraryVersion='shared-registry/1';return JSON.stringify(d);})() },
     { name: 'asset_bindings.json', data: JSON.stringify({schemaVersion:1,bindings:Object.entries(catalogExport().types).filter(([,v])=>v.sharedModel).map(([id,v])=>({id,...v}))}) },
-    {name:'small_props.json',data:JSON.stringify(TDSmallPropExport.build(PROP,groundedData,props.filter(p=>TDSmallPropExport.ids.includes(PROP[p[0]].id)).map(p=>{const v=.86+.28*hash2(p[1]*97|0,p[2]*89|0);return{instanceId:p[8],...(['rowboat','seafan','pillarcoral','scallop'].includes(PROP[p[0]].id)?{rootPosition:[U.x(p[1]),U.y(propBaseY(p)),U.z(p[2])]}:{}),tint:[v*(.95+.1*hash2(p[1]*13|0,7)),v,v*(.95+.1*hash2(3,p[2]*17|0))]};})))},
+    {name:'small_props.json',data:JSON.stringify(TDSmallPropExport.build(PROP,groundedData,props.filter(p=>TDSmallPropExport.ids.includes(PROP[p[0]].id)).map(p=>{const v=.86+.28*hash2(p[1]*97|0,p[2]*89|0);return{instanceId:p[8],...(['rowboat','seafan','pillarcoral','scallop','obsidian'].includes(PROP[p[0]].id)?{rootPosition:[U.x(p[1]),U.y(propBaseY(p)),U.z(p[2])]}:{}),tint:[v*(.95+.1*hash2(p[1]*13|0,7)),v,v*(.95+.1*hash2(3,p[2]*17|0))]};})))},
     { name: 'pine_wind.json', data: TDPineWind.exportJson() },
     {name:'root_grounding.json',data:JSON.stringify({version:1,axes:'Unity world XZ',paint:{file:'root_paint.png',resolution:N,sizeMetres:[SIZE,SIZE]},instances:props.filter(p=>PROP[p[0]].sharedAsset&&TDSharedProps.asset(PROP[p[0]].sharedAsset).rootGrounding).map(p=>{const v=rootSlopeAt(p);return{instanceId:p[8],slope:[v[0],-v[1]],terrain:rootTerrainAt(p)};})})},
     { name: 'shared_ground.json', data: JSON.stringify(TDGroundData) },

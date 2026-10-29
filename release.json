@@ -1,7 +1,7 @@
 {
-  "release": "seafan-net-20261028-111",
+  "release": "obsidian-reflection-20261029-114",
   "files": {
-    "app.js": "0dec314820be90c84a721dda1fedf7aa5c408502db3d278dca976656af91208e",
+    "app.js": "20b01cfa2966872800304f11b7e1137b06875daf5bb2efa9f876221895a9ad1f",
     "props/chest-presentation.js": "02d054f76798bdf6599156ffb0655085c919b3df733386a47a11f458d3aa5233",
     "props/chest-surface.js": "bf7137cd3c64c736bc50d0dbd2a7b62f4fce1c48db73f6473fc6b9522b24f025",
     "props/chest-relief.js": "2f6d152ccd4c0dfd43d34c9867118d5060704b01ea93cfeafcdf826c479e8f94",
@@ -9,7 +9,7 @@
     "props/chest-part-surface.js": "bf2906a85b978a2c407436d3964767b787ff10ec85b0f0b1c3f3ecad0660c75d",
     "props/chest-silver-trim.js": "618ccbf1842f0712ea52956c1c4604b36d03d7b6190ad970b6039cb174936774",
     "props/chest-sanctum-data.js": "cb5e96c1769bce67ef72c6e28dbd7a3e978e26dd277a660d8f747c59f62e1e8c",
-    "props/chest-sanctum.js": "55ddc19315035800cf92ef1aaa82f80298f5c7732a6c27295a14c236710c1fdf",
+    "props/chest-sanctum.js": "374e42cb1827725e38d850aaa3120ab9737864b8db37abe2721d7837de109bba",
     "props/gravestone.js": "0481e45ab815819bf15f28dad6799b3231d8e86f98d682111cf742c6e6e478c6",
     "props/crossgrave.js": "5b7d0bf7aafd131db0293a97620b6850474bd28802435b4fb2cce9c28ff89ef5",
     "props/stone-surface.js": "b13d9f8dacad368b4f91aa9a227eef9c68c2d5ead8af91e03a74d59b20049218",
@@ -23,13 +23,14 @@
     "props/practical-parts.js": "881f1402590d3c41bb236da6b4497a544b3222a91e102bb923d23b4b0739d16b",
     "props/storagepot.js": "a438c43030411e625765317acecc89ee1cf0e7beec47bcfa7dd7a65296747fe3",
     "props/brokenpot.js": "a019b0eb7361c61d282ea6b32555df59b432c70e554858dd6439b3072d657a6b",
-    "props/small-prop-export.js": "5cfd6600cd403db22442a582b84948e39211a9435969fd21b838b742c75a9764",
+    "props/small-prop-export.js": "4188ddf02de958111f0a8863dc34e075d4a23bbd09306fbedbf770596359a751",
     "props/lantern.js": "bbeab0d3138ba12c9d1b9242d0f5c241d8b8d0e476ece144fd727da5a6be3168",
     "props/miningtools.js": "c6c110711d24f5aa00298099790c77c146f94461614964f24bbf599793e09057",
     "props/coiledrope.js": "79f301028e149761ad4451a038929e2f55fc2fd8bed97e6062651c06bad22916",
     "props/fibre-finish.js": "47d4d689f148c5398c1afe4d4c45fd5ef069364c061294aad7963683c7217759",
     "props/banner.js": "7deff215438df91f1676848c2eea5e197135ee78f9cd1b0c119448fcc8e4548d",
     "props/rowboat.js": "bc1da495dc784f81836870e879ec908016e906cac987acc77371a2eac7ecf1c7",
-    "props/seafan-surface.js": "3ad1b8c71a2b92f20b3fab9e75d4fa362e6aff183b89fd771431f7daf3e5b612"
+    "props/seafan-surface.js": "3ad1b8c71a2b92f20b3fab9e75d4fa362e6aff183b89fd771431f7daf3e5b612",
+    "props/obsidian-reflection.js": "db926e0da7a344f731911d299ae2ee2353db95c387efdd6d8934ac7683d23ee0"
   }
 }
