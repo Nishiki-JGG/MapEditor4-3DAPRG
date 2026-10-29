@@ -1,7 +1,7 @@
 {
-  "release": "mine-collapse-20261029-163",
+  "release": "mine-wall-lantern-20261029-176",
   "files": {
-    "app.js": "c62a5f7ef4acaed533b4cce07a25ff8424d3c0355d4b9c67f4f4e05488cb90d8",
+    "app.js": "a06cb03a56d8594d89438af994ba76494dab862db4fdaf2670644c0a50b5ff68",
     "props/chest-presentation.js": "02d054f76798bdf6599156ffb0655085c919b3df733386a47a11f458d3aa5233",
     "props/chest-surface.js": "bf7137cd3c64c736bc50d0dbd2a7b62f4fce1c48db73f6473fc6b9522b24f025",
     "props/chest-relief.js": "2f6d152ccd4c0dfd43d34c9867118d5060704b01ea93cfeafcdf826c479e8f94",
@@ -23,7 +23,7 @@
     "props/practical-parts.js": "881f1402590d3c41bb236da6b4497a544b3222a91e102bb923d23b4b0739d16b",
     "props/storagepot.js": "a438c43030411e625765317acecc89ee1cf0e7beec47bcfa7dd7a65296747fe3",
     "props/brokenpot.js": "a019b0eb7361c61d282ea6b32555df59b432c70e554858dd6439b3072d657a6b",
-    "props/small-prop-export.js": "75dee5f9730c578420a310eba54d8831a913b9b7e66ddf4a509ba893a3631483",
+    "props/small-prop-export.js": "1b1864bc95c6333c5d9e747af2afac8593cb1414c9bb9db25401846ecc495ae3",
     "props/lantern.js": "bbeab0d3138ba12c9d1b9242d0f5c241d8b8d0e476ece144fd727da5a6be3168",
     "props/miningtools.js": "c6c110711d24f5aa00298099790c77c146f94461614964f24bbf599793e09057",
     "props/coiledrope.js": "79f301028e149761ad4451a038929e2f55fc2fd8bed97e6062651c06bad22916",
@@ -37,18 +37,26 @@
     "props/mine-rail-drag.js": "7103ee81b1d164a608c14c0701e3fc728f060a0ed0034bb76fd4c92ed3d5241a",
     "props/mine-cut-rock.js": "249b6979eeec4ce30fa181b60004094bc7296f6de1783fa4d1e275b64b960b3b",
     "unity/Assets/MapSharedProps/Editor/MineCutRockV1.cs": "192558bef384f83dd23fdb3550070eefa7626a156371deaf47f0b4f1292c280e",
-    "unity/Assets/MapSharedProps/Editor/SmallPropsV1.cs": "94a2ac8d285f629e4864f7afbcd14ab2fa50200f7fd82bee2af9240d7a78e66d",
+    "unity/Assets/MapSharedProps/Editor/SmallPropsV1.cs": "310bd8d077bfcd830a59375e0eb115cae5cac2917da65380daf1c4e1077440a2",
     "props/mine-spoil.js": "efdde095fd8c6636b89522a56e7cd739efc49574c0ba89c82635217e4dec9078",
     "unity/Assets/MapSharedProps/Editor/MineSpoilV1.cs": "18413514bdf454f98e9acc696b736cce2bf9017894b0b901ece2f597573f463e",
     "props/cave-decor.js": "abf74ab0b78918409e80854060e0291cda33f30ed758a7c4d46a29e12ddaead1",
     "props/shared/cave-decor-data.js": "5939db717735b0bc3400f5decf360bc3e6aaec12c75f0abbbb26c616269ba57c",
-    "index.html": "cdbf011085f7bd00aa78fe869537948006ea89835a8788fec887f04bcac9eb0c",
-    "prepared/manifest.js": "1a1861514a63998be64e16ecefec6f0c2ed6a0a8b82e3957b15a623a8ccde8bf",
+    "index.html": "2da0fc08c9f4f7d1070e8a958db77c30f5a12ed6aefe7b8a7b122f74e1170c8a",
+    "prepared/manifest.js": "fc0465489758c62f5e943db6f5ac436f6e353091ca72bdc9723a00ce9921f56d",
     "terrain/cliff-shoulder.js": "e437f1ffb0ab47fa4b243f7408f4ed3de759508b0f1dfef49eaf217b1630ac59",
     "props/mine-collapse.js": "49ff2562ce9a97766c4f664c3b283d0f25762b9edb6df370308c150769baafd8",
     "props/mine-collapse-pbr.js": "e90181e4ba56831e286649539dcc05197180e32199a07c675fb5d4da0630a6cd",
-    "unity/Assets/MapSharedProps/Editor/MineCollapseV1.cs": "1df8252d14d02122170d6e0ff67e6e0cd13292cab14086e8f8c86793bf3d6cfd"
+    "unity/Assets/MapSharedProps/Editor/MineCollapseV1.cs": "1df8252d14d02122170d6e0ff67e6e0cd13292cab14086e8f8c86793bf3d6cfd",
+    "props/mine-lantern.js": "87e69f27a2e15f788ca745588ab732d58a3f191bca074c2accf13fb10cc58602",
+    "props/wall_torch.js": "825d25e5f0b8fe27d49f03f329f76ce4b402c99ff4354cfda9b37ee7cc37e5c8",
+    "unity/Assets/MapSharedProps/Editor/MineLanternV1.cs": "d2f39052548bb3708a253d10999ffe8278d54c214618386d13fd762b0255002b",
+    "unity/Assets/MapSharedProps/Editor/MineLanternV1.cs.meta": "220f472af88facac694fa87162b10e1e7c611210b816ad657ffd63e9e5f8e8bb",
+    "unity/Assets/MapSharedProps/Editor/MapSharedPropsBuilder.cs": "6c7307e15d4889c1887e97018305c669ec1943766aa824dcb6752a5c4a23b5e5",
+    "unity/Assets/MapSharedProps/Runtime/RoomTorchBudget.cs": "ae1b5ba98f39c533ce72917f5eefff531cc5e018c4283e17255194b5a1e54dff",
+    "unity/Assets/MapSharedProps/Runtime/RoomTorchInstance.cs": "0e06f0be2b12eebbccd0a04c992ea781db6f039e038f6626685a1f6dcd139ec6",
+    "unity/Assets/MapTunnels/Runtime/Shaders/MapTunnel.shader": "6b10c51126121db637c4b8bc533095f80914189e58d1c78009cff755c9fcabe5"
   },
-  "sourceCandidate": "f560355542d50eb77d992c265c0b6ef523745697",
-  "integratedMain": "39b3de974e7edc440661a415d2cb3fb4dede7266"
+  "sourceCandidate": "ba980286601accc69a3be9264b3e20dd5970777f",
+  "integratedMain": "fdf9c7360235c022eceaeb56e1d9b6d08ee57886"
 }
