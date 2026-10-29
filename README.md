@@ -1,5 +1,7 @@
 # MapEditor4-3DAPRG
 
+自作の洞窟装飾20種（シダ・苔・根・蔦・キノコ・朽ち木など）を追加しました。[素材一覧・配置方法・Unity書き出し](docs/CAVE_DECOR.md)。購入素材は含みません。
+
 宝箱の金属材質・彫金・朽木形状を更新しました。[Unity 導入・Reflection Probe・検証範囲](docs/CHEST_RELEASE.md)。
 
 既存松明と壁掛け松明の炎・煙・火の粉を改善し、三脚と薪・炭・熾火を持つ地面置きの篝火を追加しました。[描画・保存・Unityへの取り込み](docs/FIRE_FIXTURES.md)。

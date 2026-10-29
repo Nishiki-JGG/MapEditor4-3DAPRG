@@ -3243,7 +3243,7 @@ function canPlace(t, x, z, hash) {
   return ok;
 }
 function scatterAt(x, z, R = Math.random) {
-  const types = [...state.types].filter(propVisible); if (!types.length) return;
+  const types = [...state.types].filter(i=>propVisible(i)&&!PROP[i].manualOnly); if (!types.length) return;
   const r = state.radius, sq = state.brushShape === 'square', hash = buildPropHash(), n = Math.max(1, Math.round((sq ? 4 : Math.PI) * r * r * state.density * .22));
   for (let k = 0; k < n; k++) {
     const a = R() * Math.PI * 2, d = Math.sqrt(R()) * r, t = types[(R() * types.length) | 0];
@@ -4890,6 +4890,7 @@ $('cliffStyle').onchange = e => { pushUndo(); state.cliffStyle = e.target.value;
 // prop types as a folding tree: one group per kind, a group's box checks all its (shown) types
 const placeOpen = new Set();   // groups of the 置く list the user opened
 const PROP_GROUPS = [
+  ['洞窟装飾（自作20種）', TDCaveDecor.ids],
   ['木・倒木', ['pine', 'oak', 'scotspine', 'birch', 'willow', 'hazel', 'rowan', 'juniper', 'deadtree', 'twisttree', 'palm', 'banana', 'maple', 'cherry', 'zelkova', 'nara', 'sugi', 'hinoki', 'islandash', 'olive', 'eucalyptus', 'dragontree', 'elftree', 'worldtree', 'log', 'stump', 'rootfan', 'driftwood']],
   ['草花・低木', ['shortgrass', 'meadowgrass', 'groundlitter', 'grass', 'meadowwhite', 'meadowyellow', 'meadowpink', 'meadowred', 'meadowviolet', 'bush', 'fern', 'bramble', 'ivy', 'sedge', 'foxglove', 'horsetail', 'dock', 'clover', 'reed', 'flowers', 'mushroom', 'glowmush', 'shelfshroom', 'cactus', 'barrelcactus']],
   ['岩・崖', ['drysoil_curl','drysoil_cup','drysoil_flake','scree', 'rock', 'mossrock', 'pebble', 'cliff', 'cliff_split', 'cliff_shoulder', 'cliff_joint', 'cliff_slab', 'cliff_talus', 'rubblepile', 'stalagmite', 'crystal', 'lavarock', 'obsidian', 'fumarole', 'iceblock', 'icespike']],
@@ -4918,7 +4919,7 @@ function syncTypesUI() {
   for (const d of typesEl.children) {
     let shown = 0, on = 0;
     for (const l of d.querySelectorAll('label[data-type]')) {
-      const i = +l.dataset.type, vis = propVisible(i); l.hidden = !vis; l.firstChild.checked = state.types.has(i);
+      const i = +l.dataset.type, vis = propVisible(i) && !PROP[i].manualOnly; l.hidden = !vis; l.firstChild.checked = state.types.has(i);
       if (vis) { shown++; if (state.types.has(i)) on++; }
     }
     d.hidden = !shown; d.querySelector('.cnt').textContent = `${on}/${shown}`;
@@ -5000,6 +5001,7 @@ function showVariants() {
     : tool === 'place' ? PROP.map((t, i) => [i, t.name]).filter(([i]) => propVisible(i)) : null;
   if (opts && opts.length && !opts.some(([v]) => v === state.variant[tool])) { state.variant[tool] = opts[0][0]; if (tool === 'place') preview.geometry = PROP[opts[0][0]].roomTorch ? TDWallTorch.previewGeometry : PROP[opts[0][0]].geo; }
   box.hidden = !opts; $('placeOpts').hidden = tool !== 'place';
+  $('caveDecorHeightRow').hidden = tool !== 'place' || !PROP[state.variant.place]?.caveDecor;
   if (!opts) return;
   $('variantTitle').textContent = tool === 'marker' ? 'マーカーの種類' : tool === 'link' ? '階層移動の種類' : tool === 'cliffpaint' ? '岩壁の種類' : tool === 'bridge' ? '橋の種類' : tool === 'stairs' ? '階段の種類' : tool === 'spring' ? '湧出量' : tool === 'pool' ? 'プールの形' : tool === 'tunnel' ? '見た目' : '置く物';
   list.innerHTML = '';
@@ -5082,6 +5084,7 @@ function stepPlaceControl(id, direction) {
   } else input.stepUp(direction);
   state[id] = +input.value; syncPlaceUI(); updateRing();
 }
+$('caveDecorHeight').oninput = () => { $('caveDecorHeightV').textContent = (+$('caveDecorHeight').value).toFixed(2)+' m'; updateRing(); };
 $('placeScale').oninput = e => { if(stroke.rail){syncPlaceUI();return;} state.placeScale = +e.target.value; syncPlaceUI(); updateRing(); };
 $('placeRot').oninput = e => { if(stroke.rail){syncPlaceUI();return;} state.placeRot = +e.target.value; syncPlaceUI(); updateRing(); };
 $('placeRandom').onchange = e => { state.placeRandom = e.target.checked; };
@@ -5278,9 +5281,10 @@ function updateRing() {
   }
   if (state.tool === 'place') {
     const t = state.variant.place, s0 = (PROP[t].sc[0] + PROP[t].sc[1]) / 2 * state.placeScale;
-    preview.material=PROP[t].mineCutRock?cutRockPreviewMat:PROP[t].mineCart?cartPreviewMat:PROP[t].mineRail?railPreviewMat:standardPreviewMat;
+    preview.material=PROP[t].caveDecor?TDSharedProps.material(PROP[t].sharedAsset,true):PROP[t].mineCutRock?cutRockPreviewMat:PROP[t].mineCart?cartPreviewMat:PROP[t].mineRail?railPreviewMat:standardPreviewMat;
     if(PROP[t].mineRail&&PROP[t].id!=='mine_rail_end'&&state.mode==='edit'&&placementPointerType!=='touch'){const q=TDMineRailDrag.begin(hit.x,hit.z,state.placeRot*Math.PI/180,s0,props,PROP,floorAt),p=q.start;preview.geometry=PROP[TYPE('mine_rail_straight')].geo;preview.visible=true;preview.position.set(p.x,p.y,p.z);preview.rotation.y=p.rot;preview.scale.setScalar(s0);outline(circle(p.x,p.z,.14),q.startReason?0xff5555:q.snapped?0x68ffb0:0xffd27a,.18);return;}
     if(PROP[t].mineRail){preview.geometry=PROP[t].geo;const p=TDMineRails.placement(PROP[t].id,hit.x,hit.z,state.placeRot*Math.PI/180,s0,props,PROP,floorAt);preview.visible=true;preview.position.set(p.x,p.y,p.z);preview.rotation.y=p.rot;preview.scale.setScalar(s0);outline(circle(p.x,p.z,.14),!p.valid?0xff5555:p.snapped?0x68ffb0:0xffd27a,.18);return;}
+    if(PROP[t].caveDecor){preview.visible=true;preview.position.set(hit.x,TDCaveDecor.baseY(PROP[t],heightAt(hit.x,hit.z),s0,+$('caveDecorHeight').value),hit.z);preview.rotation.y=state.placeRot*Math.PI/180;preview.scale.setScalar(s0);return;}
     if(PROP[t].mineCutRock){preview.visible=true;preview.position.set(hit.x,floorAt(hit.x,hit.z),hit.z);preview.rotation.y=state.placeRot*Math.PI/180;preview.scale.setScalar(s0);return;}
     if(PROP[t].mineCart){const p=TDMineCart.placement(hit.x,hit.z,state.placeRot*Math.PI/180,s0,props,PROP,floorAt);preview.visible=true;preview.position.set(p.x,p.y,p.z);preview.rotation.y=p.rot;preview.scale.setScalar(s0);outline(circle(p.x,p.z,.6*s0),!p.valid?0xff5555:p.snapped?0x68ffb0:0xffd27a,.18);return;}
     if(PROP[t].geo.userData.groundParts){setGroundPreview(t,hit.x,hit.z,state.placeRot*Math.PI/180,s0);preview.visible=false;}else{preview.visible = true; preview.position.set(hit.x, heightAt(hit.x, hit.z) + (PROP[t].roomTorch ? TDWallTorchSource.defaultMountHeight : 0), hit.z); preview.rotation.y = state.placeRot * Math.PI / 180; preview.scale.setScalar(s0);}
@@ -5395,7 +5399,9 @@ function beginStroke(e) {
     if(PROP[t].mineRail){const p=TDMineRails.placement(PROP[t].id,hit.x,hit.z,state.placeRot*Math.PI/180,s0,props,PROP,floorAt);if(!p.valid){toast('レールの両端が同じ高さになる平らな場所に置いてください');return;}props.push([t,p.x,p.z,p.rot,s0,0,1,p.y]);rebuildProps();toast(PROP[t].name+(p.snapped?'を端点に接続しました':'を置きました'));return;}
     if(PROP[t].mineCart){const p=TDMineCart.placement(hit.x,hit.z,state.placeRot*Math.PI/180,s0,props,PROP,floorAt);if(!p.valid){toast(p.reason==='scale'?'レールと同じサイズにしてください':p.reason==='track'?'車輪を支えるレールと車止めの余裕を確保してください':'平らな場所に置いてください');return;}props.push([t,p.x,p.z,p.rot,s0,0,1,p.y]);rebuildProps();toast(PROP[t].name+(p.snapped?'をレール上に置きました':'を置きました'));return;}
     if(PROP[t].mineCutRock){props.push([t,hit.x,hit.z,state.placeRot*Math.PI/180,s0,0,1,floorAt(hit.x,hit.z)]);rebuildProps();return;}
-    props.push([t, hit.x, hit.z, state.placeRot * Math.PI / 180, s0, 0]); rebuildProps();
+    const placement=[t,hit.x,hit.z,state.placeRot*Math.PI/180,s0,0];
+    if(PROP[t].caveDecor) {placement[6]=1;placement[7]=TDCaveDecor.baseY(PROP[t],heightAt(hit.x,hit.z),s0,+$('caveDecorHeight').value);}
+    props.push(placement); rebuildProps();
     if (state.placeRandom) { state.placeRot = (state.placeRot + 15 * ((Math.random() * 24) | 0)) % 360; syncPlaceUI(); }
     toast(PROP[t].name + 'を置きました');
     return;

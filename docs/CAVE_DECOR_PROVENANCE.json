@@ -1,0 +1,180 @@
+{
+  "kind": "authored mesh and procedural texture",
+  "package": "CaveNature20 UltraLite r003",
+  "sourceFiles": [
+    {
+      "file": "props.json",
+      "sha256": "d1bbec1bf1af5461f3f690c86e01efac972f3b7702b323d9317c25fa2e2fed90"
+    },
+    {
+      "file": "model/exports/CND001_BroadFernClump.gltf",
+      "sha256": "f5f1761f85bc2037da190c0df35130946864c6a73dfa86a5e1519dcfe3122ede"
+    },
+    {
+      "file": "model/exports/CND001_BroadFernClump.bin",
+      "sha256": "f9244ed5ee977524402c0126b2fc1a34647c8c2289512e24b1f73ad644b5395a"
+    },
+    {
+      "file": "model/exports/CND002_TallFineFern.gltf",
+      "sha256": "461d4e18ca75ef44f213e0ef40dc78da0383ac57ea55264e0bf212c5b4093606"
+    },
+    {
+      "file": "model/exports/CND002_TallFineFern.bin",
+      "sha256": "42326c7eb17accba638dc0ee69280be436e643fc7e18813780ae5ab8ea5e823c"
+    },
+    {
+      "file": "model/exports/CND003_CreviceFern.gltf",
+      "sha256": "5764f71c22126f9c79ae99f38e77ba0ce869be2ae544b68c160a17c8443d8a9f"
+    },
+    {
+      "file": "model/exports/CND003_CreviceFern.bin",
+      "sha256": "848eaa108edb69225d738e6e4d25352446e8fa16c73bcfc2221dcfb195d00a5c"
+    },
+    {
+      "file": "model/exports/CND004_WallFern.gltf",
+      "sha256": "b926a35624008cb9cc0f66db2d6c49733c21fbde275249e34cee4d6bcda7d087"
+    },
+    {
+      "file": "model/exports/CND004_WallFern.bin",
+      "sha256": "8e4726753b020c7ee006af21918bfbf3cd2706519ab0ee54161ac7767d152f35"
+    },
+    {
+      "file": "model/exports/CND005_MossTufts.gltf",
+      "sha256": "da7507afe9f0df09991fc8dc6348f1fd01ab1ab0dce929bf8666e7d88b664e02"
+    },
+    {
+      "file": "model/exports/CND005_MossTufts.bin",
+      "sha256": "15eafac950e4e8aff94d5f72cf692228fed3309e5e2f76a5a07fe5c9679010ab"
+    },
+    {
+      "file": "model/exports/CND006_MossEdge.gltf",
+      "sha256": "7756bf312349362ec3576d78717a4a462d517d4be8aacaf6096088f1b6891af1"
+    },
+    {
+      "file": "model/exports/CND006_MossEdge.bin",
+      "sha256": "2c5fb2ce8cb21300b8d6231a35e3a21315a84b5a67ab846ff4b8fca742a5547e"
+    },
+    {
+      "file": "model/exports/CND007_DrapingMoss.gltf",
+      "sha256": "4a6bded57aa495910b2c25cab3d3b2eedfcfed60c7b329512f54d57a10ccbbd1"
+    },
+    {
+      "file": "model/exports/CND007_DrapingMoss.bin",
+      "sha256": "a3e4e15a2910bb277e9150f0bf72b32497f75ad1be3be62ec53a937bbf2e9406"
+    },
+    {
+      "file": "model/exports/CND008_HangingRoots.gltf",
+      "sha256": "041d527bb063408a7f263bab0bb2f77dbde917b24691037f14d2b01fc5256a6a"
+    },
+    {
+      "file": "model/exports/CND008_HangingRoots.bin",
+      "sha256": "595d663c181e8dfc28f89cae9ecd0c3b25b5f972116614c9ad594150a968a1ec"
+    },
+    {
+      "file": "model/exports/CND009_LongTangledRoots.gltf",
+      "sha256": "a45c549a2524a807740caf42b3e491994b602be41b8406e5d17a645024f8c05e"
+    },
+    {
+      "file": "model/exports/CND009_LongTangledRoots.bin",
+      "sha256": "72656c5638bc1fcd8223433475b2cfd43a9941a278885b0ea10ef9d34030295f"
+    },
+    {
+      "file": "model/exports/CND010_GroundRoots.gltf",
+      "sha256": "94f1312479344f1a3eb27d77607e21f3cd9bffb50b6c40bbf28b04bbb5dc75f1"
+    },
+    {
+      "file": "model/exports/CND010_GroundRoots.bin",
+      "sha256": "b4cb2bf9473e7e7aad181741395a33f67b780a48f25cab8e646593262626309c"
+    },
+    {
+      "file": "model/exports/CND011_WallIvy.gltf",
+      "sha256": "ecdcbba0c5a28aa5fc9e5ea799aa35876939f2eea661d24437347df619584799"
+    },
+    {
+      "file": "model/exports/CND011_WallIvy.bin",
+      "sha256": "e6be08e19c59c2009b8bc302a90cd50743543a6a1ad3505dba00df1f31aaf97e"
+    },
+    {
+      "file": "model/exports/CND012_HangingIvy.gltf",
+      "sha256": "ac4c691258dbcf984a07a2c957a5c63f1ffb0c936284ae3c01514f6db3f75d45"
+    },
+    {
+      "file": "model/exports/CND012_HangingIvy.bin",
+      "sha256": "3da033269f68a9f8cfe6d3484e50d94a3da9518aafee731d5cc95b1271b9b2ae"
+    },
+    {
+      "file": "model/exports/CND013_SmallMushrooms.gltf",
+      "sha256": "28aa88d8fe36299104e2505ca2c26c10c3764dd0573114cf5ec32fb1f2e9b917"
+    },
+    {
+      "file": "model/exports/CND013_SmallMushrooms.bin",
+      "sha256": "22d4da97a14557266f65583931a3b30ce4e1874fd696e4f1256568ff1e23cbd8"
+    },
+    {
+      "file": "model/exports/CND014_TallMushrooms.gltf",
+      "sha256": "5418f530c7141191c0bd55a3c6352c9e7b7f78299c1b2ecf95301bb07c88d015"
+    },
+    {
+      "file": "model/exports/CND014_TallMushrooms.bin",
+      "sha256": "9b6d59727eb114150ee7f0df985d1ec1bb089fb7f172d30c3705a22569b13983"
+    },
+    {
+      "file": "model/exports/CND015_BracketFungi.gltf",
+      "sha256": "77ecdc3ea6d3c6939c5b03dce4de045c3e8aa9ac0cef32bd953cc6ea3269b2d2"
+    },
+    {
+      "file": "model/exports/CND015_BracketFungi.bin",
+      "sha256": "b3869d4b1dad9a384f37ddf652c7fbcd0868a3e1d1ae5f86c71bce9d75c0fb2b"
+    },
+    {
+      "file": "model/exports/CND016_WetGrass.gltf",
+      "sha256": "a54236af9ee67cea9ad81cad0b37d72f9ad040de7a10a9343f226e3c34ca6c98"
+    },
+    {
+      "file": "model/exports/CND016_WetGrass.bin",
+      "sha256": "d55dc033227308b69aa90b3727c57e18cb53f28e1499d49de329ddf597e2df53"
+    },
+    {
+      "file": "model/exports/CND017_EntranceUnderstory.gltf",
+      "sha256": "4ca080fd3123aa523afd35d0c69fb3f5152569f8007cdf94589150343fdf67b9"
+    },
+    {
+      "file": "model/exports/CND017_EntranceUnderstory.bin",
+      "sha256": "72e115bc381b1ee7836ef5fc7628480735c44de80e6352be1a4595b2982a94cf"
+    },
+    {
+      "file": "model/exports/CND018_LeafLitter.gltf",
+      "sha256": "21a6bae8efaecb9cc815773ec723a90c0cd70d4d7ccc3201026e28bb9a391b46"
+    },
+    {
+      "file": "model/exports/CND018_LeafLitter.bin",
+      "sha256": "d6ef21c95464c1977ed19033429d04d8e8af75d96a005087a89a101c1fb2c5ad"
+    },
+    {
+      "file": "model/exports/CND019_DeadBranches.gltf",
+      "sha256": "444f54ebb55216147d8a12e0ac4f4602089557453f27c2724ac31d1dadf474ae"
+    },
+    {
+      "file": "model/exports/CND019_DeadBranches.bin",
+      "sha256": "ed44260aecc808326da978ae69fddb8f0a3919e979cee13a36d0ca066344a194"
+    },
+    {
+      "file": "model/exports/CND020_RottenLog.gltf",
+      "sha256": "218a0b11da68136564fbb3e376f5d49643350721f878f0ae1b52259d72ccbdd4"
+    },
+    {
+      "file": "model/exports/CND020_RottenLog.bin",
+      "sha256": "0ab5b5cef7523e522d3d4cc3ac3bc7007a853a3eded752ea86d0fd8f9d3d535b"
+    },
+    {
+      "file": "textures/props/UL_Atlas_BC_512.png",
+      "sha256": "32de344231b54e8b0d506ae7fa81c94bb4d3da23924f72886b2c470a1384b765"
+    }
+  ],
+  "triangles": 1123,
+  "excluded": [
+    "background scene",
+    "purchased assets"
+  ],
+  "adaptation": "Coordinate/UV conversion only; shared diffuse material uses original base color. Normal/ORM source maps are not used by the diffuse renderer."
+}
