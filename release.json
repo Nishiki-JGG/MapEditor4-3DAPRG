@@ -1,7 +1,7 @@
 {
-  "release": "placement-shortcuts-20261029-121",
+  "release": "mine-rail-set-20261029-124",
   "files": {
-    "app.js": "192714a19e7ce2afd2304d787bc130b45c9f7c55a14e8f56dbaa5333d80cec53",
+    "app.js": "55fe5fa5a71339b0d60e96e4fd0d50828aba3c9309dafc60bf8fe2e83be13e76",
     "props/chest-presentation.js": "02d054f76798bdf6599156ffb0655085c919b3df733386a47a11f458d3aa5233",
     "props/chest-surface.js": "bf7137cd3c64c736bc50d0dbd2a7b62f4fce1c48db73f6473fc6b9522b24f025",
     "props/chest-relief.js": "2f6d152ccd4c0dfd43d34c9867118d5060704b01ea93cfeafcdf826c479e8f94",
@@ -23,7 +23,7 @@
     "props/practical-parts.js": "881f1402590d3c41bb236da6b4497a544b3222a91e102bb923d23b4b0739d16b",
     "props/storagepot.js": "a438c43030411e625765317acecc89ee1cf0e7beec47bcfa7dd7a65296747fe3",
     "props/brokenpot.js": "a019b0eb7361c61d282ea6b32555df59b432c70e554858dd6439b3072d657a6b",
-    "props/small-prop-export.js": "4188ddf02de958111f0a8863dc34e075d4a23bbd09306fbedbf770596359a751",
+    "props/small-prop-export.js": "dd3c465181de5dacee0b45dcfdec77de6ea9f86550b17e832cd1b04b5435efb4",
     "props/lantern.js": "bbeab0d3138ba12c9d1b9242d0f5c241d8b8d0e476ece144fd727da5a6be3168",
     "props/miningtools.js": "c6c110711d24f5aa00298099790c77c146f94461614964f24bbf599793e09057",
     "props/coiledrope.js": "79f301028e149761ad4451a038929e2f55fc2fd8bed97e6062651c06bad22916",
@@ -31,6 +31,8 @@
     "props/banner.js": "7deff215438df91f1676848c2eea5e197135ee78f9cd1b0c119448fcc8e4548d",
     "props/rowboat.js": "bc1da495dc784f81836870e879ec908016e906cac987acc77371a2eac7ecf1c7",
     "props/seafan-surface.js": "3ad1b8c71a2b92f20b3fab9e75d4fa362e6aff183b89fd771431f7daf3e5b612",
-    "props/obsidian-reflection.js": "db926e0da7a344f731911d299ae2ee2353db95c387efdd6d8934ac7683d23ee0"
-  }
+    "props/obsidian-reflection.js": "db926e0da7a344f731911d299ae2ee2353db95c387efdd6d8934ac7683d23ee0",
+    "props/mine-rails.js": "9f3dfc0f40cbe0cffe3d3e2f48065077a7fce2ed3f191d880816c201a7b315ae"
+  },
+  "sourceCandidate": "81ce432d3fb34db916c2b327c28f6a95b59e4432"
 }
