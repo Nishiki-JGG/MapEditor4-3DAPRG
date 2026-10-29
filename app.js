@@ -1022,6 +1022,7 @@ const waterMat = new THREE.ShaderMaterial({
       float alpha=max(mix(.16,.85,t)+spec*.5,fz*.9);   // a few cm of clear water: the stream bed shows through
       #else
       float alpha=max(mix(.42,.93,t),fz*.95);
+      alpha*=smoothstep(0.,.04,d);
       #endif
       if(dry){ col=vec3(0.); alpha=0.; }
       // the sea: waves, surf, run-up, wet sand, clear water and the light network on the floor (sea.js)
