@@ -1,0 +1,392 @@
+{
+  "candidate": 137,
+  "published": false,
+  "base": "e4a8fa23c24706611b5c0f31649a66a36373ba51",
+  "previousIndependentReview": {
+    "candidate": 136,
+    "score": [
+      25,
+      17,
+      19,
+      20,
+      9
+    ],
+    "total": 90,
+    "accepted": false
+  },
+  "gate": "自己評価91。独立再評価前の公開は禁止。",
+  "score": {
+    "appearance": 26,
+    "material": 17,
+    "structurePlacement": 19,
+    "webFormalUnity": 20,
+    "lightness": 9,
+    "total": 91
+  },
+  "deductions": {
+    "appearance": "通常距離で中央打点群を判別できるようになったが、近景の楔形打点には整った印象が残る。製品坑道の通常カメラは壁をほぼ横から見るため、この視点で工具痕の識別改善は主張しない。",
+    "material": "新鮮面の色と彫りが対応するが、既存洞窟壁との岩質/色差が残る。",
+    "structurePlacement": "床高・壁への埋込み・支柱間隔の手動調整が必要。",
+    "lightness": "GPU/モバイル未測定。CPU送信時間はフレーム性能保証ではない。"
+  },
+  "changes": {
+    "primaryPeel": "中央1群の浅い楔形剥離縁。周囲2群は浅く低コントラストへ。",
+    "strikes": {
+      "medium": 9,
+      "small": 11,
+      "previous": 55
+    },
+    "normalSlope": "height差を実寸とUV区画のtexel幅/高さで正規化。黒い色線の増量ではない。",
+    "upperContour": "二つの山を抑えた単一の低い外周。",
+    "fixedGeometryBudget": {
+      "triangles": 372,
+      "vertices": 1116
+    },
+    "idColliderShaderLightingChanged": false
+  },
+  "web": {
+    "pass": true,
+    "tests": {
+      "rows": [
+        "manual-only closed solid",
+        "under1000 triangles",
+        "finite geometry",
+        "ground base and closed back",
+        "bounded nonmetal texture",
+        "shared material",
+        "closed manifold after position welding",
+        "front faces present and consistently outward",
+        "central foot has outward contact faces without an underside bevel",
+        "shallow collision bounds contain visual"
+      ],
+      "unitNormals": 1116,
+      "triangles": 372,
+      "vertices": 1116,
+      "bounds": [
+        [
+          -0.8999999761581421,
+          0,
+          -0.05999999865889549
+        ],
+        [
+          0.8799999952316284,
+          1.850000023841858,
+          0.147586390376091
+        ]
+      ]
+    },
+    "legacy": {
+      "first": {
+        "success": true,
+        "count": 0,
+        "stats": {
+          "kind": "load",
+          "seed": 0,
+          "cacheHit": false,
+          "persistent": false,
+          "persistentStored": false,
+          "preparedSource": "generated",
+          "bundleBytes": 0,
+          "walkReused": false,
+          "elapsedMs": 24.800000071525574,
+          "firstRenderMs": 13.399999976158142,
+          "props": 0,
+          "fits": 0,
+          "fitStats": null
+        }
+      },
+      "second": {
+        "success": true,
+        "count": 2,
+        "stats": {
+          "kind": "load",
+          "seed": 0,
+          "cacheHit": false,
+          "persistent": false,
+          "persistentStored": false,
+          "preparedSource": "generated",
+          "bundleBytes": 0,
+          "walkReused": false,
+          "elapsedMs": 32.200000047683716,
+          "firstRenderMs": 13.600000023841858,
+          "props": 2,
+          "fits": 0,
+          "fitStats": null
+        }
+      }
+    },
+    "oldTypes": {
+      "loaded": true,
+      "ids": [
+        "mine_rail_straight",
+        "minecart"
+      ],
+      "withoutNewType": true
+    },
+    "save": {
+      "loaded": true,
+      "save": true,
+      "collider": true
+    },
+    "stats": {
+      "gl": 0,
+      "calls": 4,
+      "triangles": 10344,
+      "textures": 40
+    },
+    "extensionBytes": 673457
+  },
+  "unity": {
+    "pass": true,
+    "cases": [
+      {
+        "tag": "valid",
+        "savedReload": "passed save-destroy-reinstantiate",
+        "prefabs": 49,
+        "placed": 2,
+        "old48Preserved": true
+      }
+    ],
+    "error": "",
+    "limitations": [
+      "Background Editor only; Player/mobile/GPU timing not measured.",
+      "Old Reader binary not executed; unknown optional field follows previous source control flow.",
+      "Standalone facing; no original walls or fixed rock samples replaced."
+    ]
+  },
+  "sharedLoad": {
+    "cases": [
+      {
+        "placed": 9,
+        "visible": 9,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 3,
+        "meshBytes": 166752,
+        "textureBytes": 4089777,
+        "cpuRenderMedianMs": 0.65,
+        "gpuMeasured": false
+      },
+      {
+        "placed": 225,
+        "visible": 225,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 3,
+        "meshBytes": 166752,
+        "textureBytes": 4089777,
+        "cpuRenderMedianMs": 1.0325,
+        "gpuMeasured": false
+      }
+    ],
+    "limitation": "CPU Render submission, not GPU or game-frame guarantee"
+  },
+  "cave": {
+    "pass": true,
+    "seed": 71421,
+    "cells": 648,
+    "torches": 21,
+    "baseline": 136,
+    "sameCameraLightingPoseBeforeAfter": true,
+    "originalSceneSaved": false
+  },
+  "productMine": {
+    "pass": true,
+    "source": "Product mine tunnel generator: 14m line, width2.4m, height2.8m, terrain3.5m",
+    "formalTunnelImporter": true,
+    "formalRailPrefabs": 2,
+    "formalWallPrefab": true,
+    "centralCorridorClear": true,
+    "existingLights": 2,
+    "originalGameSceneChanged": false,
+    "player": false,
+    "limitation": "Authored product mine test map, not a claim that this map already exists in the game. Separate actual game cave review is retained."
+  },
+  "validationReuse": "Importer/配置処理は不変更。optional欠落・不正・custom・compactの131最終10ケース、レールドラッグ入力回帰を再利用。137のvalid正式49/旧48実mesh・Collider/保存破棄再instantiate/Web保存と出力は再実行。",
+  "restrictions": {
+    "push": false,
+    "gui": false,
+    "player": false,
+    "imageUpload": false,
+    "fixedRockRegeneration": 0
+  },
+  "sourceHashes": {
+    "props/mine-cut-rock.js": "249b6979eeec4ce30fa181b60004094bc7296f6de1783fa4d1e275b64b960b3b",
+    "tests/mine-cut-rock.cjs": "b93dd1ed1e372bfe2a178af343cc1c7e79ce45b7be635dfa6558668e37a22ea9",
+    "tests/unity/Rock137Checks.cs": "3f8ec2e93336cdf36f30dc33ad6ae03915272a67e1ba7e2f35f9d798d4dde55f"
+  },
+  "evidence": {
+    "Evidence137Web/back.png": {
+      "bytes": 908409,
+      "sha256": "ea470c1ecf1b45e272d26ce5fe662b737d0b05b353b0e6787fb2f1739fcf23e6"
+    },
+    "Evidence137Web/checks.json": {
+      "bytes": 291413,
+      "sha256": "5c3b30b7bde14e5eea52921e7b3ed0ca18a1bd82e5d8bc5709bba4630a448798"
+    },
+    "Evidence137Web/colour.png": {
+      "bytes": 132218,
+      "sha256": "83549bafd9a12898e820f220dc5278c0a035b42659fa5815a0a59f9192566a5d"
+    },
+    "Evidence137Web/front-close.png": {
+      "bytes": 1012163,
+      "sha256": "6e87d8940492bdba29e314cbc4bf594c83d014e47cca8ab72db1970e00528442"
+    },
+    "Evidence137Web/front-normal.png": {
+      "bytes": 947995,
+      "sha256": "4adc011975db6a037f1e465d71b23d39284f5e33064fcafafa23adea2079edee"
+    },
+    "Evidence137Web/night.png": {
+      "bytes": 21539,
+      "sha256": "fc90077d347a6a6d0c479cc841f7ef69ddef3d8e935f43d4609e90422ce4e1e1"
+    },
+    "Evidence137Web/normal.png": {
+      "bytes": 204457,
+      "sha256": "a3b7a778db307e7f0f8906169a93d0b5e5e9b7de33bc03834781c64df0c74e4d"
+    },
+    "Evidence137Web/opposite-light.png": {
+      "bytes": 963390,
+      "sha256": "3aef4a337a99dc7e8fb5cbf42da3380b699a8534409ca2fa8e11f95dfbcf7e90"
+    },
+    "Evidence137Web/packed.png": {
+      "bytes": 40786,
+      "sha256": "91950c14e616ccc5e55149f6d2c906eea2052bfade6d3bbc83e803339de03877"
+    },
+    "Evidence137Web/rock-payload.json": {
+      "bytes": 673457,
+      "sha256": "7cda81e7ffb4294d653b5a77c3257689f0c2650a35d45a71c4f93a7173d6aef8"
+    },
+    "Evidence137Native/back.png": {
+      "bytes": 437394,
+      "sha256": "25d712c783aa5b7c6dc56f235ccd9e20f71c128f08d7ac8a8f8198813f17af70"
+    },
+    "Evidence137Native/close.png": {
+      "bytes": 499988,
+      "sha256": "dba1475b6b2cd6f315e44522bd104b5e7f43ab0612b43a28b441fb2d991a19b3"
+    },
+    "Evidence137Native/dark.png": {
+      "bytes": 266059,
+      "sha256": "8e73b6e7085935846f1664e7f6833ac728f58d2c61f3ef1dd6f8426cbba7daaa"
+    },
+    "Evidence137Native/load.json": {
+      "bytes": 387,
+      "sha256": "a1c6eb94d5e23d5c75d7477afa2dc8936c85978a7a83ee544063072ba2687c58"
+    },
+    "Evidence137Native/normal.png": {
+      "bytes": 273776,
+      "sha256": "4023cff524c663215d696e4015ce3dc9771523dd4e38b06cb8652ee98d280a61"
+    },
+    "Evidence137Native/opposite.png": {
+      "bytes": 577551,
+      "sha256": "e7f3238d5b00a6a881866fc9695f9af41c50f6fa8431ac3abd2705546a205cde"
+    },
+    "Evidence137Native/point.png": {
+      "bytes": 482374,
+      "sha256": "e486858afb216206498a9063e358cad57a560e19b975db7915ed35ed68944ba6"
+    },
+    "Evidence137Native/refresh.json": {
+      "bytes": 543,
+      "sha256": "9f84b77736f79d419dfa70d2c61e428920335c9c24e67e9712ffe55bc607dcef"
+    },
+    "Evidence137Native/spot.png": {
+      "bytes": 415860,
+      "sha256": "a7049e5b43e494ed4d48349092d007f2c02020283fd2ea536eadab3ca364838b"
+    },
+    "Evidence137Cave/dark-baseline-close.png": {
+      "bytes": 1197375,
+      "sha256": "7dbb6236d24ae40afffa53c32fac21331fc7ee3cce328ea0b95df9a79e9b6fb9"
+    },
+    "Evidence137Cave/dark-baseline-normal.png": {
+      "bytes": 1374452,
+      "sha256": "7e341fe1105dc7936445a5a043a68794b17961e8d3a87663ec751dd251ca4779"
+    },
+    "Evidence137Cave/dark-baseline-side.png": {
+      "bytes": 1208479,
+      "sha256": "67777d2fca0964c0b70349f31bf0e2fd50bde94bf094e060691160ef511248b0"
+    },
+    "Evidence137Cave/dark-before-normal.png": {
+      "bytes": 1373504,
+      "sha256": "aecb1a061e4b6ebd05fefef9b403caa57af790a504b38f2d407b6b2987409021"
+    },
+    "Evidence137Cave/dark-close.png": {
+      "bytes": 1196026,
+      "sha256": "6a17055c5d3ebee5fcf0898a1c05ca47f4ef1c0f2b87041e54031721c9bde14a"
+    },
+    "Evidence137Cave/dark-normal.png": {
+      "bytes": 1374409,
+      "sha256": "0a2fc1bb681de64198aeac4f9927da516206b6511c28a5ebc60ab7a3294e2bfe"
+    },
+    "Evidence137Cave/dark-side.png": {
+      "bytes": 1207562,
+      "sha256": "158014e76ed8c3f55d182cecab163d957cf20ad4bead56d8e02a9c6e00cd1191"
+    },
+    "Evidence137Cave/lighting.json": {
+      "bytes": 400,
+      "sha256": "a59dc8437a49316fd3af28c12673b7a3303363528766ef00e98aa396c0813d4f"
+    },
+    "Evidence137Cave/lit-baseline-close.png": {
+      "bytes": 1227343,
+      "sha256": "306803830ff35592ae23eaaa3ad96db8996143290d606fe5cb962cbe9a6f062f"
+    },
+    "Evidence137Cave/lit-baseline-normal.png": {
+      "bytes": 1351497,
+      "sha256": "8193d197771fb1f060af88b3904b5dde5ee16d6628a78d3f28d17996a19335c9"
+    },
+    "Evidence137Cave/lit-baseline-side.png": {
+      "bytes": 1171306,
+      "sha256": "101928be700a61e5f49d4c4143881aaf16787dc755e01e4b064a6da114752645"
+    },
+    "Evidence137Cave/lit-before-normal.png": {
+      "bytes": 1350879,
+      "sha256": "f3cfe9cbb13dc88a30ddace964eba2bd078de1bfd3db50723417d87bd97befd4"
+    },
+    "Evidence137Cave/lit-close.png": {
+      "bytes": 1227421,
+      "sha256": "c2045245f041e3ae5d18eb19121347dd5d4bbfe211547bdf2c6aed12315af810"
+    },
+    "Evidence137Cave/lit-normal.png": {
+      "bytes": 1351427,
+      "sha256": "bf932f54a2afbbf88b98873ea94d9b3897cc809ae6d3871b70f45cb8a8f0acec"
+    },
+    "Evidence137Cave/lit-side.png": {
+      "bytes": 1170090,
+      "sha256": "27313d094d10e074813b4a4d852afcb49bc2eeedf72b06f1744687e00b7b7aa4"
+    },
+    "Evidence137Cave/validation.json": {
+      "bytes": 1271,
+      "sha256": "5e9755d6519002e2378b1c5d8e1adf3795dac717509d1c41b142a8c254975d28"
+    },
+    "Evidence137Mine/baseline-close.png": {
+      "bytes": 535819,
+      "sha256": "a5e12172d6b92e2b2be46379281a6ebe961bdb0677ca58408f083a62c2bfed52"
+    },
+    "Evidence137Mine/baseline-normal.png": {
+      "bytes": 75731,
+      "sha256": "b715e07c5e0a403bed1a1edd030776ce6e869ff6be9b848175ecbac9b93222b9"
+    },
+    "Evidence137Mine/baseline-reverse.png": {
+      "bytes": 408576,
+      "sha256": "2028902f23f5df0fe0c7918818fca78bf93a825b9820a9728ec54d632b33f953"
+    },
+    "Evidence137Mine/before-normal.png": {
+      "bytes": 71050,
+      "sha256": "d428a6209e70304ad21c605773a849501aec6fc855e8d8e724d773e58a9585ee"
+    },
+    "Evidence137Mine/checks.json": {
+      "bytes": 416,
+      "sha256": "30048d74d1af9a9b6417315c816e68543d81f841d92622bc95588f9ee9f345c0"
+    },
+    "Evidence137Mine/close.png": {
+      "bytes": 527868,
+      "sha256": "8257cd42a953bada133faac3ad2fbb39966229620b3e77b7adf6d5c63c445e49"
+    },
+    "Evidence137Mine/normal.png": {
+      "bytes": 75444,
+      "sha256": "6b1877ec32351e998d13c85fb6082c6317a5bc7a1e3a154193ce26b4afd4975b"
+    },
+    "Evidence137Mine/reverse.png": {
+      "bytes": 411250,
+      "sha256": "4e0e03ac56f078732e94c53ac5c906adcf10b4b60ffebcb8ff02569c23388df7"
+    }
+  }
+}
