@@ -34,7 +34,7 @@ Unity Profiler.GetRuntimeMemorySizeLong の参照textureオブジェクト測定
 - 9/225の各単品配置は共有mesh1/material1/texture3を維持。225中210可視。短いCPU投入時間は記録のみで性能保証に使わない。共存9/225のmaterial2/texture6も確認。GPUは未測定。
 - 182の欠落/破損optional/compact・旧Readerの検証は契約とImporter sourceが不変のため再利用。旧Readerは旧ソース再compileで73種生成・新optional省略を実証したもので、旧バイナリ実行ではない。182のレールドラッグ・固定sample2種の再生成0も対応sourceが不変のため再利用する。
 
-積荷上端の約6.7cmは既存BoxColliderから出る装飾許容として継続記録。最終形状では約6.3cm。各岩の精密衝突、荷崩れ物理、Player、スマホ、GPU、ゲーム全セッションは未検証/対象外。原本ゲームScene・他担当source・既存未追跡物は保持、GUI/Player/AV/upload/pushを行わない。
+積荷上端の非精密衝突部分は最終形状で約6.3cm。旧182の約6.7cmと区別する。各岩の精密衝突、荷崩れ物理、Player、スマホ、GPU、ゲーム全セッションは未検証/対象外。原本ゲームScene・他担当source・既存未追跡物は保持、GUI/Player/AV/upload/pushを行わない。
 
 自己評価91（見た目27/材質17/構造19/Web正式Unity20/軽量8）。独立合格ではない。材質・軽量性の点を上げず、厚い大粒2個が板片の反復を破る点だけを見た目の改善根拠とする。
 
