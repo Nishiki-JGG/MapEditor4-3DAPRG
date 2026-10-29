@@ -1,0 +1,607 @@
+{
+  "baselineCommit": "9683c1672772ae8f27ad0e96e6832e4a6469ad3f",
+  "published": false,
+  "before": {
+    "pass": false,
+    "cases": [
+      {
+        "name": "touch curve preview equals committed geometry and pose",
+        "pass": false,
+        "before": {
+          "geometryMatches": false,
+          "position": [
+            7.370881949242403e-08,
+            0,
+            -2.7849011985381367e-09
+          ],
+          "rotation": 1.5707963267948966,
+          "scale": 1,
+          "visible": true
+        },
+        "placed": [
+          {
+            "id": "mine_rail_curve",
+            "position": [
+              7.370881949242403e-08,
+              0,
+              -2.7849011985381367e-09
+            ],
+            "rotation": 1.5707963267948966,
+            "scale": 1
+          }
+        ]
+      },
+      {
+        "name": "left + right chord cancels and hands off camera",
+        "pass": false,
+        "canceled": false,
+        "cameraMoved": false,
+        "stoppedAfterButtonRelease": true,
+        "count": 2,
+        "onlyFirstDown": true,
+        "trace": [
+          {
+            "type": "pointermove",
+            "button": -1,
+            "buttons": 0,
+            "pointerType": "mouse"
+          },
+          {
+            "type": "pointerdown",
+            "button": 0,
+            "buttons": 1,
+            "pointerType": "mouse"
+          },
+          {
+            "type": "pointermove",
+            "button": -1,
+            "buttons": 1,
+            "pointerType": "mouse"
+          },
+          {
+            "type": "pointermove",
+            "button": 2,
+            "buttons": 3,
+            "pointerType": "mouse"
+          },
+          {
+            "type": "pointermove",
+            "button": -1,
+            "buttons": 3,
+            "pointerType": "mouse"
+          },
+          {
+            "type": "pointermove",
+            "button": 2,
+            "buttons": 1,
+            "pointerType": "mouse"
+          },
+          {
+            "type": "pointermove",
+            "button": -1,
+            "buttons": 1,
+            "pointerType": "mouse"
+          },
+          {
+            "type": "pointerup",
+            "button": 0,
+            "buttons": 0,
+            "pointerType": "mouse"
+          }
+        ]
+      },
+      {
+        "name": "left + middle chord cancels and hands off camera",
+        "pass": false,
+        "canceled": false,
+        "cameraMoved": false,
+        "stoppedAfterButtonRelease": true,
+        "count": 2,
+        "onlyFirstDown": true,
+        "trace": [
+          {
+            "type": "pointermove",
+            "button": -1,
+            "buttons": 0,
+            "pointerType": "mouse"
+          },
+          {
+            "type": "pointerdown",
+            "button": 0,
+            "buttons": 1,
+            "pointerType": "mouse"
+          },
+          {
+            "type": "pointermove",
+            "button": -1,
+            "buttons": 1,
+            "pointerType": "mouse"
+          },
+          {
+            "type": "pointermove",
+            "button": 1,
+            "buttons": 5,
+            "pointerType": "mouse"
+          },
+          {
+            "type": "pointermove",
+            "button": -1,
+            "buttons": 5,
+            "pointerType": "mouse"
+          },
+          {
+            "type": "pointermove",
+            "button": 1,
+            "buttons": 1,
+            "pointerType": "mouse"
+          },
+          {
+            "type": "pointermove",
+            "button": -1,
+            "buttons": 1,
+            "pointerType": "mouse"
+          },
+          {
+            "type": "pointerup",
+            "button": 0,
+            "buttons": 0,
+            "pointerType": "mouse"
+          }
+        ]
+      },
+      {
+        "name": "stationary pointer with WASD movement cancels pending rails",
+        "pass": false,
+        "motion": {
+          "active": true,
+          "target": [
+            -1.4813185282075498,
+            0,
+            -2.058090119500677
+          ],
+          "previewCount": 2
+        },
+        "count": 0
+      }
+    ],
+    "errors": [],
+    "privateHeadless": true,
+    "gui": false
+  },
+  "after": {
+    "pass": true,
+    "cases": [
+      {
+        "name": "touch curve preview equals committed geometry and pose",
+        "pass": true,
+        "before": {
+          "geometryMatches": true,
+          "position": [
+            7.370881949242403e-08,
+            0,
+            -2.7849011985381367e-09
+          ],
+          "rotation": 1.5707963267948966,
+          "scale": 1,
+          "visible": true
+        },
+        "placed": [
+          {
+            "id": "mine_rail_curve",
+            "position": [
+              7.370881949242403e-08,
+              0,
+              -2.7849011985381367e-09
+            ],
+            "rotation": 1.5707963267948966,
+            "scale": 1
+          }
+        ]
+      },
+      {
+        "name": "left + right chord cancels and hands off camera",
+        "pass": true,
+        "canceled": true,
+        "cameraMoved": true,
+        "stoppedAfterButtonRelease": true,
+        "count": 0,
+        "onlyFirstDown": true,
+        "trace": [
+          {
+            "type": "pointermove",
+            "button": -1,
+            "buttons": 0,
+            "pointerType": "mouse"
+          },
+          {
+            "type": "pointerdown",
+            "button": 0,
+            "buttons": 1,
+            "pointerType": "mouse"
+          },
+          {
+            "type": "pointermove",
+            "button": -1,
+            "buttons": 1,
+            "pointerType": "mouse"
+          },
+          {
+            "type": "pointermove",
+            "button": 2,
+            "buttons": 3,
+            "pointerType": "mouse"
+          },
+          {
+            "type": "pointermove",
+            "button": -1,
+            "buttons": 3,
+            "pointerType": "mouse"
+          },
+          {
+            "type": "pointermove",
+            "button": 2,
+            "buttons": 1,
+            "pointerType": "mouse"
+          },
+          {
+            "type": "pointermove",
+            "button": -1,
+            "buttons": 1,
+            "pointerType": "mouse"
+          },
+          {
+            "type": "pointerup",
+            "button": 0,
+            "buttons": 0,
+            "pointerType": "mouse"
+          }
+        ]
+      },
+      {
+        "name": "left + middle chord cancels and hands off camera",
+        "pass": true,
+        "canceled": true,
+        "cameraMoved": true,
+        "stoppedAfterButtonRelease": true,
+        "count": 0,
+        "onlyFirstDown": true,
+        "trace": [
+          {
+            "type": "pointermove",
+            "button": -1,
+            "buttons": 0,
+            "pointerType": "mouse"
+          },
+          {
+            "type": "pointerdown",
+            "button": 0,
+            "buttons": 1,
+            "pointerType": "mouse"
+          },
+          {
+            "type": "pointermove",
+            "button": -1,
+            "buttons": 1,
+            "pointerType": "mouse"
+          },
+          {
+            "type": "pointermove",
+            "button": 1,
+            "buttons": 5,
+            "pointerType": "mouse"
+          },
+          {
+            "type": "pointermove",
+            "button": -1,
+            "buttons": 5,
+            "pointerType": "mouse"
+          },
+          {
+            "type": "pointermove",
+            "button": 1,
+            "buttons": 1,
+            "pointerType": "mouse"
+          },
+          {
+            "type": "pointermove",
+            "button": -1,
+            "buttons": 1,
+            "pointerType": "mouse"
+          },
+          {
+            "type": "pointerup",
+            "button": 0,
+            "buttons": 0,
+            "pointerType": "mouse"
+          }
+        ]
+      },
+      {
+        "name": "stationary pointer with WASD movement cancels pending rails",
+        "pass": true,
+        "motion": {
+          "active": false,
+          "target": [
+            -1.4813185282075498,
+            0,
+            -2.058090119500677
+          ],
+          "previewCount": 0
+        },
+        "count": 0
+      }
+    ],
+    "errors": [],
+    "privateHeadless": true,
+    "gui": false
+  },
+  "regressions": {
+    "drag": {
+      "pass": true,
+      "pure": [
+        "three straights",
+        "replace provisional tail with -1 turn",
+        "actual mesh port -1",
+        "actual mesh port -1",
+        "actual mesh port -1",
+        "actual mesh port -1",
+        "actual mesh port -1",
+        "actual mesh port -1",
+        "continuous -1 1",
+        "continuous -1 2",
+        "replace provisional tail with 1 turn",
+        "actual mesh port 1",
+        "actual mesh port 1",
+        "actual mesh port 1",
+        "actual mesh port 1",
+        "actual mesh port 1",
+        "actual mesh port 1",
+        "continuous 1 1",
+        "continuous 1 2",
+        "two successive bends",
+        "four curves closed loop",
+        "closed loop stable on pointer release",
+        "retract to earlier endpoint",
+        "existing start sets outward tangent",
+        "finish at matching existing port",
+        "perpendicular end rejected",
+        "end scale mismatch rejected",
+        "end height mismatch rejected",
+        "duplicate/interior overlap rejected",
+        "occupied start rejected",
+        "uneven ground rejected",
+        "impossible short sideways move rejected",
+        "scale and QE heading",
+        "bounded stroke",
+        "map bounds rejected",
+        "225 existing rail scene"
+      ],
+      "final": [
+        [
+          136,
+          2.184924952075562e-08,
+          -1.5200453340469267e-07,
+          0,
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          136,
+          2.184924952075562e-08,
+          1.9999998479954666,
+          0,
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          136,
+          2.184924952075562e-08,
+          3.9999998479954666,
+          0,
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          137,
+          2.184924952075562e-08,
+          5.999999847995467,
+          0,
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          136,
+          2.0000000218492495,
+          7.999999847995467,
+          1.5707963267948966,
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          136,
+          4.0000000218492495,
+          7.999999847995467,
+          1.5707963267948966,
+          1,
+          0,
+          1,
+          0
+        ]
+      ],
+      "reload": {
+        "success": true,
+        "equal": true,
+        "count": 6
+      },
+      "cancelModes": [
+        "escape",
+        "cancel",
+        "blur",
+        "type",
+        "tool",
+        "mode",
+        "capture"
+      ],
+      "oneStrokeOneUndo": true,
+      "dragScaleHeadingLocked": true,
+      "ordinaryPropUnchanged": true,
+      "undergroundFloor": true,
+      "timing": {
+        "existing": 225,
+        "maxStroke": 64,
+        "updateMedianMs": 0.30000007152557373,
+        "updateMaxMs": 0.5,
+        "gpuMeasured": false
+      },
+      "errors": [],
+      "privateHeadless": true,
+      "gui": false
+    },
+    "touch": {
+      "pass": true,
+      "joint": {
+        "count": 2,
+        "dx": 0,
+        "dz": 2,
+        "scales": [
+          1,
+          1
+        ],
+        "rot": [
+          0,
+          0
+        ],
+        "ys": [
+          0,
+          0
+        ],
+        "stateRot": 0
+      },
+      "distinct": [
+        0.04999993352045262,
+        4.050000010895439,
+        0,
+        0.8,
+        0,
+        1,
+        0
+      ],
+      "saved": {
+        "equal": true,
+        "ids": [
+          "mine_rail_straight",
+          "mine_rail_curve",
+          "mine_rail_end"
+        ]
+      },
+      "stage": {
+        "unevenRejected": true,
+        "gauge": {
+          "railCentres": 0.84,
+          "clearGauge": 0.79,
+          "runningHeight": 0.14,
+          "wheelCentres": [
+            -0.42,
+            0.42
+          ],
+          "bodyWidth": 1,
+          "bodyLength": 1.4,
+          "bodyHeight": 1.1
+        }
+      },
+      "underground": {
+        "count": 1,
+        "x": -1.2476156641128e-07,
+        "z": -0.9999998151853546,
+        "y": 0,
+        "terrain": 3.5,
+        "previewCorrect": true,
+        "previewY": 0
+      },
+      "midBumpRejected": true,
+      "privateHeadless": true,
+      "guiUsed": false
+    },
+    "shortcuts": {
+      "pass": true,
+      "cases": [
+        "Ctrl wheel changes scale without preview or camera zoom",
+        "scale slider and readout synchronized",
+        "Q wraps 0 to345",
+        "E wraps345 to0",
+        "held E repeats on existing15 degree grid",
+        "placement Q/E does not turn camera",
+        "scale upper clamp",
+        "Ctrl wheel still consumed at maximum",
+        "scale lower clamp",
+        "horizontal wheel fallback",
+        "zero delta stable",
+        "type switch preserves settings",
+        "outside canvas leaves Ctrl wheel unconsumed",
+        "ordinary wheel retains camera zoom",
+        "Shift wheel brush radius retained",
+        "focused input keeps typing",
+        "focused textarea keeps typing",
+        "focused select keeps typing",
+        "focused div keeps typing",
+        "modified keys and IME do not rotate placement",
+        "other tool leaves Ctrl zoom unconsumed",
+        "other edit tool Q rotates camera",
+        "mode switch while Q held does not rotate place camera",
+        "walk E retains view rotation",
+        "walk Ctrl wheel is not intercepted",
+        "walk ordinary wheel retains zoom"
+      ],
+      "preview": {
+        "scale": 1.25,
+        "rotation": 45,
+        "previewScale": 1.25,
+        "previewAngle": 0.7853981633974483,
+        "expectedScale": 1.25,
+        "geometry": true,
+        "dist": 12,
+        "viewportScale": 1
+      },
+      "placed": {
+        "count": 1,
+        "scale": 1.25,
+        "angle": 0.7853981633974483,
+        "id": "smallbarrel"
+      },
+      "ground": {
+        "parts": 9,
+        "match": true,
+        "scale": 0.9600000000000002,
+        "angle": 6.021385919380437
+      },
+      "saved": {
+        "randomPreserved": true,
+        "propsExact": true,
+        "props": 3,
+        "gl": 0
+      },
+      "privateHeadless": true,
+      "guiUsed": false,
+      "uploads": 0
+    }
+  },
+  "nativeReexecuted": false,
+  "nativeEvidenceApplicability": "入力修正のみ。Native・mesh・material・export契約不変、128と今回の6配置値は完全一致。128の正式48Prefab・保存再読込結果を維持。",
+  "sampleRegeneration": 0,
+  "sourceHashes": {
+    "app.js": "d594017eabb9f3c1c880999d92822f9245f6f3e4fe6583d1c75d2ccdd4995e75",
+    "props/mine-rail-drag.js": "7103ee81b1d164a608c14c0701e3fc728f060a0ed0034bb76fd4c92ed3d5241a",
+    "tests/mine-rail-input-boundary.cjs": "2ed0794209549b4f037cb42c099c61c9b03f6f8f7bef93c9165c9910d381ca11",
+    "prepared/manifest.js": "2e608e062c2c0abb95a6a50b3c7289c65afd7c7f41e50fed60d3201fcf4ca2d2"
+  }
+}

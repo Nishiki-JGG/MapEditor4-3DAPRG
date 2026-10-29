@@ -3179,8 +3179,8 @@ function pushUndo() { undoStack.push(snapshot()); if (undoStack.length > 40) und
 function undo() { cancelRailDrag(); if (!undoStack.length) return; redoStack.push(snapshot()); restore(undoStack.pop()); toast('取り消し'); }
 function redo() { cancelRailDrag(); if (!redoStack.length) return; undoStack.push(snapshot()); restore(redoStack.pop()); toast('やり直し'); }
 
-const stroke = { rail: null, active: false, base: 0, lower: false, lastStamp: null };
-let hit = null;
+const stroke = { rail: null, railCamera: false, active: false, base: 0, lower: false, lastStamp: null };
+let hit = null, placementPointerType = 'mouse';
 // brush distance: a circle, or with the square brush the larger of the two axis distances (an axis-aligned square of half side r)
 const brushDist = (dx, dz, sq = state.brushShape === 'square') => sq ? Math.max(Math.abs(dx), Math.abs(dz)) : Math.hypot(dx, dz);
 function forBrush(x, z, r, fn, sq = false) {
@@ -5279,7 +5279,7 @@ function updateRing() {
   if (state.tool === 'place') {
     const t = state.variant.place, s0 = (PROP[t].sc[0] + PROP[t].sc[1]) / 2 * state.placeScale;
     preview.material=PROP[t].mineCart?cartPreviewMat:PROP[t].mineRail?railPreviewMat:standardPreviewMat;
-    if(PROP[t].mineRail&&PROP[t].id!=='mine_rail_end'&&state.mode==='edit'){const q=TDMineRailDrag.begin(hit.x,hit.z,state.placeRot*Math.PI/180,s0,props,PROP,floorAt),p=q.start;preview.geometry=PROP[TYPE('mine_rail_straight')].geo;preview.visible=true;preview.position.set(p.x,p.y,p.z);preview.rotation.y=p.rot;preview.scale.setScalar(s0);outline(circle(p.x,p.z,.14),q.startReason?0xff5555:q.snapped?0x68ffb0:0xffd27a,.18);return;}
+    if(PROP[t].mineRail&&PROP[t].id!=='mine_rail_end'&&state.mode==='edit'&&placementPointerType!=='touch'){const q=TDMineRailDrag.begin(hit.x,hit.z,state.placeRot*Math.PI/180,s0,props,PROP,floorAt),p=q.start;preview.geometry=PROP[TYPE('mine_rail_straight')].geo;preview.visible=true;preview.position.set(p.x,p.y,p.z);preview.rotation.y=p.rot;preview.scale.setScalar(s0);outline(circle(p.x,p.z,.14),q.startReason?0xff5555:q.snapped?0x68ffb0:0xffd27a,.18);return;}
     if(PROP[t].mineRail){preview.geometry=PROP[t].geo;const p=TDMineRails.placement(PROP[t].id,hit.x,hit.z,state.placeRot*Math.PI/180,s0,props,PROP,floorAt);preview.visible=true;preview.position.set(p.x,p.y,p.z);preview.rotation.y=p.rot;preview.scale.setScalar(s0);outline(circle(p.x,p.z,.14),!p.valid?0xff5555:p.snapped?0x68ffb0:0xffd27a,.18);return;}
     if(PROP[t].mineCart){const p=TDMineCart.placement(hit.x,hit.z,state.placeRot*Math.PI/180,s0,props,PROP,floorAt);preview.visible=true;preview.position.set(p.x,p.y,p.z);preview.rotation.y=p.rot;preview.scale.setScalar(s0);outline(circle(p.x,p.z,.6*s0),!p.valid?0xff5555:p.snapped?0x68ffb0:0xffd27a,.18);return;}
     if(PROP[t].geo.userData.groundParts){setGroundPreview(t,hit.x,hit.z,state.placeRot*Math.PI/180,s0);preview.visible=false;}else{preview.visible = true; preview.position.set(hit.x, heightAt(hit.x, hit.z) + (PROP[t].roomTorch ? TDWallTorchSource.defaultMountHeight : 0), hit.z); preview.rotation.y = state.placeRot * Math.PI / 180; preview.scale.setScalar(s0);}
@@ -5325,7 +5325,7 @@ const railDragGuide=new THREE.Line(new THREE.BufferGeometry().setAttribute('posi
 const railDragStatus=document.createElement('div');railDragStatus.id='railDragStatus';railDragStatus.hidden=true;
 railDragStatus.setAttribute('role','status');railDragStatus.style.cssText='position:fixed;bottom:52px;left:50%;transform:translateX(-50%);padding:8px 12px;background:#14202eee;color:white;border:1px solid #77ddaa;border-radius:6px;pointer-events:none;z-index:30;max-width:80vw';document.body.appendChild(railDragStatus);
 function railDragLock(on){for(const id of ['placeScale','placeRot','placeRandom'])$(id).disabled=on;}
-function cancelRailDrag(){if(!stroke.rail)return;stroke.rail=null;railDragGroup.clear();railDragGuide.visible=false;railDragStatus.hidden=true;railDragLock(false);}
+function cancelRailDrag(){if(stroke.railCamera){stroke.railCamera=false;drag=null;}if(!stroke.rail)return;stroke.rail=null;railDragGroup.clear();railDragGuide.visible=false;railDragStatus.hidden=true;railDragLock(false);}
 function beginRailDrag(e){
   const t=PROP[state.variant.place],scale=(t.sc[0]+t.sc[1])*.5*state.placeScale;
   stroke.rail=TDMineRailDrag.begin(hit.x,hit.z,state.placeRot*Math.PI/180,scale,props,PROP,floorAt);
@@ -5462,10 +5462,12 @@ function stampAt(p) {
   state.tool === 'scatter' ? scatterAt(p.x, p.z) : eraseAt(p.x, p.z);
 }
 canvas.addEventListener('contextmenu', e => e.preventDefault());
+canvas.addEventListener('mousedown',e=>{if(stroke.railCamera&&e.button===1)e.preventDefault();});
 // mouse and pen: left = edit (in both modes), right = turn the view, middle = pan. Touch: see touch gestures below.
 let lastClient = [0, 0];   // the pointer in screen coordinates (pick), lastXY in the page's own coordinates (drags)
 canvas.addEventListener('pointerdown', e => {
-  if(stroke.rail){if(e.button!==0)cancelRailDrag();else return;}
+  placementPointerType=e.pointerType||'mouse';
+  if(stroke.rail){if(e.button!==0){cancelRailDrag();stroke.railCamera=true;}else return;}
   if (e.pointerType === 'touch') { touchDown(e); return; }
   canvas.setPointerCapture(e.pointerId); canvas.focus(); lastXY = toLocal(e.clientX, e.clientY); lastClient = [e.clientX, e.clientY];
   if (e.button === 2) drag = 'orbit';
@@ -5482,6 +5484,10 @@ function panView(dx, dy) {
   cam.target.x += (-dx * Math.cos(cam.yaw) + dy * fx) * s; cam.target.z += (dx * Math.sin(cam.yaw) + dy * fz) * s;
 }
 canvas.addEventListener('pointermove', e => {
+  placementPointerType=e.pointerType||'mouse';
+  // Chorded buttons arrive as pointermove, not a second pointerdown.
+  if(stroke.rail&&(e.buttons&6)){cancelRailDrag();stroke.railCamera=true;}
+  if(stroke.railCamera){drag=e.buttons&2?'orbit':e.buttons&4?'pan':null;if(!e.buttons)stroke.railCamera=false;if(e.buttons&4)e.preventDefault();}
   if (e.pointerType === 'touch') { touchMove(e); return; }
   pointerIn = true;
   const p = toLocal(e.clientX, e.clientY), dx = p[0] - lastXY[0], dy = p[1] - lastXY[1]; lastXY = p; lastClient = [e.clientX, e.clientY];
@@ -5507,11 +5513,11 @@ function endStroke() {
   const s0 = undoStack[undoStack.length - 1];
   if (stroke.active && s0 && s0.SC && !['spring', 'pool'].includes(state.tool)) for (let k = 0; k < N * N; k++) if (H[k] !== s0.H[k]) SC[k] = 0;
   if (stroke.active && falls.length && s0 && H.some((h, k) => h !== s0.H[k])) refitFalls();   // placed waterfalls follow the reshaped ground
-  stroke.dragStart = null; drag = null; stroke.active = false;
+  stroke.dragStart = null; drag = null; stroke.active = false;stroke.railCamera=false;
 }
 canvas.addEventListener('pointerup', e => { if (e.pointerType === 'touch') { touchUp(e); return; } if(stroke.rail){finishRailDrag(e);return;} endStroke(); });
 canvas.addEventListener('pointercancel', e => { if(stroke.rail){cancelRailDrag();return;} if (e.pointerType === 'touch') touchUp(e, true); else endStroke(); });
-canvas.addEventListener('lostpointercapture',e=>{if(stroke.rail?.pointerId===e.pointerId)cancelRailDrag();});
+canvas.addEventListener('lostpointercapture',e=>{if(stroke.rail?.pointerId===e.pointerId||stroke.railCamera)cancelRailDrag();});
 canvas.addEventListener('pointerleave', e => { if(e.pointerType==='touch')return; pointerIn = false; hit = null;if(stroke.rail)updateRailDrag(); });
 
 // ---- touch gestures. Walking: one finger turns the view, two fingers pinch to zoom. Editing: one finger edits (it starts
@@ -5697,6 +5703,7 @@ function update(dt) {
   const ix = kx || joy.x, iz = kz || joy.y, amt = kx || kz ? 1 : Math.min(1, Math.hypot(joy.x, joy.y));   // the stick walks slower when pushed less
   if (state.mode === 'edit') {
     if (ix || iz) {
+      if(stroke.rail){cancelRailDrag();toast('カメラ移動のため、未確定のレール敷設を取り消しました');}
       const s = cam.dist * .9 * dt, fx = -Math.sin(cam.yaw), fz = -Math.cos(cam.yaw), rx = Math.cos(cam.yaw), rz = -Math.sin(cam.yaw);
       cam.target.x = clamp(cam.target.x + (fx * iz + rx * ix) * s, -HALF, HALF); cam.target.z = clamp(cam.target.z + (fz * iz + rz * ix) * s, -HALF, HALF);
     }

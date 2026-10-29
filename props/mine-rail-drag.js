@@ -77,7 +77,7 @@ const TDMineRailDrag = (() => {
     }
     stroke.pieces=best;
     stroke.reason=validate(stroke,placed,types,heightAt,inside);
-    if(!stroke.reason){if(!best.length)stroke.reason='進行方向へドラッグしてください';else if(bestD>1.02*s)stroke.reason=best.length===LIMIT?'一筆は64部品までです':'2m刻み・半径2mの90°曲線へ合わせてください';}
+    if(!stroke.reason){if(!best.length)stroke.reason=`進行方向へドラッグ。90°曲線には前方・横方向それぞれ約${(2*s).toFixed(2)}m（半径${(2*s).toFixed(2)}m）が必要です`;else if(bestD>1.02*s)stroke.reason=best.length===LIMIT?'一筆は64部品までです':'2m刻み・半径2mの90°曲線へ合わせてください';}
     // A nearby existing port is an explicit connection request, never silently
     // leave a gap by accepting the usual free-end length snapping tolerance.
     const requested=stroke.ends.find(e=>dist(e,target)<.4*s);
