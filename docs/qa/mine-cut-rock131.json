@@ -1,0 +1,346 @@
+{
+  "candidate": 131,
+  "published": false,
+  "gate": "自己評価88点。独立レビュー待ち、91点未達のため公開不可。",
+  "publishedBase": "873891174c02d3300e6bff5a04cf84e530de8ff7",
+  "sourceBase": "45099bb",
+  "score": {
+    "appearance": 25,
+    "material": 17,
+    "structurePlacement": 17,
+    "webFormalUnity": 20,
+    "lightness": 9,
+    "total": 88
+  },
+  "web": {
+    "pass": true,
+    "tests": {
+      "rows": [
+        "manual-only closed solid",
+        "under1000 triangles",
+        "finite geometry",
+        "ground base and closed back",
+        "bounded nonmetal texture",
+        "shared material",
+        "closed manifold after position welding",
+        "front faces present and consistently outward",
+        "shallow collision bounds contain visual"
+      ],
+      "unitNormals": 1116,
+      "triangles": 372,
+      "vertices": 1116,
+      "bounds": [
+        [
+          -0.8999999761581421,
+          0,
+          -0.05999999865889549
+        ],
+        [
+          0.8999999761581421,
+          1.909999966621399,
+          0.28971049189567566
+        ]
+      ]
+    },
+    "legacy": {
+      "first": {
+        "success": true,
+        "count": 0,
+        "stats": {
+          "kind": "load",
+          "seed": 0,
+          "cacheHit": false,
+          "persistent": false,
+          "persistentStored": false,
+          "preparedSource": "generated",
+          "bundleBytes": 0,
+          "walkReused": false,
+          "elapsedMs": 18.200000047683716,
+          "firstRenderMs": 10.899999976158142,
+          "props": 0,
+          "fits": 0,
+          "fitStats": null
+        }
+      },
+      "second": {
+        "success": true,
+        "count": 2,
+        "stats": {
+          "kind": "load",
+          "seed": 0,
+          "cacheHit": false,
+          "persistent": false,
+          "persistentStored": false,
+          "preparedSource": "generated",
+          "bundleBytes": 0,
+          "walkReused": false,
+          "elapsedMs": 25.700000047683716,
+          "firstRenderMs": 10.5,
+          "props": 2,
+          "fits": 0,
+          "fitStats": null
+        }
+      }
+    },
+    "oldTypes": {
+      "loaded": true,
+      "ids": [
+        "mine_rail_straight",
+        "minecart"
+      ],
+      "withoutNewType": true
+    },
+    "save": {
+      "loaded": true,
+      "save": true,
+      "collider": true
+    },
+    "stats": {
+      "gl": 0,
+      "calls": 4,
+      "triangles": 10344,
+      "textures": 40
+    },
+    "extensionBytes": 685332
+  },
+  "unity": {
+    "pass": true,
+    "cases": [
+      {
+        "tag": "valid",
+        "savedReload": "passed save-destroy-reinstantiate",
+        "prefabs": 49,
+        "placed": 2,
+        "old48Preserved": true
+      },
+      {
+        "tag": "missing",
+        "savedReload": "not applicable: rejected/missing optional",
+        "prefabs": 48,
+        "placed": 0,
+        "old48Preserved": true
+      },
+      {
+        "tag": "badVersion",
+        "savedReload": "not applicable: rejected/missing optional",
+        "prefabs": 48,
+        "placed": 0,
+        "old48Preserved": true
+      },
+      {
+        "tag": "badIndex",
+        "savedReload": "not applicable: rejected/missing optional",
+        "prefabs": 48,
+        "placed": 0,
+        "old48Preserved": true
+      },
+      {
+        "tag": "badPng",
+        "savedReload": "not applicable: rejected/missing optional",
+        "prefabs": 48,
+        "placed": 0,
+        "old48Preserved": true
+      },
+      {
+        "tag": "nonfinite",
+        "savedReload": "not applicable: rejected/missing optional",
+        "prefabs": 48,
+        "placed": 0,
+        "old48Preserved": true
+      },
+      {
+        "tag": "nonSolid",
+        "savedReload": "passed save-destroy-reinstantiate",
+        "prefabs": 49,
+        "placed": 2,
+        "old48Preserved": true
+      },
+      {
+        "tag": "compact",
+        "savedReload": "passed save-destroy-reinstantiate",
+        "prefabs": 49,
+        "placed": 2,
+        "old48Preserved": true
+      },
+      {
+        "tag": "customCircle",
+        "savedReload": "passed save-destroy-reinstantiate",
+        "prefabs": 49,
+        "placed": 2,
+        "old48Preserved": true
+      },
+      {
+        "tag": "customHeight",
+        "savedReload": "passed save-destroy-reinstantiate",
+        "prefabs": 49,
+        "placed": 2,
+        "old48Preserved": true
+      }
+    ],
+    "error": "",
+    "limitations": [
+      "Background Editor only; Player/mobile/GPU timing not measured.",
+      "Old Reader binary not executed; unknown optional field follows previous source control flow.",
+      "Standalone facing; no original walls or fixed rock samples replaced."
+    ]
+  },
+  "sharedLoad": {
+    "cases": [
+      {
+        "placed": 9,
+        "visible": 9,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 3,
+        "meshBytes": 166752,
+        "textureBytes": 4088756,
+        "cpuRenderMedianMs": 0.5863,
+        "gpuMeasured": false
+      },
+      {
+        "placed": 225,
+        "visible": 225,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 3,
+        "meshBytes": 166752,
+        "textureBytes": 4088756,
+        "cpuRenderMedianMs": 0.9053,
+        "gpuMeasured": false
+      }
+    ],
+    "limitation": "CPU Render submission, not GPU or game-frame guarantee"
+  },
+  "interaction": {
+    "pass": true,
+    "placed": {
+      "count": 2,
+      "id": "mine_cut_rock",
+      "pose": [
+        0.04000010381433672,
+        1.0000001985293068,
+        0,
+        1,
+        0,
+        1,
+        0
+      ],
+      "previewY": 0,
+      "previewMaterial": "hand-picked-rock"
+    },
+    "scaledRotation": true,
+    "underground": {
+      "id": "mine_cut_rock",
+      "y": 0,
+      "terrain": 3.5,
+      "count": 2
+    },
+    "saved": true,
+    "privateHeadless": true,
+    "guiUsed": false
+  },
+  "formalMine": {
+    "pass": true,
+    "source": "Product mine tunnel generator: 14m line, width2.4m, height2.8m, terrain3.5m",
+    "formalTunnelImporter": true,
+    "formalRailPrefabs": 2,
+    "formalWallPrefab": true,
+    "centralCorridorClear": true,
+    "existingLights": 2,
+    "originalGameSceneChanged": false,
+    "player": false,
+    "limitation": "Authored product mine test map, not a claim that this map already exists in the game. Separate actual game cave review is retained."
+  },
+  "cave": {
+    "pass": true,
+    "seed": 71421,
+    "cells": 648,
+    "torches": 21,
+    "originalSceneSaved": false,
+    "sameCameraLightingPoseForBeforeAfter": true
+  },
+  "geometryRegression": {
+    "beforeFixFrontReversedTriangles": 1,
+    "afterFixFrontReversedTriangles": 0,
+    "trianglesBeforeAfter": [
+      372,
+      372
+    ],
+    "description": "外周の凹形四辺形では正向きになる対角線を選ぶ。閉じたmanifold検査だけでは検出できない面反転を追加検査。"
+  },
+  "preserved": {
+    "railDrag": true,
+    "inputBoundary": true,
+    "preparedBundles": "2 bundles current, runtime fitCalls=0, walkReused=true",
+    "fixedRockRegeneration": 0,
+    "playerRun": false,
+    "guiUsed": false,
+    "imageUpload": false
+  },
+  "remaining": [
+    "実洞窟では大きな剥離面が読めるが、周囲の壁とは異なる塊に見える。",
+    "通常距離では短い打点が薄く、手掘り作業面の識別が十分ではない。",
+    "製品坑道の切断表示を含む近景には黒い遮蔽が残る。面反転修正後も見え、原因の特定は未完。実洞窟の同形状にはこの黒い切れ目は見られない。",
+    "旧Reader実バイナリ、Player、スマホ、GPU時間、ゲーム全セッションは未実行。CPU Camera.Render値は性能保証ではない。",
+    "診断照明の影はURPが2048 atlas内へ収めるため解像度を1/2にした。設定は変更していない。"
+  ],
+  "evidence": {
+    "Evidence131CaveFinal/lit-baseline-close.png": {
+      "bytes": 1261430,
+      "sha256": "6318c146c62a8471b6e5f6af209583c0bfdd8743cbbb0b45170b29490bdb4b93"
+    },
+    "Evidence131CaveFinal/lit-close.png": {
+      "bytes": 1264428,
+      "sha256": "1219cd580da4f18d3b2becb0319db4d4b0ecb772688fdcedaaec7715ba121fc6"
+    },
+    "Evidence131CaveFinal/lit-baseline-normal.png": {
+      "bytes": 1353876,
+      "sha256": "c5ce0848e3a89a9f6332cfc3cef991fa9259d9eed674f38738696a62ce1b492e"
+    },
+    "Evidence131CaveFinal/lit-normal.png": {
+      "bytes": 1352600,
+      "sha256": "33c3f70152b647e1bc948c5a7a96ea7c31688d2d74073f8d555199cf54f400c7"
+    },
+    "Evidence131CaveFinal/lit-side.png": {
+      "bytes": 1208328,
+      "sha256": "64dece8034f9e71a3485506a3a7146d68bb7698350e28414ddc03351c01d75d5"
+    },
+    "Evidence131CaveFinal/dark-normal.png": {
+      "bytes": 1375518,
+      "sha256": "09ff706ef046a9159211d22075a989516babaabe731687a9ce607fce9bc3c1cf"
+    },
+    "Evidence131Mine/baseline-close.png": {
+      "bytes": 713735,
+      "sha256": "d535c45f22428e64d3d76b7d621091b038e133eb2f6053a6f3a7b5124f3c588c"
+    },
+    "Evidence131Mine/close.png": {
+      "bytes": 718680,
+      "sha256": "b301363829126a5d42cecd8852af9eb32afaffae07f3137120a82c71f06c28e7"
+    },
+    "Evidence131Mine/reverse.png": {
+      "bytes": 489200,
+      "sha256": "322929b099cf6bdb32430edb32b87041b95d9e648f6cf3f49479a83696676c06"
+    },
+    "Evidence131Web/front-close.png": {
+      "bytes": 999251,
+      "sha256": "1c18cd9179e6a8dfb29660beb98d1771597f51a38b0176eba8b6fc8825e66002"
+    },
+    "Evidence131Web/colour.png": {
+      "bytes": 132225,
+      "sha256": "25e6c23674b3847ca461b57b8aa82960907b61c8c05dfce21ead7ac0869df74a"
+    },
+    "Evidence131Web/normal.png": {
+      "bytes": 204719,
+      "sha256": "d81a86b4560cf4ba4e2017ae547aa4aee0673156ae0268a3caf62629a2bbed9a"
+    },
+    "Evidence131Web/packed.png": {
+      "bytes": 47632,
+      "sha256": "d1688c97687fbec14ecd5e6d68fb644a06933771132895596cd7e0c8200e567a"
+    }
+  },
+  "sourceSha256": {
+    "props/mine-cut-rock.js": "d15710a4be8556dfa54f026cee071706b11cdd7813035deac66bdea6d176ce62",
+    "tests/mine-cut-rock.cjs": "881c00fb5f905e5e4f2dc62f4a78edaae64fa3da69928bf3d2a1a4da8d4b28e8",
+    "tests/unity/Rock131Checks.cs": "828343098888da1c6b57c432bc7c984076687fe10b27210820d1ead6f6554559"
+  }
+}
