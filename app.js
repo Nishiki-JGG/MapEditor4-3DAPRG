@@ -5607,14 +5607,16 @@ function touchUp(e, cancel) {
   if (touchWait) { clearTimeout(touchWait); touchWait = null; if (!cancel && hit && state.mode === 'edit') beginStroke({ shiftKey: false }); }   // a quick tap still places / picks / paints once
   drag = null; endStroke(); hit = null;
 }
+// Capture placement scaling over both the canvas and UI before browser zoom.
+window.addEventListener('wheel', e => {
+  if (!e.ctrlKey || state.mode !== 'edit' || state.tool !== 'place' || e.metaKey || e.altKey) return;
+  e.preventDefault();
+  e.stopPropagation();
+  const delta = e.deltaY || e.deltaX;
+  if (!mapPreparation && delta) stepPlaceControl('placeScale', -Math.sign(delta));
+}, { capture: true, passive: false });
 canvas.addEventListener('wheel', e => {
-  if (e.ctrlKey) {
-    if (state.mode !== 'edit' || state.tool !== 'place' || mapPreparation || e.metaKey || e.altKey) return;
-    e.preventDefault();
-    const delta = e.deltaY || e.deltaX;
-    if (delta) stepPlaceControl('placeScale', -Math.sign(delta));
-    return;
-  }
+  if (e.ctrlKey) return;
   e.preventDefault();
   if (state.mode === 'edit') cam.dist = clamp(cam.dist * Math.exp(e.deltaY * .0012), 6, Math.max(140, SIZE * 2.4));
   else playCam.dist = clamp(playCam.dist * Math.exp(e.deltaY * .0012), 7, 40);
