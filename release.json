@@ -1,7 +1,7 @@
 {
-  "release": "minecart-20261029-126",
+  "release": "rail-drag-20261029-130",
   "files": {
-    "app.js": "e977dbad320a87950f4d2383c2d3b96a3043987e45d9b53a080eb81aeab74ebd",
+    "app.js": "d594017eabb9f3c1c880999d92822f9245f6f3e4fe6583d1c75d2ccdd4995e75",
     "props/chest-presentation.js": "02d054f76798bdf6599156ffb0655085c919b3df733386a47a11f458d3aa5233",
     "props/chest-surface.js": "bf7137cd3c64c736bc50d0dbd2a7b62f4fce1c48db73f6473fc6b9522b24f025",
     "props/chest-relief.js": "2f6d152ccd4c0dfd43d34c9867118d5060704b01ea93cfeafcdf826c479e8f94",
@@ -32,8 +32,9 @@
     "props/rowboat.js": "bc1da495dc784f81836870e879ec908016e906cac987acc77371a2eac7ecf1c7",
     "props/seafan-surface.js": "3ad1b8c71a2b92f20b3fab9e75d4fa362e6aff183b89fd771431f7daf3e5b612",
     "props/obsidian-reflection.js": "db926e0da7a344f731911d299ae2ee2353db95c387efdd6d8934ac7683d23ee0",
-    "props/mine-rails.js": "9f3dfc0f40cbe0cffe3d3e2f48065077a7fce2ed3f191d880816c201a7b315ae",
-    "props/minecart.js": "d81638fa5dcfb05644e0ed7d21660968c682402372dde884d21f9fa4c191c336"
+    "props/mine-rails.js": "a64ac22e284c820939cd7e33b26e44f933e5455365b2709fa07387a99b018bde",
+    "props/minecart.js": "d81638fa5dcfb05644e0ed7d21660968c682402372dde884d21f9fa4c191c336",
+    "props/mine-rail-drag.js": "7103ee81b1d164a608c14c0701e3fc728f060a0ed0034bb76fd4c92ed3d5241a"
   },
-  "sourceCandidate": "f1c026b763a1ce3e4bfb5bb13cf1725b843afb68"
+  "sourceCandidate": "bf697a27cf7f5c4f991eddad44ab0c080b364781"
 }

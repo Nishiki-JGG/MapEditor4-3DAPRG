@@ -1,0 +1,54 @@
+{
+  "sourceCandidate": "bf697a27cf7f5c4f991eddad44ab0c080b364781",
+  "remoteBase": "65d27a6883748d6e707591c1d8a62e29b4f092eb",
+  "rekey": {
+    "pass": true,
+    "renderOnlySources": [],
+    "report": [
+      {
+        "kind": "sample",
+        "oldKey": "sample:25df0ce81fad64999cea20b5251e6c8dd8d9be51a67da3102112f06b0c6f201e",
+        "key": "sample:fc1aff6b2bdde98e5601c0963c0570f408990e1457279aae79c9327b9808d1a9",
+        "keyOnly": true,
+        "props": 5761,
+        "fits": 552
+      },
+      {
+        "kind": "sample2",
+        "oldKey": "sample:9bce7c1d84c718612f264dd6f30eef85190828ad9d37abe01eb311504f15dfa3",
+        "key": "sample:c9bd5af93ccd41c27c87e2c6c97a74ebe4facf7006667dd27dba33ccfad81942",
+        "keyOnly": true,
+        "props": 536,
+        "fits": 226
+      }
+    ]
+  },
+  "bundleLoad": {
+    "pass": true,
+    "rows": [
+      {
+        "kind": "sample",
+        "ok": true,
+        "source": "bundle",
+        "fitStats": null,
+        "walkReused": true,
+        "fitCalls": 0,
+        "props": 5761
+      },
+      {
+        "kind": "sample2",
+        "ok": true,
+        "source": "bundle",
+        "fitStats": null,
+        "walkReused": true,
+        "fitCalls": 0,
+        "props": 536
+      }
+    ],
+    "rockRegeneration": 0
+  },
+  "rockCandidateIncluded": false,
+  "privatePathAndSecretPatternHits": 0,
+  "fixedCompletedContent": "deep equality except key; no geometry, placement or collision regeneration",
+  "nativeReexecuted": false
+}

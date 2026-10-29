@@ -3160,7 +3160,7 @@ const TOOLS = [
   { id: 'pool', name: 'プール', key: ':', hint: '角から角へドラッグすると、石の縁で囲んだプールを地面の上に作ります（四角・丸は下の「プールの形」から、1.6〜16m）。中の床は平らにならして石畳にし、水は縁の 10cm 下まで張ります。中に水源を置くと、外の地面がいちばん低い側のあふれ口から小川が流れ出ます。Shift+クリックで近くのプールを消します。' },
   { id: 'tunnel', name: 'トンネル', key: '^', hint: '崖や斜面の前の地面から、山の中へドラッグすると横に掘ります。床の高さは入口の地面と同じ。掘った先の端からまたドラッグすると続きを掘り（曲がり角になります）、トンネルの途中からドラッグすると枝分かれします。反対側の地面まで掘ると出口になり、床がその地面に合わせて上り下りします（15° まで）。見た目は下の「見た目」、幅と高さは「大きさ」、中の上り下りは「勾配」から。トンネルの上でカーソルを合わせると、屋根を透かして中が見えます。Shift+クリックで近くのトンネルを消します。' },
   { id: 'fall', name: '滝', key: '=', hint: '崖をクリックすると、縁から水面へ落ちる滝を置きます（幅＝半径の半分）。Shift+クリックで近くの滝を消します。' },
-  { id: 'place', name: '置く', key: 'p', hint: '「種類」で選んだ物をクリックで配置。Ctrl＋ホイールで大きさ、Q／Eで15°回転、Rで45°回転。' },
+  { id: 'place', name: '置く', key: 'p', hint: '「種類」で選んだ物をクリックで配置。Ctrl＋ホイールで大きさ、Q／Eで15°回転、Rで45°回転。レール直線/曲線はドラッグ敷設（2m刻み、90°曲線、Esc取消）。車止めとタッチは単体配置。' },
   { id: 'detail', name: '地表小物を調整', key: ';', hint: '草・花・小石・落ち葉をクリックして選び、下の欄で位置・向き・大きさを調整。Shift＋クリックで選んだ小物を移動します。調整した物は自動更新でも残ります。' },
   { id: 'pick', name: '選んで消す', key: 'o', hint: 'カーソルを合わせると赤く囲まれた物（木・岩・橋・階段・滝など）を、クリックで1つ消します。' },
   { id: 'marker', name: 'マーカー', key: 't', hint: '出入口・敵の候補・宝箱の候補・戦闘/出現禁止範囲を置きます。出入口は、置く場所から部屋の内側へドラッグ（クリックだけなら中央向き）。幅＝半径の半分。禁止範囲の大きさ＝半径。Shift+クリックで近くのマーカーを消します。' },
@@ -3174,13 +3174,13 @@ const TOOLS = [
 ];
 const undoStack = [], redoStack = [];
 const snapshot = () => ({ ...(tunnels.length ? { TU: JSON.parse(JSON.stringify(tunnels)) } : {}), ...(springs.length ? { SP: springs.map(s => ({ ...s })) } : {}), ...(pools.length ? { PL: pools.map(p => ({ ...p })) } : {}), ...(SC.some(v => v) ? { SC: SC.slice() } : {}), H: H.slice(), S: S.slice(), O: O.slice(), C: C.slice(), CF: cliffFits.save(), P: props.map(p => p.slice()), F: falls.map(f => ({ ...f })), B: bridges.map(b => ({ ...b })), T: stairs.map(st => ({ ...st })), W: state.water, sp: { ...state.spawn }, bi: state.biome, at: { ...state.atmo }, sea: state.sea, we: { ...state.weather }, sun: state.sunOn, tod: state.timeOfDay, dk: state.darkness, M: markers.map(m => ({ ...m })), nid: state.nextId, rid: state.roomId, cat: JSON.stringify(state.catalog), ag: { ...state.agent }, cs: state.cliffStyle });
-function restore(s,prepared,deferMarkers=false) { cliffFits.clear();H.set(s.H); tunnels = s.TU ? JSON.parse(JSON.stringify(s.TU)) : []; springs = (s.SP || []).map(q => ({ ...q })); pools = (s.PL || []).map(q => ({ ...q })); if (s.SC) SC.set(s.SC); else SC.fill(0); rebuildPools(); S.set(s.S); O.set(s.O); if (s.C) C.set(s.C); else C.fill(0); walkDirty = true; props = s.P.map(p => p.slice()); falls = s.F.map(f => ({ ...f })); bridges = s.B.map(b => ({ ...b })); stairs = (s.T || []).map(st => ({ ...st })); state.water = s.W; state.spawn = { ...s.sp }; if (s.at) state.atmo = { ...s.at }; if (s.we) state.weather = { ...s.we }; state.sunOn = s.sun !== false; state.timeOfDay = timeId(s.tod); state.darkness = s.dk || 'dark'; markers = (s.M || []).map(m => ({ ...m })); state.nextId = s.nid || state.nextId; state.roomId = s.rid || state.roomId; if (s.cat) { state.catalog = JSON.parse(s.cat); applyCatalog(); } if (s.ag) { state.agent = { ...s.ag }; syncAgentUI(); colliders = null; } state.cliffStyle = s.cs || 'standard'; applyCliffStyle(); if ($('cliffStyle')) $('cliffStyle').value = state.cliffStyle; if(!deferMarkers)rebuildMarkers(); state.sea = !!s.sea; applyBiome(s.bi || state.biome); syncUI(); updateTerrain(); rebuildTunnels(); solveSprings(); rebuildSpringMarks(); rebuildProps(); rebuildFalls(); rebuildBridges(); rebuildStairs();if(prepared)cliffFits.installPrepared(prepared,props,cliffInputSignature());else cliffFits.load(s.CF,props,cliffInputSignature());rebuildProps(); }
+function restore(s,prepared,deferMarkers=false) { cancelRailDrag(); cliffFits.clear();H.set(s.H); tunnels = s.TU ? JSON.parse(JSON.stringify(s.TU)) : []; springs = (s.SP || []).map(q => ({ ...q })); pools = (s.PL || []).map(q => ({ ...q })); if (s.SC) SC.set(s.SC); else SC.fill(0); rebuildPools(); S.set(s.S); O.set(s.O); if (s.C) C.set(s.C); else C.fill(0); walkDirty = true; props = s.P.map(p => p.slice()); falls = s.F.map(f => ({ ...f })); bridges = s.B.map(b => ({ ...b })); stairs = (s.T || []).map(st => ({ ...st })); state.water = s.W; state.spawn = { ...s.sp }; if (s.at) state.atmo = { ...s.at }; if (s.we) state.weather = { ...s.we }; state.sunOn = s.sun !== false; state.timeOfDay = timeId(s.tod); state.darkness = s.dk || 'dark'; markers = (s.M || []).map(m => ({ ...m })); state.nextId = s.nid || state.nextId; state.roomId = s.rid || state.roomId; if (s.cat) { state.catalog = JSON.parse(s.cat); applyCatalog(); } if (s.ag) { state.agent = { ...s.ag }; syncAgentUI(); colliders = null; } state.cliffStyle = s.cs || 'standard'; applyCliffStyle(); if ($('cliffStyle')) $('cliffStyle').value = state.cliffStyle; if(!deferMarkers)rebuildMarkers(); state.sea = !!s.sea; applyBiome(s.bi || state.biome); syncUI(); updateTerrain(); rebuildTunnels(); solveSprings(); rebuildSpringMarks(); rebuildProps(); rebuildFalls(); rebuildBridges(); rebuildStairs();if(prepared)cliffFits.installPrepared(prepared,props,cliffInputSignature());else cliffFits.load(s.CF,props,cliffInputSignature());rebuildProps(); }
 function pushUndo() { undoStack.push(snapshot()); if (undoStack.length > 40) undoStack.shift(); redoStack.length = 0; }
-function undo() { if (!undoStack.length) return; redoStack.push(snapshot()); restore(undoStack.pop()); toast('取り消し'); }
-function redo() { if (!redoStack.length) return; undoStack.push(snapshot()); restore(redoStack.pop()); toast('やり直し'); }
+function undo() { cancelRailDrag(); if (!undoStack.length) return; redoStack.push(snapshot()); restore(undoStack.pop()); toast('取り消し'); }
+function redo() { cancelRailDrag(); if (!redoStack.length) return; undoStack.push(snapshot()); restore(redoStack.pop()); toast('やり直し'); }
 
-const stroke = { active: false, base: 0, lower: false, lastStamp: null };
-let hit = null;
+const stroke = { rail: null, railCamera: false, active: false, base: 0, lower: false, lastStamp: null };
+let hit = null, placementPointerType = 'mouse';
 // brush distance: a circle, or with the square brush the larger of the two axis distances (an axis-aligned square of half side r)
 const brushDist = (dx, dz, sq = state.brushShape === 'square') => sq ? Math.max(Math.abs(dx), Math.abs(dz)) : Math.hypot(dx, dz);
 function forBrush(x, z, r, fn, sq = false) {
@@ -5005,7 +5005,7 @@ function showVariants() {
   list.innerHTML = '';
   const button = (v, name, box) => {
     const b = document.createElement('button'); b.textContent = name; b.classList.toggle('on', state.variant[tool] === v);
-    b.onclick = () => { state.variant[tool] = v; showVariants(); if (tool === 'place') preview.geometry = PROP[v].roomTorch ? TDWallTorch.previewGeometry : PROP[v].geo; };
+    b.onclick = () => { cancelRailDrag(); state.variant[tool] = v; showVariants(); if (tool === 'place') preview.geometry = PROP[v].roomTorch ? TDWallTorch.previewGeometry : PROP[v].geo; };
     box.appendChild(b);
   };
   if (tool !== 'place') { for (const [v, name] of opts) button(v, name, list); return; }
@@ -5045,6 +5045,7 @@ function applyPalette() {
   $('paletteInfo').textContent = `小物・橋・階段：専用 ${own}種 ＋ 共通 ${common}種（地形・地面の道具は常に表示）` + (own < 4 ? '（専用パーツは今後追加予定）' : '');
 }
 function setTool(id) {
+  cancelRailDrag();
   state.tool = id;
   if(id==='grass'||GROUND.includes(id))$('fillGround').value=id;
   if ($('variantBox')) showVariants();
@@ -5072,6 +5073,7 @@ for (const [id, f] of sliders) {
 function syncPlaceUI() { $('placeScale').value = state.placeScale; $('placeScaleV').textContent = '×' + state.placeScale.toFixed(2); $('placeRot').value = state.placeRot; $('placeRotV').textContent = state.placeRot + '°'; $('placeRandom').checked = state.placeRandom; }
 // Placement shortcuts use the same range controls as the sliders.
 function stepPlaceControl(id, direction) {
+  if(stroke.rail)return; // A stroke keeps one scale and heading; sliders are locked too.
   const input = $(id);
   if (id === 'placeRot') {
     const min = +input.min, step = +input.step, count = Math.round((+input.max - min) / step) + 1;
@@ -5080,8 +5082,8 @@ function stepPlaceControl(id, direction) {
   } else input.stepUp(direction);
   state[id] = +input.value; syncPlaceUI(); updateRing();
 }
-$('placeScale').oninput = e => { state.placeScale = +e.target.value; syncPlaceUI(); updateRing(); };
-$('placeRot').oninput = e => { state.placeRot = +e.target.value; syncPlaceUI(); updateRing(); };
+$('placeScale').oninput = e => { if(stroke.rail){syncPlaceUI();return;} state.placeScale = +e.target.value; syncPlaceUI(); updateRing(); };
+$('placeRot').oninput = e => { if(stroke.rail){syncPlaceUI();return;} state.placeRot = +e.target.value; syncPlaceUI(); updateRing(); };
 $('placeRandom').onchange = e => { state.placeRandom = e.target.checked; };
 syncPlaceUI();
 // 自動下草を手直しした時だけ手置きへ切り替え、次回更新から保護する。
@@ -5221,6 +5223,7 @@ for (const k of AGENT_KEYS) $('ag_' + k).onchange = e => { state.agent[k] = +e.t
 syncAgentUI();
 
 function setMode(m,prepared=false) {
+  cancelRailDrag();
   if(mapPreparation&&!prepared){mapPreparation.requestedMode=m;return;}
   state.mode = m; document.body.classList.toggle('play', m === 'play');
   $('modeEdit').classList.toggle('on', m === 'edit'); $('modePlay').classList.toggle('on', m === 'play');
@@ -5244,6 +5247,7 @@ ring.renderOrder = 5; scene.add(ring);
 function updateRing() {
   groundPreview.visible=false;
   preview.visible = false;
+  if(stroke.rail){ring.visible=false;return;}
   ring.visible = !!hit;
   if (!ring.visible) return;
   const a = ring.geometry.attributes.position.array, r = state.tool === 'spawn' ? .8 : state.radius;
@@ -5275,7 +5279,8 @@ function updateRing() {
   if (state.tool === 'place') {
     const t = state.variant.place, s0 = (PROP[t].sc[0] + PROP[t].sc[1]) / 2 * state.placeScale;
     preview.material=PROP[t].mineCutRock?cutRockPreviewMat:PROP[t].mineCart?cartPreviewMat:PROP[t].mineRail?railPreviewMat:standardPreviewMat;
-    if(PROP[t].mineRail){const p=TDMineRails.placement(PROP[t].id,hit.x,hit.z,state.placeRot*Math.PI/180,s0,props,PROP,floorAt);preview.visible=true;preview.position.set(p.x,p.y,p.z);preview.rotation.y=p.rot;preview.scale.setScalar(s0);outline(circle(p.x,p.z,.14),!p.valid?0xff5555:p.snapped?0x68ffb0:0xffd27a,.18);return;}
+    if(PROP[t].mineRail&&PROP[t].id!=='mine_rail_end'&&state.mode==='edit'&&placementPointerType!=='touch'){const q=TDMineRailDrag.begin(hit.x,hit.z,state.placeRot*Math.PI/180,s0,props,PROP,floorAt),p=q.start;preview.geometry=PROP[TYPE('mine_rail_straight')].geo;preview.visible=true;preview.position.set(p.x,p.y,p.z);preview.rotation.y=p.rot;preview.scale.setScalar(s0);outline(circle(p.x,p.z,.14),q.startReason?0xff5555:q.snapped?0x68ffb0:0xffd27a,.18);return;}
+    if(PROP[t].mineRail){preview.geometry=PROP[t].geo;const p=TDMineRails.placement(PROP[t].id,hit.x,hit.z,state.placeRot*Math.PI/180,s0,props,PROP,floorAt);preview.visible=true;preview.position.set(p.x,p.y,p.z);preview.rotation.y=p.rot;preview.scale.setScalar(s0);outline(circle(p.x,p.z,.14),!p.valid?0xff5555:p.snapped?0x68ffb0:0xffd27a,.18);return;}
     if(PROP[t].mineCutRock){preview.visible=true;preview.position.set(hit.x,floorAt(hit.x,hit.z),hit.z);preview.rotation.y=state.placeRot*Math.PI/180;preview.scale.setScalar(s0);return;}
     if(PROP[t].mineCart){const p=TDMineCart.placement(hit.x,hit.z,state.placeRot*Math.PI/180,s0,props,PROP,floorAt);preview.visible=true;preview.position.set(p.x,p.y,p.z);preview.rotation.y=p.rot;preview.scale.setScalar(s0);outline(circle(p.x,p.z,.6*s0),!p.valid?0xff5555:p.snapped?0x68ffb0:0xffd27a,.18);return;}
     if(PROP[t].geo.userData.groundParts){setGroundPreview(t,hit.x,hit.z,state.placeRot*Math.PI/180,s0);preview.visible=false;}else{preview.visible = true; preview.position.set(hit.x, heightAt(hit.x, hit.z) + (PROP[t].roomTorch ? TDWallTorchSource.defaultMountHeight : 0), hit.z); preview.rotation.y = state.placeRot * Math.PI / 180; preview.scale.setScalar(s0);}
@@ -5315,6 +5320,37 @@ function setGroundPreview(type,x,z,yaw,scale){
  const t=PROP[type];if(groundPreview.userData.type!==type){groundPreview.clear();TDPropGrounding.parts(t.geo).forEach(part=>{const m=new THREE.Mesh(part.geometry,t.surface?TDSmallPropSurface.material(preview.material,t.surface):preview.material);m.matrixAutoUpdate=false;m.frustumCulled=false;m.renderOrder=9;groundPreview.add(m);});groundPreview.userData.type=type;groundPreview.userData.fit=null;}
  previewGroundPose.splice(0,previewGroundPose.length,type,x,z,yaw,scale,0,1,null);const fit=groundedParts(previewGroundPose);if(groundPreview.userData.fit!==fit){groundPreview.children.forEach((m,i)=>m.matrix.copy(fit.matrices[i]));groundPreview.userData.fit=fit;}groundPreview.visible=true;
 }
+// A separate preview group never enters props, snapshots, saves or exports.
+const railDragGroup=new THREE.Group();scene.add(railDragGroup);
+const railDragMaterial=railPreviewMat.clone();
+const railDragGuide=new THREE.Line(new THREE.BufferGeometry().setAttribute('position',new THREE.BufferAttribute(new Float32Array(6),3)),new THREE.LineBasicMaterial({color:0xff5555,depthTest:false}));railDragGuide.visible=false;railDragGuide.frustumCulled=false;railDragGuide.renderOrder=10;scene.add(railDragGuide);
+const railDragStatus=document.createElement('div');railDragStatus.id='railDragStatus';railDragStatus.hidden=true;
+railDragStatus.setAttribute('role','status');railDragStatus.style.cssText='position:fixed;bottom:52px;left:50%;transform:translateX(-50%);padding:8px 12px;background:#14202eee;color:white;border:1px solid #77ddaa;border-radius:6px;pointer-events:none;z-index:30;max-width:80vw';document.body.appendChild(railDragStatus);
+function railDragLock(on){for(const id of ['placeScale','placeRot','placeRandom'])$(id).disabled=on;}
+function cancelRailDrag(){if(stroke.railCamera){stroke.railCamera=false;drag=null;}if(!stroke.rail)return;stroke.rail=null;railDragGroup.clear();railDragGuide.visible=false;railDragStatus.hidden=true;railDragLock(false);}
+function beginRailDrag(e){
+  const t=PROP[state.variant.place],scale=(t.sc[0]+t.sc[1])*.5*state.placeScale;
+  stroke.rail=TDMineRailDrag.begin(hit.x,hit.z,state.placeRot*Math.PI/180,scale,props,PROP,floorAt);
+  stroke.rail.pointerId=e.pointerId;stroke.rail.type=state.variant.place;railDragLock(true);updateRailDrag();
+}
+function updateRailDrag(){
+  const q=stroke.rail;if(!q)return;
+  if(state.mode!=='edit'||state.tool!=='place'||state.variant.place!==q.type){cancelRailDrag();return;}
+  TDMineRailDrag.update(q,hit,props,PROP,floorAt,(x,z,r)=>Math.abs(x)+r<=HALF&&Math.abs(z)+r<=HALF);
+  while(railDragGroup.children.length>q.pieces.length)railDragGroup.remove(railDragGroup.children.at(-1));
+  q.pieces.forEach((p,i)=>{let mesh=railDragGroup.children[i];if(!mesh){mesh=new THREE.Mesh(PROP[TYPE(p.id)].geo,railDragMaterial);mesh.renderOrder=9;railDragGroup.add(mesh);}mesh.geometry=PROP[TYPE(p.id)].geo;mesh.position.set(p.x,p.y+.006,p.z);mesh.rotation.y=p.rot;mesh.scale.setScalar(p.scale);});
+  railDragMaterial.color.setHex(q.valid?0x92ffd0:0xff5555);railDragMaterial.emissive.setHex(q.valid?0x123c24:0x661010);preview.visible=false;ring.visible=false;
+  railDragGuide.visible=!!hit;if(hit){const end=q.pieces.at(-1)?.end||q.start,a=railDragGuide.geometry.attributes.position;a.setXYZ(0,end.x,end.y+.18,end.z);a.setXYZ(1,hit.x,hit.y+.18,hit.z);a.needsUpdate=true;railDragGuide.material.color.setHex(q.valid?0x77ffbb:0xff4444);}
+  railDragStatus.hidden=false;railDragStatus.style.borderColor=q.valid?'#77ddaa':'#ff7777';
+  railDragStatus.textContent=(q.valid?`${q.pieces.length}部品・離すと確定`:q.reason)+' ／ Escで取消・ドラッグ中はサイズ/角度固定';
+}
+function finishRailDrag(e){
+  const q=stroke.rail;if(!q||q.pointerId!==e.pointerId||e.button!==0)return;
+  hit=pick(e.clientX,e.clientY);updateRailDrag();if(stroke.rail!==q)return;
+  if(q.valid){const added=TDMineRailDrag.placements(q,PROP);pushUndo();props.push(...added);cancelRailDrag();rebuildProps();toast(`レール${added.length}部品を敷設しました（Undo一回で取消）`);}
+  else{const reason=q.reason;cancelRailDrag();toast(reason+'：配置を取り消しました');}
+}
+
 // nearest deletable thing under the cursor
 function pickTarget(x, z) {
   let best = null, bd = 1;
@@ -5345,6 +5381,7 @@ function pick(cx, cy) {
 }
 function beginStroke(e) {
   if (!hit) return;
+  if(state.mode==='edit'&&state.tool==='place'&&PROP[state.variant.place]?.mineRail&&PROP[state.variant.place].id!=='mine_rail_end'&&e.pointerType!=='touch'&&e.pointerId!==undefined){beginRailDrag(e);return;}
   if(state.tool==='detail'){
    if(e.shiftKey&&selectedGroundDetail()){const p=selectedGroundDetail();adjustGroundDetail(hit.x,hit.z,p[3]*180/Math.PI,p[4]);}
    else {ensureIds();const p=pickGroundDetail(hit.x,hit.z);groundDetailId=p?p[8]:null;syncGroundDetailUI();}
@@ -5428,9 +5465,12 @@ function stampAt(p) {
   state.tool === 'scatter' ? scatterAt(p.x, p.z) : eraseAt(p.x, p.z);
 }
 canvas.addEventListener('contextmenu', e => e.preventDefault());
+canvas.addEventListener('mousedown',e=>{if(stroke.railCamera&&e.button===1)e.preventDefault();});
 // mouse and pen: left = edit (in both modes), right = turn the view, middle = pan. Touch: see touch gestures below.
 let lastClient = [0, 0];   // the pointer in screen coordinates (pick), lastXY in the page's own coordinates (drags)
 canvas.addEventListener('pointerdown', e => {
+  placementPointerType=e.pointerType||'mouse';
+  if(stroke.rail){if(e.button!==0){cancelRailDrag();stroke.railCamera=true;}else return;}
   if (e.pointerType === 'touch') { touchDown(e); return; }
   canvas.setPointerCapture(e.pointerId); canvas.focus(); lastXY = toLocal(e.clientX, e.clientY); lastClient = [e.clientX, e.clientY];
   if (e.button === 2) drag = 'orbit';
@@ -5447,11 +5487,15 @@ function panView(dx, dy) {
   cam.target.x += (-dx * Math.cos(cam.yaw) + dy * fx) * s; cam.target.z += (dx * Math.sin(cam.yaw) + dy * fz) * s;
 }
 canvas.addEventListener('pointermove', e => {
+  placementPointerType=e.pointerType||'mouse';
+  // Chorded buttons arrive as pointermove, not a second pointerdown.
+  if(stroke.rail&&(e.buttons&6)){cancelRailDrag();stroke.railCamera=true;}
+  if(stroke.railCamera){drag=e.buttons&2?'orbit':e.buttons&4?'pan':null;if(!e.buttons)stroke.railCamera=false;if(e.buttons&4)e.preventDefault();}
   if (e.pointerType === 'touch') { touchMove(e); return; }
   pointerIn = true;
   const p = toLocal(e.clientX, e.clientY), dx = p[0] - lastXY[0], dy = p[1] - lastXY[1]; lastXY = p; lastClient = [e.clientX, e.clientY];
   dragView(dx, dy);
-  hit = pick(e.clientX, e.clientY); if (stroke.active && hit && (state.tool === 'scatter' || state.tool === 'erase')) stampAt(hit);
+  hit = pick(e.clientX, e.clientY); if(stroke.rail){updateRailDrag();return;} if (stroke.active && hit && (state.tool === 'scatter' || state.tool === 'erase')) stampAt(hit);
 });
 function endStroke() {
   if (stroke.cliffChanged) { stroke.cliffChanged = false; rebuildProps(true); }
@@ -5472,11 +5516,12 @@ function endStroke() {
   const s0 = undoStack[undoStack.length - 1];
   if (stroke.active && s0 && s0.SC && !['spring', 'pool'].includes(state.tool)) for (let k = 0; k < N * N; k++) if (H[k] !== s0.H[k]) SC[k] = 0;
   if (stroke.active && falls.length && s0 && H.some((h, k) => h !== s0.H[k])) refitFalls();   // placed waterfalls follow the reshaped ground
-  stroke.dragStart = null; drag = null; stroke.active = false;
+  stroke.dragStart = null; drag = null; stroke.active = false;stroke.railCamera=false;
 }
-canvas.addEventListener('pointerup', e => { if (e.pointerType === 'touch') { touchUp(e); return; } endStroke(); });
-canvas.addEventListener('pointercancel', e => { if (e.pointerType === 'touch') touchUp(e, true); else endStroke(); });
-canvas.addEventListener('pointerleave', e => { if (e.pointerType === 'touch') return; pointerIn = false; hit = null; });
+canvas.addEventListener('pointerup', e => { if (e.pointerType === 'touch') { touchUp(e); return; } if(stroke.rail){finishRailDrag(e);return;} endStroke(); });
+canvas.addEventListener('pointercancel', e => { if(stroke.rail){cancelRailDrag();return;} if (e.pointerType === 'touch') touchUp(e, true); else endStroke(); });
+canvas.addEventListener('lostpointercapture',e=>{if(stroke.rail?.pointerId===e.pointerId||stroke.railCamera)cancelRailDrag();});
+canvas.addEventListener('pointerleave', e => { if(e.pointerType==='touch')return; pointerIn = false; hit = null;if(stroke.rail)updateRailDrag(); });
 
 // ---- touch gestures. Walking: one finger turns the view, two fingers pinch to zoom. Editing: one finger edits (it starts
 // after a moment, so a second finger can join without editing), two fingers zoom, turn and pan the view.
@@ -5527,8 +5572,10 @@ canvas.addEventListener('wheel', e => {
   e.preventDefault();
   if (state.mode === 'edit') cam.dist = clamp(cam.dist * Math.exp(e.deltaY * .0012), 6, Math.max(140, SIZE * 2.4));
   else playCam.dist = clamp(playCam.dist * Math.exp(e.deltaY * .0012), 7, 40);
+  if(stroke.rail){placeCamera(cam,cam.target);hit=pick(lastClient[0],lastClient[1]);updateRailDrag();}
 }, { passive: false });
 window.addEventListener('keydown', e => {
+  if(e.code==='Escape'&&stroke.rail){e.preventDefault();cancelRailDrag();return;}
   if(mapPreparation){if(e.code==='Tab'){e.preventDefault();setMode(mapPreparation.requestedMode==='edit'?'play':'edit');}else if(e.code==='Escape'){e.preventDefault();cancelMapPreparation(true);}return;}
   if ((e.ctrlKey || e.metaKey) && e.code === 'KeyS') { e.preventDefault(); e.shiftKey ? saveMapAs() : saveMap(); return; }
   if (e.target.isContentEditable || ['SELECT','TEXTAREA'].includes(e.target.tagName) || (e.target.tagName === 'INPUT' && e.target.type !== 'range' && e.target.type !== 'checkbox')) return;
@@ -5544,12 +5591,13 @@ window.addEventListener('keydown', e => {
   {   // tool keys work while walking too (none of them is a walking key: W A S D Q E Shift)
     const t = TOOLS.find(t => t.key === e.key); if (t && toolVisible(t.id)) { setTool(t.id); return; }
     if (e.key === 'v' || e.key === 'V') { setWalkView(!state.showWalk); return; }
-    if ((e.key === 'r' || e.key === 'R') && state.tool === 'place') { state.placeRot = (state.placeRot + 45) % 360; syncPlaceUI(); return; }
+    if ((e.key === 'r' || e.key === 'R') && state.tool === 'place') { if(stroke.rail){e.preventDefault();return;} state.placeRot = (state.placeRot + 45) % 360; syncPlaceUI(); return; }
   }
   keys.add(e.code);
 });
 window.addEventListener('keyup', e => keys.delete(e.code));
-window.addEventListener('blur', () => keys.clear());
+window.addEventListener('blur', () => {keys.clear();cancelRailDrag();});
+document.addEventListener('visibilitychange',()=>{if(document.hidden)cancelRailDrag();});
 
 // ============================================================
 // Phones and tablets: the menu in and out, a stick and a run button for walking, portrait / landscape
@@ -5658,6 +5706,7 @@ function update(dt) {
   const ix = kx || joy.x, iz = kz || joy.y, amt = kx || kz ? 1 : Math.min(1, Math.hypot(joy.x, joy.y));   // the stick walks slower when pushed less
   if (state.mode === 'edit') {
     if (ix || iz) {
+      if(stroke.rail){cancelRailDrag();toast('カメラ移動のため、未確定のレール敷設を取り消しました');}
       const s = cam.dist * .9 * dt, fx = -Math.sin(cam.yaw), fz = -Math.cos(cam.yaw), rx = Math.cos(cam.yaw), rz = -Math.sin(cam.yaw);
       cam.target.x = clamp(cam.target.x + (fx * iz + rx * ix) * s, -HALF, HALF); cam.target.z = clamp(cam.target.z + (fz * iz + rz * ix) * s, -HALF, HALF);
     }
@@ -5834,6 +5883,7 @@ async function compilePreparedMap(job){
  for(;;){TDPreparation.check(job);const mode=job.requestedMode;setMode(mode,true);update(0);job.progress('初回の描画を準備',0,0);await renderer.compileAsync(scene,camera);await TDPreparation.pause(job);if(mode===job.requestedMode)break;}
 }
 async function prepareMap(kind,seed=7,options={}){
+ cancelRailDrag();
  const previous=mapPreparation;
  const backup=previous?.backup||snapshot(),backupCollision=previous?.backupCollision||captureCollisionPreparation();
  const backupMetadata=previous?.backupMetadata||{name:state.mapName,revision:state.revision,lastExportHash:state.lastExportHash,saveHandle};
