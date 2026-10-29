@@ -1,7 +1,7 @@
 {
-  "release": "minecart-loaded-20261029-184",
+  "release": "cut-rock-surface-20261029-186",
   "files": {
-    "app.js": "0296af5c2408a797eccc7204ce67ce3aa795b50454d270dda5ca2566799f09cd",
+    "app.js": "2e04486bebaa688baba08920fe95c367382c6db12761b8cf832083ce539aee43",
     "props/chest-presentation.js": "02d054f76798bdf6599156ffb0655085c919b3df733386a47a11f458d3aa5233",
     "props/chest-surface.js": "bf7137cd3c64c736bc50d0dbd2a7b62f4fce1c48db73f6473fc6b9522b24f025",
     "props/chest-relief.js": "2f6d152ccd4c0dfd43d34c9867118d5060704b01ea93cfeafcdf826c479e8f94",
@@ -35,15 +35,15 @@
     "props/mine-rails.js": "a64ac22e284c820939cd7e33b26e44f933e5455365b2709fa07387a99b018bde",
     "props/minecart.js": "987e9bad0429e2f06943d56997e05105d16ccaedeb09819ba6db5a6166b0b011",
     "props/mine-rail-drag.js": "7103ee81b1d164a608c14c0701e3fc728f060a0ed0034bb76fd4c92ed3d5241a",
-    "props/mine-cut-rock.js": "249b6979eeec4ce30fa181b60004094bc7296f6de1783fa4d1e275b64b960b3b",
+    "props/mine-cut-rock.js": "bc0aa43a2cbbd567c913ec43ff8b32c2ef3549ad4ecf03f4a15e2d5709edc156",
     "unity/Assets/MapSharedProps/Editor/MineCutRockV1.cs": "192558bef384f83dd23fdb3550070eefa7626a156371deaf47f0b4f1292c280e",
     "unity/Assets/MapSharedProps/Editor/SmallPropsV1.cs": "8f392803872227043f98e71dec5fd81d89f5db8e2afa43df192d197d1bd52812",
     "props/mine-spoil.js": "efdde095fd8c6636b89522a56e7cd739efc49574c0ba89c82635217e4dec9078",
     "unity/Assets/MapSharedProps/Editor/MineSpoilV1.cs": "18413514bdf454f98e9acc696b736cce2bf9017894b0b901ece2f597573f463e",
     "props/cave-decor.js": "abf74ab0b78918409e80854060e0291cda33f30ed758a7c4d46a29e12ddaead1",
     "props/shared/cave-decor-data.js": "5939db717735b0bc3400f5decf360bc3e6aaec12c75f0abbbb26c616269ba57c",
-    "index.html": "be57fc0d84ec7e03a8c4fc99c59e4f95f1080b2795fdacb976a7a0e78e998c8b",
-    "prepared/manifest.js": "21e415f055b277d4318458e76a87d2f5b21d35633ed8eea73a16fc98a6e8eafc",
+    "index.html": "9cfacf17efd7462ba962c6dc2be539f38c1ebc3597ea0bc727a35fbc35630ac6",
+    "prepared/manifest.js": "1fc18db018f190a8cf8fae8cc1d29a075a0ad2aac5e7f3af433ceb79ba6c3c6d",
     "terrain/cliff-shoulder.js": "e437f1ffb0ab47fa4b243f7408f4ed3de759508b0f1dfef49eaf217b1630ac59",
     "props/mine-collapse.js": "49ff2562ce9a97766c4f664c3b283d0f25762b9edb6df370308c150769baafd8",
     "props/mine-collapse-pbr.js": "e90181e4ba56831e286649539dcc05197180e32199a07c675fb5d4da0630a6cd",
@@ -63,6 +63,6 @@
     "unity/Assets/MapSharedProps/Editor/MineCartV1.cs": "ec3559f3c54216f8b9b0196bf083412fb922d550b133a6b108c9193c123de114",
     "unity/Assets/MapSharedProps/Editor/GroundedPropsV1.cs": "4f800dd6b1701e3de149c2d524ddcc8baac9e2cd50aadc19539b79ff11765d14"
   },
-  "sourceCandidate": "af8e79f612d04572229a281d5ef7d6a23a568d08",
-  "integratedMain": "93d772ca0d5884e20ae9e0667425a33ab7b41fc2"
+  "sourceCandidate": "fca119035d8619b1fc6033273e6279cd51118a35",
+  "integratedMain": "89ac659e46b8aaea230b734d995cfe9918e401ce"
 }
