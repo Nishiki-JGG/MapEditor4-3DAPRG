@@ -3159,7 +3159,7 @@ const TOOLS = [
   { id: 'pool', name: 'プール', key: ':', hint: '角から角へドラッグすると、石の縁で囲んだプールを地面の上に作ります（四角・丸は下の「プールの形」から、1.6〜16m）。中の床は平らにならして石畳にし、水は縁の 10cm 下まで張ります。中に水源を置くと、外の地面がいちばん低い側のあふれ口から小川が流れ出ます。Shift+クリックで近くのプールを消します。' },
   { id: 'tunnel', name: 'トンネル', key: '^', hint: '崖や斜面の前の地面から、山の中へドラッグすると横に掘ります。床の高さは入口の地面と同じ。掘った先の端からまたドラッグすると続きを掘り（曲がり角になります）、トンネルの途中からドラッグすると枝分かれします。反対側の地面まで掘ると出口になり、床がその地面に合わせて上り下りします（15° まで）。見た目は下の「見た目」、幅と高さは「大きさ」、中の上り下りは「勾配」から。トンネルの上でカーソルを合わせると、屋根を透かして中が見えます。Shift+クリックで近くのトンネルを消します。' },
   { id: 'fall', name: '滝', key: '=', hint: '崖をクリックすると、縁から水面へ落ちる滝を置きます（幅＝半径の半分）。Shift+クリックで近くの滝を消します。' },
-  { id: 'place', name: '置く', key: 'p', hint: '「種類」で選んだ物を、クリックした場所に1つ置きます。R キーで向きを45°回転。' },
+  { id: 'place', name: '置く', key: 'p', hint: '「種類」で選んだ物をクリックで配置。Ctrl＋ホイールで大きさ、Q／Eで15°回転、Rで45°回転。' },
   { id: 'detail', name: '地表小物を調整', key: ';', hint: '草・花・小石・落ち葉をクリックして選び、下の欄で位置・向き・大きさを調整。Shift＋クリックで選んだ小物を移動します。調整した物は自動更新でも残ります。' },
   { id: 'pick', name: '選んで消す', key: 'o', hint: 'カーソルを合わせると赤く囲まれた物（木・岩・橋・階段・滝など）を、クリックで1つ消します。' },
   { id: 'marker', name: 'マーカー', key: 't', hint: '出入口・敵の候補・宝箱の候補・戦闘/出現禁止範囲を置きます。出入口は、置く場所から部屋の内側へドラッグ（クリックだけなら中央向き）。幅＝半径の半分。禁止範囲の大きさ＝半径。Shift+クリックで近くのマーカーを消します。' },
@@ -5068,8 +5068,18 @@ for (const [id, f] of sliders) {
   if (id === 'water') $(id).addEventListener('pointerdown', pushUndo);
 }
 function syncPlaceUI() { $('placeScale').value = state.placeScale; $('placeScaleV').textContent = '×' + state.placeScale.toFixed(2); $('placeRot').value = state.placeRot; $('placeRotV').textContent = state.placeRot + '°'; $('placeRandom').checked = state.placeRandom; }
-$('placeScale').oninput = e => { state.placeScale = +e.target.value; syncPlaceUI(); };
-$('placeRot').oninput = e => { state.placeRot = +e.target.value; syncPlaceUI(); };
+// Placement shortcuts use the same range controls as the sliders.
+function stepPlaceControl(id, direction) {
+  const input = $(id);
+  if (id === 'placeRot') {
+    const min = +input.min, step = +input.step, count = Math.round((+input.max - min) / step) + 1;
+    const index = Math.round((state.placeRot - min) / step);
+    input.value = min + ((index + direction) % count + count) % count * step;
+  } else input.stepUp(direction);
+  state[id] = +input.value; syncPlaceUI(); updateRing();
+}
+$('placeScale').oninput = e => { state.placeScale = +e.target.value; syncPlaceUI(); updateRing(); };
+$('placeRot').oninput = e => { state.placeRot = +e.target.value; syncPlaceUI(); updateRing(); };
 $('placeRandom').onchange = e => { state.placeRandom = e.target.checked; };
 syncPlaceUI();
 // 自動下草を手直しした時だけ手置きへ切り替え、次回更新から保護する。
@@ -5492,6 +5502,13 @@ function touchUp(e, cancel) {
   drag = null; endStroke(); hit = null;
 }
 canvas.addEventListener('wheel', e => {
+  if (e.ctrlKey) {
+    if (state.mode !== 'edit' || state.tool !== 'place' || mapPreparation || e.metaKey || e.altKey) return;
+    e.preventDefault();
+    const delta = e.deltaY || e.deltaX;
+    if (delta) stepPlaceControl('placeScale', -Math.sign(delta));
+    return;
+  }
   e.preventDefault();
   if (state.mode === 'edit') cam.dist = clamp(cam.dist * Math.exp(e.deltaY * .0012), 6, Math.max(140, SIZE * 2.4));
   else playCam.dist = clamp(playCam.dist * Math.exp(e.deltaY * .0012), 7, 40);
@@ -5500,6 +5517,9 @@ window.addEventListener('keydown', e => {
   if(mapPreparation){if(e.code==='Tab'){e.preventDefault();setMode(mapPreparation.requestedMode==='edit'?'play':'edit');}else if(e.code==='Escape'){e.preventDefault();cancelMapPreparation(true);}return;}
   if ((e.ctrlKey || e.metaKey) && e.code === 'KeyS') { e.preventDefault(); e.shiftKey ? saveMapAs() : saveMap(); return; }
   if (e.target.isContentEditable || ['SELECT','TEXTAREA'].includes(e.target.tagName) || (e.target.tagName === 'INPUT' && e.target.type !== 'range' && e.target.type !== 'checkbox')) return;
+  if (state.mode === 'edit' && state.tool === 'place' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.isComposing && (e.code === 'KeyQ' || e.code === 'KeyE')) {
+    e.preventDefault(); keys.delete(e.code); stepPlaceControl('placeRot', e.code === 'KeyQ' ? -1 : 1); return;
+  }
   if(!e.ctrlKey&&!e.metaKey&&!e.altKey){const inc=e.key==='+'||e.code==='NumpadAdd'||e.key===']',dec=e.key==='-'||e.code==='NumpadSubtract'||e.key==='[';if(inc||dec){e.preventDefault();setBrushRadius(state.radius+(inc?.5:-.5));return;}}
   if (e.code === 'Tab') { e.preventDefault(); setMode((mapPreparation?.requestedMode||state.mode) === 'edit' ? 'play' : 'edit'); return; }
   if ((e.ctrlKey || e.metaKey) && e.code === 'KeyZ') { e.preventDefault(); e.shiftKey ? redo() : undo(); return; }
@@ -5626,7 +5646,7 @@ function update(dt) {
       const s = cam.dist * .9 * dt, fx = -Math.sin(cam.yaw), fz = -Math.cos(cam.yaw), rx = Math.cos(cam.yaw), rz = -Math.sin(cam.yaw);
       cam.target.x = clamp(cam.target.x + (fx * iz + rx * ix) * s, -HALF, HALF); cam.target.z = clamp(cam.target.z + (fz * iz + rz * ix) * s, -HALF, HALF);
     }
-    if (keys.has('KeyQ')) cam.yaw += dt * 1.2; if (keys.has('KeyE')) cam.yaw -= dt * 1.2;
+    if (state.tool !== 'place') { if (keys.has('KeyQ')) cam.yaw += dt * 1.2; if (keys.has('KeyE')) cam.yaw -= dt * 1.2; }
     if (state.showWalk && walkDirty) computeWalk();
     editTick(dt);
     placeCamera(cam, cam.target);

@@ -1,7 +1,7 @@
 {
-  "release": "grounded-local-light-20261029-119",
+  "release": "placement-shortcuts-20261029-121",
   "files": {
-    "app.js": "20b01cfa2966872800304f11b7e1137b06875daf5bb2efa9f876221895a9ad1f",
+    "app.js": "192714a19e7ce2afd2304d787bc130b45c9f7c55a14e8f56dbaa5333d80cec53",
     "props/chest-presentation.js": "02d054f76798bdf6599156ffb0655085c919b3df733386a47a11f458d3aa5233",
     "props/chest-surface.js": "bf7137cd3c64c736bc50d0dbd2a7b62f4fce1c48db73f6473fc6b9522b24f025",
     "props/chest-relief.js": "2f6d152ccd4c0dfd43d34c9867118d5060704b01ea93cfeafcdf826c479e8f94",

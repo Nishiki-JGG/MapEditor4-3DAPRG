@@ -1,0 +1,72 @@
+{
+  "baseline": "90e69ec4276970de5a657232f3f54b4d327d656d",
+  "web": {
+    "pass": true,
+    "cases": [
+      "Ctrl wheel changes scale without preview or camera zoom",
+      "scale slider and readout synchronized",
+      "Q wraps 0 to345",
+      "E wraps345 to0",
+      "held E repeats on existing15 degree grid",
+      "placement Q/E does not turn camera",
+      "scale upper clamp",
+      "Ctrl wheel still consumed at maximum",
+      "scale lower clamp",
+      "horizontal wheel fallback",
+      "zero delta stable",
+      "type switch preserves settings",
+      "outside canvas leaves Ctrl wheel unconsumed",
+      "ordinary wheel retains camera zoom",
+      "Shift wheel brush radius retained",
+      "focused input keeps typing",
+      "focused textarea keeps typing",
+      "focused select keeps typing",
+      "focused div keeps typing",
+      "modified keys and IME do not rotate placement",
+      "other tool leaves Ctrl zoom unconsumed",
+      "other edit tool Q rotates camera",
+      "mode switch while Q held does not rotate place camera",
+      "walk E retains view rotation",
+      "walk Ctrl wheel is not intercepted",
+      "walk ordinary wheel retains zoom"
+    ],
+    "preview": {
+      "scale": 1.25,
+      "rotation": 45,
+      "previewScale": 1.25,
+      "previewAngle": 0.7853981633974483,
+      "expectedScale": 1.25,
+      "geometry": true,
+      "dist": 12,
+      "viewportScale": 1
+    },
+    "placed": {
+      "count": 1,
+      "scale": 1.25,
+      "angle": 0.7853981633974483,
+      "id": "smallbarrel"
+    },
+    "ground": {
+      "parts": 9,
+      "match": true,
+      "scale": 0.9600000000000002,
+      "angle": 6.021385919380437
+    },
+    "saved": {
+      "randomPreserved": true,
+      "propsExact": true,
+      "props": 3,
+      "gl": 0
+    },
+    "privateHeadless": true,
+    "guiUsed": false,
+    "uploads": 0
+  },
+  "nativeCodeAssetsUnchanged": true,
+  "schemaAndPlacedDataFormatUnchanged": true,
+  "limits": [
+    "Headless Chromium on desktop; physical mouse/device diversity not separately tested",
+    "Existing random-placement checkbox retains its scale jitter and next-item rotation; deterministic equality checked with it OFF"
+  ],
+  "harnessCorrection": "The first test server wrote a200 header before reading a missing file, then attempted404. Read-before-header fixed in the harness only; no product failure or GUI action."
+}
