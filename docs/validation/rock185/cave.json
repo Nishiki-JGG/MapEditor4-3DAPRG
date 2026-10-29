@@ -1,0 +1,53 @@
+{
+  "pass": true,
+  "seed": 71421,
+  "cells": 648,
+  "torches": 21,
+  "pipeline": "URP 17.5 Forward+ Linear",
+  "fov": 50.0,
+  "darkCameraPosition": {
+    "x": -6.25,
+    "y": 9.0,
+    "z": 39.95000076293945
+  },
+  "darkCameraEuler": {
+    "x": 53.77506637573242,
+    "y": 0.0,
+    "z": 0.0
+  },
+  "cases": [
+    {
+      "placement": {
+        "x": -6.25,
+        "y": 0.0,
+        "z": 46.85499954223633
+      },
+      "light": {
+        "x": -1.25,
+        "y": 1.7100000381469727,
+        "z": 45.525001525878906
+      },
+      "distance": 5.231696605682373,
+      "intensity": 3.0101847648620605,
+      "range": 8.0
+    },
+    {
+      "placement": {
+        "x": -3.75,
+        "y": 0.0,
+        "z": 46.85499954223633
+      },
+      "light": {
+        "x": -1.25,
+        "y": 1.7100000381469727,
+        "z": 45.525001525878906
+      },
+      "distance": 2.9275670051574707,
+      "intensity": 3.0101847648620605,
+      "range": 8.0
+    }
+  ],
+  "allSixBeforeExactlyMatch137": true,
+  "originalSceneSaved": false,
+  "player": false
+}

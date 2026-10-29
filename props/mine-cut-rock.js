@@ -1,4 +1,4 @@
-// 手掘りの岩面。写真や発破孔を使わない自作テクスチャ。
+// 掘削痕は自作。石肌は同梱CC0 Rock050から派生し、形状とUVは維持する。
 window.TDMineCutRock=(()=>{
  'use strict';
  const id='mine_cut_rock',spec={version:1,width:1.8,height:1.92,depth:.30,front:'+Z',back:-.06};let textureSet,shared;
@@ -17,8 +17,46 @@ window.TDMineCutRock=(()=>{
  function maps(){if(textureSet)return textureSet;const w=512,h=256,colour=new Uint8Array(w*h*4),packed=new Uint8Array(w*h*4),normal=new Uint8Array(w*h*4),heights=new Float32Array(w*h);
  for(let y=0;y<h;y++)for(let x=0;x<w;x++){const front=x<384,u=front?(x-3)/378:(x-387)/122,v=(y-3)/250,q=sample(u,v,front),n=noise(x,y),grain=(n-.5)*7,stone=(noise(x>>3,y>>3)-.5)*7+(noise(x>>1,y>>1)-.5)*4,base=102+stone+q.cloud*7+q.fresh*23+q.ridge*9+q.groove*4-q.crack*12+(front?0:1);const i=(y*w+x)*4;colour[i]=Math.round(base+grain+6);colour[i+1]=Math.round(base+grain+3);colour[i+2]=Math.round(base+grain);colour[i+3]=255;packed[i]=0;packed[i+1]=Math.round(255*(1-q.groove*.16-q.crack*.18));packed[i+2]=0;packed[i+3]=Math.round(255*(.19+q.fresh*.09+q.cloud*.025-q.groove*.04));heights[y*w+x]=q.h+(n-.5)*.0004;}
  for(let y=0;y<h;y++)for(let x=0;x<w;x++){const i=(y*w+x)*4;let dx=(heights[y*w+Math.min(w-1,x+1)]-heights[y*w+Math.max(0,x-1)])*(x<384?378/3.6:122/3.6),dy=(heights[Math.min(h-1,y+1)*w+x]-heights[Math.max(0,y-1)*w+x])*(250/3.84);if(x===383||x===384)dx=0;const len=Math.hypot(dx,dy,1);normal[i]=Math.round((.5-dx*.5/len)*255);normal[i+1]=Math.round((.5-dy*.5/len)*255);normal[i+2]=Math.round((.5+.5/len)*255);normal[i+3]=255;}
- const tex=(bytes,srgb)=>{const t=new THREE.DataTexture(bytes,w,h);t.colorSpace=srgb?THREE.SRGBColorSpace:THREE.NoColorSpace;t.flipY=false;t.generateMipmaps=true;t.minFilter=THREE.LinearMipmapLinearFilter;t.anisotropy=2;t.needsUpdate=true;return t;};const mr=new Uint8Array(packed);for(let i=0;i<mr.length;i+=4){mr[i]=packed[i+1];mr[i+1]=255-packed[i+3];mr[i+2]=0;}const data=tex(mr,false);return textureSet={w,h,colour,packed,normal,map:tex(colour,true),metalRough:data,normalMap:tex(normal,false),aoMap:data};
+ const tex=(bytes,srgb)=>{const t=new THREE.DataTexture(bytes,w,h);t.colorSpace=srgb?THREE.SRGBColorSpace:THREE.NoColorSpace;t.flipY=false;t.generateMipmaps=true;t.minFilter=THREE.LinearMipmapLinearFilter;t.anisotropy=2;t.needsUpdate=true;return t;};const mr=new Uint8Array(packed);for(let i=0;i<mr.length;i+=4){mr[i]=packed[i+1];mr[i+1]=255-packed[i+3];mr[i+2]=0;}const data=tex(mr,false);textureSet={w,h,colour,packed,normal,map:tex(colour,true),metalRough:data,normalMap:tex(normal,false),aoMap:data,status:'loading',error:null};textureSet.ready=installStone(textureSet);return textureSet;
  }
+
+ // Reuse the decoded, bundled CC0 source; no new file, GPU map, or geometry changes.
+ // Atomic replacement keeps placed instances and preview clones on identical maps.
+ async function installStone(t){try{
+  await Promise.resolve();
+  const source=window.TDMineCollapse;if(!source)throw Error('shared Rock050 source unavailable');
+  await source.prepare();const rock=source.maps();if(rock.status!=='ready')throw Error('shared Rock050 source not ready');
+  const linear=n=>{n/=255;return n<=.04045?n/12.92:Math.pow((n+.055)/1.055,2.4);};
+  const srgb=n=>255*(n<=.0031308?n*12.92:1.055*Math.pow(n,1/2.4)-.055);
+  const lut=Array.from({length:256},(_,i)=>linear(i)),mean=[new Float64Array(4),new Float64Array(4)];
+  for(let y=0;y<256;y++)for(let x=0;x<512;x++){const i=(y*512+x)*4,m=mean[x>>8];for(let c=0;c<3;c++)m[c]+=lut[rock.colour[i+c]]/65536;m[3]+=rock.packed[i+3]/65536;}
+  function read(bytes,u,v,half,c,colour=false){const x=clamp(u)*255,y=clamp(v)*255,x0=Math.floor(x),y0=Math.floor(y),fx=x-x0,fy=y-y0;let n=0;for(let j=0;j<2;j++)for(let k=0;k<2;k++){let b=bytes[((Math.min(255,y0+j)*512)+half*256+Math.min(255,x0+k))*4+c];n+=(colour?lut[b]:b)*(k?fx:1-fx)*(j?fy:1-fy);}return n;}
+  const colour=new Uint8Array(t.colour),normal=new Uint8Array(t.normal),packed=new Uint8Array(t.packed);
+  for(let y=0;y<t.h;y++)for(let x=0;x<t.w;x++){
+   const front=x<384,u=front?(x-3)/378:(x-387)/122,v=(y-3)/250,q=sample(u,v,front),fresh=clamp(q.fresh/0.65),i=(y*t.w+x)*4;
+   // 1.8m front occupies 75% of the assumed 2.4m source tile. Same location on both rind/fresh halves.
+   const su=.09+clamp(u)*.75,sv=.06+clamp(v)*.80,blend=(a,b)=>a*(1-fresh)+b*fresh;
+   for(let c=0;c<3;c++){
+    const ratio=blend(read(rock.colour,su,sv,0,c,true)/mean[0][c],read(rock.colour,su,sv,1,c,true)/mean[1][c]);
+    const grain=(noise(x,y)-.5)*7+(noise(x>>3,y>>3)-.5)*7+(noise(x>>1,y>>1)-.5)*4;
+    const base=linear(Math.max(0,colour[i+c]-grain*.8)),strength=blend(.85,.55);
+    colour[i+c]=Math.round(Math.max(0,Math.min(255,srgb(base*(1+strength*(Math.max(.55,Math.min(1.65,ratio))-1))))));
+   }
+   const nx=blend(read(rock.normal,su,sv,0,0),read(rock.normal,su,sv,1,0))/127.5-1,
+    ny=blend(read(rock.normal,su,sv,0,1),read(rock.normal,su,sv,1,1))/127.5-1,
+    nz=Math.max(.25,blend(read(rock.normal,su,sv,0,2),read(rock.normal,su,sv,1,2))/127.5-1),
+    z=Math.max(.1,normal[i+2]/127.5-1),strength=blend(.45,.22)*(1-q.groove*.75),
+    dx=(normal[i]/127.5-1)/z+nx/nz*strength,dy=(normal[i+1]/127.5-1)/z+ny/nz*strength,len=Math.hypot(dx,dy,1);
+   normal[i]=Math.round((.5+.5*dx/len)*255);normal[i+1]=Math.round((.5+.5*dy/len)*255);normal[i+2]=Math.round((.5+.5/len)*255);
+   const ao=blend(read(rock.packed,su,sv,0,1),read(rock.packed,su,sv,1,1))/255;
+   packed[i+1]=Math.round(packed[i+1]*(.92+.08*ao));
+   packed[i+3]=Math.round(Math.max(0,Math.min(255,packed[i+3]+.4*blend(read(rock.packed,su,sv,0,3)-mean[0][3],read(rock.packed,su,sv,1,3)-mean[1][3]))));
+  }
+  t.colour.set(colour);t.normal.set(normal);t.packed.set(packed);
+  const mr=t.metalRough.image.data;for(let i=0;i<mr.length;i+=4){mr[i]=packed[i+1];mr[i+1]=255-packed[i+3];mr[i+2]=0;mr[i+3]=255;}
+  for(const map of [t.map,t.normalMap,t.metalRough])map.needsUpdate=true;t.status='ready';
+ }catch(e){t.status='fallback';t.error=String(e.message||e);}}
+ function prepare(){return maps().ready;}
  function material(){if(!shared){const t=maps();shared=new THREE.MeshStandardMaterial({name:'hand-picked-rock',map:t.map,metalness:0,roughness:1,roughnessMap:t.metalRough,normalMap:t.normalMap,normalScale:new THREE.Vector2(1,1),aoMap:t.aoMap,aoMapIntensity:.6});}return shared;}
  function geometry(){const nx=10,ny=12,p=[],uv=[],ix=[];
  const left=[-.85,-.87,-.88,-.88,-.83,-.82,-.81,-.86,-.90,-.87,-.83,-.76,-.70],right=[.87,.88,.88,.84,.77,.76,.79,.83,.84,.81,.75,.68,.58],top=[1.62,1.76,1.81,1.82,1.85,1.84,1.80,1.77,1.73,1.66,1.56],bottom=[0,0,0,0,0,.01,.04,.02,0,0,0];
@@ -42,5 +80,5 @@ window.TDMineCutRock=(()=>{
  function png(bytes){const t=maps(),c=document.createElement('canvas');c.width=t.w;c.height=t.h;c.getContext('2d').putImageData(new ImageData(new Uint8ClampedArray(bytes),t.w,t.h),0,0);return c.toDataURL('image/png').split(',')[1];}
  function exportData(types){const t=maps();return{version:1,units:'metres',axes:'Unity X/Y/Z',textures:{width:t.w,height:t.h,colour:png(t.colour),packed:png(t.packed),normal:png(t.normal)},assets:types.filter(t=>t.id===id&&t.assetKey==='tdj/'+id).map(t=>({id,assetKey:t.assetKey,radius:t.r,height:t.height,shape:!!t.shape,groundSink:0,material:'mineCutRock',...(!t.shape&&t.r>0?{circleColliders:(t.offs||[[0,0]]).map(o=>({center:[o[0],0,-o[1]],radius:t.r,height:t.height}))}:{}),...TDSmallPropExport.geometry(t.geo)}))};}
  TDProps.add({id,name:'掘削痕の岩壁',r:.9,collisionGeo:new THREE.BoxGeometry(1.82,1.92,.36).translate(0,.96,.12),height:1.92,groundSink:0,min:2,sc:[1,1],slope:.1,vis:1,anyGround:true,manualOnly:true,shape:true,tags:['cave'],material:'mineCutRock',mineCutRock:true,build:geometry});
- return{id,spec,maps,material,export:exportData};
+ return{id,spec,maps,material,prepare,stats:()=>({status:maps().status,error:maps().error}),export:exportData};
 })();

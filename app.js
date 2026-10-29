@@ -4481,6 +4481,7 @@ const GROUND_EFFECT = { sand: 'slow_light', rubble: 'slow_light', swamp: 'slow',
 const WEIGHT_LAYERS = ['grass', 'dirt', 'cobble', 'sand', 'rubble', 'swamp', 'poison', 'lava', 'snowfield', 'ice', 'cliff', 'bedrock', 'pureblack'];
 async function buildExport({sharedAssets = false} = {}) {
   await TDMineCollapse.prepare(); // Export exactly the ready shared maps, or the intact fallback.
+  await TDMineCutRock.prepare(); // Reuse the same decoded source before serializing the three rock maps.
   refreshGroundWeights();
   if(mapPreparation||cliffContactDisabled)throw Error('崖の岩を調整中です。完了後に書き出してください');
   ensureIds(); applyCatalog(); if (walkDirty) computeWalk();

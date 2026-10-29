@@ -1,0 +1,142 @@
+{
+  "baseline": "89ac659e46b8aaea230b734d995cfe9918e401ce",
+  "geometrySHA": "76b43d0d16c8e352bbf358dbeaae04ffbdc59b864ecc538e2966ca0da7f4982d",
+  "toolAndFractureCodeSHA": "ba8f1508ec83ae5dab33aeb746e6b914f308b385a5bf553922884042aabd1f0c",
+  "maps": [
+    {
+      "map": "colour",
+      "beforeSHA": "83549bafd9a12898e820f220dc5278c0a035b42659fa5815a0a59f9192566a5d",
+      "afterSHA": "427dc9646bfe8f9d2779211c65d05d01b44288444f351c1de22106da61663ca9",
+      "meanBefore": [
+        110.50037384033203,
+        107.50037384033203,
+        104.50037384033203
+      ],
+      "meanAfter": [
+        110.1984634399414,
+        107.35945892333984,
+        104.6525650024414
+      ]
+    },
+    {
+      "map": "normal",
+      "beforeSHA": "a3b7a778db307e7f0f8906169a93d0b5e5e9b7de33bc03834781c64df0c74e4d",
+      "afterSHA": "b7fa4f27062cc32acb5603f42f9792e3bf7edc87d36a78474391f51453b8d903",
+      "meanBefore": [
+        127.47029876708984,
+        127.47807312011719,
+        254.8552017211914
+      ],
+      "meanAfter": [
+        127.60694885253906,
+        127.61539459228516,
+        254.0425033569336
+      ]
+    },
+    {
+      "map": "packed",
+      "beforeSHA": "91950c14e616ccc5e55149f6d2c906eea2052bfade6d3bbc83e803339de03877",
+      "afterSHA": "dd57f547a608a974d3e818de47e04244e2b42b66db225d583925304e96ef3df6",
+      "meanBefore": [
+        0.0,
+        254.6612777709961,
+        0.0
+      ],
+      "meanAfter": [
+        0.0,
+        254.51973724365234,
+        0.0
+      ]
+    }
+  ],
+  "caveComparisons": [
+    {
+      "view": "lit-normal",
+      "beforeSHA": "bf932f54a2afbbf88b98873ea94d9b3897cc809ae6d3871b70f45cb8a8f0acec",
+      "afterSHA": "f83f029bc90de6099e918fb223650a33fd3a7989b992031a43724fe1fc7e7b90",
+      "changedPixels": 16391,
+      "bounds": [
+        716,
+        313,
+        877,
+        438
+      ],
+      "replayed137MaxRGBDiff": 0,
+      "replayed137ChangedPixels": 0
+    },
+    {
+      "view": "lit-close",
+      "beforeSHA": "c2045245f041e3ae5d18eb19121347dd5d4bbfe211547bdf2c6aed12315af810",
+      "afterSHA": "eae0aaa8537e4f0c5ab680d59dd59ad83d4948115db69d39eec17feeb65b7558",
+      "changedPixels": 331772,
+      "bounds": [
+        497,
+        118,
+        1105,
+        787
+      ],
+      "replayed137MaxRGBDiff": 0,
+      "replayed137ChangedPixels": 0
+    },
+    {
+      "view": "lit-side",
+      "beforeSHA": "27313d094d10e074813b4a4d852afcb49bc2eeedf72b06f1744687e00b7b7aa4",
+      "afterSHA": "77adefb354b8b8a313e60aacb74582dfa43df7d0ec54fcfd0bc47b66bce37d69",
+      "changedPixels": 392627,
+      "bounds": [
+        427,
+        75,
+        1058,
+        846
+      ],
+      "replayed137MaxRGBDiff": 0,
+      "replayed137ChangedPixels": 0
+    },
+    {
+      "view": "dark-normal",
+      "beforeSHA": "0a2fc1bb681de64198aeac4f9927da516206b6511c28a5ebc60ab7a3294e2bfe",
+      "afterSHA": "f0fa0455f26764b0e68f8f535299bf6def42306853a76b2937642995f9697f61",
+      "changedPixels": 16275,
+      "bounds": [
+        717,
+        314,
+        877,
+        438
+      ],
+      "replayed137MaxRGBDiff": 0,
+      "replayed137ChangedPixels": 0
+    },
+    {
+      "view": "dark-close",
+      "beforeSHA": "6a17055c5d3ebee5fcf0898a1c05ca47f4ef1c0f2b87041e54031721c9bde14a",
+      "afterSHA": "1f48aa2bae9442dfad417c6ed2c2622f7853ac4661f2b69ac21083b4f2990ab3",
+      "changedPixels": 328890,
+      "bounds": [
+        496,
+        117,
+        1111,
+        787
+      ],
+      "replayed137MaxRGBDiff": 0,
+      "replayed137ChangedPixels": 0
+    },
+    {
+      "view": "dark-side",
+      "beforeSHA": "158014e76ed8c3f55d182cecab163d957cf20ad4bead56d8e02a9c6e00cd1191",
+      "afterSHA": "3e6a59067371a5871b6e4aa4d7a21f57defeaafd3f1d428627c8a53ad7210452",
+      "changedPixels": 388510,
+      "bounds": [
+        428,
+        74,
+        1062,
+        846
+      ],
+      "replayed137MaxRGBDiff": 0,
+      "replayed137ChangedPixels": 0
+    }
+  ],
+  "sourceSHA": "e90181e4ba56831e286649539dcc05197180e32199a07c675fb5d4da0630a6cd",
+  "originalSourceAndProvenanceUnmodified": true,
+  "fixedRockRegenerations": 0,
+  "textureOnly": true
+}
