@@ -26,15 +26,22 @@ window.TDMineRails=(()=>{
   const frame=(s,x,y)=>{const a=def.curve?s/2:0;return def.curve?[2-2*Math.cos(a)+x*Math.cos(a),y,2*Math.sin(a)-x*Math.sin(a)]:[x,y,s];};
   function box(s,x,y,w,h,d,region,pitch=0){
    const local=v=>{const a=def.curve?s/2:0,base=frame(s,x,y),yy=v[1]*Math.cos(pitch)-v[2]*Math.sin(pitch),zz=v[1]*Math.sin(pitch)+v[2]*Math.cos(pitch);return[base[0]+v[0]*Math.cos(a)+zz*Math.sin(a),base[1]+yy,base[2]-v[0]*Math.sin(a)+zz*Math.cos(a)];};
-   if(region==='wood'){const c=Math.min(.008,h*.15,d*.15),prof=[[-h/2,-d/2+c],[-h/2+c,-d/2],[h/2-c,-d/2],[h/2,-d/2+c],[h/2,d/2-c],[h/2-c,d/2],[-h/2+c,d/2],[-h/2,d/2-c]],left=prof.map(([yy,z])=>local([-w/2,yy,z])),right=prof.map(([yy,z])=>local([w/2,yy,z]));for(let i=0;i<8;i++){let j=(i+1)%8;quad(left[i],left[j],right[j],right[i],'wood',i/8,j/8,0,1);}const face=THREE.ShapeUtils.triangulateShape(prof.map(p=>new THREE.Vector2(...p)),[]);for(const f of face){push(...f.map(i=>left[i]).reverse(),'woodEnd',[[0,0],[1,0],[0,1]]);push(...f.map(i=>right[i]),'woodEnd',[[0,0],[1,0],[0,1]]);}return;}
+   if(region==='wood'){const c=Math.min(.008,h*.15,d*.15),prof=[[-h/2,-d/2+c],[-h/2+c,-d/2],[h/2-c,-d/2],[h/2,-d/2+c],[h/2,d/2-c],[h/2-c,d/2],[-h/2+c,d/2],[-h/2,d/2-c]],left=prof.map(([yy,z])=>local([-w/2,yy,z])),right=prof.map(([yy,z])=>local([w/2,yy,z]));for(let i=0;i<8;i++){let j=(i+1)%8;quad(left[i],left[j],right[j],right[i],'wood',i/8,j/8,0,1);}const face=THREE.ShapeUtils.triangulateShape(prof.map(p=>new THREE.Vector2(...p)),[]);const jitter=(Math.sin(s*19.17+x*7.31+w*3.1)*437.58)%1,shift=Math.abs(jitter)*.16,capUV=i=>[.06+shift+(prof[i][1]/d+.5)*.72,.05+shift*.7+(prof[i][0]/h+.5)*.78];for(const f of face){const rev=[...f].reverse();push(...rev.map(i=>left[i]),'woodEnd',rev.map(capUV));push(...f.map(i=>right[i]),'woodEnd',f.map(capUV));}return;}
    const p=[[-w/2,-h/2,-d/2],[w/2,-h/2,-d/2],[w/2,h/2,-d/2],[-w/2,h/2,-d/2],[-w/2,-h/2,d/2],[w/2,-h/2,d/2],[w/2,h/2,d/2],[-w/2,h/2,d/2]].map(local);for(const f of [[0,3,2,1],[4,5,6,7],[0,4,7,3],[1,2,6,5],[3,7,6,2],[0,1,5,4]])quad(...f.map(i=>p[i]),region);
   }
   const profile=[[-.045,.070],[.045,.070],[.045,.081],[.014,.092],[.014,.118],[.025,.124],[.025,.136],[.018,.140],[-.018,.140],[-.025,.136],[-.025,.124],[-.014,.118],[-.014,.092],[-.045,.081]],steps=def.curve?16:1;
   for(const offset of [-.42,.42]){for(let k=0;k<steps;k++){const s0=def.length*k/steps,s1=def.length*(k+1)/steps;for(let j=0;j<profile.length;j++){const a=profile[j],b=profile[(j+1)%profile.length],region=j>=6&&j<=8?'head':'iron';quad(frame(s0,offset+a[0],a[1]),frame(s0,offset+b[0],b[1]),frame(s1,offset+b[0],b[1]),frame(s1,offset+a[0],a[1]),region,j/profile.length,(j+1)/profile.length,k/steps,(k+1)/steps);}}
    const caps=THREE.ShapeUtils.triangulateShape(profile.map(p=>new THREE.Vector2(...p)),[]);for(const face of caps){const points=face.map(j=>frame(0,offset+profile[j][0],profile[j][1]));push(points[2],points[1],points[0],'iron',[[0,0],[1,0],[0,1]]);const q=face.map(j=>frame(def.length,offset+profile[j][0],profile[j][1]));push(...q,'iron',[[0,0],[1,0],[0,1]]);}}
   const ties=def.curve?7:4;for(let k=0;k<ties;k++){const s=def.length*(k+.5)/ties;box(s,0,.035,1.24,.07,.18,'wood');for(const rail of [-.42,.42])for(const side of [-1,1])box(s,rail+side*.060,.078,.033,.025,.055,'fastener');}
-  // Fishplates stop short of the module boundary, leaving the joining faces exact.
-  for(const rail of [-.42,.42])for(const side of [-1,1])box(def.length-.10,rail+side*.019,.105,.009,.024,.18,'iron');
+  // One pre-fitted plate per rail/end: opposing end tangents put the neighbour's
+  // plate on the other side, including entry-entry and exit-exit connections.
+  // The free half and captive bolt remain visible at an isolated, unjoined end.
+  // Running faces, ports and collision proxies do not move.
+  for(let end=0;end<def.ends.length;end++){const s=end===0?0:def.length,side=end===0?1:-1;
+   for(const rail of [-.42,.42]){box(s,rail+side*.020,.105,.010,.026,.24,'iron');
+    for(const along of [-.065,.065])box(s+along,rail+side*.0275,.105,.005,.012,.014,'fastener');
+   }
+  }
   if(def.id===ids[2]){box(1.78,0,.40,1.20,.18,.16,'wood');for(const side of [-1,1]){box(1.78,side*.49,.21,.12,.42,.15,'iron');box(1.55,side*.49,.21,.07,.57,.07,'iron',.85);box(1.78,side*.49,.40,.045,.045,.19,'fastener');}}
   const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setAttribute('normal',new THREE.Float32BufferAttribute(norm,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));g.setAttribute('color',new THREE.Float32BufferAttribute(new Float32Array(pos.length).fill(1),3));g.setAttribute('glow',new THREE.Float32BufferAttribute(new Float32Array(pos.length/3),1));g.setIndex(tri);g.computeBoundingBox();g.computeBoundingSphere();return g;
  }
