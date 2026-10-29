@@ -1,0 +1,172 @@
+{
+  "baseline": "425de799a4ba070685ad655853c1ebd6c26cd971",
+  "native": {
+    "pass": true,
+    "prefabs": 44,
+    "rows": [
+      {
+        "mode": "0",
+        "light": "off",
+        "before": 0.0,
+        "after": 0.0
+      },
+      {
+        "mode": "0",
+        "light": "point",
+        "before": 0.0,
+        "after": 0.010550718754529953
+      },
+      {
+        "mode": "0",
+        "light": "spot",
+        "before": 0.0,
+        "after": 0.010547416284680367
+      },
+      {
+        "mode": "0",
+        "light": "shadow",
+        "before": 0.0,
+        "after": 0.0
+      },
+      {
+        "mode": "0",
+        "light": "day",
+        "before": 0.021119393408298492,
+        "after": 0.021119393408298492
+      },
+      {
+        "mode": "2",
+        "light": "off",
+        "before": 0.0,
+        "after": 0.0
+      },
+      {
+        "mode": "2",
+        "light": "point",
+        "before": 0.0,
+        "after": 0.010550718754529953
+      },
+      {
+        "mode": "2",
+        "light": "spot",
+        "before": 0.0,
+        "after": 0.010547416284680367
+      },
+      {
+        "mode": "2",
+        "light": "shadow",
+        "before": 0.0,
+        "after": 0.0
+      },
+      {
+        "mode": "2",
+        "light": "day",
+        "before": 0.021119393408298492,
+        "after": 0.021119393408298492
+      }
+    ],
+    "limits": [
+      "Source reader unchanged; old binary not run",
+      "Offscreen Editor only; Player/mobile not run"
+    ]
+  },
+  "legacy": {
+    "pass": true,
+    "prefabs": 43,
+    "sourceControlFlowOnly": true,
+    "oldBinaryExecuted": false
+  },
+  "web": {
+    "pass": true,
+    "rows": [
+      {
+        "on": false,
+        "mean": 0.021375122469422716,
+        "gl": 0
+      },
+      {
+        "on": true,
+        "mean": 0.0533836846794979,
+        "gl": 0
+      }
+    ],
+    "saved": true,
+    "productWebCodeChanged": false
+  },
+  "actualCave": {
+    "seed": 71421,
+    "cells": 648,
+    "torches": 21,
+    "originalNearestTorchDistance": 6.190696716308594,
+    "near": {
+      "placement": {
+        "x": -11.25,
+        "y": 0.0,
+        "z": 48.75
+      },
+      "light": {
+        "x": -10.524999618530273,
+        "y": 1.7100000381469727,
+        "z": 50.0
+      },
+      "distance": 2.238800048828125,
+      "intensity": 2.854231834411621,
+      "range": 8.0
+    },
+    "images": {
+      "normal": {
+        "changedBounds": [
+          745,
+          315,
+          858,
+          362
+        ],
+        "beforeSha256": "c3ce3f9231a35722cd541da1cc279fa83f3e733e2d326051e9a59c585cd6c4e9",
+        "afterSha256": "12b9edeb23f11c3b4d19e43689ab18dbd2a8cd6d3cc5f5d63bb874b51ae9f4de"
+      },
+      "close": {
+        "changedBounds": [
+          640,
+          370,
+          994,
+          563
+        ],
+        "beforeSha256": "b9fcf5314178ad68c35a15f7014a2b9961f780ceabb09c17e98393ca789070e3",
+        "afterSha256": "b4539b4fbc3624893ffd0c00a78bcc93976a8dba4af116437e83a63ff7795f2d"
+      },
+      "near-existing-torch/normal": {
+        "changedBounds": [
+          745,
+          315,
+          858,
+          362
+        ],
+        "beforeSha256": "77f27c1485b1a95acc494e5afb9d6eb70f30dc0b36054762439757024ac2933c",
+        "afterSha256": "fb734b63a3499223f8dab6d655edb61e36fd9094f12c91dcc64f2db1544a779e"
+      },
+      "near-existing-torch/close": {
+        "changedBounds": [
+          641,
+          370,
+          994,
+          528
+        ],
+        "beforeSha256": "09c67b8006972933edeb95934a48ad871649aeb86d270a0c1ec4be33203c1849",
+        "afterSha256": "aee3431f5630528ced9b5013ee0ef7d1e0a825644de09123d5882be2363be6c1"
+      }
+    }
+  },
+  "geometryUvNormalsColoursColliders": "All 44 unchanged; all 43 legacy-source outputs match",
+  "productScope": [
+    "FibreProp.shader used only by tiedsack/coiledrope"
+  ],
+  "newLights": 0,
+  "newTextures": 0,
+  "newGeometry": 0,
+  "visualReview": "Existing cave torch warms the rope and sack surfaces consistently with the floor. At the original 6.19m placement the difference is small; at an unobstructed same-room floor cell 2.24m from the authored torch the normal-distance change is visible. No new lighting or exposure. Main-only and lights-off diagnostic PNGs are byte-identical before/after.",
+  "limits": [
+    "Native GPU timing, mobile, Player and full gameplay not executed",
+    "Forward and Forward+ per-pixel additional-light settings exercised; vertex mode not separately rendered",
+    "Old reader source control flow only, no old binary run"
+  ]
+}

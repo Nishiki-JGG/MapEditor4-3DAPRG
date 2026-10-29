@@ -42,7 +42,7 @@
   "props/stone-surface.js": "b13d9f8dacad368b4f91aa9a227eef9c68c2d5ead8af91e03a74d59b20049218",
   "props/storagepot.js": "a438c43030411e625765317acecc89ee1cf0e7beec47bcfa7dd7a65296747fe3",
   "props/wall-torch-source.js": "26b9c2078ffbfa7a000e9dc2fda0720934d4c7a372f75bdd3337153e4814cc9a",
-  "release.json": "5662e56b9e870cfac407c64b78cdd887cd7a4133cc1931d8c414e32b3b4cdf95",
+  "release.json": "c91ba421a3f581dbae5fb7e7c62a24b0aa55e29a6ecfe6a082bcf58a4c3b3745",
   "sea.js": "9c929f4f08ac4cf1555ea8f13f58620fd2efaadfb588da56bc64858c5b7d56fb",
   "unity/Assets/MapSharedProps/Editor/ChestPresentationBuilder.cs": "4266b553a28dd80b1dd7f8eee401325e9b7cf5e0957b8a842c3909cf48d84cbf",
   "unity/Assets/MapSharedProps/Editor/ChestRoyalLitBuilder.cs": "4a7eac30ed8966eac116b421a4d6acd0dbda9d8d40e54bb961e33a1cc95ac939",
@@ -68,5 +68,6 @@
   "props/seafan-surface.js": "3ad1b8c71a2b92f20b3fab9e75d4fa362e6aff183b89fd771431f7daf3e5b612",
   "props/obsidian-reflection.js": "db926e0da7a344f731911d299ae2ee2353db95c387efdd6d8934ac7683d23ee0",
   "unity/Assets/MapSharedProps/Editor/ObsidianV1.cs": "9850581da7e04beaec59b259786efe8aa6ba96d6ca4962f8e6cabd084403cf2b",
-  "unity/Assets/MapSharedProps/Editor/ObsidianV1.cs.meta": "5feb9e072e1b2d9cae91809c22177eb4f963e4a8bbbe3b55ed43a739405db86e"
+  "unity/Assets/MapSharedProps/Editor/ObsidianV1.cs.meta": "5feb9e072e1b2d9cae91809c22177eb4f963e4a8bbbe3b55ed43a739405db86e",
+  "unity/Assets/MapSharedProps/Runtime/FibreProp.shader": "c20b60221aa76763e8dddb6eb78861f3c17891158f929fb004bc847007fbfaaa"
 }

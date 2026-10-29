@@ -11,6 +11,9 @@ Shader "MapSharedProps/FibreProp" {
    #pragma fragment Frag
    #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE
    #pragma multi_compile_fragment _ _SHADOWS_SOFT
+   #pragma multi_compile _ _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHTS
+   #pragma multi_compile_fragment _ _ADDITIONAL_LIGHT_SHADOWS
+   #pragma multi_compile _ _CLUSTER_LIGHT_LOOP
    #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
    #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
    CBUFFER_START(UnityPerMaterial)
@@ -21,7 +24,22 @@ Shader "MapSharedProps/FibreProp" {
    V Vert(A i){V o;VertexPositionInputs p=GetVertexPositionInputs(i.p.xyz);o.p=p.positionCS;o.world=p.positionWS;o.n=TransformObjectToWorldNormal(i.n);o.uv=i.uv;o.color=i.color*_BaseColor;return o;}
    float3 Detail(float2 uv){if(_FibreKind>.5){float fade=1-smoothstep(.2,1,max(fwidth(uv.x),fwidth(uv.y)*3));float a=6.2831853*(uv.y*3-uv.x),h=sin(a),d=cos(a);return float3(1-.24*pow(.5-.5*h,3)*fade,-6.2831853*d*fade,18.849556*d*fade);}float fade=1-smoothstep(.18,.9,max(fwidth(uv.x*36),fwidth(uv.y*36)));float2 a=uv*226.194671;return float3(1-.012*fade+.012*sin(a.x)*sin(a.y)*fade,226.194671*cos(a.x)*sin(a.y)*fade,226.194671*sin(a.x)*cos(a.y)*fade);}
    float3 FinishNormal(float3 n,float3 p,float2 uv,float2 gradient){float3 dx=ddx(p),dy=ddy(p);float2 ux=ddx(uv),uy=ddy(uv);float3 tangent=dx*uy.y-dy*ux.y,bitangent=dy*ux.x-dx*uy.x;float det=ux.x*uy.y-ux.y*uy.x,scale=rsqrt(max(max(dot(tangent,tangent),dot(bitangent,bitangent)),1e-12));return normalize(n-(tangent*gradient.x+bitangent*gradient.y)*scale*sign(det)*(_FibreKind>.5?.030:.00035));}
-   half4 Frag(V i):SV_Target {float3 d=Detail(i.uv),n=FinishNormal(normalize(i.n),i.world,i.uv,d.yz);Light light=GetMainLight();float shadow=MainLightRealtimeShadow(TransformWorldToShadowCoord(i.world));return half4(i.color.rgb*d.x*(SampleSH(n)+light.color*max(0,dot(n,light.direction))*shadow),1);}
+   // Preserve fibre relief while receiving the same local lights as other lit props.
+   half3 FibreLocalLight(Light light,float3 normal){return light.color*(light.distanceAttenuation*light.shadowAttenuation*max(0,dot(normal,light.direction)));}
+   half3 FibreLocal(float3 world,float3 normal,float4 positionCS){half3 result=0;
+   #if defined(_ADDITIONAL_LIGHTS) || defined(_ADDITIONAL_LIGHTS_VERTEX) || USE_CLUSTER_LIGHT_LOOP
+    InputData inputData=(InputData)0;inputData.positionWS=world;inputData.normalizedScreenSpaceUV=GetNormalizedScreenSpaceUV(positionCS);
+    #if USE_CLUSTER_LIGHT_LOOP
+     UNITY_LOOP for(uint lightIndex=0;lightIndex<min(URP_FP_DIRECTIONAL_LIGHTS_COUNT,MAX_VISIBLE_LIGHTS);lightIndex++)result+=FibreLocalLight(GetAdditionalLight(lightIndex,world,half4(1,1,1,1)),normal);
+    #endif
+    uint count=GetAdditionalLightsCount();
+    LIGHT_LOOP_BEGIN(count)
+     result+=FibreLocalLight(GetAdditionalLight(lightIndex,world,half4(1,1,1,1)),normal);
+    LIGHT_LOOP_END
+   #endif
+    return result;
+   }
+   half4 Frag(V i):SV_Target {float3 d=Detail(i.uv),n=FinishNormal(normalize(i.n),i.world,i.uv,d.yz);Light light=GetMainLight();float shadow=MainLightRealtimeShadow(TransformWorldToShadowCoord(i.world));return half4(i.color.rgb*d.x*(SampleSH(n)+light.color*max(0,dot(n,light.direction))*shadow+FibreLocal(i.world,n,i.p)),1);}
    ENDHLSL
   }
   Pass {
