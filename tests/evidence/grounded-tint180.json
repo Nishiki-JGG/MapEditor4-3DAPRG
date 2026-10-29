@@ -1,0 +1,424 @@
+{
+  "baselineCommit": "b7242ef6479b85413a540b3a37a8679a539f6926",
+  "unity": "6000.5.9f1",
+  "urp": "17.5",
+  "colourSpace": "Linear",
+  "rendererMode": 2,
+  "path": "Forward+",
+  "productFilesChanged": [
+    "unity/Assets/MapSharedProps/Editor/GroundedPropsV1.cs"
+  ],
+  "sourceBeforeSha256": "87a5a5640c12463a83762421dd2eb262d26156e75ced89a6cdee263870740454",
+  "sourceAfterSha256": "4f800dd6b1701e3de149c2d524ddcc8baac9e2cd50aadc19539b79ff11765d14",
+  "input": {
+    "projectRelativePath": "Input119/grounded_props.json",
+    "sha256": "32ad40fa709dc923db89fc6263a2b0d3916d2cdfef8050e5da6d286b68a7fecd",
+    "derivation": "Three copies with original tint, [0.55,0.82,0.90], and [1,1,1]; optional surface present/absent/invalid PNG"
+  },
+  "before": {
+    "pass": true,
+    "regressionPassed": false,
+    "lossReproduced": true,
+    "phase": "before3",
+    "rows": [
+      {
+        "kind": "textured",
+        "liveExpected": true,
+        "prefabExpected": false,
+        "sceneExpected": false,
+        "oneMaterial": true,
+        "noColliders": true,
+        "poseMeshStable": true,
+        "noDoubleTint": true,
+        "instances": 3,
+        "meshes": 3,
+        "maxPrefabColourError": 0.6450967192649841,
+        "maxSceneColourError": 0.6450967192649841,
+        "liveTint": [
+          0.8700112700462341,
+          0.8600000143051147,
+          0.8459173440933228
+        ],
+        "imageNames": [
+          "textured-live-main.png",
+          "textured-live-point.png",
+          "textured-live-spot.png",
+          "textured-live-off.png",
+          "textured-prefab-main.png",
+          "textured-prefab-point.png",
+          "textured-prefab-spot.png",
+          "textured-prefab-off.png",
+          "textured-scene-main.png",
+          "textured-scene-point.png",
+          "textured-scene-spot.png",
+          "textured-scene-off.png"
+        ]
+      },
+      {
+        "kind": "legacy",
+        "liveExpected": true,
+        "prefabExpected": false,
+        "sceneExpected": false,
+        "oneMaterial": true,
+        "noColliders": true,
+        "poseMeshStable": true,
+        "noDoubleTint": true,
+        "instances": 3,
+        "meshes": 3,
+        "maxPrefabColourError": 0.6450967192649841,
+        "maxSceneColourError": 0.6450967192649841,
+        "liveTint": [
+          0.8700112700462341,
+          0.8600000143051147,
+          0.8459173440933228
+        ],
+        "imageNames": [
+          "legacy-live-main.png",
+          "legacy-live-point.png",
+          "legacy-live-spot.png",
+          "legacy-live-off.png",
+          "legacy-prefab-main.png",
+          "legacy-prefab-point.png",
+          "legacy-prefab-spot.png",
+          "legacy-prefab-off.png",
+          "legacy-scene-main.png",
+          "legacy-scene-point.png",
+          "legacy-scene-spot.png",
+          "legacy-scene-off.png"
+        ]
+      },
+      {
+        "kind": "badPNG",
+        "liveExpected": true,
+        "prefabExpected": false,
+        "sceneExpected": false,
+        "oneMaterial": true,
+        "noColliders": true,
+        "poseMeshStable": true,
+        "noDoubleTint": true,
+        "instances": 3,
+        "meshes": 3,
+        "maxPrefabColourError": 0.6450967192649841,
+        "maxSceneColourError": 0.6450967192649841,
+        "liveTint": [
+          0.8700112700462341,
+          0.8600000143051147,
+          0.8459173440933228
+        ],
+        "imageNames": [
+          "badPNG-live-main.png",
+          "badPNG-live-point.png",
+          "badPNG-live-spot.png",
+          "badPNG-live-off.png",
+          "badPNG-prefab-main.png",
+          "badPNG-prefab-point.png",
+          "badPNG-prefab-spot.png",
+          "badPNG-prefab-off.png",
+          "badPNG-scene-main.png",
+          "badPNG-scene-point.png",
+          "badPNG-scene-spot.png",
+          "badPNG-scene-off.png"
+        ]
+      }
+    ],
+    "limits": [
+      "Dedicated Editor only; no Player/mobile",
+      "Legacy means original vertex-colour data without optional surface; tint remains required by V1"
+    ]
+  },
+  "after": {
+    "pass": true,
+    "regressionPassed": true,
+    "lossReproduced": false,
+    "phase": "after2",
+    "rows": [
+      {
+        "kind": "textured",
+        "liveExpected": true,
+        "prefabExpected": true,
+        "sceneExpected": true,
+        "oneMaterial": true,
+        "noColliders": true,
+        "poseMeshStable": true,
+        "noDoubleTint": true,
+        "instances": 3,
+        "meshes": 3,
+        "maxPrefabColourError": 0.0,
+        "maxSceneColourError": 0.0,
+        "liveTint": [
+          0.8700112700462341,
+          0.8600000143051147,
+          0.8459173440933228
+        ],
+        "imageNames": [
+          "textured-live-main.png",
+          "textured-live-point.png",
+          "textured-live-spot.png",
+          "textured-live-off.png",
+          "textured-prefab-main.png",
+          "textured-prefab-point.png",
+          "textured-prefab-spot.png",
+          "textured-prefab-off.png",
+          "textured-scene-main.png",
+          "textured-scene-point.png",
+          "textured-scene-spot.png",
+          "textured-scene-off.png"
+        ]
+      },
+      {
+        "kind": "legacy",
+        "liveExpected": true,
+        "prefabExpected": true,
+        "sceneExpected": true,
+        "oneMaterial": true,
+        "noColliders": true,
+        "poseMeshStable": true,
+        "noDoubleTint": true,
+        "instances": 3,
+        "meshes": 3,
+        "maxPrefabColourError": 0.0,
+        "maxSceneColourError": 0.0,
+        "liveTint": [
+          0.8700112700462341,
+          0.8600000143051147,
+          0.8459173440933228
+        ],
+        "imageNames": [
+          "legacy-live-main.png",
+          "legacy-live-point.png",
+          "legacy-live-spot.png",
+          "legacy-live-off.png",
+          "legacy-prefab-main.png",
+          "legacy-prefab-point.png",
+          "legacy-prefab-spot.png",
+          "legacy-prefab-off.png",
+          "legacy-scene-main.png",
+          "legacy-scene-point.png",
+          "legacy-scene-spot.png",
+          "legacy-scene-off.png"
+        ]
+      },
+      {
+        "kind": "badPNG",
+        "liveExpected": true,
+        "prefabExpected": true,
+        "sceneExpected": true,
+        "oneMaterial": true,
+        "noColliders": true,
+        "poseMeshStable": true,
+        "noDoubleTint": true,
+        "instances": 3,
+        "meshes": 3,
+        "maxPrefabColourError": 0.0,
+        "maxSceneColourError": 0.0,
+        "liveTint": [
+          0.8700112700462341,
+          0.8600000143051147,
+          0.8459173440933228
+        ],
+        "imageNames": [
+          "badPNG-live-main.png",
+          "badPNG-live-point.png",
+          "badPNG-live-spot.png",
+          "badPNG-live-off.png",
+          "badPNG-prefab-main.png",
+          "badPNG-prefab-point.png",
+          "badPNG-prefab-spot.png",
+          "badPNG-prefab-off.png",
+          "badPNG-scene-main.png",
+          "badPNG-scene-point.png",
+          "badPNG-scene-spot.png",
+          "badPNG-scene-off.png"
+        ]
+      }
+    ],
+    "limits": [
+      "Dedicated Editor only; no Player/mobile",
+      "Legacy means original vertex-colour data without optional surface; tint remains required by V1"
+    ]
+  },
+  "freshEditor": {
+    "pass": true,
+    "rows": [
+      {
+        "kind": "textured",
+        "prefabExpected": true,
+        "sceneExpected": true,
+        "oneMaterial": true,
+        "noColliders": true,
+        "noDoubleTint": true,
+        "instances": 3,
+        "meshes": 3,
+        "maxPrefabColourError": 0.0,
+        "maxSceneColourError": 0.0
+      },
+      {
+        "kind": "legacy",
+        "prefabExpected": true,
+        "sceneExpected": true,
+        "oneMaterial": true,
+        "noColliders": true,
+        "noDoubleTint": true,
+        "instances": 3,
+        "meshes": 3,
+        "maxPrefabColourError": 0.0,
+        "maxSceneColourError": 0.0
+      },
+      {
+        "kind": "badPNG",
+        "prefabExpected": true,
+        "sceneExpected": true,
+        "oneMaterial": true,
+        "noColliders": true,
+        "noDoubleTint": true,
+        "instances": 3,
+        "meshes": 3,
+        "maxPrefabColourError": 0.0,
+        "maxSceneColourError": 0.0
+      }
+    ],
+    "note": "Live construction and poseMeshStable are not measured in this reload-only run; full checks are in after."
+  },
+  "pixelComparisons": [
+    {
+      "kind": "textured",
+      "lighting": "main",
+      "oldLiveToNewLiveMax8BitDelta": 0,
+      "oldLiveToSavedPrefabMax8BitDelta": 0,
+      "oldLiveToSavedSceneMax8BitDelta": 0
+    },
+    {
+      "kind": "textured",
+      "lighting": "point",
+      "oldLiveToNewLiveMax8BitDelta": 0,
+      "oldLiveToSavedPrefabMax8BitDelta": 0,
+      "oldLiveToSavedSceneMax8BitDelta": 0
+    },
+    {
+      "kind": "textured",
+      "lighting": "spot",
+      "oldLiveToNewLiveMax8BitDelta": 0,
+      "oldLiveToSavedPrefabMax8BitDelta": 0,
+      "oldLiveToSavedSceneMax8BitDelta": 0
+    },
+    {
+      "kind": "textured",
+      "lighting": "off",
+      "oldLiveToNewLiveMax8BitDelta": 0,
+      "oldLiveToSavedPrefabMax8BitDelta": 0,
+      "oldLiveToSavedSceneMax8BitDelta": 0
+    },
+    {
+      "kind": "legacy",
+      "lighting": "main",
+      "oldLiveToNewLiveMax8BitDelta": 0,
+      "oldLiveToSavedPrefabMax8BitDelta": 0,
+      "oldLiveToSavedSceneMax8BitDelta": 0
+    },
+    {
+      "kind": "legacy",
+      "lighting": "point",
+      "oldLiveToNewLiveMax8BitDelta": 0,
+      "oldLiveToSavedPrefabMax8BitDelta": 0,
+      "oldLiveToSavedSceneMax8BitDelta": 0
+    },
+    {
+      "kind": "legacy",
+      "lighting": "spot",
+      "oldLiveToNewLiveMax8BitDelta": 0,
+      "oldLiveToSavedPrefabMax8BitDelta": 0,
+      "oldLiveToSavedSceneMax8BitDelta": 0
+    },
+    {
+      "kind": "legacy",
+      "lighting": "off",
+      "oldLiveToNewLiveMax8BitDelta": 0,
+      "oldLiveToSavedPrefabMax8BitDelta": 0,
+      "oldLiveToSavedSceneMax8BitDelta": 0
+    },
+    {
+      "kind": "badPNG",
+      "lighting": "main",
+      "oldLiveToNewLiveMax8BitDelta": 0,
+      "oldLiveToSavedPrefabMax8BitDelta": 0,
+      "oldLiveToSavedSceneMax8BitDelta": 0
+    },
+    {
+      "kind": "badPNG",
+      "lighting": "point",
+      "oldLiveToNewLiveMax8BitDelta": 0,
+      "oldLiveToSavedPrefabMax8BitDelta": 0,
+      "oldLiveToSavedSceneMax8BitDelta": 0
+    },
+    {
+      "kind": "badPNG",
+      "lighting": "spot",
+      "oldLiveToNewLiveMax8BitDelta": 0,
+      "oldLiveToSavedPrefabMax8BitDelta": 0,
+      "oldLiveToSavedSceneMax8BitDelta": 0
+    },
+    {
+      "kind": "badPNG",
+      "lighting": "off",
+      "oldLiveToNewLiveMax8BitDelta": 0,
+      "oldLiveToSavedPrefabMax8BitDelta": 0,
+      "oldLiveToSavedSceneMax8BitDelta": 0
+    }
+  ],
+  "representativeLocalImages": [
+    {
+      "projectRelativePath": "Evidence180-before3/textured-live-main.png",
+      "bytes": 28206,
+      "sha256": "b13ac647d76a3274b933b9e91a634134043645b232d91340db08d98afb32d9c5"
+    },
+    {
+      "projectRelativePath": "Evidence180-before3/textured-prefab-main.png",
+      "bytes": 28015,
+      "sha256": "e1f16986de18f210e9f63e9002d390b19f2c916e33d523b5de144616a70c3b20"
+    },
+    {
+      "projectRelativePath": "Evidence180-before3/textured-prefab-point.png",
+      "bytes": 26910,
+      "sha256": "0427d1ecde690b88583d897f65b2d30ef120834c8f7892e62cdfdfb35a7157af"
+    },
+    {
+      "projectRelativePath": "Evidence180-before3/textured-scene-spot.png",
+      "bytes": 18062,
+      "sha256": "ed7f1a9dba9f0b57c138cf8255b9b031db24c9be16b552efaaefb301aa504bd9"
+    },
+    {
+      "projectRelativePath": "Evidence180-after2/textured-live-main.png",
+      "bytes": 28206,
+      "sha256": "b13ac647d76a3274b933b9e91a634134043645b232d91340db08d98afb32d9c5"
+    },
+    {
+      "projectRelativePath": "Evidence180-after2/textured-prefab-main.png",
+      "bytes": 28206,
+      "sha256": "b13ac647d76a3274b933b9e91a634134043645b232d91340db08d98afb32d9c5"
+    },
+    {
+      "projectRelativePath": "Evidence180-after2/textured-prefab-point.png",
+      "bytes": 27739,
+      "sha256": "139dec02816cc7004425ee9cddc1b6ca3d9e096895c62f56effca5eb42608e50"
+    },
+    {
+      "projectRelativePath": "Evidence180-after2/textured-scene-spot.png",
+      "bytes": 18106,
+      "sha256": "5c89f93260ee2de4ff3cef54ca8af469e1b4c16510fccb67f4f0754cac8ee15b"
+    }
+  ],
+  "history": [
+    "Initial fallback assertion incorrectly required Texture2D.whiteTexture rather than accepting null default; test corrected.",
+    "Raw tint bake preserved serialization but changed live pixels; rejected. Final bake matches SetColor sRGB-to-linear conversion."
+  ],
+  "limits": [
+    "No Player, mobile or GPU performance test",
+    "Gamma branch reviewed but not rendered; changing project colour space requires reimport",
+    "Forward and vertex additional-light modes not rerun; shader unchanged",
+    "Deterministic offscreen persistence scene, not full gameplay session",
+    "No full 73-prefab rerun; only grounded shells production file changed",
+    "Image files local only; not uploaded or committed",
+    "No push or publication"
+  ],
+  "setColorReference": "https://docs.unity3d.com/ScriptReference/MaterialPropertyBlock.SetColor.html"
+}
