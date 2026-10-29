@@ -1,0 +1,464 @@
+{
+  "baselineCandidate": "e67e1085742239b749eb679fb7133714307c0671",
+  "state": "unpublished-independent-review-pending",
+  "selfScore": [
+    27,
+    17,
+    19,
+    20,
+    8
+  ],
+  "selfTotal": 91,
+  "previousIndependentScore": 90,
+  "productChanges": [
+    "props/minecart-loaded.js: first two fragments only",
+    "index.html: loaded script content key"
+  ],
+  "productHashes": {
+    "props/minecart-loaded.js": "fd316b07809e791671aa0609541852fd48d64808c9a386498a3ee028c2ea6e60",
+    "index.html": "ea3eb79ec6e62bad2c7cd7acabda927df7885c1b7926068d60e0d1564ba7329b"
+  },
+  "results": {
+    "web/loaded183-final/checks.json": {
+      "sha256": "c445e08ffd61062651e7e066c1f5cc574d96d674223d2b7b51ef3e88b5ce9099",
+      "result": {
+        "pass": true,
+        "tests": {
+          "pass": true,
+          "emptyTriangles": 2200,
+          "loadedTriangles": 2440,
+          "cargoTriangles": 240,
+          "cargoVertices": 720,
+          "bounds": [
+            [
+              -0.5254999995231628,
+              -0.02500000037252903,
+              -0.8880000114440918
+            ],
+            [
+              0.5254999995231628,
+              1.1580204963684082,
+              0.8880000114440918
+            ]
+          ]
+        },
+        "save": {
+          "save": true,
+          "collider": true
+        },
+        "oldSave": {
+          "pass": true,
+          "ids": [
+            "mine_rail_straight",
+            "minecart",
+            "mine_cobweb"
+          ]
+        },
+        "shares": [
+          {
+            "instances": 9,
+            "sharedMaterial": true,
+            "meshes": 1,
+            "materials": 1,
+            "textures": 3,
+            "gl": 0,
+            "drawCalls": 5,
+            "triangles": 26970
+          },
+          {
+            "instances": 225,
+            "sharedMaterial": true,
+            "meshes": 1,
+            "materials": 1,
+            "textures": 3,
+            "gl": 0,
+            "drawCalls": 5,
+            "triangles": 554010
+          }
+        ],
+        "extensionBytes": 2201550,
+        "limits": [
+          "No GPU time or mobile execution",
+          "Formal Unity tested separately"
+        ]
+      }
+    },
+    "web/loaded183-final/shape-delta.json": {
+      "sha256": "ba799dc685c2c0c4c54ab28331025790296727fd82296aa8a2c786d43c5edb61",
+      "result": {
+        "pass": true,
+        "onlyFirstTwoFragmentsChanged": true,
+        "otherSevenAndFinesExact": true,
+        "vehicleExact": true,
+        "textureBytesExact": true,
+        "triangles": 2440,
+        "fragmentCount": 9,
+        "previousHeight": 1.1622706651687622,
+        "finalHeight": 1.1580204963684082,
+        "collisionBoxUnchanged": true
+      }
+    },
+    "web/loaded183-input/interaction.json": {
+      "sha256": "ec0a8de40335aa9d321d992dfa724406c41480f20ad4cb85de6e0c523374c9e5",
+      "result": {
+        "pass": true,
+        "placed": {
+          "count": 2,
+          "id": "minecart_loaded",
+          "pose": [
+            0,
+            1.0000001985293068,
+            0,
+            1,
+            0,
+            1,
+            0.14
+          ],
+          "previewY": 0.14,
+          "previewMaterial": "ore-cart-with-spoil"
+        },
+        "scaleMismatchRejected": true,
+        "underground": {
+          "id": "minecart_loaded",
+          "y": 0.14,
+          "terrain": 3.5,
+          "count": 2
+        },
+        "saved": true,
+        "privateHeadless": true,
+        "guiUsed": false
+      }
+    },
+    "unity/Evidence183/checks.json": {
+      "sha256": "dbdb15dcc4616d1c4b59911558550418746c98d187386d92d7e5da567e443691",
+      "result": {
+        "pass": true,
+        "formal74": true,
+        "old73GeometryCollider": true,
+        "bodyUnchanged": true,
+        "saveReinstantiateScene": true,
+        "noLights": true,
+        "triangles": 2440,
+        "assetDirectory": "Assets/MapSharedPropsGenerated/Pilot 11",
+        "player": false
+      }
+    },
+    "unity/Evidence183/load.json": {
+      "sha256": "023f86724fa8775ef03ef2912d8062a0073b083f2cc3cb87294fe8cebcfeb71f",
+      "result": {
+        "gpuMeasured": false,
+        "cpuSubmissionNotFrameGuarantee": true,
+        "rows": [
+          {
+            "id": "minecart",
+            "placed": 9,
+            "visible": 9,
+            "meshes": 1,
+            "materials": 1,
+            "textures": 3,
+            "meshBytes": 978384,
+            "textureBytes": 4022545,
+            "cpuMedianMs": 0.48700000000000004
+          },
+          {
+            "id": "minecart",
+            "placed": 225,
+            "visible": 210,
+            "meshes": 1,
+            "materials": 1,
+            "textures": 3,
+            "meshBytes": 978384,
+            "textureBytes": 4022545,
+            "cpuMedianMs": 0.7272000000000001
+          },
+          {
+            "id": "minecart_loaded",
+            "placed": 9,
+            "visible": 9,
+            "meshes": 1,
+            "materials": 1,
+            "textures": 3,
+            "meshBytes": 1084944,
+            "textureBytes": 8042071,
+            "cpuMedianMs": 0.4016
+          },
+          {
+            "id": "minecart_loaded",
+            "placed": 225,
+            "visible": 210,
+            "meshes": 1,
+            "materials": 1,
+            "textures": 3,
+            "meshBytes": 1084944,
+            "textureBytes": 8042071,
+            "cpuMedianMs": 0.5519000000000001
+          }
+        ]
+      }
+    },
+    "unity/Evidence183/coexist.json": {
+      "sha256": "b59f2fdd51c05c4da7858e880779eb0c1289c92e81f9d7b73069841713c0b327",
+      "result": {
+        "gpuMeasured": false,
+        "rows": [
+          {
+            "placed": 9,
+            "materials": 2,
+            "textureReferences": 6,
+            "textureBytes": 12064616,
+            "textures": [
+              {
+                "name": "e5b811629da6070badcdceb1a4338fd9a992b6d28f44b9f59334c8e3fa6430bd",
+                "path": "Assets/MapSharedAssetCache/e5b811629da6070badcdceb1a4338fd9a992b6d28f44b9f59334c8e3fa6430bd.png",
+                "width": 512,
+                "height": 256,
+                "readable": false,
+                "bytes": 1224334
+              },
+              {
+                "name": "ba5c515a006a074f32fc1b732625e5f5a778a68048aff2943ba8434db8c8a8d5",
+                "path": "Assets/MapSharedAssetCache/ba5c515a006a074f32fc1b732625e5f5a778a68048aff2943ba8434db8c8a8d5.png",
+                "width": 512,
+                "height": 256,
+                "readable": false,
+                "bytes": 1399097
+              },
+              {
+                "name": "mine-cart-normal-117633416819a651a11a3b7d719f3ada26898ad283bcd91e6e2f59357bdcdd75",
+                "path": "Assets/MapSharedAssetCache/mine-cart-normal-117633416819a651a11a3b7d719f3ada26898ad283bcd91e6e2f59357bdcdd75.png",
+                "width": 512,
+                "height": 256,
+                "readable": false,
+                "bytes": 1399114
+              },
+              {
+                "name": "231f3324e5aa72a919871c90279b66ed0724b855666de96c68e2343ecdf731db",
+                "path": "Assets/MapSharedAssetCache/231f3324e5aa72a919871c90279b66ed0724b855666de96c68e2343ecdf731db.png",
+                "width": 512,
+                "height": 512,
+                "readable": false,
+                "bytes": 2447668
+              },
+              {
+                "name": "7b3748af4f94c016151087dc9215abbe6a14d6b2cab2320bd3d0c1300c8bda73",
+                "path": "Assets/MapSharedAssetCache/7b3748af4f94c016151087dc9215abbe6a14d6b2cab2320bd3d0c1300c8bda73.png",
+                "width": 512,
+                "height": 512,
+                "readable": false,
+                "bytes": 2797193
+              },
+              {
+                "name": "mine-cart-normal-1c3563d57c818591831ba0d94bacd9586adf74b3b72e3bd3f9365f54c91d8fef",
+                "path": "Assets/MapSharedAssetCache/mine-cart-normal-1c3563d57c818591831ba0d94bacd9586adf74b3b72e3bd3f9365f54c91d8fef.png",
+                "width": 512,
+                "height": 512,
+                "readable": false,
+                "bytes": 2797210
+              }
+            ]
+          },
+          {
+            "placed": 225,
+            "materials": 2,
+            "textureReferences": 6,
+            "textureBytes": 12064616,
+            "textures": [
+              {
+                "name": "e5b811629da6070badcdceb1a4338fd9a992b6d28f44b9f59334c8e3fa6430bd",
+                "path": "Assets/MapSharedAssetCache/e5b811629da6070badcdceb1a4338fd9a992b6d28f44b9f59334c8e3fa6430bd.png",
+                "width": 512,
+                "height": 256,
+                "readable": false,
+                "bytes": 1224334
+              },
+              {
+                "name": "ba5c515a006a074f32fc1b732625e5f5a778a68048aff2943ba8434db8c8a8d5",
+                "path": "Assets/MapSharedAssetCache/ba5c515a006a074f32fc1b732625e5f5a778a68048aff2943ba8434db8c8a8d5.png",
+                "width": 512,
+                "height": 256,
+                "readable": false,
+                "bytes": 1399097
+              },
+              {
+                "name": "mine-cart-normal-117633416819a651a11a3b7d719f3ada26898ad283bcd91e6e2f59357bdcdd75",
+                "path": "Assets/MapSharedAssetCache/mine-cart-normal-117633416819a651a11a3b7d719f3ada26898ad283bcd91e6e2f59357bdcdd75.png",
+                "width": 512,
+                "height": 256,
+                "readable": false,
+                "bytes": 1399114
+              },
+              {
+                "name": "231f3324e5aa72a919871c90279b66ed0724b855666de96c68e2343ecdf731db",
+                "path": "Assets/MapSharedAssetCache/231f3324e5aa72a919871c90279b66ed0724b855666de96c68e2343ecdf731db.png",
+                "width": 512,
+                "height": 512,
+                "readable": false,
+                "bytes": 2447668
+              },
+              {
+                "name": "7b3748af4f94c016151087dc9215abbe6a14d6b2cab2320bd3d0c1300c8bda73",
+                "path": "Assets/MapSharedAssetCache/7b3748af4f94c016151087dc9215abbe6a14d6b2cab2320bd3d0c1300c8bda73.png",
+                "width": 512,
+                "height": 512,
+                "readable": false,
+                "bytes": 2797193
+              },
+              {
+                "name": "mine-cart-normal-1c3563d57c818591831ba0d94bacd9586adf74b3b72e3bd3f9365f54c91d8fef",
+                "path": "Assets/MapSharedAssetCache/mine-cart-normal-1c3563d57c818591831ba0d94bacd9586adf74b3b72e3bd3f9365f54c91d8fef.png",
+                "width": 512,
+                "height": 512,
+                "readable": false,
+                "bytes": 2797210
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "unity/Evidence183/field.json": {
+      "sha256": "d7559184e0dabd4748df98aa6478a947def5989c079dda98814d955c0b9c6839",
+      "result": {
+        "formalProductTunnel": true,
+        "input": "Input123Mine",
+        "width": 2.4,
+        "height": 2.8,
+        "cart": [
+          12,
+          0.14,
+          10.5
+        ],
+        "existingLights": 2,
+        "originalGameSceneChanged": false
+      }
+    }
+  },
+  "images": {
+    "web/loaded183-final/close-minecart.png": {
+      "sha256": "83a109f6d81a5aac15f9f8c5fe2b5a96d1ace9e383d10d42e2ea928e51c1d294",
+      "bytes": 955978
+    },
+    "web/loaded183-final/close-minecart_loaded.png": {
+      "sha256": "657952cfd9a7766754f478a01f324d587259e8be213fb83c22db36594710896b",
+      "bytes": 1038467
+    },
+    "web/loaded183-final/curve-loaded.png": {
+      "sha256": "dc7d034766f4868db792454171a164d261576ea304c0b2a58c34fc6ac23fe3bb",
+      "bytes": 1098691
+    },
+    "web/loaded183-final/night-minecart.png": {
+      "sha256": "d10b317db313c4ae98b96db54d7e309c543469328c1978cf57a35ea7e4e2ea24",
+      "bytes": 1183388
+    },
+    "web/loaded183-final/night-minecart_loaded.png": {
+      "sha256": "2a00bfdac5c09fdaf26d07b8914d3736009cbdac5295515e16c106bead001d75",
+      "bytes": 1196255
+    },
+    "web/loaded183-final/normal-minecart.png": {
+      "sha256": "7e2fc8d23ee3917369f4d33958b7110dfc7d2f1cb9551603ed37e4443328f45b",
+      "bytes": 1183382
+    },
+    "web/loaded183-final/normal-minecart_loaded.png": {
+      "sha256": "07b4236ca5c926cf14b9039965dfe0abc765c227a38a9e5d1542a4472bdd105c",
+      "bytes": 1196250
+    },
+    "web/loaded183-final/opposite-minecart.png": {
+      "sha256": "8c89486ccc49e7b7d712e5c5587b570ad8c560ab48806d25647f795c9d6f8ae2",
+      "bytes": 1054394
+    },
+    "web/loaded183-final/opposite-minecart_loaded.png": {
+      "sha256": "a6708868ac3964ef4d15f2ad938c994403578ebc03ab1984504895e8b56212cd",
+      "bytes": 1107109
+    },
+    "unity/Evidence183/curve-close-minecart.png": {
+      "sha256": "a5a1ca7e58699a1934f5e4cddec7dd362375598084b8cdb1207f0fbf38aeadcf",
+      "bytes": 250300
+    },
+    "unity/Evidence183/curve-close-minecart_loaded.png": {
+      "sha256": "47e0d26b2cdb84e36a98583131a1a22adc88b7e48d692c7b548fcea0d9a29672",
+      "bytes": 272679
+    },
+    "unity/Evidence183/curve-normal-minecart.png": {
+      "sha256": "b83ad2752b3ab1ae73cc414dd7d7b710039c1882b09e7c8de2dfc406be8d9a80",
+      "bytes": 211344
+    },
+    "unity/Evidence183/curve-normal-minecart_loaded.png": {
+      "sha256": "2ea30fb921891ed046ef5ff2055c86030176f409060739ced647f43e2cbe23d7",
+      "bytes": 218790
+    },
+    "unity/Evidence183/curve-opposite-minecart.png": {
+      "sha256": "702542b4368af89647c7861e5493b53acf0684ca09a7512037bcf6e27f848178",
+      "bytes": 252316
+    },
+    "unity/Evidence183/curve-opposite-minecart_loaded.png": {
+      "sha256": "cfc2dd50f92973bc5a9b37db46de1995c6e13474123d7f6d9f1de16151fccc57",
+      "bytes": 272855
+    },
+    "unity/Evidence183/mine-close-minecart.png": {
+      "sha256": "bf6c189bb8cfd3d8424f55efab87507b47227865b2a51c007f94e033fc64953a",
+      "bytes": 328255
+    },
+    "unity/Evidence183/mine-close-minecart_loaded.png": {
+      "sha256": "953ab419c1d20f8103d95919b8b220ef10065d4d3d4c359fc2547125ac6ff996",
+      "bytes": 379613
+    },
+    "unity/Evidence183/mine-normal-minecart.png": {
+      "sha256": "6f082bbd2b11e4eadc7e60fd2ecbfdcc8b66c2a1265a8193fb0ec7044b2c1a53",
+      "bytes": 124585
+    },
+    "unity/Evidence183/mine-normal-minecart_loaded.png": {
+      "sha256": "8b7dacbf7928c9ae134c95e2beaebe40d75a877e6e52861f3e4c0cfe3e250992",
+      "bytes": 132005
+    },
+    "unity/Evidence183/mine-reverse-minecart.png": {
+      "sha256": "9d450b1a0349ce6b7146b44199bdea0a3f1f451a01c499b37fdfd870d8a919ed",
+      "bytes": 402388
+    },
+    "unity/Evidence183/mine-reverse-minecart_loaded.png": {
+      "sha256": "40aababd6db6e4dae46893ef1f9dcc5dc4dbf781d8dfc6cb9a9a9d89be02680f",
+      "bytes": 471770
+    },
+    "unity/Evidence183/straight-close-minecart.png": {
+      "sha256": "16c090b60cdfd9acfec8654b895d4ca15a685761bb6601434cd649e2230d014c",
+      "bytes": 253659
+    },
+    "unity/Evidence183/straight-close-minecart_loaded.png": {
+      "sha256": "65a7e75456bace934b3f454411a28cf5d0941ea531ccb3ec5dd7ad06a5dd5987",
+      "bytes": 275411
+    },
+    "unity/Evidence183/straight-normal-minecart.png": {
+      "sha256": "29dad5780572b03af179e91a83c8d966be511cc4d579f6faa6414799f341ce42",
+      "bytes": 203012
+    },
+    "unity/Evidence183/straight-normal-minecart_loaded.png": {
+      "sha256": "2dab5066cb1a1d0c16151e300ea77f25e84d7fdc5f0eef5e54f9b2b9c8f451a0",
+      "bytes": 211807
+    },
+    "unity/Evidence183/straight-opposite-minecart.png": {
+      "sha256": "90ddd09ca8b65d9248b827e01b9a22098542c040861b8506e0b2d33023d15e3d",
+      "bytes": 247742
+    },
+    "unity/Evidence183/straight-opposite-minecart_loaded.png": {
+      "sha256": "537e9e3b6be8b36f1ffded2371c595f40cc6e59f88ec1edcc82bfaf285b0c212",
+      "bytes": 268077
+    }
+  },
+  "reusedEvidence": [
+    "182: invalid/missing optional fallback, compact read/import and previous source reader recompiled to generate73",
+    "182: rail drag and unchanged previous empty input path, fixed sample bundle regeneration0"
+  ],
+  "limitations": [
+    "GPU/mobile/Player not executed",
+    "225 per-type load: 210 visible",
+    "Old source was recompiled, not an old binary",
+    "Approx upper6.7cm decorative allowance outside unchanged precise collision; final actual6.3cm",
+    "Full catalog resident total not measured; coexist is distinct referenced texture objects",
+    "Large fragments still simplified polygonal forms and fine-bed texture repeats"
+  ],
+  "payloadSha256": "e2327d9102ad3d24ba8682df2319103cc44cdb2a7d6928bf2e9c197154ef427b",
+  "inputSha256": "8380cebef527ad4294fdd038be4c7677ff2573b7318f6a694c82706b09baa478",
+  "testHashes": {
+    "tests/minecart-load-shape183.cjs": "5367ff420c8fc195291f4f5e613b1ab38782f11e881410258197d729bb600163",
+    "tests/unity/Loaded183Checks.cs": "7fdc9b6611e888c45aad437ee1d5213ee672abc325032f9a73e14d8d62c1aa89"
+  }
+}

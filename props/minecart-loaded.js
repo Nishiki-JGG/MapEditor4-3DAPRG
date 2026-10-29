@@ -17,9 +17,11 @@ window.TDMineCartLoad=(()=>{
   for(let j=0;j<nz;j++)for(let i=0;i<nx;i++){const a=j*(nx+1)+i,b=a+nx+1;ix.push(a,b,a+1,a+1,b,b+1);}
   const bed=new THREE.BufferGeometry();bed.setAttribute('position',new THREE.Float32BufferAttribute(p,3));bed.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));bed.setIndex(ix);add(bed);
   // 角張った破片は少数。押し潰れた楔と板状片を混ぜ、均等な球や宝石にしない。
-  const rocks=[[-.17,-.28,.21,.13,.22,.24],[.19,.09,.17,.105,.23,-.65],[-.19,.30,.18,.085,.15,.95],[.22,-.38,.105,.065,.12,.3],[.03,.46,.12,.055,.10,-.3],[-.30,.02,.085,.052,.11,.7],[.02,-.03,.12,.075,.13,.2],[.31,.39,.065,.045,.09,.1],[-.23,-.51,.075,.045,.075,.4]];
-  rocks.forEach((s,k)=>{const [cx,cz,sx,sy,sz,angle]=s,c=Math.cos(angle),sn=Math.sin(angle),pos=[],top=[],bottom=[],ix=[],cy=level(cx,cz);
+  const rocks=[[-.17,-.28,.175,.18,.18,.24],[.19,.09,.145,.18,.18,-.65],[-.19,.30,.18,.085,.15,.95],[.22,-.38,.105,.065,.12,.3],[.03,.46,.12,.055,.10,-.3],[-.30,.02,.085,.052,.11,.7],[.02,-.03,.12,.075,.13,.2],[.31,.39,.065,.045,.09,.1],[-.23,-.51,.075,.045,.075,.4]];
+  rocks.forEach((s,k)=>{const [cx,cz,sx,sy,sz,angle]=s,c=Math.cos(angle),sn=Math.sin(angle),pos=[],top=[],bottom=[],ix=[],cy=level(cx,cz)-(k<2?.025:0);
    for(let j=0;j<5;j++){const a=j*Math.PI*2/5+.1*Math.sin(k+j*2),rr=.82+.16*Math.sin(k*1.7+j*2.4),x=Math.cos(a)*rr,z=Math.sin(a)*rr;bottom.push([x*1.04,-.48,z*1.04]);top.push([x*.85+.06*Math.sin(k),.5+.29*x-.18*z-(j===k%5?.24:0),z*.90]);}
+   // 大粒2片は上下面を相似にせず、異なる斜面と厚い破断肩を持つ塊にする。
+   if(k<2){const rise=k===0?[.034,.105,.094,.060,.022]:[.068,.036,.098,.108,.072],inset=k===0?[.95,.61,.78,.91,.68]:[.70,.96,.64,.84,.92];for(let j=0;j<5;j++){top[j][0]=bottom[j][0]*inset[j]+(k===0?-.04:.06);top[j][1]=Math.min(rise[j],1.16227-cy)/sy;top[j][2]=bottom[j][2]*(1.54-inset[j])+(k===0?.06:-.04);}}
    for(const [x,y,z]of [...bottom,...top])pos.push(cx+(x*sx*c+z*sz*sn),cy+y*sy,cz+(-x*sx*sn+z*sz*c));
    for(let j=0;j<5;j++){const n=(j+1)%5;ix.push(j,j+5,n,n,j+5,n+5);}for(let j=1;j<4;j++){ix.push(0,j,(j+1));ix.push(5,5+j+1,5+j);}
    const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setIndex(ix);add(g,true,((k%3)-1)*.08,cx,cz,cy);
