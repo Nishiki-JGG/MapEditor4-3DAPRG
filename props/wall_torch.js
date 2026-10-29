@@ -142,7 +142,7 @@
       for (const p of [sparks, smoke]) { const g = p.object.geometry; g.setDrawRange(0, p.count); p.object.material.uniforms.pixelHeight.value = pixelHeight; for (const a of Object.values(g.attributes)) a.needsUpdate = true; }
       metrics.sparks = sparks.count; metrics.smoke = smoke.count; metrics.updateMs = performance.now() - start;
     }
-    function updateLights(lights, props, types, tunnelLamps, center, time, dt, dim, groundHeight) {
+    function updateLights(lights, props, types, tunnelLamps, center, time, dt, dim, groundHeight,baseY) {
       pool = lights;
       if ((lightTimer -= dt) <= 0) {
         lightTimer = .2; const candidates = [];
@@ -150,17 +150,20 @@
           const t = types[p[0]], L = t.light; if (!L) continue;
           const d = Math.hypot(p[1] - center.x, p[2] - center.z); if (d >= 40) continue;
           const torch = t.roomTorch||t.fireEffect, r = torch ? records.find(r => r.p === p) : null;
-          candidates.push({ id: p[8], d, x: p[1], y: r ? r.y + (r.fire.origin[1]+r.fire.height*.4) * p[4] * (p[6] ?? 1) : groundHeight(p[1], p[2]) + L[2] * p[4], z: p[2],
-            p, L, r, color: torch ? sourceColor(S.light.color) : new THREE.Color(L[0]), range: r?r.fire.range:10,
+          const lamp=t.mineLantern?TDMineLantern.lightPose(p,t,baseY(p)):null;
+          candidates.push({ lamp:!!lamp,id: p[8]||"light-"+props.indexOf(p), d, x: lamp?lamp.x:p[1], y: lamp?lamp.y:r ? r.y + (r.fire.origin[1]+r.fire.height*.4) * p[4] * (p[6] ?? 1) : groundHeight(p[1], p[2]) + L[2] * p[4], z: lamp?lamp.z:p[2],
+            p, L, r, color: torch ? sourceColor(S.light.color) : new THREE.Color(L[0]), range: lamp?TDMineLantern.range*p[4]:r?r.fire.range:10,
             base: r?r.fire.power:L[1] * p[4] });
         }
         for (let i = 0; i < tunnelLamps.length; i++) { const p = tunnelLamps[i], d = Math.hypot(p.x - center.x, p.z - center.z); if (d < 40) candidates.push({ id: 'tunnel-' + i, ...p, d, base: 2.4, range: 10, color: new THREE.Color(p.color) }); }
         const current = new Set(lights.map(l => l.userData.torchSlot?.target?.id));
         candidates.sort((a, b) => (a.d - (current.has(a.id) ? 1.5 : 0)) - (b.d - (current.has(b.id) ? 1.5 : 0)));
-        const selected = candidates.slice(0, lights.length), unused = new Map(selected.map(c => [c.id, c]));
+        // 壁面の裏へ漏らさないため、新壁灯は影付き二枠に限定する。
+        const selected=[];let lampCount=0;for(const c of candidates){if(c.lamp&&lampCount>=2)continue;selected.push(c);if(c.lamp)lampCount++;if(selected.length===lights.length)break;}
+        const lamps=selected.filter(c=>c.lamp),unused=new Map(selected.map(c=>[c.id,c]));
         for (const l of lights) { const s = l.userData.torchSlot || (l.userData.torchSlot = { gain: 0, target: null, next: null });
-          if (s.target && unused.has(s.target.id)) { s.next = unused.get(s.target.id); unused.delete(s.target.id); } else s.next = null; }
-        for (const l of lights) { const s = l.userData.torchSlot; if (!s.next) { s.next = unused.values().next().value || null; if (s.next) unused.delete(s.next.id); } }
+          if (s.target && unused.has(s.target.id) && (!!unused.get(s.target.id).lamp === (lights.indexOf(l)<lamps.length))) { s.next = unused.get(s.target.id); unused.delete(s.target.id); } else s.next = null; }
+        for (const l of lights) { const s = l.userData.torchSlot; if (!s.next) { s.next = [...unused.values()].find(c=>!!c.lamp===(lights.indexOf(l)<lamps.length)) || null; if (s.next) unused.delete(s.next.id); } }
       }
       metrics.lights = 0;
       for (let i = 0; i < lights.length; i++) {
@@ -168,11 +171,11 @@
         if (!s) continue;
         if (s.target?.id !== s.next?.id && s.gain > .002) s.gain *= Math.exp(-Math.max(0, dt) * 14);
         else { s.target = s.next; s.gain = lerp(s.gain, s.target ? 1 : 0, 1 - Math.exp(-Math.max(0, dt) * 7)); }
-        const c = s.target; if (!c) { l.intensity = 0; continue; }
+        const c = s.target; l.castShadow=!!c?.lamp&&i<2;l.shadow.mapSize.set(256,256);l.shadow.bias=-.0003;l.shadow.normalBias=.015; if (!c) { l.intensity = 0; continue; }
         // 通常の灯具の高さは呼出側が供給する。固定支点の松明だけ原本の高さを使用。
         l.position.set(c.x, c.y, c.z); l.color.copy(c.color); l.distance = c.range; l.decay = c.r ? 2 : 1.7;
-        const f = c.r ? 1 - S.flicker.amount + 2 * S.flicker.amount * flicker(time, c.r.phase) : .85 + .15 * Math.sin(time * 9 + i * 2.1);
-        l.intensity = c.base * f * s.gain * (1 - .5 * dim); l.userData.base = c.base;
+        const f = c.lamp ? .93+.07*Math.sin(time*9+TDMineLantern.phase(c.id)*Math.PI*2) : c.r ? 1 - S.flicker.amount + 2 * S.flicker.amount * flicker(time, c.r.phase) : .85 + .15 * Math.sin(time * 9 + i * 2.1);
+        l.intensity = c.base * f * s.gain * (c.lamp ? 1 : 1 - .5 * dim); l.userData.base = c.base;
         if (l.intensity > .001) metrics.lights++;
       }
     }

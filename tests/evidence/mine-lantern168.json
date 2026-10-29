@@ -1,0 +1,624 @@
+{
+  "baseline": "fdf9c7360235c022eceaeb56e1d9b6d08ee57886",
+  "branch": "codex/mine-wall-lantern-20261029",
+  "candidateProductAndTestFiles": [
+    "app.js",
+    "docs/NIGHT_BATCH168.md",
+    "index.html",
+    "prepared/manifest.js",
+    "props/mine-lantern.js",
+    "props/small-prop-export.js",
+    "props/wall_torch.js",
+    "tests/mine-lantern-input.cjs",
+    "tests/mine-lantern-visual.cjs",
+    "tests/mine-lantern.cjs",
+    "tests/unity/Lantern164Checks.cs",
+    "tests/unity/Lantern165Checks.cs",
+    "tests/unity/Lantern167Checks.cs",
+    "tests/unity/Lantern168BudgetChecks.cs",
+    "unity/Assets/MapSharedProps/Editor/MapSharedPropsBuilder.cs",
+    "unity/Assets/MapSharedProps/Editor/MineLanternV1.cs",
+    "unity/Assets/MapSharedProps/Editor/MineLanternV1.cs.meta",
+    "unity/Assets/MapSharedProps/Editor/SmallPropsV1.cs",
+    "unity/Assets/MapSharedProps/Runtime/RoomTorchBudget.cs",
+    "unity/Assets/MapSharedProps/Runtime/RoomTorchInstance.cs",
+    "unity/Assets/MapTunnels/Runtime/Shaders/MapTunnel.shader"
+  ],
+  "bytes": 720503,
+  "limitedScanFindings": [],
+  "sourceHashes": {
+    "app.js": "a06cb03a56d8594d89438af994ba76494dab862db4fdaf2670644c0a50b5ff68",
+    "index.html": "2da0fc08c9f4f7d1070e8a958db77c30f5a12ed6aefe7b8a7b122f74e1170c8a",
+    "prepared/manifest.js": "fc0465489758c62f5e943db6f5ac436f6e353091ca72bdc9723a00ce9921f56d",
+    "props/mine-lantern.js": "87e69f27a2e15f788ca745588ab732d58a3f191bca074c2accf13fb10cc58602",
+    "props/small-prop-export.js": "1b1864bc95c6333c5d9e747af2afac8593cb1414c9bb9db25401846ecc495ae3",
+    "props/wall_torch.js": "825d25e5f0b8fe27d49f03f329f76ce4b402c99ff4354cfda9b37ee7cc37e5c8",
+    "unity/Assets/MapSharedProps/Editor/MapSharedPropsBuilder.cs": "6c7307e15d4889c1887e97018305c669ec1943766aa824dcb6752a5c4a23b5e5",
+    "unity/Assets/MapSharedProps/Editor/MineLanternV1.cs": "d2f39052548bb3708a253d10999ffe8278d54c214618386d13fd762b0255002b",
+    "unity/Assets/MapSharedProps/Editor/MineLanternV1.cs.meta": "220f472af88facac694fa87162b10e1e7c611210b816ad657ffd63e9e5f8e8bb",
+    "unity/Assets/MapSharedProps/Editor/SmallPropsV1.cs": "310bd8d077bfcd830a59375e0eb115cae5cac2917da65380daf1c4e1077440a2",
+    "unity/Assets/MapSharedProps/Runtime/RoomTorchBudget.cs": "7816dbcdfa55edf4a5e4fee5862674e79ee57fb611320a08c2d5002d5eba349f",
+    "unity/Assets/MapSharedProps/Runtime/RoomTorchInstance.cs": "668ab5556f8d610273f38a17a871c8409f1103fe03ed98e93f6282c455169821",
+    "unity/Assets/MapTunnels/Runtime/Shaders/MapTunnel.shader": "6b10c51126121db637c4b8bc533095f80914189e58d1c78009cff755c9fcabe5"
+  },
+  "native": {
+    "Evidence164/checks.json": {
+      "pass": true,
+      "smallPrefabs": 52,
+      "oldPreserved": 51,
+      "totalFormal": 52,
+      "optionalCases": [
+        "missing",
+        "badVersion",
+        "badIndex",
+        "badPNG",
+        "nonfinite",
+        "oversizeLight",
+        "nonSolid",
+        "customCircle",
+        "customShape"
+      ],
+      "error": "",
+      "saveReinstantiate": true,
+      "sceneReload": true
+    },
+    "Evidence165/checks.json": {
+      "pass": true,
+      "customColliderCases": [
+        "nonSolid",
+        "circle",
+        "shape"
+      ],
+      "invalidOptionalOld51Generated": true,
+      "formal72": true,
+      "caveDecor20": true,
+      "mixedFixtures": 9,
+      "ordinaryBudgetCount": 1,
+      "maxOrdinaryLights": 6,
+      "maxShadowedNewLamps": 2,
+      "mixedSaveReinstantiate": true,
+      "shaderCompileErrors": 0,
+      "player": false
+    },
+    "Evidence165/load.json": {
+      "cases": [
+        {
+          "count": 9,
+          "visible": 9,
+          "materials": 2,
+          "meshes": 2,
+          "textures": 4,
+          "activeLights": 2,
+          "poolLights": 2,
+          "shadowLights": 2,
+          "textureBytes": 1314722,
+          "meshBytes": 526736,
+          "cpuMedianMs": 0.7844
+        },
+        {
+          "count": 225,
+          "visible": 121,
+          "materials": 2,
+          "meshes": 2,
+          "textures": 4,
+          "activeLights": 2,
+          "poolLights": 2,
+          "shadowLights": 2,
+          "textureBytes": 1314722,
+          "meshBytes": 526736,
+          "cpuMedianMs": 1.3348
+        }
+      ],
+      "gpuMeasured": false,
+      "meaning": "CPU render submission only, not total frame performance guarantee"
+    },
+    "Evidence167/checks.json": {
+      "pass": true,
+      "URP175ValidatorNegativeControl": true,
+      "emissionAfterValidation": true,
+      "runtimeOnlyNoLightBake": true,
+      "shaderCompileErrors": 0,
+      "player": false
+    },
+    "Evidence168/budget.json": {
+      "pass": true,
+      "maxActive": 2,
+      "focusTransitions": 7,
+      "orphanLights": 0
+    }
+  },
+  "scope": "Background Editor only; no Player/GPU/mobile/old reader binary run. Evidence164/165 final emission claim superseded by167.",
+  "web": {
+    "contract": {
+      "pass": true,
+      "geometry": {
+        "triangles": 1172,
+        "glass": 24,
+        "bounds": [
+          [
+            -0.125,
+            -0.43799999356269836,
+            7.748603980672897e-10
+          ],
+          [
+            0.13699999451637268,
+            0.4399999976158142,
+            0.5049999952316284
+          ]
+        ],
+        "types": 164
+      },
+      "save": {
+        "error": "準備が完了しました（5.4秒）",
+        "loaded": true,
+        "props": true,
+        "noncollision": true,
+        "collider": true,
+        "glass": 2,
+        "pose": [
+          [
+            0,
+            1.5099999999999998,
+            0.5
+          ],
+          [
+            2.35,
+            1.7824,
+            1
+          ]
+        ]
+      },
+      "load": {
+        "rows": [
+          {
+            "count": 0,
+            "glass": 0,
+            "activeLights": 0,
+            "shadowLights": 0,
+            "calls": 4,
+            "triangles": 5010,
+            "textures": 14,
+            "sharedBody": true,
+            "sharedGlass": true,
+            "cpuSubmissionMedianMs": 0.19999992847442627
+          },
+          {
+            "count": 9,
+            "glass": 9,
+            "activeLights": 2,
+            "shadowLights": 2,
+            "calls": 6,
+            "triangles": 15774,
+            "textures": 14,
+            "sharedBody": true,
+            "sharedGlass": true,
+            "cpuSubmissionMedianMs": 0.7999999523162842
+          },
+          {
+            "count": 225,
+            "glass": 225,
+            "activeLights": 2,
+            "shadowLights": 2,
+            "calls": 6,
+            "triangles": 274110,
+            "textures": 14,
+            "sharedBody": true,
+            "sharedGlass": true,
+            "cpuSubmissionMedianMs": 0.8000000715255737
+          }
+        ],
+        "removedLights": 0,
+        "removedShadow": 0,
+        "gpuMeasured": false
+      },
+      "mixed": {
+        "ordinary": 6,
+        "shadow": 2,
+        "lamps": 4,
+        "torch": 4,
+        "chest": {
+          "ornaments": 8,
+          "motes": 108,
+          "rays": 0,
+          "rims": 0,
+          "slots": 108,
+          "disposed": 0,
+          "activeLights": 0,
+          "lightCapacity": 8,
+          "drawObjects": 3,
+          "capacity": 128,
+          "sanctumChests": 4,
+          "sanctumMotes": 144,
+          "sanctumActiveLights": 0,
+          "sanctumLightCapacity": 6,
+          "sanctumFxCapacity": 256
+        }
+      },
+      "oldExportUnchanged": "Native51 mesh/Collider checks; previous full export retained",
+      "extensionBytes": 607018,
+      "errors": []
+    },
+    "input": {
+      "rows": [
+        {
+          "preview": {
+            "scale": 1.05,
+            "y": 1.65,
+            "angle": 0.2617993877991494,
+            "id": "mine_wall_lantern"
+          },
+          "placed": {
+            "n": 1,
+            "id": "mine_wall_lantern",
+            "y": 1.65,
+            "scale": 1.05,
+            "angle": 0.2617993877991494
+          },
+          "restored": {
+            "ok": true,
+            "same": true,
+            "glass": 1
+          }
+        }
+      ],
+      "errors": []
+    },
+    "rail": {
+      "pass": true,
+      "pure": [
+        "three straights",
+        "replace provisional tail with -1 turn",
+        "actual mesh port -1",
+        "actual mesh port -1",
+        "actual mesh port -1",
+        "actual mesh port -1",
+        "actual mesh port -1",
+        "actual mesh port -1",
+        "continuous -1 1",
+        "continuous -1 2",
+        "replace provisional tail with 1 turn",
+        "actual mesh port 1",
+        "actual mesh port 1",
+        "actual mesh port 1",
+        "actual mesh port 1",
+        "actual mesh port 1",
+        "actual mesh port 1",
+        "continuous 1 1",
+        "continuous 1 2",
+        "two successive bends",
+        "four curves closed loop",
+        "closed loop stable on pointer release",
+        "retract to earlier endpoint",
+        "existing start sets outward tangent",
+        "finish at matching existing port",
+        "perpendicular end rejected",
+        "end scale mismatch rejected",
+        "end height mismatch rejected",
+        "duplicate/interior overlap rejected",
+        "occupied start rejected",
+        "uneven ground rejected",
+        "impossible short sideways move rejected",
+        "scale and QE heading",
+        "bounded stroke",
+        "map bounds rejected",
+        "225 existing rail scene"
+      ],
+      "final": [
+        [
+          136,
+          2.184924952075562e-08,
+          -1.5200453340469267e-07,
+          0,
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          136,
+          2.184924952075562e-08,
+          1.9999998479954666,
+          0,
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          136,
+          2.184924952075562e-08,
+          3.9999998479954666,
+          0,
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          137,
+          2.184924952075562e-08,
+          5.999999847995467,
+          0,
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          136,
+          2.0000000218492495,
+          7.999999847995467,
+          1.5707963267948966,
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          136,
+          4.0000000218492495,
+          7.999999847995467,
+          1.5707963267948966,
+          1,
+          0,
+          1,
+          0
+        ]
+      ],
+      "reload": {
+        "success": true,
+        "equal": true,
+        "count": 6
+      },
+      "cancelModes": [
+        "escape",
+        "cancel",
+        "blur",
+        "type",
+        "tool",
+        "mode",
+        "capture"
+      ],
+      "oneStrokeOneUndo": true,
+      "dragScaleHeadingLocked": true,
+      "ordinaryPropUnchanged": true,
+      "undergroundFloor": true,
+      "timing": {
+        "existing": 225,
+        "maxStroke": 64,
+        "updateMedianMs": 0.5,
+        "updateMaxMs": 0.9000000953674316,
+        "gpuMeasured": false
+      },
+      "errors": [],
+      "privateHeadless": true,
+      "gui": false
+    },
+    "railBoundary": {
+      "pass": true,
+      "cases": [
+        {
+          "name": "touch curve preview equals committed geometry and pose",
+          "pass": true,
+          "before": {
+            "geometryMatches": true,
+            "position": [
+              7.370881949242403e-08,
+              0,
+              -2.7849011985381367e-09
+            ],
+            "rotation": 1.5707963267948966,
+            "scale": 1,
+            "visible": true
+          },
+          "placed": [
+            {
+              "id": "mine_rail_curve",
+              "position": [
+                7.370881949242403e-08,
+                0,
+                -2.7849011985381367e-09
+              ],
+              "rotation": 1.5707963267948966,
+              "scale": 1
+            }
+          ]
+        },
+        {
+          "name": "left + right chord cancels and hands off camera",
+          "pass": true,
+          "canceled": true,
+          "cameraMoved": true,
+          "stoppedAfterButtonRelease": true,
+          "count": 0,
+          "onlyFirstDown": true,
+          "trace": [
+            {
+              "type": "pointermove",
+              "button": -1,
+              "buttons": 0,
+              "pointerType": "mouse"
+            },
+            {
+              "type": "pointerdown",
+              "button": 0,
+              "buttons": 1,
+              "pointerType": "mouse"
+            },
+            {
+              "type": "pointermove",
+              "button": -1,
+              "buttons": 1,
+              "pointerType": "mouse"
+            },
+            {
+              "type": "pointermove",
+              "button": 2,
+              "buttons": 3,
+              "pointerType": "mouse"
+            },
+            {
+              "type": "pointermove",
+              "button": -1,
+              "buttons": 3,
+              "pointerType": "mouse"
+            },
+            {
+              "type": "pointermove",
+              "button": 2,
+              "buttons": 1,
+              "pointerType": "mouse"
+            },
+            {
+              "type": "pointermove",
+              "button": -1,
+              "buttons": 1,
+              "pointerType": "mouse"
+            },
+            {
+              "type": "pointerup",
+              "button": 0,
+              "buttons": 0,
+              "pointerType": "mouse"
+            }
+          ]
+        },
+        {
+          "name": "left + middle chord cancels and hands off camera",
+          "pass": true,
+          "canceled": true,
+          "cameraMoved": true,
+          "stoppedAfterButtonRelease": true,
+          "count": 0,
+          "onlyFirstDown": true,
+          "trace": [
+            {
+              "type": "pointermove",
+              "button": -1,
+              "buttons": 0,
+              "pointerType": "mouse"
+            },
+            {
+              "type": "pointerdown",
+              "button": 0,
+              "buttons": 1,
+              "pointerType": "mouse"
+            },
+            {
+              "type": "pointermove",
+              "button": -1,
+              "buttons": 1,
+              "pointerType": "mouse"
+            },
+            {
+              "type": "pointermove",
+              "button": 1,
+              "buttons": 5,
+              "pointerType": "mouse"
+            },
+            {
+              "type": "pointermove",
+              "button": -1,
+              "buttons": 5,
+              "pointerType": "mouse"
+            },
+            {
+              "type": "pointermove",
+              "button": 1,
+              "buttons": 1,
+              "pointerType": "mouse"
+            },
+            {
+              "type": "pointermove",
+              "button": -1,
+              "buttons": 1,
+              "pointerType": "mouse"
+            },
+            {
+              "type": "pointerup",
+              "button": 0,
+              "buttons": 0,
+              "pointerType": "mouse"
+            }
+          ]
+        },
+        {
+          "name": "stationary pointer with WASD movement cancels pending rails",
+          "pass": true,
+          "motion": {
+            "active": false,
+            "target": [
+              -1.4813185282075498,
+              0,
+              -2.058090119500677
+            ],
+            "previewCount": 0
+          },
+          "count": 0
+        }
+      ],
+      "errors": [],
+      "privateHeadless": true,
+      "gui": false
+    },
+    "cache": {
+      "pass": true,
+      "rows": [
+        {
+          "kind": "sample",
+          "keyMatches": true,
+          "profileMatches": true
+        },
+        {
+          "kind": "sample2",
+          "keyMatches": true,
+          "profileMatches": true
+        }
+      ],
+      "offlineFile": {
+        "status": "ready",
+        "error": null
+      },
+      "bundlesByteIdentical": true,
+      "entriesIdentical": true,
+      "fixedRockRegenerated": 0
+    }
+  },
+  "localImageSha256": {
+    "Evidence167/studio-close.png": "1ef6204b5305f92e71af78d964ea9b55241bb1bc0c2d2bcaf384780f757f9043",
+    "Evidence167/studio-opposite.png": "83748fd3367f895e14306c6883c86b9fe7cc4741cbf24276691fa8d1016874ac",
+    "Evidence167/studio-light-off.png": "309cfdcd690499a53ffb5753ffbf9ca0a9e9f4f1ac5a76df092e08e094d012eb",
+    "Evidence167/studio-back.png": "6fbdc1227828d1f93de774aed58372b5968f29485a81d108e18109c45c2899a4",
+    "Evidence167/mine-normal-off.png": "bea64502477e8aeefa7cd5c0c92bc803b85e496752a84cef9dcf0acca8a158a0",
+    "Evidence167/mine-normal-on.png": "d0ac24bc74220c8404eb98089356021142260ae63955a0e92ef1793811a015e7",
+    "Evidence167/mine-close.png": "4d622ae8af5a26ef08d73cef5be0daa1f9190a0741379c5ba4720f7d3353aa76",
+    "Evidence167/mine-reverse.png": "84bede84bc442a4ddc947d577dd76ebefe00cdf5092675536a40ec823f0b7d53",
+    "Evidence167/mine-time-0.png": "1a12d22bc6f669590889aca22df5e9f4c9f1deb515d36010c03ac5693dc46643",
+    "Evidence167/mine-time-1.png": "d0ac24bc74220c8404eb98089356021142260ae63955a0e92ef1793811a015e7",
+    "Evidence167/mine-time-2.png": "46e52e67dab1c395f0b63039f9fa3f3cd40ffd2410405e51e0fd4a139fe64efa",
+    "Evidence167Cave/dark-before-normal.png": "a48839114dab25fd92f093ed11ab2dc2af1be530cf40c142fe9b820b1bf58c8a",
+    "Evidence167Cave/dark-normal.png": "85429ca3087b321c15f25e17ee7ae5594fc6e068b19aecb166340bd5c5bb2620",
+    "Evidence167Cave/dark-close.png": "6ecf3c8db86397505df4b76880bac38efd5d545f03b1814358a879fb28010764",
+    "Evidence167Cave/lit-normal.png": "d520ce334ae8e0c5cccae4ec0b723d257b07f401258b17aed4d2232d03f9ad04",
+    "lantern167-visual/close.png": "fa2b08cc4cc5b14020d8afba8a940e8729a14208b47ceb9cc15cc7f0866c2a55",
+    "lantern167-visual/side.png": "9ea2dd5dca2b072270355af668b8d388683009aba51ba3d3d2e83b83ef83b246",
+    "lantern167-visual/normal.png": "d118821ed27653698a91857e0edb7a970518186b9d02852b56c0d047e0da186e",
+    "lantern167-visual/dark-close.png": "be7aae0c1abc3049348f4e2385d9d0fcae8a4eaa9e9f1bfccabe94b10a9a2b13",
+    "lantern167-visual/dark-normal.png": "dc81925db0838068007c2cc5a1ee226971c0dcdfdefa50108577b7a6ce31526c",
+    "lantern167-visual/back.png": "4812aa47051cfad5eaf5df457c2515dbf3d9067f57680ed5776348411c6bc4da"
+  },
+  "selfScore": {
+    "appearance": 27,
+    "material": 17,
+    "structure": 18,
+    "webUnity": 20,
+    "cost": 9,
+    "total": 91,
+    "independentReviewPending": true
+  },
+  "knownTestFailuresResolved": [
+    "Web initial oversized simultaneous JSON allocation: replaced by small sequential extension export, no memory-limit change",
+    "Input harness searched generic opacity .6; corrected to lantern preview .65, product unchanged",
+    "URP deferred validator removed emission with flagsNone; final flagsBakedEmissive tested, no bake executed"
+  ]
+}

@@ -185,7 +185,12 @@ public static class MapSharedPropsBuilder {
    int grounded=GroundedPropsV1.Build(exportDirectory,r.assetDirectory,r.root.transform,shader);r.placed+=grounded;r.skipped-=grounded;int small=SmallPropsV1.Build(exportDirectory,r.assetDirectory,r.root.transform,shader,r.prefabs,externalPrefabs);r.placed+=small;r.skipped-=small;
     var torches=RoomTorchBuilder.Build(exportDirectory,r.root.transform);if(torches!=null){r.placed+=torches.Fixtures.Length;r.skipped-=torches.Fixtures.Length;}
     int fire=FirePropsBuilder.Build(exportDirectory,r.assetDirectory,r.root.transform,shader);r.placed+=fire;r.skipped-=fire;
-    AssetDatabase.SaveAssets(); return r;
+    // 壁灯と既存松明を同じ六灯枠へ統合。宝箱の独立した照明枠は変更しない。
+   var budgets=r.root.GetComponentsInChildren<MapSharedProps.RoomTorchBudget>();
+   if(budgets.Length>1 && r.root.GetComponentsInChildren<MapSharedProps.RoomTorchInstance>().Any(f=>f.IsPooledLamp)){
+    var fixtures=budgets.SelectMany(b=>b.Fixtures).Distinct().ToArray();for(int i=1;i<budgets.Length;i++)UnityEngine.Object.DestroyImmediate(budgets[i]);budgets[0].Configure(fixtures);
+   }
+   AssetDatabase.SaveAssets(); return r;
   } catch (Exception failure) {
    Debug.LogException(failure);
    if (r.root != null) UnityEngine.Object.DestroyImmediate(r.root);

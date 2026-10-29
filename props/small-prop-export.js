@@ -13,6 +13,7 @@ window.TDSmallPropExport=(()=>{
   if(window.TDMineRails)data.mineRailsV1=TDMineRails.export(types);
   if(window.TDMineCutRock)data.mineCutRockV1=TDMineCutRock.export(types);
   if(window.TDMineSpoil)data.mineSpoilV1=TDMineSpoil.export(types);
+  if(window.TDMineLantern)data.mineLanternV1=TDMineLantern.export(types);
   if(window.TDMineCollapse)data.mineCollapseV1=TDMineCollapse.export(types);
   if(window.TDMineCart)data.mineCartV1=TDMineCart.export(types);
   data.additionalAssets=types.filter(t=>additionalIds.includes(t.id)&&t.assetKey==='tdj/'+t.id).map(t=>({

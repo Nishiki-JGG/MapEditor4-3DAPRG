@@ -17,6 +17,12 @@ namespace MapSharedProps
         private int[] order = Array.Empty<int>();
         private float[] distances = Array.Empty<float>(), particleFades = Array.Empty<float>();
         private float selectionTimer, cameraTimer;
+        private readonly Light[] pooledLampLights = new Light[MaxLights];
+        public int PooledLampLightCount { get { int n=0; foreach(var light in pooledLampLights)if(light)n++; return n; } }
+        private Light LampLight(int slot) { if(pooledLampLights[slot])return pooledLampLights[slot]; var go=new GameObject("Shared lamp light "+slot); go.hideFlags=HideFlags.DontSave; go.transform.SetParent(transform,false); var light=go.AddComponent<Light>();light.enabled=false;light.renderMode=LightRenderMode.ForcePixel;light.shadowCustomResolution=256;light.shadowBias=.03f;light.shadowNormalBias=.015f;pooledLampLights[slot]=light;return light; }
+        private void OnDisable() { foreach(var light in pooledLampLights)if(light)light.enabled=false; foreach(var f in fixtures)if(f&&f.IsPooledLamp)f.BorrowLight(null); }
+        private void OnDestroy() { foreach(var light in pooledLampLights)if(light){if(Application.isPlaying)Destroy(light.gameObject);else DestroyImmediate(light.gameObject);} }
+        public float TimeOverride {get;set;} = -1f;
         public int ActiveLights { get; private set; }
         public int ActiveEmitters { get; private set; }
         public RoomTorchInstance[] Fixtures => fixtures;
@@ -30,6 +36,7 @@ namespace MapSharedProps
         private void OnEnable() => ResetBudget();
         private void ResetBudget()
         {
+            foreach(var light in pooledLampLights)if(light)light.enabled=false;
             order = new int[fixtures.Length]; distances = new float[fixtures.Length]; particleFades = new float[fixtures.Length];
             Array.Clear(slots, 0, slots.Length); Array.Clear(targets, 0, targets.Length); Array.Clear(gains, 0, gains.Length);
             for (int i = 0; i < fixtures.Length; i++) { order[i] = i; if (fixtures[i] != null && fixtures[i].SourceLight != null) fixtures[i].SourceLight.enabled = false; }
@@ -49,7 +56,7 @@ namespace MapSharedProps
             ActiveEmitters = 0;
             for (int i = 0; i < fixtures.Length; i++)
             {
-                var fixture = fixtures[i]; if (fixture == null) { distances[i] = float.PositiveInfinity; continue; }
+                var fixture = fixtures[i]; if (fixture == null || (fixture.IsPooledLamp && !fixture.isActiveAndEnabled)) { distances[i] = float.PositiveInfinity; continue; }
                 Vector3 delta = fixture.transform.position - center; distances[i] = new Vector2(delta.x, delta.z).magnitude;
                 float target = 1f - Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((distances[i] - 18f) / 14f));
                 particleFades[i] = Mathf.Lerp(particleFades[i], target, 1f - Mathf.Exp(-Mathf.Max(0f, dt) * 5f));
@@ -62,18 +69,12 @@ namespace MapSharedProps
                 for (int i = 0; i < order.Length; i++) order[i] = i;
                 Array.Sort(order, (a, b) => Score(a).CompareTo(Score(b)));
                 Array.Clear(targets, 0, targets.Length);
-                int count = Mathf.Min(MaxLights, order.Length);
-                for (int i = 0; i < count; i++)
-                {
-                    int index = order[i]; if (distances[index] >= 40f || fixtures[index] == null) continue;
-                    int slot = Array.IndexOf(slots, fixtures[index]);
-                    if (slot >= 0) targets[slot] = fixtures[index];
-                }
-                for (int i = 0; i < count; i++)
-                {
-                    int index = order[i]; if (distances[index] >= 40f || fixtures[index] == null || Array.IndexOf(targets, fixtures[index]) >= 0) continue;
-                    int empty = Array.IndexOf(targets, null); if (empty >= 0) targets[empty] = fixtures[index];
-                }
+                var selected=new System.Collections.Generic.List<RoomTorchInstance>();int lampCount=0;
+                foreach(int index in order){if(distances[index]>=40f||fixtures[index]==null)continue;var f=fixtures[index];if(f.IsPooledLamp){if(lampCount>=2)continue;lampCount++;}selected.Add(f);if(selected.Count==MaxLights)break;}
+                // 壁灯は先頭の影付き二枠。既存の六灯上限は増やさない。
+                foreach(var f in selected){int slot=Array.IndexOf(slots,f);if(slot>=0&&(f.IsPooledLamp==(slot<lampCount)))targets[slot]=f;}
+                foreach(var f in selected){if(Array.IndexOf(targets,f)>=0)continue;for(int slot=0;slot<MaxLights;slot++)if(targets[slot]==null&&(f.IsPooledLamp==(slot<lampCount))){targets[slot]=f;break;}}
+
             }
             ActiveLights = 0;
             for (int i = 0; i < MaxLights; i++)
@@ -81,12 +82,13 @@ namespace MapSharedProps
                 if (slots[i] != targets[i] && gains[i] > .002f) gains[i] *= Mathf.Exp(-Mathf.Max(0f, dt) * 14f);
                 else
                 {
-                    if (slots[i] != targets[i] && slots[i] != null && slots[i].SourceLight != null) slots[i].SourceLight.enabled = false;
+                    if (slots[i] != targets[i] && slots[i] != null) { if(slots[i].SourceLight != null) slots[i].SourceLight.enabled = false; if(slots[i].IsPooledLamp)slots[i].BorrowLight(null); }
                     slots[i] = targets[i]; gains[i] = Mathf.Lerp(gains[i], slots[i] != null ? 1f : 0f, 1f - Mathf.Exp(-Mathf.Max(0f, dt) * 7f));
                 }
+                if (slots[i] != null && slots[i].IsPooledLamp) { slots[i].BorrowLight(LampLight(i)); slots[i].UpdateLamp(TimeOverride>=0?TimeOverride:Time.time); }
                 if (slots[i] == null || slots[i].SourceLight == null) continue;
                 Light light = slots[i].SourceLight; light.enabled = gains[i] > .001f;
-                light.shadows = i < shadowedLights ? LightShadows.Soft : LightShadows.None;
+                light.shadows = (slots[i].IsPooledLamp || i < shadowedLights) && i < 2 ? LightShadows.Soft : LightShadows.None;
                 // 原本Updateの光量をLateUpdateでフェードする。元の明滅式・色・範囲は保持。
                 light.intensity *= gains[i]; if (light.enabled) ActiveLights++;
             }
