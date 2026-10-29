@@ -1,7 +1,7 @@
 {
-  "release": "smooth-shore-cliff-20261030",
+  "release": "cave-decoration-label-20261030",
   "files": {
-    "app.js": "37ca706ee9ec38651dd596e269313348d17a8a7c36fee7fe61f99e07176d4a50",
+    "app.js": "6b984137161762d43d2b525f5e3b0cf7e700fbfd783bccf8e7d83dbccbf3b8b3",
     "props/chest-presentation.js": "02d054f76798bdf6599156ffb0655085c919b3df733386a47a11f458d3aa5233",
     "props/chest-surface.js": "bf7137cd3c64c736bc50d0dbd2a7b62f4fce1c48db73f6473fc6b9522b24f025",
     "props/chest-relief.js": "2f6d152ccd4c0dfd43d34c9867118d5060704b01ea93cfeafcdf826c479e8f94",
@@ -42,10 +42,10 @@
     "unity/Assets/MapSharedProps/Editor/MineSpoilV1.cs": "18413514bdf454f98e9acc696b736cce2bf9017894b0b901ece2f597573f463e",
     "props/cave-decor.js": "abf74ab0b78918409e80854060e0291cda33f30ed758a7c4d46a29e12ddaead1",
     "props/shared/cave-decor-data.js": "5939db717735b0bc3400f5decf360bc3e6aaec12c75f0abbbb26c616269ba57c",
-    "index.html": "4c631a5e96cb5223bfdccc5f998ca65ad41f2781300966eb36dcd7e9ea9d5955",
-    "prepared/manifest.js": "478492f490ed872568f7f306ded0c1763bb1d2755ae98dd018fcdd99de567df5",
+    "index.html": "7171bee3d348263da51494f0b4c57a2a439a817f1edb5d3cf37f3ddec31a6908",
+    "prepared/manifest.js": "8b9af0e31d1f5e3cdb35c04a8f6f880335bed2338f7d2c8fd654765229f49d49",
     "terrain/cliff-shoulder.js": "71e49d1ee7d85f2164431f9a23bde42d1c07daf472c4f6960124d98c3ee91094"
   },
-  "sourceCandidate": "b2773c257d7f17f80f4b7833fa1a01c38a1485af",
-  "integratedMain": "b2773c257d7f17f80f4b7833fa1a01c38a1485af"
+  "sourceCandidate": "0e2ac4c633f326882f8974c45daf576bf9e96c81",
+  "integratedMain": "0e2ac4c633f326882f8974c45daf576bf9e96c81"
 }

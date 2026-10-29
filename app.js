@@ -4924,7 +4924,7 @@ $('cliffStyle').onchange = e => { pushUndo(); state.cliffStyle = e.target.value;
 // prop types as a folding tree: one group per kind, a group's box checks all its (shown) types
 const placeOpen = new Set();   // groups of the 置く list the user opened
 const PROP_GROUPS = [
-  ['洞窟装飾（自作20種）', TDCaveDecor.ids],
+  ['洞窟装飾', TDCaveDecor.ids],
   ['木・倒木', ['pine', 'oak', 'scotspine', 'birch', 'willow', 'hazel', 'rowan', 'juniper', 'deadtree', 'twisttree', 'palm', 'banana', 'maple', 'cherry', 'zelkova', 'nara', 'sugi', 'hinoki', 'islandash', 'olive', 'eucalyptus', 'dragontree', 'elftree', 'worldtree', 'log', 'stump', 'rootfan', 'driftwood']],
   ['草花・低木', ['shortgrass', 'meadowgrass', 'groundlitter', 'grass', 'meadowwhite', 'meadowyellow', 'meadowpink', 'meadowred', 'meadowviolet', 'bush', 'fern', 'bramble', 'ivy', 'sedge', 'foxglove', 'horsetail', 'dock', 'clover', 'reed', 'flowers', 'mushroom', 'glowmush', 'shelfshroom', 'cactus', 'barrelcactus']],
   ['岩・崖', ['drysoil_curl','drysoil_cup','drysoil_flake','scree', 'rock', 'mossrock', 'pebble', 'cliff', 'cliff_split', 'cliff_shoulder', 'cliff_joint', 'cliff_slab', 'cliff_talus', 'rubblepile', 'stalagmite', 'crystal', 'lavarock', 'obsidian', 'fumarole', 'iceblock', 'icespike']],
