@@ -47,5 +47,5 @@ window.TDMineCart=(()=>{
  function png(bytes){const t=maps(),c=document.createElement('canvas');c.width=t.w;c.height=t.h;c.getContext('2d').putImageData(new ImageData(new Uint8ClampedArray(bytes),t.w,t.h),0,0);return c.toDataURL('image/png').split(',')[1];}
  function exportData(types){const t=maps();return{version:1,units:'metres',axes:'Unity X/Y/Z',railCentres:.84,runningHeight:.14,textures:{width:t.w,height:t.h,colour:png(t.colour),packed:png(t.packed),normal:png(t.normal)},assets:types.filter(t=>t.id===id&&t.assetKey==='tdj/'+id).map(t=>({id,assetKey:t.assetKey,radius:t.r,height:t.height,shape:!!t.shape,groundSink:0,material:'mineCart',...(!t.shape&&t.r>0?{circleColliders:(t.offs||[[0,0]]).map(o=>({center:[o[0],0,-o[1]],radius:t.r,height:t.height}))}:{}),...TDSmallPropExport.geometry(t.geo)}))};}
  TDProps.add({id,name:'鉱石トロッコ',r:.85,collisionGeo:new THREE.BoxGeometry(1.08,1.12,1.78).translate(0,.535,0),height:1.12,groundSink:0,min:2,sc:[1,1],slope:.1,vis:1,anyGround:true,manualOnly:true,shape:true,tags:['cave','ruins'],material:'mineCart',mineCart:true,build:geometry});
- return{id,spec,maps,material,placement,export:exportData};
+ return{id,spec,maps,material,geometry,placement,export:exportData};
 })();

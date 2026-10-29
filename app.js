@@ -1492,7 +1492,7 @@ function touchMat(base) {
 }
 const propMeshes = new Array(PROP.length);
 function createPropMesh(t, capacity) {
-  const source = t.mineCobweb ? TDMineCobweb.material() : t.mineLantern ? TDMineLantern.material() : t.mineCollapse ? TDMineCollapse.material() : t.mineSpoil ? TDMineSpoil.material() : t.mineCutRock ? TDMineCutRock.material() : t.mineCart ? TDMineCart.material() : t.mineRail ? TDMineRails.material() : t.sharedAsset ? TDSharedProps.material(t.sharedAsset) : t.id==='miningtools'?miningToolMat:PROP_MATS[t.material] || propMat;
+  const source = t.mineCobweb ? TDMineCobweb.material() : t.mineLantern ? TDMineLantern.material() : t.mineCollapse ? TDMineCollapse.material() : t.mineSpoil ? TDMineSpoil.material() : t.mineCutRock ? TDMineCutRock.material() : t.mineCartLoad ? TDMineCartLoad.material() : t.mineCart ? TDMineCart.material() : t.mineRail ? TDMineRails.material() : t.sharedAsset ? TDSharedProps.material(t.sharedAsset) : t.id==='miningtools'?miningToolMat:PROP_MATS[t.material] || propMat;
   const base = t.id==='obsidian'?TDObsidianReflection.material(source):TDChestSurface.ids.includes(t.id)?TDChestSurface.material(source,t.id,timeU,hemi) : t.surface ? TDSmallPropSurface.material(source,t.surface) : TDFibreFinish.ids.includes(t.id)?TDFibreFinish.material(source,t.id) : t.material==='chestmetal' ? TDChestSeries.material(t.id,timeU,hemi) : source;
   const m = new THREE.InstancedMesh(t.geo, t.touch ? touchMat(base) : base, capacity);
   if(t.sharedAsset&&TDSharedProps.asset(t.sharedAsset).rootGrounding){m.userData.rootSlope=new THREE.InstancedBufferAttribute(new Float32Array(capacity*2),2);t.geo.setAttribute('rootSlope',m.userData.rootSlope);m.userData.rootTerrain=new THREE.InstancedBufferAttribute(new Float32Array(capacity*4),4);t.geo.setAttribute('rootTerrain',m.userData.rootTerrain);}
@@ -4936,7 +4936,7 @@ const PROP_GROUPS = [
   ['岩・崖', ['drysoil_curl','drysoil_cup','drysoil_flake','scree', 'rock', 'mossrock', 'pebble', 'cliff', 'cliff_split', 'cliff_shoulder', 'cliff_joint', 'cliff_slab', 'cliff_talus', 'rubblepile', 'stalagmite', 'crystal', 'lavarock', 'obsidian', 'fumarole', 'iceblock', 'icespike']],
   ['遺跡・墓', ['column', 'brokencol', 'ruinwall', 'archgate', 'statue', 'statue_seated', 'statue_damaged', 'stele', 'obelisk', 'pyramid', 'gravestone', 'crossgrave', 'mausoleum', 'bones', 'bonepile', 'skullpile', 'magiccircle', 'demonspire']],
   ['海の生き物', ['braincoral', 'staghorn', 'pillarcoral', 'seafan', 'tablecoral', 'roundcoral', 'scallop', 'cowrie', 'shellbits', 'wrack', 'shells']],
-  ['坑道小物', ['mine_rail_straight','mine_rail_curve','mine_rail_end','minecart','mine_cut_rock','mine_spoil','mine_collapsed_wall','mine_wall_lantern','mine_cobweb']],
+  ['坑道小物', ['mine_rail_straight','mine_rail_curve','mine_rail_end','minecart','minecart_loaded','mine_cut_rock','mine_spoil','mine_collapsed_wall','mine_wall_lantern','mine_cobweb']],
   ['建物・道具', ['wall_torch', 'torch', 'brazier', 'lantern', 'banner', 'woodfence', 'ironfence', 'castlewall', 'tower', 'gatehouse', 'lighthouse', 'rowboat', 'haystack', 'miningtools', 'supplycrate', 'treasurechest_worn', 'treasurechest', 'treasurechest_reinforced', 'treasurechest_ornate', 'treasurechest_silver', 'treasurechest_gold', 'treasurechest_rainbow', 'smallbarrel', 'tiedsack', 'coiledrope', 'storagepot', 'brokenpot', 'snowman', 'kamakura']],
 ];
 // [group name, type indices]; types not in PROP_GROUPS (added later) land in "その他"
@@ -5326,7 +5326,7 @@ function updateRing() {
   }
   if (state.tool === 'place') {
     const t = state.variant.place, s0 = (PROP[t].sc[0] + PROP[t].sc[1]) / 2 * state.placeScale;
-    preview.material=PROP[t].mineCobweb?cobwebPreviewMat:PROP[t].mineLantern?lanternPreviewMat:PROP[t].caveDecor?TDSharedProps.material(PROP[t].sharedAsset,true):PROP[t].mineCollapse?collapsePreviewMat:PROP[t].mineSpoil?spoilPreviewMat:PROP[t].mineCutRock?cutRockPreviewMat:PROP[t].mineCart?cartPreviewMat:PROP[t].mineRail?railPreviewMat:standardPreviewMat;
+    preview.material=PROP[t].mineCobweb?cobwebPreviewMat:PROP[t].mineLantern?lanternPreviewMat:PROP[t].caveDecor?TDSharedProps.material(PROP[t].sharedAsset,true):PROP[t].mineCollapse?collapsePreviewMat:PROP[t].mineSpoil?spoilPreviewMat:PROP[t].mineCutRock?cutRockPreviewMat:PROP[t].mineCartLoad?cartLoadPreviewMat:PROP[t].mineCart?cartPreviewMat:PROP[t].mineRail?railPreviewMat:standardPreviewMat;
     if(PROP[t].mineRail&&PROP[t].id!=='mine_rail_end'&&state.mode==='edit'&&placementPointerType!=='touch'){const q=TDMineRailDrag.begin(hit.x,hit.z,state.placeRot*Math.PI/180,s0,props,PROP,floorAt),p=q.start;preview.geometry=PROP[TYPE('mine_rail_straight')].geo;preview.visible=true;preview.position.set(p.x,p.y,p.z);preview.rotation.y=p.rot;preview.scale.setScalar(s0);outline(circle(p.x,p.z,.14),q.startReason?0xff5555:q.snapped?0x68ffb0:0xffd27a,.18);return;}
     if(PROP[t].mineRail){preview.geometry=PROP[t].geo;const p=TDMineRails.placement(PROP[t].id,hit.x,hit.z,state.placeRot*Math.PI/180,s0,props,PROP,floorAt);preview.visible=true;preview.position.set(p.x,p.y,p.z);preview.rotation.y=p.rot;preview.scale.setScalar(s0);outline(circle(p.x,p.z,.14),!p.valid?0xff5555:p.snapped?0x68ffb0:0xffd27a,.18);return;}
     if(PROP[t].caveDecor){preview.visible=true;preview.position.set(hit.x,TDCaveDecor.baseY(PROP[t],heightAt(hit.x,hit.z),s0,+$('caveDecorHeight').value),hit.z);preview.rotation.y=state.placeRot*Math.PI/180;preview.scale.setScalar(s0);return;}
@@ -5368,6 +5368,7 @@ const lanternPreviewMat=TDMineLantern.material().clone();lanternPreviewMat.trans
 const collapsePreviewMat=TDMineCollapse.material().clone();collapsePreviewMat.transparent=true;collapsePreviewMat.opacity=.65;collapsePreviewMat.depthWrite=false;
 const spoilPreviewMat=TDMineSpoil.material().clone();spoilPreviewMat.transparent=true;spoilPreviewMat.opacity=.65;spoilPreviewMat.depthWrite=false;
 const cutRockPreviewMat=TDMineCutRock.material().clone();cutRockPreviewMat.transparent=true;cutRockPreviewMat.opacity=.65;cutRockPreviewMat.depthWrite=false;
+const cartLoadPreviewMat=TDMineCartLoad.material().clone();cartLoadPreviewMat.onBeforeRender=TDMineCartLoad.material().onBeforeRender;cartLoadPreviewMat.transparent=true;cartLoadPreviewMat.opacity=.65;cartLoadPreviewMat.depthWrite=false;
 const cartPreviewMat=TDMineCart.material().clone();cartPreviewMat.onBeforeRender=TDMineCart.material().onBeforeRender;cartPreviewMat.transparent=true;cartPreviewMat.opacity=.65;cartPreviewMat.depthWrite=false;
 preview.visible = false; preview.renderOrder = 9; scene.add(preview);
 const groundPreview=new THREE.Group(),previewGroundPose=[];groundPreview.visible=false;scene.add(groundPreview);
