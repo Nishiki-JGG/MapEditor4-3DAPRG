@@ -1,0 +1,209 @@
+{
+  "pass": true,
+  "candidate": "minecart125, not published",
+  "triangles": 2200,
+  "webChecks": [
+    "straight contact running height",
+    "curve tangent alignment",
+    "full rail head inside tread -1 -0.28",
+    "full rail head inside tread -1 0.28",
+    "full rail head inside tread 1 -0.28",
+    "full rail head inside tread 1 0.28",
+    "short fixed axle curve clearance",
+    "different scale rejected without auto-scale",
+    "rotation scale elevated rail 0",
+    "rotation scale elevated rail 0.37",
+    "rotation scale elevated rail 1.5707963267948966",
+    "rotation scale elevated rail 3.141592653589793",
+    "buffer clearance",
+    "two axles supported across module seam",
+    "unsupported end rejected",
+    "actual mesh tread height -1 -0.28",
+    "actual mesh tread height -1 0.28",
+    "actual mesh tread height 1 -0.28",
+    "actual mesh tread height 1 0.28",
+    "freefloor flange contact",
+    "steep ground rejected",
+    "finite mesh",
+    "bounded triangles",
+    "flange lowest point",
+    "interior floor upward"
+  ],
+  "save": {
+    "props": true,
+    "actualMapCollider": true
+  },
+  "nativeCases": [
+    {
+      "tag": "valid",
+      "savedReload": "passed save-destroy-reinstantiate",
+      "prefabs": 48,
+      "placed": 2,
+      "old47Preserved": true
+    },
+    {
+      "tag": "missing",
+      "savedReload": "not applicable: rejected/missing optional",
+      "prefabs": 47,
+      "placed": 1,
+      "old47Preserved": true
+    },
+    {
+      "tag": "badVersion",
+      "savedReload": "not applicable: rejected/missing optional",
+      "prefabs": 47,
+      "placed": 1,
+      "old47Preserved": true
+    },
+    {
+      "tag": "badIndex",
+      "savedReload": "not applicable: rejected/missing optional",
+      "prefabs": 47,
+      "placed": 1,
+      "old47Preserved": true
+    },
+    {
+      "tag": "badPng",
+      "savedReload": "not applicable: rejected/missing optional",
+      "prefabs": 47,
+      "placed": 1,
+      "old47Preserved": true
+    },
+    {
+      "tag": "nonfinite",
+      "savedReload": "not applicable: rejected/missing optional",
+      "prefabs": 47,
+      "placed": 1,
+      "old47Preserved": true
+    },
+    {
+      "tag": "nonSolid",
+      "savedReload": "passed save-destroy-reinstantiate",
+      "prefabs": 48,
+      "placed": 2,
+      "old47Preserved": true
+    },
+    {
+      "tag": "compact",
+      "savedReload": "passed save-destroy-reinstantiate",
+      "prefabs": 48,
+      "placed": 2,
+      "old47Preserved": true
+    },
+    {
+      "tag": "customCircle",
+      "savedReload": "passed save-destroy-reinstantiate",
+      "prefabs": 48,
+      "placed": 2,
+      "old47Preserved": true
+    },
+    {
+      "tag": "customHeight",
+      "savedReload": "passed save-destroy-reinstantiate",
+      "prefabs": 48,
+      "placed": 2,
+      "old47Preserved": true
+    }
+  ],
+  "load": {
+    "cases": [
+      {
+        "placed": 9,
+        "visible": 9,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 3,
+        "meshBytes": 978384,
+        "textureBytes": 4088752,
+        "cpuRenderMedianMs": 0.6302,
+        "gpuMeasured": false
+      },
+      {
+        "placed": 225,
+        "visible": 225,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 3,
+        "meshBytes": 978384,
+        "textureBytes": 4088752,
+        "cpuRenderMedianMs": 0.8153,
+        "gpuMeasured": false
+      }
+    ],
+    "limitation": "CPU Render submission, not GPU or game-frame guarantee"
+  },
+  "cave": {
+    "seed": 71421,
+    "cells": 648,
+    "torches": 21,
+    "originalSceneSaved": false
+  },
+  "mine": {
+    "pass": true,
+    "source": "Product mine tunnel generator: 14m line, width2.4m, height2.8m, terrain3.5m",
+    "formalTunnelImporter": true,
+    "formalRailPrefabs": 2,
+    "existingLights": 2,
+    "originalGameSceneChanged": false,
+    "player": false,
+    "limitation": "Authored product mine test map, not a claim that this map already exists in the game. Separate actual game cave review is retained."
+  },
+  "fixedSamples": {
+    "pass": true,
+    "rows": [
+      {
+        "kind": "sample",
+        "source": "bundle",
+        "fitCalls": 0,
+        "walkReused": true,
+        "props": 5761,
+        "railCount": 0,
+        "key": "sample:78ae77d0d5ed4f2cc5668f3c348e0109da2065daaee16cd5f30ef2dc17b4682e"
+      },
+      {
+        "kind": "sample2",
+        "source": "bundle",
+        "fitCalls": 0,
+        "walkReused": true,
+        "props": 536,
+        "railCount": 0,
+        "key": "sample:243bfe77ac4e5b15fe81fe6294ed2f73ea1ba60e21ddf8f4127d257446e00f53"
+      }
+    ]
+  },
+  "manifestSourceAudit": [
+    {
+      "file": "app.js",
+      "old": "55fe5fa5a71339b0d60e96e4fd0d50828aba3c9309dafc60bf8fe2e83be13e76",
+      "new": "e977dbad320a87950f4d2383c2d3b96a3043987e45d9b53a080eb81aeab74ebd"
+    },
+    {
+      "file": "index.html",
+      "old": "6284fd17dca567f303490b721c0b62ff60e5b1198052e71e51d8ba240f9b1b18",
+      "new": "9750e8fcecac7a9547132ba2bc6d91e698ef080fc651d58d37b824da6bf57074"
+    }
+  ],
+  "productHashes": {
+    "app.js": "e977dbad320a87950f4d2383c2d3b96a3043987e45d9b53a080eb81aeab74ebd",
+    "index.html": "9750e8fcecac7a9547132ba2bc6d91e698ef080fc651d58d37b824da6bf57074",
+    "props/small-prop-export.js": "745e39eebd333cb619b05c091fc4373d0d797713694ad5974f86a14b853c1a83",
+    "props/minecart.js": "d81638fa5dcfb05644e0ed7d21660968c682402372dde884d21f9fa4c191c336",
+    "unity/Assets/MapSharedProps/Editor/SmallPropsV1.cs": "aaa235c47533316049d241a13042595eb766f1a211ecb36256e3d3ddee785bfb",
+    "unity/Assets/MapSharedProps/Editor/MineCartV1.cs": "36102981b3b524dd1cbbd141f8ad0c12d83057179e9216323f7001002ae52e06"
+  },
+  "selfScore": {
+    "appearance": 27,
+    "material": 17,
+    "structurePlacement": 19,
+    "webFormalUnity": 20,
+    "lightness": 9,
+    "total": 92,
+    "independentReviewPending": true
+  },
+  "limits": [
+    "Player/mobile/GPU not executed",
+    "Old Reader binary not executed; source compatibility only",
+    "Static placement, no vehicle simulation",
+    "No push or upload"
+  ]
+}
