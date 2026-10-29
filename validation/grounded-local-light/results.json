@@ -1,0 +1,218 @@
+{
+  "baseline": "874ed74a7d6e41a9ba8b725621cd9ced1db28683",
+  "unity": "6000.5.9f1",
+  "urp": "17.5.0",
+  "reproduction": {
+    "pass": true,
+    "formalGroundedBuild": true,
+    "instances": 1,
+    "renderers": 1,
+    "localKeyword": false,
+    "pointOffOnPixelsExact": true,
+    "localLightOmissionReproduced": true,
+    "sourceSceneChanged": false
+  },
+  "native": {
+    "pass": true,
+    "worldPoseExact": true,
+    "materialTintExact": true,
+    "sharedTexture": true,
+    "mainAmbientOffExact": true,
+    "cases": 8,
+    "triangles": 1216,
+    "colliders": 0,
+    "unrelatedPrefabs": 44,
+    "rows": [
+      {
+        "mode": 0,
+        "light": "off",
+        "before": 0.0,
+        "after": 0.0
+      },
+      {
+        "mode": 0,
+        "light": "ambient",
+        "before": 0.0039039014372974634,
+        "after": 0.0039039014372974634
+      },
+      {
+        "mode": 0,
+        "light": "main",
+        "before": 0.026007486507296562,
+        "after": 0.026007486507296562
+      },
+      {
+        "mode": 0,
+        "light": "point",
+        "before": 0.0,
+        "after": 0.02461080625653267
+      },
+      {
+        "mode": 0,
+        "light": "far",
+        "before": 0.0,
+        "after": 0.003062368370592594
+      },
+      {
+        "mode": 0,
+        "light": "spot",
+        "before": 0.0,
+        "after": 0.02461080625653267
+      },
+      {
+        "mode": 0,
+        "light": "spotOutside",
+        "before": 0.0,
+        "after": 0.0
+      },
+      {
+        "mode": 0,
+        "light": "pointShadow",
+        "before": 0.0,
+        "after": 0.0
+      },
+      {
+        "mode": 0,
+        "light": "spotShadow",
+        "before": 0.0,
+        "after": 0.0
+      },
+      {
+        "mode": 2,
+        "light": "off",
+        "before": 0.0,
+        "after": 0.0
+      },
+      {
+        "mode": 2,
+        "light": "ambient",
+        "before": 0.0039039014372974634,
+        "after": 0.0039039014372974634
+      },
+      {
+        "mode": 2,
+        "light": "main",
+        "before": 0.026007486507296562,
+        "after": 0.026007486507296562
+      },
+      {
+        "mode": 2,
+        "light": "point",
+        "before": 0.0,
+        "after": 0.02461080625653267
+      },
+      {
+        "mode": 2,
+        "light": "far",
+        "before": 0.0,
+        "after": 0.003062368370592594
+      },
+      {
+        "mode": 2,
+        "light": "spot",
+        "before": 0.0,
+        "after": 0.02461080625653267
+      },
+      {
+        "mode": 2,
+        "light": "spotOutside",
+        "before": 0.0,
+        "after": 0.0
+      },
+      {
+        "mode": 2,
+        "light": "pointShadow",
+        "before": 0.0,
+        "after": 0.0
+      },
+      {
+        "mode": 2,
+        "light": "spotShadow",
+        "before": 0.0,
+        "after": 0.0
+      }
+    ],
+    "limits": [
+      "OldReader95 source path exercised, not old binary; its missing optional texture is expected",
+      "Forward/Forward+ per-pixel modes; vertex mode untested",
+      "Existing unrelated44 assets retained; their builder and product data unchanged",
+      "Player/mobile/full gameplay untested; no GPU timing claim"
+    ]
+  },
+  "web": {
+    "pass": true,
+    "rows": [
+      {
+        "on": false,
+        "mean": 0,
+        "gl": 0
+      },
+      {
+        "on": true,
+        "mean": 0.04644076959324123,
+        "gl": 0
+      }
+    ],
+    "saved": {
+      "save": true,
+      "collision": true
+    },
+    "productWebCodeChanged": false
+  },
+  "actualMap": {
+    "seed": 71421,
+    "cells": 648,
+    "torches": 21,
+    "placement": {
+      "x": -11.25,
+      "y": 0.0,
+      "z": 48.75
+    },
+    "cameraPosition": {
+      "x": -11.25,
+      "y": 10.0,
+      "z": 39.95000076293945
+    },
+    "cameraEuler": {
+      "x": 54.400787353515625,
+      "y": 0.0,
+      "z": 0.0
+    },
+    "fov": 50.0,
+    "nearestTorchDistance": 2.238800048828125,
+    "images": {
+      "normal": {
+        "changedBounds": [
+          790,
+          341,
+          834,
+          365
+        ],
+        "beforeSha256": "2674ee07ef5da284ccb01860fb6291fe2f09c012fe308bc005f3c88c03c9dd3f",
+        "afterSha256": "dbef61458ce91bc8abe098b09383c2dffcc628cc3c4814229ba3fddbdb4111fe"
+      },
+      "close": {
+        "changedBounds": [
+          617,
+          374,
+          1064,
+          676
+        ],
+        "beforeSha256": "569d039c6eaaf4765d211a2cb33a1c6ba95c578b9f96a75a10022057b5425e50",
+        "afterSha256": "b2e553087657138570edf37b0667cf89d22b9e308ec3adef73b702b5e5f55195"
+      }
+    }
+  },
+  "productChange": "Only guarded SMALL_PROP_LOCAL_LIGHTS enable on the grounded-shells material in GroundedPropsV1.Build. Existing SharedPropLit shader reused unchanged.",
+  "geometryColoursNormalsUvTintPoseExact": true,
+  "unrelated44ProductAndShaderFilesUnchanged": true,
+  "noNewGeometryTexturesLights": true,
+  "visualReview": "Warm illumination now follows the existing cave torch on the shell ridges and starfish lobes, retaining darker underside/grooves. Normal-play distance shows a restrained change; the surrounding map pixels are unchanged. Cave is an actual lighting fixture, not a claim of natural shoreline placement.",
+  "testCorrection": "Initial test required the built-in white texture object exactly. Unity serializes it as null using shader default white; assertion was corrected to accept the existing null-or-white fallback. Failure log and original output retained; no product fallback change.",
+  "limits": [
+    "Old reader source path only; no old binary executed",
+    "Forward and Forward+ per-pixel modes only; additional-light vertex mode untested",
+    "No GPU/Player/mobile/full gameplay validation or performance guarantee",
+    "Existing 44 Prefabs retained and product files unchanged; not rebuilt in this one-line grounded importer change"
+  ]
+}

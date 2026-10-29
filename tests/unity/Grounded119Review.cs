@@ -1,0 +1,6 @@
+using System;using System.IO;using UnityEngine;using UnityEditor;
+public static class Grounded119Review{
+ public static void Compare(Camera camera,Vector3 position,string output){Directory.CreateDirectory(output);var before=(GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/grounded119-before.prefab"));var after=(GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/grounded119-after.prefab"));before.transform.position=after.transform.position=position+Vector3.up*.015f;var pos=camera.transform.position;var rot=camera.transform.rotation;
+ foreach(string view in new[]{"normal","close"}){if(view=="close"){camera.transform.position=position+new Vector3(.5f,.8f,-.9f);camera.transform.LookAt(position+new Vector3(.08f,.02f,0));}for(int stage=0;stage<2;stage++){before.SetActive(stage==0);after.SetActive(stage==1);var image=Shared117Review.Image(camera,1600,900);File.WriteAllBytes(Path.Combine(output,view+"-"+(stage==0?"before":"after")+".png"),image.EncodeToPNG());UnityEngine.Object.DestroyImmediate(image);}}camera.transform.SetPositionAndRotation(pos,rot);UnityEngine.Object.DestroyImmediate(before);UnityEngine.Object.DestroyImmediate(after);
+ }
+}
