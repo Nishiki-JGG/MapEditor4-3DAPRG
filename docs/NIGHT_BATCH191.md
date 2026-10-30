@@ -1,0 +1,11 @@
+# クモの巣190の公開準備
+
+独立92点・当該P1/P2なし。製品変更はクモの巣の自作描画だけ。188/189の不採用コード・巨大payload・画像は含めない。
+
+mainの並行更新61e3528を先に取り込み、保存アーカイブ・完成地形・共有メッシュ改善を保持した。クモの巣のpresentation-onlyスクリプトURLとrelease/hashを同期。app本体、保存キー、固定sample2本のkey/profile/bundleは変更なし、固定岩再生成0。最終remoteを再確認して通常pushする。
+
+基点mainのmanifest.sourcesにはapp/保存関連4ファイルの旧hashとmap-archive未登録が残っていた。sourcesはruntime判定に使われず、557fa3d以後の正規化script URL列は同一。現行decoderで2bundleのkey/profile/通行/完成面を独立検査し、さらに実headless読込でsource=bundle・walk再利用・岩再生成0を確認した上で、互換検証済みの記録としてsourcesのみ同期した。bundle本体・entriesを更新してcheckを迂回したものではない。
+
+Unityは更新したWebから再exportし、既存の正式Importerで別出力に再importして置き換える。Importer/shader更新は今回不要。対象1種の正式生成・Prefab/Scene再読込であり全カタログ再生成ではない。細糸の縮小・真横・手動接点、坑道比較の旧松明白芯差、GPU/スマホ/Player未測定を190の記録どおり残す。
+
+配信hash・公開配置/保存/export・サイズ回転・レールドラッグ/入力は公開後ローカル証拠へ記録する。GUI/Player/AV/upload/forcepushなし。

@@ -1,0 +1,474 @@
+{
+  "base": "61e352869bfb9c384ba446987382d36d68014e0a",
+  "productSha256": "abeb8091c733137431044121d3bb4aa6e1449f723c942e83858e9d527c1d5203",
+  "geometryAndExportExceptTextureUnchanged": true,
+  "web": {
+    "pass": true,
+    "desc": {
+      "types": 166,
+      "last": "mine_cobweb",
+      "triangles": 80,
+      "coverage": 0.09424972534179688,
+      "alphaTest": 0.12,
+      "transparent": false,
+      "depthWrite": true,
+      "emissive": [
+        0,
+        0,
+        0
+      ],
+      "castShadow": false
+    },
+    "shots": [
+      {
+        "view": "close",
+        "dist": 3,
+        "yaw": 0.12,
+        "light": 16
+      },
+      {
+        "view": "normal",
+        "dist": 10,
+        "yaw": 0.12,
+        "light": 16
+      },
+      {
+        "view": "far",
+        "dist": 16,
+        "yaw": 0.12,
+        "light": 16
+      },
+      {
+        "view": "opposite",
+        "dist": 3,
+        "yaw": 0.12,
+        "light": 16
+      },
+      {
+        "view": "back",
+        "dist": 3,
+        "yaw": 3.141592653589793,
+        "light": 16
+      },
+      {
+        "view": "dark",
+        "dist": 3,
+        "yaw": 0.12,
+        "light": 2
+      },
+      {
+        "view": "unlit",
+        "dist": 3,
+        "yaw": 0.12,
+        "light": 0
+      },
+      {
+        "view": "edge",
+        "dist": 3,
+        "yaw": 1.35,
+        "light": 16
+      },
+      {
+        "view": "overlap",
+        "dist": 3,
+        "yaw": 0.12,
+        "light": 16
+      }
+    ],
+    "saved": {
+      "loaded": true,
+      "equal": true,
+      "noncollision": true,
+      "collidersSame": true
+    },
+    "exported": {
+      "otherHash": "1f1fb4db82db36b9c92a2d1d4a0d961cf022cac559cb756ea9cd52fa4bd7600a",
+      "newOptional": true,
+      "files": [
+        {
+          "name": "props.csv",
+          "bytes": 134
+        },
+        {
+          "name": "asset_catalog.json",
+          "bytes": 65125
+        },
+        {
+          "name": "asset_bindings.json",
+          "bytes": 20272
+        },
+        {
+          "name": "small_props.json",
+          "bytes": 42302956
+        }
+      ]
+    },
+    "load": [
+      {
+        "count": 0,
+        "calls": 4,
+        "triangles": 5010,
+        "textures": 9,
+        "shared": true,
+        "lights": 0
+      },
+      {
+        "count": 9,
+        "calls": 5,
+        "triangles": 5730,
+        "textures": 9,
+        "shared": true,
+        "lights": 0
+      },
+      {
+        "count": 225,
+        "calls": 5,
+        "triangles": 23010,
+        "textures": 9,
+        "shared": true,
+        "lights": 0
+      }
+    ],
+    "errors": [],
+    "gpuMeasured": false
+  },
+  "baselineCoverage": 0.10112380981445312,
+  "unity": {
+    "pass": true,
+    "formalTargetPrefab": true,
+    "geometryUVNormalsColoursUnchanged": true,
+    "triangles": 80,
+    "textures": 1,
+    "prefabSceneReload": true,
+    "noncollision": true,
+    "sameCameraBeforeAfter": true,
+    "targetOnlyRegenerated": true,
+    "player": false
+  },
+  "unityLoadBefore": {
+    "gpuMeasured": false,
+    "cpuIncludesRenderTextureReadback": true,
+    "rows": [
+      {
+        "count": 9,
+        "visible": 9,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 1,
+        "lights": 0,
+        "textureBytes": 2797193,
+        "meshBytes": 11184,
+        "cpuMedianMs": 5.6013
+      },
+      {
+        "count": 225,
+        "visible": 129,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 1,
+        "lights": 0,
+        "textureBytes": 2797193,
+        "meshBytes": 11184,
+        "cpuMedianMs": 5.6869000000000005
+      }
+    ]
+  },
+  "unityLoadAfter": {
+    "gpuMeasured": false,
+    "cpuIncludesRenderTextureReadback": true,
+    "rows": [
+      {
+        "count": 9,
+        "visible": 9,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 1,
+        "lights": 0,
+        "textureBytes": 2797193,
+        "meshBytes": 11184,
+        "cpuMedianMs": 4.7263
+      },
+      {
+        "count": 225,
+        "visible": 129,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 1,
+        "lights": 0,
+        "textureBytes": 2797193,
+        "meshBytes": 11184,
+        "cpuMedianMs": 5.2271
+      }
+    ]
+  },
+  "priorTestsReused": "177/178 optional missing/bad PNG, arbitrary collider, old-source reader; importer/schema/mesh unchanged",
+  "scope": "one formal target regenerated, not all catalogue Prefabs",
+  "rejected": {
+    "188": "independent89; polygonal cells, weaker normal-distance capture region",
+    "189": "self-rejected at Web: dense single knot; no Unity run"
+  },
+  "limitations": [
+    "GPU/mobile/Player not measured",
+    "225 Unity placements:129 visible",
+    "CPU includes RenderTexture readback, not production frame time",
+    "manual mounting points; edge-on thin; close-up stylised curved cells remain",
+    "Mine-view legacy torch white core differs despite time-freeze attempt; not a whole-screen identical-lighting claim"
+  ],
+  "images": {
+    "before/mine-absent.png": "094fdab75d707c525c36a209e0b58518026af5d7ac2d82facb5bff26b94a55e2",
+    "before/mine-close.png": "03d8d4bd7ceff2b8200109db9b1f574ecb66d8276c4428a05ad5060de90e2f4f",
+    "before/mine-dark.png": "41a3bd48ec1f337a0f0a7c3f0a4d4f34b66fc7978e7ff497e0abf5501f7c8843",
+    "before/mine-normal.png": "7fe8e2583b8456ce90b415a097744d3a06bf2de86a277bd8645aa2af0ed8834f",
+    "before/mine-reverse.png": "e7765fb248d77842297be02e2a20a99b7106adef4c27c0bf6cf8e7c214a8f841",
+    "before/mine-wall-oblique.png": "4bd21e03ec3839511243ca44729027f7cec56c45473cab18e7ad794ab473646c",
+    "before/normal-motion0.png": "1644d9d302f874782ae5b41cae66cd1f1017380d80d828b2fd8e57437a691ae2",
+    "before/normal-motion1.png": "4ca6e1d5efdb1c856fb1f4dfe4e61f85e5b24ca56c8fb1ec95fca453505926da",
+    "before/normal-motion2.png": "a3b1059f22df1476fb85035783566e88a663824462ab594ba69adfcbf615a6dc",
+    "before/overlap--1.png": "82eef2ef15ffd734797e84dedab3f9c0b8bb923a90fb64198e366c73df797ae0",
+    "before/overlap-0.png": "6af8ac96a0e8be47ebbeb8037a0ec2aaf781fe5f664be7bc8ab842e344b56935",
+    "before/overlap-1.png": "e3135081d5febc92ee8804ec3581e3143727dc6ddce10c9f7f2e409e02c4fb6c",
+    "before/studio-back.png": "42b8e5d4800242908cca87ea047b1015d32cf83ce255b1889a0e2dbcd0a7b425",
+    "before/studio-close.png": "e085c8aa16cce93b3fda7cd30319937f8a4ed1c3bb8e5320e18685f59d7abfe5",
+    "before/studio-dark.png": "8a31814e7cdba720391940e4cf56bbc961ee44819c2d6df8b4caa6f6e1c5ccf9",
+    "before/studio-edge.png": "7706ee6b431056252829e51db47b9c290442f1e578e977cc54cd0be6385b2a7a",
+    "before/studio-far.png": "17b8fefdea82671e0fa66fb8845e8150a59cc248ffbcd30c1570fd2d2cf75ec3",
+    "before/studio-move0.png": "e085c8aa16cce93b3fda7cd30319937f8a4ed1c3bb8e5320e18685f59d7abfe5",
+    "before/studio-move1.png": "a310850b327366c3ea36e3756254ba954466cb25937b6685e66a71a2a7b65463",
+    "before/studio-move2.png": "346a1ebe706552604b664dd2dbeedf5f72263853cbddf9b107c88f5279df14cc",
+    "before/studio-normal.png": "46df50fd420a9ae7d1ac57252aba02e60a7fb9778b76879e0cbd4544447b43f5",
+    "before/studio-opposite.png": "589ff8c7e43c30e12b20a8d7ef5b6f5394aab248ea9ca4ebd57705140d9cafea",
+    "before/studio-unlit.png": "495cc2ae82a665139408ed2eb15e0045c988c46fd1a419f988526212a74e4283",
+    "after/mine-absent.png": "e3fb6abf521a9b230a53da4802dd7ffaa3a3199df2ac9f1faa45ea2e2c0cd276",
+    "after/mine-close.png": "fea578cbb9581079f3cf84788fd33aba873e5f4553cfa56826671d20a132a915",
+    "after/mine-dark.png": "902cd32d47e08d7659d497a4a0d35093e6c02d1c0b99c53031f488235ea7107f",
+    "after/mine-normal.png": "276d9108567f458c004dead69adddc1e3b1256b2abca6ca329690a922b37108e",
+    "after/mine-reverse.png": "f71b5b195cd761cff8aaee68c1ad8976d7b0b3261d46b74aaa85623db9fddb95",
+    "after/mine-wall-oblique.png": "35d063d6f984bf4c86eb66f0f59dd0f6fadef4287d9bd938fe104c13b0719aa3",
+    "after/normal-motion0.png": "92395615c3633bdb315de7260c5dfac6c85bc895daa8b39779cf8912007d193a",
+    "after/normal-motion1.png": "903435ec5936826adc0896487648b81e4bf06caf5e9b092935018b383c013962",
+    "after/normal-motion2.png": "0dbf8554e7f2d5577ec434bb15f6110c83c6e0381e6945973e0eb746c8449a9d",
+    "after/overlap--1.png": "f798415c957da2c7ab1752f7c7596dedc5a012e209a75086d0c59962081407dd",
+    "after/overlap-0.png": "3a00f6f226fbcf059096b00e60276a66125789e65d2bec8eb6f4b03c584becf9",
+    "after/overlap-1.png": "a2732dd9442d4614f97ba5009060d3f31776a98f4b7ac0c28b9ba1b7112657cd",
+    "after/studio-back.png": "7418d5c4bd4b2f9b95a7b4a1b89c3c7ceb2d2b1f98b16372b6b85288131421ff",
+    "after/studio-close.png": "fd86470c476fd825707358a48f27ef1e444665488da8e39b8b3be6ab5d73eda0",
+    "after/studio-dark.png": "a505209e7309c3f7498556d57e8327ce5bba76b989292d522fcd9a750c304ca8",
+    "after/studio-edge.png": "78253323c5f39f8d5eadf9b23faa2ea6e0895dd7a6b524f56ce206b4bfd862ee",
+    "after/studio-far.png": "d419e0e8d295942f3a503aab6584f017fcf363cff03ef30ad4dc2665483895a6",
+    "after/studio-move0.png": "fd86470c476fd825707358a48f27ef1e444665488da8e39b8b3be6ab5d73eda0",
+    "after/studio-move1.png": "9a863fc8879ce333dd7a2280982619acd513984b3e848b340092d0758b6f4f5e",
+    "after/studio-move2.png": "a4712a11b2d08f5e8ffe2087d6437c28869b25d04180f1fe5a216c0a876b94ec",
+    "after/studio-normal.png": "2309d9acb771d5f19496dd59c27a1933132432af83843e11bb2ac615f5552d2f",
+    "after/studio-opposite.png": "e725be5424242c0e5a48ef7428a078bcb46e681557feab2934acb712dfb39b37",
+    "after/studio-unlit.png": "a3a522a8e29697e5c129e04de975e66d05a6a1ff2cc758242cf0c6cefc926fa6"
+  },
+  "independentReview": {
+    "score": 92,
+    "parts": [
+      27,
+      17,
+      19,
+      20,
+      9
+    ],
+    "P1P2": false,
+    "scope": "limited visual improvement over published178"
+  },
+  "input": {
+    "rows": [
+      {
+        "preview": {
+          "scale": 1.05,
+          "y": 1.65,
+          "angle": 0.2617993877991494,
+          "id": "mine_cobweb"
+        },
+        "placed": {
+          "n": 1,
+          "id": "mine_cobweb",
+          "y": 1.65,
+          "scale": 1.05,
+          "angle": 0.2617993877991494
+        },
+        "restored": {
+          "ok": true,
+          "same": true,
+          "mesh": 1
+        }
+      }
+    ],
+    "errors": []
+  },
+  "offline": {
+    "pass": true,
+    "fileOffline": true,
+    "id": "mine_cobweb",
+    "instances": 1,
+    "clipped": true,
+    "texture": 512,
+    "exportVersion": 1,
+    "exportAssets": [
+      "mine_cobweb"
+    ],
+    "png": true,
+    "errors": []
+  },
+  "fixedSamples": {
+    "pass": true,
+    "rows": [
+      {
+        "kind": "sample",
+        "keyMatches": true,
+        "profileMatches": true,
+        "source": "bundle",
+        "walkReused": true,
+        "fitStats": null,
+        "regeneration": 0,
+        "props": 5761,
+        "gl": 0
+      },
+      {
+        "kind": "sample2",
+        "keyMatches": true,
+        "profileMatches": true,
+        "source": "bundle",
+        "walkReused": true,
+        "fitStats": null,
+        "regeneration": 0,
+        "props": 536,
+        "gl": 0
+      }
+    ]
+  },
+  "railRegression": {
+    "pass": true,
+    "pure": [
+      "three straights",
+      "replace provisional tail with -1 turn",
+      "actual mesh port -1",
+      "actual mesh port -1",
+      "actual mesh port -1",
+      "actual mesh port -1",
+      "actual mesh port -1",
+      "actual mesh port -1",
+      "continuous -1 1",
+      "continuous -1 2",
+      "replace provisional tail with 1 turn",
+      "actual mesh port 1",
+      "actual mesh port 1",
+      "actual mesh port 1",
+      "actual mesh port 1",
+      "actual mesh port 1",
+      "actual mesh port 1",
+      "continuous 1 1",
+      "continuous 1 2",
+      "two successive bends",
+      "four curves closed loop",
+      "closed loop stable on pointer release",
+      "retract to earlier endpoint",
+      "existing start sets outward tangent",
+      "finish at matching existing port",
+      "perpendicular end rejected",
+      "end scale mismatch rejected",
+      "end height mismatch rejected",
+      "duplicate/interior overlap rejected",
+      "occupied start rejected",
+      "uneven ground rejected",
+      "impossible short sideways move rejected",
+      "scale and QE heading",
+      "bounded stroke",
+      "map bounds rejected",
+      "225 existing rail scene"
+    ],
+    "final": [
+      [
+        136,
+        2.184924952075562e-08,
+        -1.5200453340469267e-07,
+        0,
+        1,
+        0,
+        1,
+        0
+      ],
+      [
+        136,
+        2.184924952075562e-08,
+        1.9999998479954666,
+        0,
+        1,
+        0,
+        1,
+        0
+      ],
+      [
+        136,
+        2.184924952075562e-08,
+        3.9999998479954666,
+        0,
+        1,
+        0,
+        1,
+        0
+      ],
+      [
+        137,
+        2.184924952075562e-08,
+        5.999999847995467,
+        0,
+        1,
+        0,
+        1,
+        0
+      ],
+      [
+        136,
+        2.0000000218492495,
+        7.999999847995467,
+        1.5707963267948966,
+        1,
+        0,
+        1,
+        0
+      ],
+      [
+        136,
+        4.0000000218492495,
+        7.999999847995467,
+        1.5707963267948966,
+        1,
+        0,
+        1,
+        0
+      ]
+    ],
+    "reload": {
+      "success": true,
+      "equal": true,
+      "count": 6
+    },
+    "cancelModes": [
+      "escape",
+      "cancel",
+      "blur",
+      "type",
+      "tool",
+      "mode",
+      "capture"
+    ],
+    "oneStrokeOneUndo": true,
+    "dragScaleHeadingLocked": true,
+    "ordinaryPropUnchanged": true,
+    "undergroundFloor": true,
+    "timing": {
+      "existing": 225,
+      "maxStroke": 64,
+      "updateMedianMs": 0.30000007152557373,
+      "updateMaxMs": 0.7999999523162842,
+      "gpuMeasured": false
+    },
+    "errors": [],
+    "privateHeadless": true,
+    "gui": false
+  }
+}

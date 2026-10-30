@@ -1,5 +1,5 @@
 {
-  "release": "compact-fitted-collision-20261031",
+  "release": "organic-cobweb-20261031-191",
   "files": {
     "app.js": "fbee0574d46114805d3d682cbaf7484747a7e17ce5848cd11afeb4248fb7a369",
     "props/chest-presentation.js": "02d054f76798bdf6599156ffb0655085c919b3df733386a47a11f458d3aa5233",
@@ -41,8 +41,8 @@
     "unity/Assets/MapSharedProps/Editor/MineSpoilV1.cs": "18413514bdf454f98e9acc696b736cce2bf9017894b0b901ece2f597573f463e",
     "props/cave-decor.js": "abf74ab0b78918409e80854060e0291cda33f30ed758a7c4d46a29e12ddaead1",
     "props/shared/cave-decor-data.js": "5939db717735b0bc3400f5decf360bc3e6aaec12c75f0abbbb26c616269ba57c",
-    "index.html": "8832cabfdfa6867be28ec1f1aca7630a0f81c73de8b2310d40c002b31c1cb078",
-    "prepared/manifest.js": "c5cb3f5f65a1f58df0264c6f3d6f08ec08c3aa930a0a6ee30e419ce708c76648",
+    "index.html": "cdcc1221f99fd9d12b7dcc00b40b70052f2dec361975af8b35077ca24835d20e",
+    "prepared/manifest.js": "29a6d6340fd6f363e433d4c6dbb6103861b32075386b880e8d03d97be7b1ebcc",
     "terrain/cliff-shoulder.js": "e437f1ffb0ab47fa4b243f7408f4ed3de759508b0f1dfef49eaf217b1630ac59",
     "props/mine-collapse.js": "49ff2562ce9a97766c4f664c3b283d0f25762b9edb6df370308c150769baafd8",
     "props/mine-collapse-pbr.js": "e90181e4ba56831e286649539dcc05197180e32199a07c675fb5d4da0630a6cd",
@@ -54,7 +54,7 @@
     "unity/Assets/MapSharedProps/Runtime/RoomTorchBudget.cs": "ae1b5ba98f39c533ce72917f5eefff531cc5e018c4283e17255194b5a1e54dff",
     "unity/Assets/MapSharedProps/Runtime/RoomTorchInstance.cs": "0e06f0be2b12eebbccd0a04c992ea781db6f039e038f6626685a1f6dcd139ec6",
     "unity/Assets/MapTunnels/Runtime/Shaders/MapTunnel.shader": "6b10c51126121db637c4b8bc533095f80914189e58d1c78009cff755c9fcabe5",
-    "props/mine-cobweb.js": "ca64915412a7040e66b199def0a4aad0f8acca5ca83f5bebff232e084ab797d3",
+    "props/mine-cobweb.js": "abeb8091c733137431044121d3bb4aa6e1449f723c942e83858e9d527c1d5203",
     "unity/Assets/MapSharedProps/Editor/MineCobwebV1.cs": "c25a03fd01c24a833d0ea203fc98dd95994980b4bc04d91268408b0b86eeae64",
     "unity/Assets/MapSharedProps/Editor/MineCobwebV1.cs.meta": "0888a1ea48459bf3906dbf74f87223c8158accce4243a93e0d39e33e4a0b827a",
     "props/minecart-loaded.js": "fd316b07809e791671aa0609541852fd48d64808c9a386498a3ee028c2ea6e60",
@@ -71,5 +71,7 @@
     "unity/Assets/MapSharedProps/Editor/MapSharedPropsBuilder.cs": "4154022bd7c76d441b5d7fb28fa01aae44cedb80c99c292c7f5d3f0953f79fbb",
     "unity/Assets/MapSharedProps/Editor/SmallPropsV1.cs": "6434989293660f94ad0299f6e8b50d8123432dbaff7e7c024ce69f47abad6319"
   },
-  "sourceBase": "5fc4fc09490551a92329ab737e3710168111cb80"
+  "sourceBase": "5fc4fc09490551a92329ab737e3710168111cb80",
+  "integratedMain": "61e352869bfb9c384ba446987382d36d68014e0a",
+  "candidateProductSha256": "abeb8091c733137431044121d3bb4aa6e1449f723c942e83858e9d527c1d5203"
 }
