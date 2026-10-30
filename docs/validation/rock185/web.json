@@ -1,0 +1,95 @@
+{
+  "pass": true,
+  "tests": {
+    "rows": [
+      "manual-only closed solid",
+      "under1000 triangles",
+      "finite geometry",
+      "ground base and closed back",
+      "bounded nonmetal texture",
+      "shared material",
+      "closed manifold after position welding",
+      "front faces present and consistently outward",
+      "central foot has outward contact faces without an underside bevel",
+      "shallow collision bounds contain visual"
+    ],
+    "unitNormals": 1116,
+    "triangles": 372,
+    "vertices": 1116,
+    "bounds": [
+      [
+        -0.8999999761581421,
+        0,
+        -0.05999999865889549
+      ],
+      [
+        0.8799999952316284,
+        1.850000023841858,
+        0.147586390376091
+      ]
+    ]
+  },
+  "legacy": {
+    "first": {
+      "success": true,
+      "count": 0,
+      "stats": {
+        "kind": "load",
+        "seed": 0,
+        "cacheHit": false,
+        "persistent": false,
+        "persistentStored": false,
+        "preparedSource": "generated",
+        "bundleBytes": 0,
+        "walkReused": false,
+        "elapsedMs": 4.399999976158142,
+        "firstRenderMs": 0.2999999523162842,
+        "props": 0,
+        "fits": 0,
+        "fitStats": null
+      }
+    },
+    "second": {
+      "success": true,
+      "count": 2,
+      "stats": {
+        "kind": "load",
+        "seed": 0,
+        "cacheHit": false,
+        "persistent": false,
+        "persistentStored": false,
+        "preparedSource": "generated",
+        "bundleBytes": 0,
+        "walkReused": false,
+        "elapsedMs": 12.700000047683716,
+        "firstRenderMs": 0.5,
+        "props": 2,
+        "fits": 0,
+        "fitStats": null
+      }
+    }
+  },
+  "oldTypes": {
+    "loaded": true,
+    "ids": [
+      "mine_rail_straight",
+      "minecart"
+    ],
+    "withoutNewType": true
+  },
+  "save": {
+    "loaded": true,
+    "save": true,
+    "collider": true,
+    "colliderSnapshotSHA256": "e4a842f674518054dff9a8a93d3942f7b8b78b58c63b817796739155495e45f4",
+    "fullSnapshotLocal": "output/rock185-after/checks.json",
+    "normalizedSnapshotBytes": 96597
+  },
+  "stats": {
+    "gl": 0,
+    "calls": 3,
+    "triangles": 5736,
+    "textures": 17
+  },
+  "extensionBytes": 984273
+}

@@ -50,9 +50,11 @@ public static class GroundedPropsV1 {
    var root=new GameObject(i.instanceId);root.transform.SetParent(parent,false);root.transform.localPosition=V(i.source.position);root.transform.localRotation=Quaternion.Euler(0,i.source.yaw,0);root.transform.localScale=V(i.source.scale);
    var inverse=Matrix4x4.TRS(root.transform.localPosition,root.transform.localRotation,root.transform.localScale).inverse;
    var pieces=new CombineInstance[i.parts.Length];for(int k=0;k<i.parts.Length;k++){var p=i.parts[k];Check(meshes.ContainsKey(p.id),"unknown component");pieces[k]=new CombineInstance{mesh=meshes[p.id],transform=inverse*Matrix4x4.TRS(V(p.position),new Quaternion(p.rotation[0],p.rotation[1],p.rotation[2],p.rotation[3]),V(p.scale))};}
-   var combined=new Mesh{name="grounded-shells"};combined.CombineMeshes(pieces,true,true);combined.RecalculateBounds();AssetDatabase.CreateAsset(combined,assetDirectory+"/grounded-placed-"+(ordinal++).ToString("D4")+".asset");root.AddComponent<MeshFilter>().sharedMesh=combined;
+   var combined=new Mesh{name="grounded-shells"};combined.CombineMeshes(pieces,true,true);combined.RecalculateBounds();
+   // 個体別Meshに一度だけ保存。SetColorと同じsRGB→Linear変換を保ち、非永続PropertyBlockを使わない。
+   var tint=new Color(i.tint[0],i.tint[1],i.tint[2],1);if(QualitySettings.activeColorSpace==ColorSpace.Linear)tint=tint.linear;var colours=combined.colors;for(int k=0;k<colours.Length;k++)colours[k]*=tint;combined.colors=colours;
+   AssetDatabase.CreateAsset(combined,assetDirectory+"/grounded-placed-"+(ordinal++).ToString("D4")+".asset");root.AddComponent<MeshFilter>().sharedMesh=combined;
    var renderer=root.AddComponent<MeshRenderer>();renderer.sharedMaterial=mat;renderer.shadowCastingMode=UnityEngine.Rendering.ShadowCastingMode.On;renderer.receiveShadows=true;
-   var properties=new MaterialPropertyBlock();properties.SetColor("_BaseColor",new Color(i.tint[0],i.tint[1],i.tint[2],1));renderer.SetPropertyBlock(properties);
   }}finally{foreach(var mesh in meshes.Values)UnityEngine.Object.DestroyImmediate(mesh);}
   return d.instances.Length;
  }

@@ -14,6 +14,8 @@ Shader "MapTunnels/Tunnel"
  #pragma target 3.5
  #pragma multi_compile _ _ADDITIONAL_LIGHTS
  #pragma multi_compile _ _CLUSTER_LIGHT_LOOP
+ #pragma multi_compile_fragment _ _ADDITIONAL_LIGHT_SHADOWS
+ #pragma multi_compile_fragment _ _SHADOWS_SOFT
  #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
  #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
  #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
@@ -38,11 +40,41 @@ Shader "MapTunnels/Tunnel"
   float3 light=SampleSH(n);
   Light main=GetMainLight(TransformWorldToShadowCoord(i.w));
   light+=main.color*main.distanceAttenuation*main.shadowAttenuation*saturate(dot(n,main.direction));
-  #if defined(_ADDITIONAL_LIGHTS)
+  // 通常ForwardとForward+の双方で、点灯の距離減衰と遮蔽を評価する。
+  #if defined(_ADDITIONAL_LIGHTS) || USE_CLUSTER_LIGHT_LOOP
+  InputData inputData=(InputData)0;inputData.positionWS=i.w;inputData.normalizedScreenSpaceUV=GetNormalizedScreenSpaceUV(i.p);
+  #if USE_CLUSTER_LIGHT_LOOP
+  UNITY_LOOP for(uint lightIndex=0;lightIndex<min(URP_FP_DIRECTIONAL_LIGHTS_COUNT,MAX_VISIBLE_LIGHTS);lightIndex++){Light l=GetAdditionalLight(lightIndex,i.w,half4(1,1,1,1));light+=l.color*l.distanceAttenuation*l.shadowAttenuation*saturate(dot(n,l.direction));}
+  #endif
   uint count=GetAdditionalLightsCount();
-  [loop]for(uint k=0;k<count;k++){Light l=GetAdditionalLight(k,i.w);light+=l.color*l.distanceAttenuation*saturate(dot(n,l.direction));}
+  LIGHT_LOOP_BEGIN(count)
+  Light l=GetAdditionalLight(lightIndex,i.w,half4(1,1,1,1));light+=l.color*l.distanceAttenuation*l.shadowAttenuation*saturate(dot(n,l.direction));
+  LIGHT_LOOP_END
   #endif
   return half4(col*light,1);
  }
  ENDHLSL
- }}}
+ }
+ // 見下ろし用の天井カットは表示だけ。実際の壁・天井は光を遮る。
+ Pass{Name "ShadowCaster" Tags{"LightMode"="ShadowCaster"} ZWrite On ZTest LEqual ColorMask 0 Cull Off
+ HLSLPROGRAM
+ #pragma vertex ShadowVert
+ #pragma fragment ShadowFrag
+ #pragma multi_compile_vertex _ _CASTING_PUNCTUAL_LIGHT_SHADOW
+ #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+ #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Shadows.hlsl"
+ CBUFFER_START(UnityPerMaterial)
+ float _Emission,_Shaft;
+ CBUFFER_END
+ float3 _LightDirection,_LightPosition;
+ float4 ShadowVert(float4 p:POSITION,float3 n:NORMAL):SV_POSITION{float3 w=TransformObjectToWorld(p.xyz);
+ #if _CASTING_PUNCTUAL_LIGHT_SHADOW
+ float3 d=normalize(_LightPosition-w);
+ #else
+ float3 d=_LightDirection;
+ #endif
+ return ApplyShadowClamping(TransformWorldToHClip(ApplyShadowBias(w,TransformObjectToWorldNormal(n),d)));}
+ half4 ShadowFrag():SV_Target{return 0;}
+ ENDHLSL
+ }
+ }}

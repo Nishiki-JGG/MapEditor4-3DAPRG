@@ -1494,7 +1494,7 @@ function touchMat(base) {
 }
 const propMeshes = new Array(PROP.length);
 function createPropMesh(t, capacity) {
-  const source = t.mineSpoil ? TDMineSpoil.material() : t.mineCutRock ? TDMineCutRock.material() : t.mineCart ? TDMineCart.material() : t.mineRail ? TDMineRails.material() : t.sharedAsset ? TDSharedProps.material(t.sharedAsset) : t.id==='miningtools'?miningToolMat:PROP_MATS[t.material] || propMat;
+  const source = t.mineCobweb ? TDMineCobweb.material() : t.mineLantern ? TDMineLantern.material() : t.mineCollapse ? TDMineCollapse.material() : t.mineSpoil ? TDMineSpoil.material() : t.mineCutRock ? TDMineCutRock.material() : t.mineCartLoad ? TDMineCartLoad.material() : t.mineCart ? TDMineCart.material() : t.mineRail ? TDMineRails.material() : t.sharedAsset ? TDSharedProps.material(t.sharedAsset) : t.id==='miningtools'?miningToolMat:PROP_MATS[t.material] || propMat;
   const base = t.id==='obsidian'?TDObsidianReflection.material(source):TDChestSurface.ids.includes(t.id)?TDChestSurface.material(source,t.id,timeU,hemi) : t.surface ? TDSmallPropSurface.material(source,t.surface) : TDFibreFinish.ids.includes(t.id)?TDFibreFinish.material(source,t.id) : t.material==='chestmetal' ? TDChestSeries.material(t.id,timeU,hemi) : source;
   const m = new THREE.InstancedMesh(t.geo, t.touch ? touchMat(base) : base, capacity);
   if(t.sharedAsset&&TDSharedProps.asset(t.sharedAsset).rootGrounding){m.userData.rootSlope=new THREE.InstancedBufferAttribute(new Float32Array(capacity*2),2);t.geo.setAttribute('rootSlope',m.userData.rootSlope);m.userData.rootTerrain=new THREE.InstancedBufferAttribute(new Float32Array(capacity*4),4);t.geo.setAttribute('rootTerrain',m.userData.rootTerrain);}
@@ -1502,6 +1502,7 @@ function createPropMesh(t, capacity) {
   m.castShadow = m.receiveShadow = true; m.frustumCulled = false; m.count = 0; m.renderOrder = dimU.value > .01 ? 7 : 0;
   if(t.sharedAsset&&(t.sharedAsset==='pine'||TDSharedProps.asset(t.sharedAsset).wind)){m.customDepthMaterial=TDPineWind.shadowMaterial(m.material);m.customDistanceMaterial=TDPineWind.shadowMaterial(m.material,true);}
   if(t.id==='treasurechest_gold'){m.customDepthMaterial=TDChestSurface.shadowMaterial(t.id);m.customDistanceMaterial=TDChestSurface.shadowMaterial(t.id,false,true);}
+  if(t.mineCobweb)m.castShadow=false;
   if (t.canopy) m.receiveShadow = false;   // lumpy canopies shadow themselves in patches; their soft normals already shade them (and it is cheaper)
   m.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(capacity * 3), 3);
   if (m.material === rockMat) { m.userData.cliffI = new THREE.InstancedBufferAttribute(new Float32Array(capacity), 1); t.geo.setAttribute('cliffI', m.userData.cliffI); }
@@ -1511,10 +1512,11 @@ const ghostMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness:
 // faded cards: the cut-out test runs after the fade (opacity .28), so it must sit below .42 × .28 or every leaf would vanish
 const ghostCardMat = ghostMat.clone(); ghostCardMat.map = atlasTex; ghostCardMat.alphaTest = .1; ghostCardMat.side = THREE.DoubleSide;
 const ghostCardMat2 = ghostCardMat.clone(); ghostCardMat2.map = atlasTex2;
+const cobwebGhostMat=TDMineCobweb.material().clone();cobwebGhostMat.transparent=true;cobwebGhostMat.opacity=.28;cobwebGhostMat.alphaTest=.03;cobwebGhostMat.depthWrite=false;
 const ghostMeshes = new Array(PROP.length);
 function createGhostMesh(t, capacity) {
   const root=t.sharedAsset&&TDSharedProps.asset(t.sharedAsset).rootGrounding,g=root?(()=>{const g=new THREE.BufferGeometry();g.setIndex(t.geo.index);for(const[name,a]of Object.entries(t.geo.attributes))g.setAttribute(name,a);g.boundingBox=t.geo.boundingBox;g.boundingSphere=t.geo.boundingSphere;return g;})():t.geo;
-  const m = new THREE.InstancedMesh(g, t.sharedAsset ? TDSharedProps.material(t.sharedAsset, true) : t.material === 'cards' ? ghostCardMat : t.material === 'cards2' ? ghostCardMat2 : t.surface ? TDSmallPropSurface.material(ghostMat,t.surface) : ghostMat, capacity);
+  const m = new THREE.InstancedMesh(g, t.mineCobweb ? cobwebGhostMat : t.sharedAsset ? TDSharedProps.material(t.sharedAsset, true) : t.material === 'cards' ? ghostCardMat : t.material === 'cards2' ? ghostCardMat2 : t.surface ? TDSmallPropSurface.material(ghostMat,t.surface) : ghostMat, capacity);
   if(root){m.userData.rootSlope=new THREE.InstancedBufferAttribute(new Float32Array(capacity*2),2);g.setAttribute('rootSlope',m.userData.rootSlope);m.userData.rootTerrain=new THREE.InstancedBufferAttribute(new Float32Array(capacity*4),4);g.setAttribute('rootTerrain',m.userData.rootTerrain);}
   m.frustumCulled = false; m.count = 0; m.renderOrder = 8;
   m.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(capacity * 3), 3);
@@ -1547,6 +1549,7 @@ const _m = new THREE.Matrix4(), _q = new THREE.Quaternion(), _p = new THREE.Vect
 const glowLights = Array.from({ length: 6 }, () => { const l = new THREE.PointLight(0xffaa55, 0, 10, 1.7); l.userData.base = 0; scene.add(l); return l; });
 let glowTick = 0;
 const wallTorches = TDWallTorch.create(scene);
+const mineLanterns=TDMineLantern.create(scene);
 const chestPresentation = TDChestPresentation.create(scene,timeU);
 function updateGlowLights(cx, cz) {
   const cand = [];
@@ -1554,6 +1557,7 @@ function updateGlowLights(cx, cz) {
   for (const q of tunnelLamps) { const d = (q.x - cx) ** 2 + (q.z - cz) ** 2; if (d < 1600) cand.push([d, null, q]); }   // the tunnels' torches and lanterns
   cand.sort((a, b) => a[0] - b[0]);
   glowLights.forEach((l, k) => {
+    l.castShadow=false;
     const c = cand[k]; if (!c) { l.userData.base = 0; l.intensity = 0; return; }
     if (!c[1]) { const q = c[2]; l.color.setHex(q.color); l.userData.base = 2.4; l.position.set(q.x, q.y, q.z); return; }
     const p = c[1], L = PROP[p[0]].light;
@@ -1648,7 +1652,7 @@ function rebuildProps(visualOnly = false) {
     mesh.setMatrixAt(c[t], _m);
     if(mesh.userData.rootSlope){const v=rootSlopeAt(p);mesh.userData.rootSlope.setXY(c[t],v[0],v[1]);mesh.userData.rootSlope.needsUpdate=true;mesh.userData.rootTerrain.setXYZW(c[t],...rootTerrainAt(p));mesh.userData.rootTerrain.needsUpdate=true;}
     const v = .86 + .28 * hash2(x * 97 | 0, z * 89 | 0);
-    mesh.setColorAt(c[t], (shared || PROP[t].mineSpoil || PROP[t].mineCutRock || PROP[t].mineCart || PROP[t].mineRail || PROP[t].roomTorch || PROP[t].fireEffect) ? _c.setRGB(1, 1, 1) : savedCliffTint(p)?_c.fromArray(savedCliffTint(p)):_c.setRGB(v * (.95 + .1 * hash2(x * 13 | 0, 7)), v, v * (.95 + .1 * hash2(3, z * 17 | 0))));
+    mesh.setColorAt(c[t], (shared || PROP[t].mineCobweb || PROP[t].mineLantern || PROP[t].mineCollapse || PROP[t].mineSpoil || PROP[t].mineCutRock || PROP[t].mineCart || PROP[t].mineRail || PROP[t].roomTorch || PROP[t].fireEffect) ? _c.setRGB(1, 1, 1) : savedCliffTint(p)?_c.fromArray(savedCliffTint(p)):_c.setRGB(v * (.95 + .1 * hash2(x * 13 | 0, 7)), v, v * (.95 + .1 * hash2(3, z * 17 | 0))));
     if (!ghost && mesh.userData.cliffI) mesh.userData.cliffI.array[c[t]] = cliffIndexNear(x, z);
     if (!ghost && mesh.userData.touch) { touchIdx.set(p, c[t]); touchProps.push(p);indexTouch(p); }
     c[t]++;
@@ -1658,8 +1662,9 @@ function rebuildProps(visualOnly = false) {
   propMeshes.forEach((m, t) => { m.count = PROP[t].geo.userData.groundParts?0:cnt[t]; m.instanceMatrix.needsUpdate = true; m.instanceColor.needsUpdate = true; if (m.userData.cliffI) m.userData.cliffI.needsUpdate = true; });
   ghostMeshes.forEach((m, t) => { m.count = PROP[t].geo.userData.groundParts?0:gcnt[t]; m.instanceMatrix.needsUpdate = true; m.instanceColor.needsUpdate = true; });
   for(const[map,counts]of [[groundedNormal,cnt],[groundedGhost,gcnt]])for(const[t,meshes]of map)for(const m of meshes){m.count=counts[t];m.instanceMatrix.needsUpdate=m.instanceColor.needsUpdate=true;}
-  if (props.some(p => PROP[p[0]].roomTorch||PROP[p[0]].fireEffect||TDChestPresentation.slots(PROP[p[0]].id).length)) ensureIds();
+  if (props.some(p => PROP[p[0]].mineLantern||PROP[p[0]].roomTorch||PROP[p[0]].fireEffect||TDChestPresentation.slots(PROP[p[0]].id).length)) ensureIds();
   wallTorches.sync(props, PROP, propBaseY, state.roomId);
+  mineLanterns.sync(props,PROP,propBaseY);
   chestPresentation.sync(props,PROP,propMeshes,ghosts);
   touchStats.registered=touchProps.length;
   if(state.tool==='detail')syncGroundDetailUI();
@@ -4541,6 +4546,8 @@ function sha256(bytes) {
 const GROUND_EFFECT = { sand: 'slow_light', rubble: 'slow_light', swamp: 'slow', poison: 'poison', lava: 'lava', snowfield: 'slow_light', ice: 'ice' };
 const WEIGHT_LAYERS = ['grass', 'dirt', 'cobble', 'sand', 'rubble', 'swamp', 'poison', 'lava', 'snowfield', 'ice', 'cliff', 'bedrock', 'pureblack'];
 async function buildExport({sharedAssets = false} = {}) {
+  await TDMineCollapse.prepare(); // Export exactly the ready shared maps, or the intact fallback.
+  await TDMineCutRock.prepare(); // Reuse the same decoded source before serializing the three rock maps.
   refreshGroundWeights();
   if(mapPreparation||cliffContactDisabled)throw Error('崖の岩を調整中です。完了後に書き出してください');
   ensureIds(); applyCatalog(); if (walkDirty) computeWalk();
@@ -4996,7 +5003,7 @@ const PROP_GROUPS = [
   ['岩・崖', ['drysoil_curl','drysoil_cup','drysoil_flake','scree', 'rock', 'mossrock', 'pebble', 'cliff', 'cliff_split', 'cliff_shoulder', 'cliff_joint', 'cliff_slab', 'cliff_talus', 'rubblepile', 'stalagmite', 'crystal', 'lavarock', 'obsidian', 'fumarole', 'iceblock', 'icespike']],
   ['遺跡・墓', ['column', 'brokencol', 'ruinwall', 'archgate', 'statue', 'statue_seated', 'statue_damaged', 'stele', 'obelisk', 'pyramid', 'gravestone', 'crossgrave', 'mausoleum', 'bones', 'bonepile', 'skullpile', 'magiccircle', 'demonspire']],
   ['海の生き物', ['braincoral', 'staghorn', 'pillarcoral', 'seafan', 'tablecoral', 'roundcoral', 'scallop', 'cowrie', 'shellbits', 'wrack', 'shells']],
-  ['坑道小物', ['mine_rail_straight','mine_rail_curve','mine_rail_end','minecart','mine_cut_rock','mine_spoil']],
+  ['坑道小物', ['mine_rail_straight','mine_rail_curve','mine_rail_end','minecart','minecart_loaded','mine_cut_rock','mine_spoil','mine_collapsed_wall','mine_wall_lantern','mine_cobweb']],
   ['建物・道具', ['wall_torch', 'torch', 'brazier', 'lantern', 'banner', 'woodfence', 'ironfence', 'castlewall', 'tower', 'gatehouse', 'lighthouse', 'rowboat', 'haystack', 'miningtools', 'supplycrate', 'treasurechest_worn', 'treasurechest', 'treasurechest_reinforced', 'treasurechest_ornate', 'treasurechest_silver', 'treasurechest_gold', 'treasurechest_rainbow', 'smallbarrel', 'tiedsack', 'coiledrope', 'storagepot', 'brokenpot', 'snowman', 'kamakura']],
 ];
 // [group name, type indices]; types not in PROP_GROUPS (added later) land in "その他"
@@ -5386,11 +5393,13 @@ function updateRing() {
   }
   if (state.tool === 'place') {
     const t = state.variant.place, s0 = (PROP[t].sc[0] + PROP[t].sc[1]) / 2 * state.placeScale;
-    preview.material=PROP[t].caveDecor?TDSharedProps.material(PROP[t].sharedAsset,true):PROP[t].mineSpoil?spoilPreviewMat:PROP[t].mineCutRock?cutRockPreviewMat:PROP[t].mineCart?cartPreviewMat:PROP[t].mineRail?railPreviewMat:standardPreviewMat;
+    preview.material=PROP[t].mineCobweb?cobwebPreviewMat:PROP[t].mineLantern?lanternPreviewMat:PROP[t].caveDecor?TDSharedProps.material(PROP[t].sharedAsset,true):PROP[t].mineCollapse?collapsePreviewMat:PROP[t].mineSpoil?spoilPreviewMat:PROP[t].mineCutRock?cutRockPreviewMat:PROP[t].mineCartLoad?cartLoadPreviewMat:PROP[t].mineCart?cartPreviewMat:PROP[t].mineRail?railPreviewMat:standardPreviewMat;
     if(PROP[t].mineRail&&PROP[t].id!=='mine_rail_end'&&state.mode==='edit'&&placementPointerType!=='touch'){const q=TDMineRailDrag.begin(hit.x,hit.z,state.placeRot*Math.PI/180,s0,props,PROP,floorAt),p=q.start;preview.geometry=PROP[TYPE('mine_rail_straight')].geo;preview.visible=true;preview.position.set(p.x,p.y,p.z);preview.rotation.y=p.rot;preview.scale.setScalar(s0);outline(circle(p.x,p.z,.14),q.startReason?0xff5555:q.snapped?0x68ffb0:0xffd27a,.18);return;}
     if(PROP[t].mineRail){preview.geometry=PROP[t].geo;const p=TDMineRails.placement(PROP[t].id,hit.x,hit.z,state.placeRot*Math.PI/180,s0,props,PROP,floorAt);preview.visible=true;preview.position.set(p.x,p.y,p.z);preview.rotation.y=p.rot;preview.scale.setScalar(s0);outline(circle(p.x,p.z,.14),!p.valid?0xff5555:p.snapped?0x68ffb0:0xffd27a,.18);return;}
     if(PROP[t].caveDecor){preview.visible=true;preview.position.set(hit.x,TDCaveDecor.baseY(PROP[t],heightAt(hit.x,hit.z),s0,+$('caveDecorHeight').value),hit.z);preview.rotation.y=state.placeRot*Math.PI/180;preview.scale.setScalar(s0);return;}
-    if(PROP[t].mineCutRock||PROP[t].mineSpoil){preview.visible=true;preview.position.set(hit.x,floorAt(hit.x,hit.z),hit.z);preview.rotation.y=state.placeRot*Math.PI/180;preview.scale.setScalar(s0);return;}
+    if(PROP[t].mineCobweb){preview.visible=true;preview.position.set(hit.x,floorAt(hit.x,hit.z)+TDMineCobweb.mount,hit.z);preview.rotation.y=state.placeRot*Math.PI/180;preview.scale.setScalar(s0);return;}
+    if(PROP[t].mineLantern){preview.visible=true;preview.position.set(hit.x,floorAt(hit.x,hit.z)+TDMineLantern.mount,hit.z);preview.rotation.y=state.placeRot*Math.PI/180;preview.scale.setScalar(s0);return;}
+    if(PROP[t].mineCutRock||PROP[t].mineSpoil||PROP[t].mineCollapse){preview.visible=true;preview.position.set(hit.x,floorAt(hit.x,hit.z),hit.z);preview.rotation.y=state.placeRot*Math.PI/180;preview.scale.setScalar(s0);return;}
     if(PROP[t].mineCart){const p=TDMineCart.placement(hit.x,hit.z,state.placeRot*Math.PI/180,s0,props,PROP,floorAt);preview.visible=true;preview.position.set(p.x,p.y,p.z);preview.rotation.y=p.rot;preview.scale.setScalar(s0);outline(circle(p.x,p.z,.6*s0),!p.valid?0xff5555:p.snapped?0x68ffb0:0xffd27a,.18);return;}
     if(PROP[t].geo.userData.groundParts){setGroundPreview(t,hit.x,hit.z,state.placeRot*Math.PI/180,s0);preview.visible=false;}else{preview.visible = true; preview.position.set(hit.x, heightAt(hit.x, hit.z) + (PROP[t].roomTorch ? TDWallTorchSource.defaultMountHeight : 0), hit.z); preview.rotation.y = state.placeRot * Math.PI / 180; preview.scale.setScalar(s0);}
     outline(circle(hit.x, hit.z, VIS_R[t] * s0 * .75 + .15), 0x9cff8a, .15);
@@ -5421,8 +5430,12 @@ function updateRing() {
 
 const preview = new THREE.Mesh(PROP[0].geo, new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, transparent: true, opacity: .6, depthWrite: false }));
 const standardPreviewMat=preview.material,railPreviewMat=TDMineRails.material().clone();railPreviewMat.transparent=true;railPreviewMat.opacity=.65;railPreviewMat.depthWrite=false;
+const cobwebPreviewMat=TDMineCobweb.material().clone();cobwebPreviewMat.opacity=.65;
+const lanternPreviewMat=TDMineLantern.material().clone();lanternPreviewMat.transparent=true;lanternPreviewMat.opacity=.65;lanternPreviewMat.depthWrite=false;
+const collapsePreviewMat=TDMineCollapse.material().clone();collapsePreviewMat.transparent=true;collapsePreviewMat.opacity=.65;collapsePreviewMat.depthWrite=false;
 const spoilPreviewMat=TDMineSpoil.material().clone();spoilPreviewMat.transparent=true;spoilPreviewMat.opacity=.65;spoilPreviewMat.depthWrite=false;
 const cutRockPreviewMat=TDMineCutRock.material().clone();cutRockPreviewMat.transparent=true;cutRockPreviewMat.opacity=.65;cutRockPreviewMat.depthWrite=false;
+const cartLoadPreviewMat=TDMineCartLoad.material().clone();cartLoadPreviewMat.onBeforeRender=TDMineCartLoad.material().onBeforeRender;cartLoadPreviewMat.transparent=true;cartLoadPreviewMat.opacity=.65;cartLoadPreviewMat.depthWrite=false;
 const cartPreviewMat=TDMineCart.material().clone();cartPreviewMat.onBeforeRender=TDMineCart.material().onBeforeRender;cartPreviewMat.transparent=true;cartPreviewMat.opacity=.65;cartPreviewMat.depthWrite=false;
 preview.visible = false; preview.renderOrder = 9; scene.add(preview);
 const groundPreview=new THREE.Group(),previewGroundPose=[];groundPreview.visible=false;scene.add(groundPreview);
@@ -5485,7 +5498,7 @@ function pick(cx, cy) {
   ray.setFromCamera(mouse, camera);
   // Rail placement targets the actual tunnel floor even while the terrain roof is visible.
   // Other tools keep their existing terrain picking behavior.
-  if(state.tool==='place'&&(PROP[state.variant.place]?.mineRail||PROP[state.variant.place]?.mineCart||PROP[state.variant.place]?.mineCutRock||PROP[state.variant.place]?.mineSpoil)){let nearest=null,distance=Infinity;const hitPoint=new THREE.Vector3();for(const t of tunnels)for(let i=0;i+1<t.pts.length;i++){const a=t.pts[i],b=t.pts[i+1],length=Math.hypot(b.x-a.x,b.z-a.z);if(length<1e-6)continue;const nx=-(b.z-a.z)/length*t.w*.5,nz=(b.x-a.x)/length*t.w*.5,corners=[new THREE.Vector3(a.x+nx,a.y,a.z+nz),new THREE.Vector3(b.x+nx,b.y,b.z+nz),new THREE.Vector3(b.x-nx,b.y,b.z-nz),new THREE.Vector3(a.x-nx,a.y,a.z-nz)];for(const ids of [[0,1,2],[0,2,3]])if(ray.ray.intersectTriangle(corners[ids[0]],corners[ids[1]],corners[ids[2]],false,hitPoint)){const d=ray.ray.origin.distanceToSquared(hitPoint);if(d<distance){distance=d;nearest=hitPoint.clone();}}}if(nearest)return nearest;}
+  if(state.tool==='place'&&(PROP[state.variant.place]?.mineRail||PROP[state.variant.place]?.mineCart||PROP[state.variant.place]?.mineCutRock||PROP[state.variant.place]?.mineSpoil||PROP[state.variant.place]?.mineCollapse||PROP[state.variant.place]?.mineLantern||PROP[state.variant.place]?.mineCobweb)){let nearest=null,distance=Infinity;const hitPoint=new THREE.Vector3();for(const t of tunnels)for(let i=0;i+1<t.pts.length;i++){const a=t.pts[i],b=t.pts[i+1],length=Math.hypot(b.x-a.x,b.z-a.z);if(length<1e-6)continue;const nx=-(b.z-a.z)/length*t.w*.5,nz=(b.x-a.x)/length*t.w*.5,corners=[new THREE.Vector3(a.x+nx,a.y,a.z+nz),new THREE.Vector3(b.x+nx,b.y,b.z+nz),new THREE.Vector3(b.x-nx,b.y,b.z-nz),new THREE.Vector3(a.x-nx,a.y,a.z-nz)];for(const ids of [[0,1,2],[0,2,3]])if(ray.ray.intersectTriangle(corners[ids[0]],corners[ids[1]],corners[ids[2]],false,hitPoint)){const d=ray.ray.origin.distanceToSquared(hitPoint);if(d<distance){distance=d;nearest=hitPoint.clone();}}}if(nearest)return nearest;}
   const h = ray.intersectObject(terrain, false)[0];
   return h ? h.point : null;
 }
@@ -5501,10 +5514,12 @@ function beginStroke(e) {
   stroke.active = true; stroke.base = heightAt(hit.x, hit.z); stroke.lower = e.shiftKey; stroke.lastStamp = null;
   if (state.tool === 'place') {
     stroke.active = false;
-    const t = state.variant.place, s0 = (PROP[t].sc[0] + PROP[t].sc[1]) / 2 * state.placeScale * (state.placeRandom && !PROP[t].mineRail && !PROP[t].mineCart && !PROP[t].mineCutRock && !PROP[t].mineSpoil ? .9 + Math.random() * .2 : 1);
+    const t = state.variant.place, s0 = (PROP[t].sc[0] + PROP[t].sc[1]) / 2 * state.placeScale * (state.placeRandom && !PROP[t].mineRail && !PROP[t].mineCart && !PROP[t].mineCutRock && !PROP[t].mineSpoil && !PROP[t].mineCollapse && !PROP[t].mineLantern && !PROP[t].mineCobweb ? .9 + Math.random() * .2 : 1);
     if(PROP[t].mineRail){const p=TDMineRails.placement(PROP[t].id,hit.x,hit.z,state.placeRot*Math.PI/180,s0,props,PROP,floorAt);if(!p.valid){toast('レールの両端が同じ高さになる平らな場所に置いてください');return;}props.push([t,p.x,p.z,p.rot,s0,0,1,p.y]);rebuildProps();toast(PROP[t].name+(p.snapped?'を端点に接続しました':'を置きました'));return;}
+    if(PROP[t].mineCobweb){props.push([t,hit.x,hit.z,state.placeRot*Math.PI/180,s0,0,1,floorAt(hit.x,hit.z)+TDMineCobweb.mount]);rebuildProps();toast("クモの巣を置きました（Q/Eで壁・梁へ向きを調整）");return;}
+    if(PROP[t].mineLantern){props.push([t,hit.x,hit.z,state.placeRot*Math.PI/180,s0,0,1,floorAt(hit.x,hit.z)+TDMineLantern.mount]);rebuildProps();toast("壁掛けランタンを置きました（Q/Eで取付方向を調整）");return;}
     if(PROP[t].mineCart){const p=TDMineCart.placement(hit.x,hit.z,state.placeRot*Math.PI/180,s0,props,PROP,floorAt);if(!p.valid){toast(p.reason==='scale'?'レールと同じサイズにしてください':p.reason==='track'?'車輪を支えるレールと車止めの余裕を確保してください':'平らな場所に置いてください');return;}props.push([t,p.x,p.z,p.rot,s0,0,1,p.y]);rebuildProps();toast(PROP[t].name+(p.snapped?'をレール上に置きました':'を置きました'));return;}
-    if(PROP[t].mineCutRock||PROP[t].mineSpoil){props.push([t,hit.x,hit.z,state.placeRot*Math.PI/180,s0,0,1,floorAt(hit.x,hit.z)]);rebuildProps();return;}
+    if(PROP[t].mineCutRock||PROP[t].mineSpoil||PROP[t].mineCollapse){props.push([t,hit.x,hit.z,state.placeRot*Math.PI/180,s0,0,1,floorAt(hit.x,hit.z)]);rebuildProps();return;}
     const placement=[t,hit.x,hit.z,state.placeRot*Math.PI/180,s0,0];
     if(PROP[t].caveDecor) {placement[6]=1;placement[7]=TDCaveDecor.baseY(PROP[t],heightAt(hit.x,hit.z),s0,+$('caveDecorHeight').value);}
     props.push(placement); rebuildProps();
@@ -5806,7 +5821,7 @@ function update(dt) {
   }
   const torchCenter = state.mode === 'edit' ? cam.target : player;
   wallTorches.update(timeU.value, dt, camera, torchCenter, renderer.domElement.height);
-  if (wallTorches.metrics.count) wallTorches.updateLights(glowLights, props, PROP, tunnelLamps, torchCenter, timeU.value, dt, dimU.value, heightAt);
+  if (wallTorches.metrics.count||mineLanterns.count) wallTorches.updateLights(glowLights, props, PROP, tunnelLamps, torchCenter, timeU.value, dt, dimU.value, heightAt,propBaseY);
   else {
     if (glowTick-- <= 0) { glowTick = 20; updateGlowLights(torchCenter.x, torchCenter.z); }
     glowLights.forEach((l, k) => { l.intensity = l.userData.base * (.85 + .15 * Math.sin(timeU.value * 9 + k * 2.1)) * (1 - .5 * dimU.value); });
@@ -5960,7 +5975,7 @@ function installWalkPreparation(w){
  for(const n of ['position','walk','forced','secret'])wkGeo.attributes[n].needsUpdate=true;wkGeo.computeBoundingSphere();walkDirty=false;
 }
 async function preparationKey(kind,seed,job){
- const config=JSON.stringify([kind,seed,SIZE,kind==='sample2'?'ruins':state.biome,state.agent,state.cliffStyle,state.catalog,TDPreparation.version,TDPreparedSamples.recipeVersion,[...document.scripts].filter(s=>!s.dataset.preparedSample&&!s.hasAttribute('data-presentation-only')).map(s=>(s.getAttribute('src')||'').replace('moon-reflection1&','').replace('time-of-day1&','').replace(/app.js\?(walltorch1|firequality1)&/,'app.js?public-label1&')).filter(Boolean)]);
+ const config=JSON.stringify([kind,seed,SIZE,kind==='sample2'?'ruins':state.biome,state.agent,state.cliffStyle,state.catalog,TDPreparation.version,TDPreparedSamples.recipeVersion,[...document.scripts].filter(s=>!s.dataset.preparedSample&&!s.hasAttribute('data-presentation-only')).map(s=>(s.getAttribute('src')||'').replace(/&collapsePBR=[a-f0-9]+/,'').replace(/&wallLamp=[a-f0-9]+/,'').replace(/&cobweb=[a-f0-9]+/,'').replace(/&mineCartLoad=[a-f0-9]+/,'').replace(/&cutRockSurface=[a-f0-9]+/,'').replace('moon-reflection1&','').replace('time-of-day1&','').replace(/app.js\?(walltorch1|firequality1)&/,'app.js?public-label1&')).filter(Boolean)]);
  if(preparationKeys.has(config))return preparationKeys.get(config);
  const hashes=[];
  await TDPreparation.each(PROP,async t=>{if(t.r<=0||t.manualOnly)return;const prep=t.preparationGeo||t.geo,a=prep.attributes.position.array,ix=prep.index?.array;const hash=async a=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new Uint8Array(a.buffer,a.byteOffset,a.byteLength))),v=>v.toString(16).padStart(2,'0')).join('');hashes.push([t.id,t.r,t.height,t.yawOffset,await hash(a),ix?await hash(ix):'']);},job);
@@ -6092,7 +6107,7 @@ const bootReady=bootPending?.startsWith('prepared:')?prepareMap('pending',0,{tok
   prepareMap(bootPending==='sample2'&&SIZE===SAMPLE2_SIZE?'sample2':bootPending==='flat'||SIZE!==64?'flat':'sample',bootPending==='sample2'?11:7,{boot:true});
 
 // hooks for automated checks
-window.__app = { chestPresentation, wallTorches, bedrockReady, splatAt,get tunnels() { return tunnels; }, set tunnels(v) { tunnels = v; }, get tunnelPrep() { return tunnelPrep; }, get tunnelLamps() { return tunnelLamps; }, placeTunnel, rebuildTunnels, tunnelGroup, tunnelHoleTex, cutU, refitFalls, placeFall, springFallGroup, fallGroup, get springs() { return springs; }, set springs(v) { springs = v; }, get pools() { return pools; }, get springRes() { return springRes; }, SC, placeSpring, placePool, applySprings, solveSprings, waterAt, springLevelAt, poolDist, poolWallAt, POOL_WALL, deckAt, fillGroundAll,buildPreparedSample,prepareMap,cancelMapPreparation,bootReady,get preparation(){return mapPreparation?{id:mapPreparation.id,phase:mapPreparation.phase,requestedMode:mapPreparation.requestedMode,elapsedMs:performance.now()-mapPreparation.start}:null;},get preparationStats(){return lastPreparedState;},
+window.__app = {mineLanterns, chestPresentation, wallTorches, bedrockReady, splatAt,get tunnels() { return tunnels; }, set tunnels(v) { tunnels = v; }, get tunnelPrep() { return tunnelPrep; }, get tunnelLamps() { return tunnelLamps; }, placeTunnel, rebuildTunnels, tunnelGroup, tunnelHoleTex, cutU, refitFalls, placeFall, springFallGroup, fallGroup, get springs() { return springs; }, set springs(v) { springs = v; }, get pools() { return pools; }, get springRes() { return springRes; }, SC, placeSpring, placePool, applySprings, solveSprings, waterAt, springLevelAt, poolDist, poolWallAt, POOL_WALL, deckAt, fillGroundAll,buildPreparedSample,prepareMap,cancelMapPreparation,bootReady,get preparation(){return mapPreparation?{id:mapPreparation.id,phase:mapPreparation.phase,requestedMode:mapPreparation.requestedMode,elapsedMs:performance.now()-mapPreparation.start}:null;},get preparationStats(){return lastPreparedState;},
   propGrounding,groundedParts,groundedNormal,groundedGhost,groundPreview,setGroundPreview,propBaseY,get cliffContactProgress(){return cliffContactProgress;},cliffFits,effectiveGeometry,fitCliffContact,adoptCliffContact, cliffProtected,cliffProtectionReason,nearFeatureReason, get cliffContactStats(){return cliffContactStats;},
   pickGroundDetail,adjustGroundDetail,selectedGroundDetail,updateTouch,touchStats, pavingMask, cliffRelief, rebuildCliffRelief, groundTrial, groundTexture, terrainSource:tGeo, terrain, renderer, camera, SIZE, state, H, S, O, F, C, propMeshes, ghostMeshes, cliffIndexAt, BIOMES, CLIFF_STYLES, applyCliffStyle, deckAt, linkDeckAt, runValidation, genSample, genSample2, secretRegions, secretLineX, passageGeometry, terrainRes, TERRAIN_RES, snapshot, sha256, LINK_KINDS, normalizeCatalog, catalogExport, valueIssues, areaIssue, deckAt, getColliders, PROP, get colliderMaxR() { return colliderMaxR; }, rebuildMarkers, portLanding, linkTrigger, linkArrival, LINK_SPEC, get markers() { return markers; }, placeMarker, ensureIds, applyCatalog, ATMOS, WEATHER, applyAtmo, makeCoast, glowLights, applyBiome, applyPalette, TIMES, timeId, propVisible, toolVisible, updateTerrain, rebuildProps, genFlat, floorAt, bridgeAt, stairsAt, placeSlope, placeStairs, placeBridge, pickTarget, regenGroundProps, rebuildBridges, get stairs() { return stairs; }, get bridges() { return bridges; }, get falls() { return falls; }, overrideAt, heroMat, hero, heroBody, get heroLook() { return heroLook; }, setHeroLook, heroStyle, heroGlow, get ghosts() { return ghosts; }, get props() { return props; }, cam, playCam, player, keys, setMode, setTool, update, heightAt, walkable, slope: slopeAt,
   stroke(x, z, frames = 20, opts = {}) {

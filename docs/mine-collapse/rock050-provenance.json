@@ -1,0 +1,102 @@
+{
+  "utc": "2026-10-29T16:29:16.552311+00:00",
+  "asset": "Rock050",
+  "source": "https://ambientcg.com/view?id=Rock050",
+  "license": "CC0-1.0",
+  "licenseUrl": "https://docs.ambientcg.com/license/",
+  "requestUrl": "https://ambientcg.com/get?file=Rock050_1K-JPG.zip",
+  "finalUrl": "https://acg-download.struffelproductions.com/file/ambientCG-Web/download/Rock050_b8TJ5ijs/Rock050_1K-JPG.zip",
+  "contentType": "application/zip",
+  "bytes": 9286505,
+  "sha256": "c4c6ca085ad782c402263118f4e45b0b61498542d38a3078c519cdc15a688f1f",
+  "archiveContents": [
+    {
+      "name": "Rock050_1K-JPG.usdc",
+      "bytes": 2954,
+      "compressed": 2954
+    },
+    {
+      "name": "Rock050_1K-JPG_AmbientOcclusion.jpg",
+      "bytes": 577940,
+      "compressed": 577940
+    },
+    {
+      "name": "Rock050_1K-JPG_Color.jpg",
+      "bytes": 1334698,
+      "compressed": 1334698
+    },
+    {
+      "name": "Rock050_1K-JPG_Displacement.jpg",
+      "bytes": 387577,
+      "compressed": 387577
+    },
+    {
+      "name": "Rock050_1K-JPG_NormalDX.jpg",
+      "bytes": 2388292,
+      "compressed": 2388292
+    },
+    {
+      "name": "Rock050_1K-JPG_NormalGL.jpg",
+      "bytes": 2390025,
+      "compressed": 2390025
+    },
+    {
+      "name": "Rock050_1K-JPG_Roughness.jpg",
+      "bytes": 671737,
+      "compressed": 671737
+    },
+    {
+      "name": "Rock050_1K-JPG.blend",
+      "bytes": 1108804,
+      "compressed": 1108804
+    },
+    {
+      "name": "Rock050_1K-JPG.mtlx",
+      "bytes": 2242,
+      "compressed": 2242
+    },
+    {
+      "name": "Rock050_1K-JPG.tres",
+      "bytes": 1010,
+      "compressed": 1010
+    },
+    {
+      "name": "Rock050.png",
+      "bytes": 419106,
+      "compressed": 419106
+    }
+  ],
+  "extracted": [
+    "Rock050_1K-JPG_AmbientOcclusion.jpg",
+    "Rock050_1K-JPG_Color.jpg",
+    "Rock050_1K-JPG_NormalGL.jpg",
+    "Rock050_1K-JPG_Roughness.jpg"
+  ],
+  "licenseEvidenceSha256": "60138e09b277c89977841462634b36e99d7bae5b77174777813502069c59461c",
+  "physicalScale": "not specified; authoring assumption2.4m",
+  "derivative": "props/mine-collapse-pbr.js",
+  "derivativeSha256": "e90181e4ba56831e286649539dcc05197180e32199a07c675fb5d4da0630a6cd",
+  "generator": "tools/build-mine-collapse-pbr.py",
+  "inputMaps": {
+    "colour": {
+      "name": "Rock050_1K-JPG_Color.jpg",
+      "bytes": 1334698,
+      "sha256": "6d0e6458909008a46efe1b2dffe92bfde48880c8f7003aa2174e1153478ab2a1"
+    },
+    "normal": {
+      "name": "Rock050_1K-JPG_NormalGL.jpg",
+      "bytes": 2390025,
+      "sha256": "d2e47f8a790d8185cee45ff888e59c730cf001c37908ca6f15585fe8d5ac20e9"
+    },
+    "rough": {
+      "name": "Rock050_1K-JPG_Roughness.jpg",
+      "bytes": 671737,
+      "sha256": "5b8fecae5a08356a3aaf2b404ea6506e56e6ed5f84aedcdc903a33eaaae72988"
+    },
+    "ao": {
+      "name": "Rock050_1K-JPG_AmbientOcclusion.jpg",
+      "bytes": 577940,
+      "sha256": "9343cd1507b1d7a930b81ac3570237de7d287c0979beb1c72eb86bfe73edc25d"
+    }
+  }
+}

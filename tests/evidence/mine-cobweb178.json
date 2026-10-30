@@ -1,0 +1,976 @@
+{
+  "baseline": "e8e187419593383e3b69567ef1ad0db8fc5a2c92",
+  "status": "local review candidate; independent review pending; not published",
+  "selfScore": {
+    "appearance": 26,
+    "material": 17,
+    "construction": 19,
+    "webUnity": 20,
+    "lightness": 9,
+    "total": 91
+  },
+  "web": {
+    "candidate": {
+      "pass": true,
+      "desc": {
+        "types": 165,
+        "last": "mine_cobweb",
+        "triangles": 80,
+        "coverage": 0.10112380981445312,
+        "alphaTest": 0.12,
+        "transparent": false,
+        "depthWrite": true,
+        "emissive": [
+          0,
+          0,
+          0
+        ],
+        "castShadow": false
+      },
+      "shots": [
+        {
+          "view": "close",
+          "dist": 3,
+          "yaw": 0.12,
+          "light": 16
+        },
+        {
+          "view": "normal",
+          "dist": 10,
+          "yaw": 0.12,
+          "light": 16
+        },
+        {
+          "view": "far",
+          "dist": 16,
+          "yaw": 0.12,
+          "light": 16
+        },
+        {
+          "view": "opposite",
+          "dist": 3,
+          "yaw": 0.12,
+          "light": 16
+        },
+        {
+          "view": "back",
+          "dist": 3,
+          "yaw": 3.141592653589793,
+          "light": 16
+        },
+        {
+          "view": "dark",
+          "dist": 3,
+          "yaw": 0.12,
+          "light": 2
+        },
+        {
+          "view": "unlit",
+          "dist": 3,
+          "yaw": 0.12,
+          "light": 0
+        },
+        {
+          "view": "edge",
+          "dist": 3,
+          "yaw": 1.35,
+          "light": 16
+        },
+        {
+          "view": "overlap",
+          "dist": 3,
+          "yaw": 0.12,
+          "light": 16
+        }
+      ],
+      "saved": {
+        "loaded": true,
+        "equal": true,
+        "noncollision": true,
+        "collidersSame": true
+      },
+      "exported": {
+        "newOptional": true,
+        "files": [
+          {
+            "name": "props.csv",
+            "bytes": 134
+          },
+          {
+            "name": "asset_catalog.json",
+            "bytes": 64818
+          },
+          {
+            "name": "asset_bindings.json",
+            "bytes": 20272
+          },
+          {
+            "name": "small_props.json",
+            "bytes": 39787460
+          }
+        ]
+      },
+      "load": [
+        {
+          "count": 0,
+          "calls": 4,
+          "triangles": 5010,
+          "textures": 9,
+          "shared": true,
+          "lights": 0
+        },
+        {
+          "count": 9,
+          "calls": 5,
+          "triangles": 5730,
+          "textures": 9,
+          "shared": true,
+          "lights": 0
+        },
+        {
+          "count": 225,
+          "calls": 5,
+          "triangles": 23010,
+          "textures": 9,
+          "shared": true,
+          "lights": 0
+        }
+      ],
+      "errors": [],
+      "gpuMeasured": false
+    },
+    "input": {
+      "rows": [
+        {
+          "preview": {
+            "scale": 1.05,
+            "y": 1.65,
+            "angle": 0.2617993877991494,
+            "id": "mine_cobweb"
+          },
+          "placed": {
+            "n": 1,
+            "id": "mine_cobweb",
+            "y": 1.65,
+            "scale": 1.05,
+            "angle": 0.2617993877991494
+          },
+          "restored": {
+            "ok": true,
+            "same": true,
+            "mesh": 1
+          }
+        }
+      ],
+      "errors": []
+    },
+    "lantern": {
+      "pass": true,
+      "geometry": {
+        "triangles": 1172,
+        "glass": 24,
+        "bounds": [
+          [
+            -0.125,
+            -0.43799999356269836,
+            7.748603980672897e-10
+          ],
+          [
+            0.13699999451637268,
+            0.4399999976158142,
+            0.5049999952316284
+          ]
+        ],
+        "types": 165
+      },
+      "save": {
+        "error": "準備が完了しました（4.6秒）",
+        "loaded": true,
+        "props": true,
+        "noncollision": true,
+        "collider": true,
+        "glass": 2,
+        "pose": [
+          [
+            0,
+            1.5099999999999998,
+            0.5
+          ],
+          [
+            2.35,
+            1.7824,
+            1
+          ]
+        ]
+      },
+      "load": {
+        "rows": [
+          {
+            "count": 0,
+            "glass": 0,
+            "activeLights": 0,
+            "shadowLights": 0,
+            "calls": 4,
+            "triangles": 5010,
+            "textures": 14,
+            "sharedBody": true,
+            "sharedGlass": true,
+            "cpuSubmissionMedianMs": 0.09999990463256836
+          },
+          {
+            "count": 9,
+            "glass": 9,
+            "activeLights": 2,
+            "shadowLights": 2,
+            "calls": 6,
+            "triangles": 15774,
+            "textures": 14,
+            "sharedBody": true,
+            "sharedGlass": true,
+            "cpuSubmissionMedianMs": 0.8999999761581421
+          },
+          {
+            "count": 225,
+            "glass": 225,
+            "activeLights": 2,
+            "shadowLights": 2,
+            "calls": 6,
+            "triangles": 274110,
+            "textures": 14,
+            "sharedBody": true,
+            "sharedGlass": true,
+            "cpuSubmissionMedianMs": 0.7000000476837158
+          }
+        ],
+        "removedLights": 0,
+        "removedShadow": 0,
+        "gpuMeasured": false
+      },
+      "mixed": {
+        "ordinary": 6,
+        "shadow": 2,
+        "lamps": 4,
+        "torch": 4,
+        "chest": {
+          "ornaments": 8,
+          "motes": 108,
+          "rays": 0,
+          "rims": 0,
+          "slots": 108,
+          "disposed": 0,
+          "activeLights": 0,
+          "lightCapacity": 8,
+          "drawObjects": 3,
+          "capacity": 128,
+          "sanctumChests": 4,
+          "sanctumMotes": 144,
+          "sanctumActiveLights": 0,
+          "sanctumLightCapacity": 6,
+          "sanctumFxCapacity": 256
+        }
+      },
+      "oldExportUnchanged": "Native51 mesh/Collider checks; previous full export retained",
+      "extensionBytes": 607018,
+      "errors": []
+    },
+    "rail": {
+      "pass": true,
+      "pure": [
+        "three straights",
+        "replace provisional tail with -1 turn",
+        "actual mesh port -1",
+        "actual mesh port -1",
+        "actual mesh port -1",
+        "actual mesh port -1",
+        "actual mesh port -1",
+        "actual mesh port -1",
+        "continuous -1 1",
+        "continuous -1 2",
+        "replace provisional tail with 1 turn",
+        "actual mesh port 1",
+        "actual mesh port 1",
+        "actual mesh port 1",
+        "actual mesh port 1",
+        "actual mesh port 1",
+        "actual mesh port 1",
+        "continuous 1 1",
+        "continuous 1 2",
+        "two successive bends",
+        "four curves closed loop",
+        "closed loop stable on pointer release",
+        "retract to earlier endpoint",
+        "existing start sets outward tangent",
+        "finish at matching existing port",
+        "perpendicular end rejected",
+        "end scale mismatch rejected",
+        "end height mismatch rejected",
+        "duplicate/interior overlap rejected",
+        "occupied start rejected",
+        "uneven ground rejected",
+        "impossible short sideways move rejected",
+        "scale and QE heading",
+        "bounded stroke",
+        "map bounds rejected",
+        "225 existing rail scene"
+      ],
+      "final": [
+        [
+          136,
+          2.184924952075562e-08,
+          -1.5200453340469267e-07,
+          0,
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          136,
+          2.184924952075562e-08,
+          1.9999998479954666,
+          0,
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          136,
+          2.184924952075562e-08,
+          3.9999998479954666,
+          0,
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          137,
+          2.184924952075562e-08,
+          5.999999847995467,
+          0,
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          136,
+          2.0000000218492495,
+          7.999999847995467,
+          1.5707963267948966,
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          136,
+          4.0000000218492495,
+          7.999999847995467,
+          1.5707963267948966,
+          1,
+          0,
+          1,
+          0
+        ]
+      ],
+      "reload": {
+        "success": true,
+        "equal": true,
+        "count": 6
+      },
+      "cancelModes": [
+        "escape",
+        "cancel",
+        "blur",
+        "type",
+        "tool",
+        "mode",
+        "capture"
+      ],
+      "oneStrokeOneUndo": true,
+      "dragScaleHeadingLocked": true,
+      "ordinaryPropUnchanged": true,
+      "undergroundFloor": true,
+      "timing": {
+        "existing": 225,
+        "maxStroke": 64,
+        "updateMedianMs": 0.40000009536743164,
+        "updateMaxMs": 0.8000000715255737,
+        "gpuMeasured": false
+      },
+      "errors": [],
+      "privateHeadless": true,
+      "gui": false
+    },
+    "boundary": {
+      "pass": true,
+      "cases": [
+        {
+          "name": "touch curve preview equals committed geometry and pose",
+          "pass": true,
+          "before": {
+            "geometryMatches": true,
+            "position": [
+              7.370881949242403e-08,
+              0,
+              -2.7849011985381367e-09
+            ],
+            "rotation": 1.5707963267948966,
+            "scale": 1,
+            "visible": true
+          },
+          "placed": [
+            {
+              "id": "mine_rail_curve",
+              "position": [
+                7.370881949242403e-08,
+                0,
+                -2.7849011985381367e-09
+              ],
+              "rotation": 1.5707963267948966,
+              "scale": 1
+            }
+          ]
+        },
+        {
+          "name": "left + right chord cancels and hands off camera",
+          "pass": true,
+          "canceled": true,
+          "cameraMoved": true,
+          "stoppedAfterButtonRelease": true,
+          "count": 0,
+          "onlyFirstDown": true,
+          "trace": [
+            {
+              "type": "pointermove",
+              "button": -1,
+              "buttons": 0,
+              "pointerType": "mouse"
+            },
+            {
+              "type": "pointerdown",
+              "button": 0,
+              "buttons": 1,
+              "pointerType": "mouse"
+            },
+            {
+              "type": "pointermove",
+              "button": -1,
+              "buttons": 1,
+              "pointerType": "mouse"
+            },
+            {
+              "type": "pointermove",
+              "button": 2,
+              "buttons": 3,
+              "pointerType": "mouse"
+            },
+            {
+              "type": "pointermove",
+              "button": -1,
+              "buttons": 3,
+              "pointerType": "mouse"
+            },
+            {
+              "type": "pointermove",
+              "button": 2,
+              "buttons": 1,
+              "pointerType": "mouse"
+            },
+            {
+              "type": "pointermove",
+              "button": -1,
+              "buttons": 1,
+              "pointerType": "mouse"
+            },
+            {
+              "type": "pointerup",
+              "button": 0,
+              "buttons": 0,
+              "pointerType": "mouse"
+            }
+          ]
+        },
+        {
+          "name": "left + middle chord cancels and hands off camera",
+          "pass": true,
+          "canceled": true,
+          "cameraMoved": true,
+          "stoppedAfterButtonRelease": true,
+          "count": 0,
+          "onlyFirstDown": true,
+          "trace": [
+            {
+              "type": "pointermove",
+              "button": -1,
+              "buttons": 0,
+              "pointerType": "mouse"
+            },
+            {
+              "type": "pointerdown",
+              "button": 0,
+              "buttons": 1,
+              "pointerType": "mouse"
+            },
+            {
+              "type": "pointermove",
+              "button": -1,
+              "buttons": 1,
+              "pointerType": "mouse"
+            },
+            {
+              "type": "pointermove",
+              "button": 1,
+              "buttons": 5,
+              "pointerType": "mouse"
+            },
+            {
+              "type": "pointermove",
+              "button": -1,
+              "buttons": 5,
+              "pointerType": "mouse"
+            },
+            {
+              "type": "pointermove",
+              "button": 1,
+              "buttons": 1,
+              "pointerType": "mouse"
+            },
+            {
+              "type": "pointermove",
+              "button": -1,
+              "buttons": 1,
+              "pointerType": "mouse"
+            },
+            {
+              "type": "pointerup",
+              "button": 0,
+              "buttons": 0,
+              "pointerType": "mouse"
+            }
+          ]
+        },
+        {
+          "name": "stationary pointer with WASD movement cancels pending rails",
+          "pass": true,
+          "motion": {
+            "active": false,
+            "target": [
+              -1.4813185282075498,
+              0,
+              -2.058090119500677
+            ],
+            "previewCount": 0
+          },
+          "count": 0
+        }
+      ],
+      "errors": [],
+      "privateHeadless": true,
+      "gui": false
+    },
+    "cache": {
+      "pass": true,
+      "rows": [
+        {
+          "kind": "sample",
+          "keyMatches": true,
+          "profileMatches": true
+        },
+        {
+          "kind": "sample2",
+          "keyMatches": true,
+          "profileMatches": true
+        }
+      ],
+      "offlineFile": {
+        "status": "ready",
+        "error": null
+      },
+      "bundlesByteIdentical": true,
+      "entriesIdentical": true,
+      "fixedRockRegenerated": 0
+    },
+    "offline": {
+      "pass": true,
+      "fileOffline": true,
+      "id": "mine_cobweb",
+      "instances": 1,
+      "clipped": true,
+      "texture": 512,
+      "exportVersion": 1,
+      "exportAssets": [
+        "mine_cobweb"
+      ],
+      "png": true,
+      "errors": []
+    }
+  },
+  "native": {
+    "formal": {
+      "pass": true,
+      "small53": true,
+      "formal73": true,
+      "old52MeshCollider": true,
+      "invalidOld52Generated": true,
+      "saveReinstantiate": true,
+      "sceneReload": true,
+      "cases": [
+        "missing",
+        "version",
+        "png",
+        "index",
+        "nan",
+        "nonSolid",
+        "circle",
+        "shape"
+      ],
+      "shaderErrors": 0,
+      "player": false
+    },
+    "final": {
+      "pass": true,
+      "finalTextureDecodeAndImport": true,
+      "alphaClipSaveReinstantiate": true,
+      "meshAndImporterUnchangedFrom177": true,
+      "formal73AndOld52CasesReused177": true,
+      "texture": "Assets/MapSharedAssetCache/5ecc06ab533b212577711b90a65f4d2bb988aa847358906a9bc5ed4d094a57cc.png",
+      "overlapOpaqueClip": true,
+      "noEmission": true,
+      "player": false
+    },
+    "field": {
+      "formalTunnel": true,
+      "width": 2.4,
+      "height": 2.8,
+      "webPosition": [
+        13.15,
+        2.15,
+        11.4
+      ],
+      "webYaw": 90,
+      "light": "published mine wall lantern shared budget",
+      "originalSceneChanged": false
+    },
+    "load": {
+      "gpuMeasured": false,
+      "cpuIncludesRenderTextureReadback": true,
+      "rows": [
+        {
+          "count": 9,
+          "visible": 9,
+          "meshes": 1,
+          "materials": 1,
+          "textures": 1,
+          "lights": 0,
+          "textureBytes": 2797193,
+          "meshBytes": 11184,
+          "cpuMedianMs": 4.339300000000001
+        },
+        {
+          "count": 225,
+          "visible": 129,
+          "meshes": 1,
+          "materials": 1,
+          "textures": 1,
+          "lights": 0,
+          "textureBytes": 2797193,
+          "meshBytes": 11184,
+          "cpuMedianMs": 4.0053
+        }
+      ]
+    }
+  },
+  "motion": [
+    {
+      "frame": 0,
+      "cameraXMetres": 0.0,
+      "litThreadPixels": 1949
+    },
+    {
+      "frame": 1,
+      "cameraXMetres": 0.08,
+      "litThreadPixels": 1987
+    },
+    {
+      "frame": 2,
+      "cameraXMetres": 0.16,
+      "litThreadPixels": 1932
+    }
+  ],
+  "images": {
+    "Web177/back.png": {
+      "sha256": "72d049ce129a1f43ddd9a1f560d188e2b2af9d054c0d24e7def6fcf8f56689ce",
+      "bytes": 139191
+    },
+    "Web177/close.png": {
+      "sha256": "add7fbc2031793385a54263a6bb797df09c7aee32d3568941a94b7556e336d5e",
+      "bytes": 196109
+    },
+    "Web177/colour.png": {
+      "sha256": "7d480d424d08c66e1de189cb6886b4dab366b7cf0e0833ddd1b2380336804cba",
+      "bytes": 101060
+    },
+    "Web177/dark.png": {
+      "sha256": "e7b99c9b5646373f6ba7a87c6579897eb0f104d8d3588ad9133268e051845c41",
+      "bytes": 113179
+    },
+    "Web177/edge.png": {
+      "sha256": "7918c7174e46d5e48c0e9f6f6650dca9c59859e8dbde50d25ecbbc516a3a02f8",
+      "bytes": 107773
+    },
+    "Web177/far.png": {
+      "sha256": "e8382610b8044d39fba031c2595232c715d59cc1c4a687cc2cae7e55793afe43",
+      "bytes": 135374
+    },
+    "Web177/normal.png": {
+      "sha256": "623dc5053a1faacafe55496773af2e962d789bf7b190c7e8e10001f045357a46",
+      "bytes": 164525
+    },
+    "Web177/opposite.png": {
+      "sha256": "e0898db8e17a9c83de949ec4c5442e58306b989d5480027503c1bd4856896dc5",
+      "bytes": 192731
+    },
+    "Web177/overlap.png": {
+      "sha256": "e10973fcf065530305c287245c82a44970c9ae56de196f4dd423e5f8ca00485d",
+      "bytes": 254502
+    },
+    "Web177/unlit.png": {
+      "sha256": "1bf48f3c2e27ea89ee092c13d56eb0ff9fdb20311ac68e6b3ac3eff1f4bee19d",
+      "bytes": 74857
+    },
+    "Web178/back.png": {
+      "sha256": "d0dcae633bfea5ab1a60778e7f2a2ee5b08f55a14aac9b0d4b87d762e3f29feb",
+      "bytes": 143033
+    },
+    "Web178/close.png": {
+      "sha256": "c48d48a4ae993865d18353c7d787dc69889651058bff24ac9a47c5c6ee736ee4",
+      "bytes": 202250
+    },
+    "Web178/colour.png": {
+      "sha256": "caa4db60c5e45f860d12431be50a584ae472a39ce2fa1c9babbf0688d9e70cf4",
+      "bytes": 127768
+    },
+    "Web178/dark.png": {
+      "sha256": "f300fb4599b0c458eed885a7fcc3cd4456d98f142493f8d80c7c90a3c06ba937",
+      "bytes": 116685
+    },
+    "Web178/edge.png": {
+      "sha256": "119ba825c4d265c9a49f5fb5f574464771ea517342cfd7929e39d12cd36b561a",
+      "bytes": 106926
+    },
+    "Web178/far.png": {
+      "sha256": "bbfa29b307d0e29812fa218597757563fa1d01a8334141fc6057b404dbb6efaf",
+      "bytes": 135108
+    },
+    "Web178/normal.png": {
+      "sha256": "ed823e2bb1c5098b8022074d4dde688d00bb9674796c876c5bce0f215530a3c5",
+      "bytes": 165229
+    },
+    "Web178/opposite.png": {
+      "sha256": "3fe2e1451403941ad222559cea932c47136f513b20b42da8ed167e12598f5950",
+      "bytes": 196243
+    },
+    "Web178/overlap.png": {
+      "sha256": "240af4ade3a849fcbfc0d56efb2cac510a95315fa2db95f6eacf094720d23000",
+      "bytes": 260750
+    },
+    "Web178/unlit.png": {
+      "sha256": "87f3b757acb4b963424cd5dcb7a4ea381ad024e160605749b8422aeb645dd5fb",
+      "bytes": 77992
+    },
+    "Unity177/mine-absent.png": {
+      "sha256": "094fdab75d707c525c36a209e0b58518026af5d7ac2d82facb5bff26b94a55e2",
+      "bytes": 128939
+    },
+    "Unity177/mine-close.png": {
+      "sha256": "7c55a5b8df614601cfa8130b6fb515e62a04ae16990a00df037d9f26b20906c3",
+      "bytes": 295979
+    },
+    "Unity177/mine-dark.png": {
+      "sha256": "4ece9ac799ec8e8e1ddfb6aa070d9d0de1051af2faaef6f76a339b7b0cad80e8",
+      "bytes": 113794
+    },
+    "Unity177/mine-normal.png": {
+      "sha256": "a1820bf4cd2475442512543445e696b92f321badb233ecfb55684cb738749188",
+      "bytes": 131689
+    },
+    "Unity177/mine-reverse.png": {
+      "sha256": "cdf456bae4a3fb9ab6d9cc245afc8c15e75a68f56901afa0838bd1bb7a40f0de",
+      "bytes": 323441
+    },
+    "Unity177/mine-wall-oblique.png": {
+      "sha256": "7d0701d625b542ea83422e7d23bae3c5995ab360771f98d3e1ed84f41f16176b",
+      "bytes": 190404
+    },
+    "Unity177/studio-back.png": {
+      "sha256": "b3ad1906f152b85078c7864bf64f703c347f78cc422e1d7aa66a397b4efe1a82",
+      "bytes": 69452
+    },
+    "Unity177/studio-close.png": {
+      "sha256": "3fc7279113c7168ae2234c3116b5ab97cdcd3d2b90d904a6a3e50d9d5358e07a",
+      "bytes": 329416
+    },
+    "Unity177/studio-dark.png": {
+      "sha256": "9fafc74f4ba71d763598ebd89bacf6f01e8d7e9cd4bf34b60aeb638fdbf2d47b",
+      "bytes": 246612
+    },
+    "Unity177/studio-edge.png": {
+      "sha256": "f737e5f0b986ac99c6f95cbb985fe9405fc0dc8a25ca66525424721bbf022d24",
+      "bytes": 115508
+    },
+    "Unity177/studio-far.png": {
+      "sha256": "ee58d83c99579b0f0d5c7a38a95d5306076793d8a62857b262f3a4b639241a50",
+      "bytes": 31695
+    },
+    "Unity177/studio-move0.png": {
+      "sha256": "3fc7279113c7168ae2234c3116b5ab97cdcd3d2b90d904a6a3e50d9d5358e07a",
+      "bytes": 329416
+    },
+    "Unity177/studio-move1.png": {
+      "sha256": "25e1685d61b508b21a50129f5e2ef4ca33d1036fca8e6712aa5e393f3b3f20f2",
+      "bytes": 327847
+    },
+    "Unity177/studio-move2.png": {
+      "sha256": "ad30f69b03e39efedbdff38bd0a6a463dbbcd74e165aec790a9383619e1ab25b",
+      "bytes": 327103
+    },
+    "Unity177/studio-normal.png": {
+      "sha256": "2ed0a04de677af51d0a2e76144b5f1d0da90a09e6de9137adadac76c68f8873b",
+      "bytes": 52806
+    },
+    "Unity177/studio-opposite.png": {
+      "sha256": "698ca85d24b29807d2c91166690265860e53009b3567232fc0f0bb405b5ae26c",
+      "bytes": 328955
+    },
+    "Unity177/studio-unlit.png": {
+      "sha256": "e441a37d60e4edacf5bc33baba08efa3f6458da522e91ffba7e1fcc7fc88e63a",
+      "bytes": 170186
+    },
+    "Unity178/mine-absent.png": {
+      "sha256": "094fdab75d707c525c36a209e0b58518026af5d7ac2d82facb5bff26b94a55e2",
+      "bytes": 128939
+    },
+    "Unity178/mine-close.png": {
+      "sha256": "03d8d4bd7ceff2b8200109db9b1f574ecb66d8276c4428a05ad5060de90e2f4f",
+      "bytes": 302476
+    },
+    "Unity178/mine-dark.png": {
+      "sha256": "41a3bd48ec1f337a0f0a7c3f0a4d4f34b66fc7978e7ff497e0abf5501f7c8843",
+      "bytes": 113602
+    },
+    "Unity178/mine-normal.png": {
+      "sha256": "7fe8e2583b8456ce90b415a097744d3a06bf2de86a277bd8645aa2af0ed8834f",
+      "bytes": 131531
+    },
+    "Unity178/mine-reverse.png": {
+      "sha256": "e7765fb248d77842297be02e2a20a99b7106adef4c27c0bf6cf8e7c214a8f841",
+      "bytes": 333624
+    },
+    "Unity178/mine-wall-oblique.png": {
+      "sha256": "4bd21e03ec3839511243ca44729027f7cec56c45473cab18e7ad794ab473646c",
+      "bytes": 192102
+    },
+    "Unity178/normal-motion0.png": {
+      "sha256": "1644d9d302f874782ae5b41cae66cd1f1017380d80d828b2fd8e57437a691ae2",
+      "bytes": 23086
+    },
+    "Unity178/normal-motion1.png": {
+      "sha256": "4ca6e1d5efdb1c856fb1f4dfe4e61f85e5b24ca56c8fb1ec95fca453505926da",
+      "bytes": 23045
+    },
+    "Unity178/normal-motion2.png": {
+      "sha256": "a3b1059f22df1476fb85035783566e88a663824462ab594ba69adfcbf615a6dc",
+      "bytes": 22722
+    },
+    "Unity178/overlap--1.png": {
+      "sha256": "82eef2ef15ffd734797e84dedab3f9c0b8bb923a90fb64198e366c73df797ae0",
+      "bytes": 129708
+    },
+    "Unity178/overlap-0.png": {
+      "sha256": "6af8ac96a0e8be47ebbeb8037a0ec2aaf781fe5f664be7bc8ab842e344b56935",
+      "bytes": 135125
+    },
+    "Unity178/overlap-1.png": {
+      "sha256": "e3135081d5febc92ee8804ec3581e3143727dc6ddce10c9f7f2e409e02c4fb6c",
+      "bytes": 109099
+    },
+    "Unity178/studio-back.png": {
+      "sha256": "42b8e5d4800242908cca87ea047b1015d32cf83ce255b1889a0e2dbcd0a7b425",
+      "bytes": 74765
+    },
+    "Unity178/studio-close.png": {
+      "sha256": "e085c8aa16cce93b3fda7cd30319937f8a4ed1c3bb8e5320e18685f59d7abfe5",
+      "bytes": 334337
+    },
+    "Unity178/studio-dark.png": {
+      "sha256": "8a31814e7cdba720391940e4cf56bbc961ee44819c2d6df8b4caa6f6e1c5ccf9",
+      "bytes": 251434
+    },
+    "Unity178/studio-edge.png": {
+      "sha256": "7706ee6b431056252829e51db47b9c290442f1e578e977cc54cd0be6385b2a7a",
+      "bytes": 115856
+    },
+    "Unity178/studio-far.png": {
+      "sha256": "17b8fefdea82671e0fa66fb8845e8150a59cc248ffbcd30c1570fd2d2cf75ec3",
+      "bytes": 31554
+    },
+    "Unity178/studio-move0.png": {
+      "sha256": "e085c8aa16cce93b3fda7cd30319937f8a4ed1c3bb8e5320e18685f59d7abfe5",
+      "bytes": 334337
+    },
+    "Unity178/studio-move1.png": {
+      "sha256": "a310850b327366c3ea36e3756254ba954466cb25937b6685e66a71a2a7b65463",
+      "bytes": 332648
+    },
+    "Unity178/studio-move2.png": {
+      "sha256": "346a1ebe706552604b664dd2dbeedf5f72263853cbddf9b107c88f5279df14cc",
+      "bytes": 331772
+    },
+    "Unity178/studio-normal.png": {
+      "sha256": "46df50fd420a9ae7d1ac57252aba02e60a7fb9778b76879e0cbd4544447b43f5",
+      "bytes": 52617
+    },
+    "Unity178/studio-opposite.png": {
+      "sha256": "589ff8c7e43c30e12b20a8d7ef5b6f5394aab248ea9ca4ebd57705140d9cafea",
+      "bytes": 333483
+    },
+    "Unity178/studio-unlit.png": {
+      "sha256": "495cc2ae82a665139408ed2eb15e0045c988c46fd1a419f988526212a74e4283",
+      "bytes": 171462
+    }
+  },
+  "preserved": {
+    "props/mine-lantern.js": "87e69f27a2e15f788ca745588ab732d58a3f191bca074c2accf13fb10cc58602",
+    "props/mine-rail-drag.js": "7103ee81b1d164a608c14c0701e3fc728f060a0ed0034bb76fd4c92ed3d5241a",
+    "props/mine-rails.js": "a64ac22e284c820939cd7e33b26e44f933e5455365b2709fa07387a99b018bde",
+    "props/chest-royal.js": "76350688d8fc0826ceed569c136f4984e3779a1c2cc1c5d0e8c7f2d89ffa1d41",
+    "props/chest-royal-ruby.js": "7f42bcee98627754782dd7bdcf703c3507a82347c70de4645246f4d1de071134",
+    "unity/Assets/MapSharedProps/Runtime/RoomTorchBudget.cs": "ae1b5ba98f39c533ce72917f5eefff531cc5e018c4283e17255194b5a1e54dff",
+    "unity/Assets/MapSharedProps/Runtime/RoomTorchInstance.cs": "0e06f0be2b12eebbccd0a04c992ea781db6f039e038f6626685a1f6dcd139ec6"
+  },
+  "motionCaveat": "Three nearby static frames only; not a long temporal-AA or all-device flicker guarantee.",
+  "sourceHashes": {
+    "props/mine-cobweb.js": "ca64915412a7040e66b199def0a4aad0f8acca5ca83f5bebff232e084ab797d3",
+    "unity/Assets/MapSharedProps/Editor/MineCobwebV1.cs": "c25a03fd01c24a833d0ea203fc98dd95994980b4bc04d91268408b0b86eeae64",
+    "app.js": "42cb6f4f569676b93f49d360fd0e555e83ffbc82c104256cedf0a90d1259f779",
+    "index.html": "754d5f120dcf627eee92fe7f165ef08524dd76ca4133d0ebdc33a5109f846fdd",
+    "props/small-prop-export.js": "ea15ede661037a0685f5f2e02932c2df12d7ddb34fbcd01f6cbb2f9d56985de1"
+  },
+  "colourPngBytes": 127768,
+  "limitations": [
+    "manual wall/beam attachment",
+    "bowed card becomes thin edge-on",
+    "stylized angular network remains",
+    "old Reader binary not run; optional-block source compatibility only",
+    "GPU/draw calls in Unity and mobile/Player not measured",
+    "native CPU includes image readback;225 placed but129 visible"
+  ],
+  "failedAttempts": [
+    "177 first formal73 check used no cave placements; corrected mixed input, final test passed",
+    "177 second launch stopped only own dedicated Editor after input preparation quoting failure; no user process touched",
+    "lantern regression assumed last item; stable existing index163 asserted instead, rerun passed"
+  ]
+}

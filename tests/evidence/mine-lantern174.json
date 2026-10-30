@@ -1,0 +1,394 @@
+{
+  "Evidence169/budget-before.json": {
+    "pass": false,
+    "baseline": "e653493505bda4a61220828616832cb445583760",
+    "cases": [
+      {
+        "name": "exact-0-45-100",
+        "pass": false,
+        "finalLights": 1,
+        "issues": [
+          "settled wrong light count 2",
+          "final orphan lights 1",
+          "disabled fixture light remains"
+        ]
+      },
+      {
+        "name": "reverse-20-minus25-minus100",
+        "pass": false,
+        "finalLights": 1,
+        "issues": [
+          "settled wrong light count 2",
+          "final orphan lights 1",
+          "disabled fixture light remains"
+        ]
+      },
+      {
+        "name": "unequal-gains",
+        "pass": true,
+        "finalLights": 0,
+        "issues": []
+      },
+      {
+        "name": "variable-dt",
+        "pass": true,
+        "finalLights": 0,
+        "issues": []
+      },
+      {
+        "name": "disable-during-transfer",
+        "pass": true,
+        "finalLights": 0,
+        "issues": []
+      },
+      {
+        "name": "budget-disable-enable",
+        "pass": false,
+        "finalLights": 1,
+        "issues": [
+          "budget disabled light remains",
+          "settled wrong light count 2",
+          "final orphan lights 1",
+          "disabled fixture light remains"
+        ]
+      }
+    ]
+  },
+  "Evidence169/budget-after.json": {
+    "pass": true,
+    "baseline": "e653493505bda4a61220828616832cb445583760",
+    "cases": [
+      {
+        "name": "exact-0-45-100",
+        "pass": true,
+        "finalLights": 0,
+        "issues": []
+      },
+      {
+        "name": "reverse-20-minus25-minus100",
+        "pass": true,
+        "finalLights": 0,
+        "issues": []
+      },
+      {
+        "name": "unequal-gains",
+        "pass": true,
+        "finalLights": 0,
+        "issues": []
+      },
+      {
+        "name": "variable-dt",
+        "pass": true,
+        "finalLights": 0,
+        "issues": []
+      },
+      {
+        "name": "disable-during-transfer",
+        "pass": true,
+        "finalLights": 0,
+        "issues": []
+      },
+      {
+        "name": "budget-disable-enable",
+        "pass": true,
+        "finalLights": 0,
+        "issues": []
+      }
+    ]
+  },
+  "Evidence172/shader.json": {
+    "completed": true,
+    "rows": [
+      {
+        "path": "Forward",
+        "mode": "Forward",
+        "stage": "main-no-shadow",
+        "changed": 0,
+        "maxDelta": 0,
+        "meanDelta": 0.0,
+        "beforeMean": 63.07024848090278,
+        "afterMean": 63.07024848090278
+      },
+      {
+        "path": "Forward",
+        "mode": "Forward",
+        "stage": "main-shadow",
+        "changed": 188811,
+        "maxDelta": 132,
+        "meanDelta": 4.382064344618056,
+        "beforeMean": 63.07024848090278,
+        "afterMean": 58.688184136284725
+      },
+      {
+        "path": "Forward",
+        "mode": "Forward",
+        "stage": "SH-only",
+        "changed": 0,
+        "maxDelta": 0,
+        "meanDelta": 0.0,
+        "beforeMean": 33.09967176649305,
+        "afterMean": 33.09967176649305
+      },
+      {
+        "path": "Forward",
+        "mode": "Forward",
+        "stage": "all-off",
+        "changed": 0,
+        "maxDelta": 0,
+        "meanDelta": 0.0,
+        "beforeMean": 0.0,
+        "afterMean": 0.0
+      },
+      {
+        "path": "Forward",
+        "mode": "Forward",
+        "stage": "cutaway-main-shadow",
+        "changed": 158097,
+        "maxDelta": 132,
+        "meanDelta": 3.456257595486111,
+        "beforeMean": 56.18260091145833,
+        "afterMean": 52.72634331597222
+      },
+      {
+        "path": "Forward",
+        "mode": "Forward",
+        "stage": "point-no-shadow",
+        "changed": 0,
+        "maxDelta": 0,
+        "meanDelta": 0.0,
+        "beforeMean": 26.64221245659722,
+        "afterMean": 26.64221245659722
+      },
+      {
+        "path": "Forward",
+        "mode": "Forward",
+        "stage": "point-shadow",
+        "changed": 218131,
+        "maxDelta": 109,
+        "meanDelta": 3.6639225260416666,
+        "beforeMean": 26.64221245659722,
+        "afterMean": 22.978289930555555
+      },
+      {
+        "path": "Forward",
+        "mode": "Forward",
+        "stage": "cutaway-point-shadow",
+        "changed": 200386,
+        "maxDelta": 157,
+        "meanDelta": 3.074060872395833,
+        "beforeMean": 24.423021375868057,
+        "afterMean": 21.348960503472224
+      },
+      {
+        "path": "Forward",
+        "mode": "Forward",
+        "stage": "actual-mine-point",
+        "changed": 110545,
+        "maxDelta": 160,
+        "meanDelta": 1.7862923177083334,
+        "beforeMean": 6.138178168402778,
+        "afterMean": 4.351885850694444
+      },
+      {
+        "path": "ForwardPlus",
+        "mode": "ForwardPlus",
+        "stage": "main-no-shadow",
+        "changed": 0,
+        "maxDelta": 0,
+        "meanDelta": 0.0,
+        "beforeMean": 63.07024848090278,
+        "afterMean": 63.07024848090278
+      },
+      {
+        "path": "ForwardPlus",
+        "mode": "ForwardPlus",
+        "stage": "main-shadow",
+        "changed": 188811,
+        "maxDelta": 132,
+        "meanDelta": 4.382064344618056,
+        "beforeMean": 63.07024848090278,
+        "afterMean": 58.688184136284725
+      },
+      {
+        "path": "ForwardPlus",
+        "mode": "ForwardPlus",
+        "stage": "SH-only",
+        "changed": 0,
+        "maxDelta": 0,
+        "meanDelta": 0.0,
+        "beforeMean": 33.09967176649305,
+        "afterMean": 33.09967176649305
+      },
+      {
+        "path": "ForwardPlus",
+        "mode": "ForwardPlus",
+        "stage": "all-off",
+        "changed": 0,
+        "maxDelta": 0,
+        "meanDelta": 0.0,
+        "beforeMean": 0.0,
+        "afterMean": 0.0
+      },
+      {
+        "path": "ForwardPlus",
+        "mode": "ForwardPlus",
+        "stage": "cutaway-main-shadow",
+        "changed": 158097,
+        "maxDelta": 132,
+        "meanDelta": 3.456257595486111,
+        "beforeMean": 56.18260091145833,
+        "afterMean": 52.72634331597222
+      },
+      {
+        "path": "ForwardPlus",
+        "mode": "ForwardPlus",
+        "stage": "point-no-shadow",
+        "changed": 321841,
+        "maxDelta": 220,
+        "meanDelta": 26.64221245659722,
+        "beforeMean": 0.0,
+        "afterMean": 26.64221245659722
+      },
+      {
+        "path": "ForwardPlus",
+        "mode": "ForwardPlus",
+        "stage": "point-shadow",
+        "changed": 250591,
+        "maxDelta": 220,
+        "meanDelta": 22.978289930555555,
+        "beforeMean": 0.0,
+        "afterMean": 22.978289930555555
+      },
+      {
+        "path": "ForwardPlus",
+        "mode": "ForwardPlus",
+        "stage": "cutaway-point-shadow",
+        "changed": 235422,
+        "maxDelta": 220,
+        "meanDelta": 21.348960503472224,
+        "beforeMean": 0.0,
+        "afterMean": 21.348960503472224
+      },
+      {
+        "path": "ForwardPlus",
+        "mode": "ForwardPlus",
+        "stage": "actual-mine-point",
+        "changed": 96902,
+        "maxDelta": 186,
+        "meanDelta": 1.5681743706597222,
+        "beforeMean": 2.7734440104166667,
+        "afterMean": 4.341618381076389
+      }
+    ],
+    "errors": []
+  },
+  "Evidence174/checks.json": {
+    "pass": true,
+    "emissionSurvivesSaveImport": true,
+    "customColliderCases": [
+      "nonSolid",
+      "circle",
+      "shape"
+    ],
+    "invalidOptionalOld51Generated": true,
+    "formal72": true,
+    "caveDecor20": true,
+    "mixedFixtures": 9,
+    "ordinaryBudgetCount": 1,
+    "maxOrdinaryLights": 6,
+    "maxShadowedNewLamps": 2,
+    "mixedSaveReinstantiate": true,
+    "shaderCompileErrors": 0,
+    "player": false
+  },
+  "Evidence174/load.json": {
+    "cases": [
+      {
+        "count": 9,
+        "visible": 9,
+        "materials": 2,
+        "meshes": 2,
+        "textures": 4,
+        "activeLights": 2,
+        "poolLights": 2,
+        "shadowLights": 2,
+        "textureBytes": 1314722,
+        "meshBytes": 526736,
+        "cpuMedianMs": 1.2709000000000001
+      },
+      {
+        "count": 225,
+        "visible": 121,
+        "materials": 2,
+        "meshes": 2,
+        "textures": 4,
+        "activeLights": 2,
+        "poolLights": 2,
+        "shadowLights": 2,
+        "textureBytes": 1314722,
+        "meshBytes": 526736,
+        "cpuMedianMs": 1.3574000000000002
+      }
+    ],
+    "gpuMeasured": false,
+    "meaning": "CPU render submission only, not total frame performance guarantee"
+  },
+  "baselineLifecycleCaveat": "The before budget-disable-enable case did not explicitly invoke EditMode lifecycle; ignore it as defect evidence. Exact/reverse failing cases are valid. After lifecycle cleanup is explicitly invoked.",
+  "visualTrials": "171/173/175 rejected; material, geometry, light power and origin retained from168.",
+  "images": {
+    "Evidence172/Forward-actual-mine-point-after.png": "2229e237c8e1dbc3b10404f483d0fe07144335e4c62ad8f02b58ab296a9561e4",
+    "Evidence172/Forward-actual-mine-point-before.png": "3d901f1575d522f8e26b7afc41d40f324b71c989f53019fc466f8cbb1280e180",
+    "Evidence172/Forward-all-off-after.png": "20a6c0f408fb2bbed638e2a9c68bdccb2c48da8dd834bfa8baaf20757b4a8325",
+    "Evidence172/Forward-all-off-before.png": "20a6c0f408fb2bbed638e2a9c68bdccb2c48da8dd834bfa8baaf20757b4a8325",
+    "Evidence172/Forward-cutaway-main-shadow-after.png": "97f9b5f2694c74c8ec183a12f16ba914fb9ed86d77db52890c5866877552622b",
+    "Evidence172/Forward-cutaway-main-shadow-before.png": "ffd32a9620427d4e0b9a19fc6bda746cd17720b59896834aa695be12902ea48c",
+    "Evidence172/Forward-cutaway-point-shadow-after.png": "18623907fd85aaae43ccbbccd45492f762d67e54207e2345719d7df5bac26582",
+    "Evidence172/Forward-cutaway-point-shadow-before.png": "c3a387dc80329c0c9254032be4dcc5c4520c944bae10a14ec16987aa5ae57aa6",
+    "Evidence172/Forward-main-no-shadow-after.png": "804c8b6e68c05c17fece0b263e8d8b0943b82df192bd34e7fb75f1c4492a6f39",
+    "Evidence172/Forward-main-no-shadow-before.png": "804c8b6e68c05c17fece0b263e8d8b0943b82df192bd34e7fb75f1c4492a6f39",
+    "Evidence172/Forward-main-shadow-after.png": "5fb1451618020b81c0c831a109cf078ef6f3063b1f739391a818c3fa601bf810",
+    "Evidence172/Forward-main-shadow-before.png": "804c8b6e68c05c17fece0b263e8d8b0943b82df192bd34e7fb75f1c4492a6f39",
+    "Evidence172/Forward-point-no-shadow-after.png": "7661f0142d6dd12b1912abf5b31af0162cc3b65465d1bcb419007d2c3c2048d6",
+    "Evidence172/Forward-point-no-shadow-before.png": "7661f0142d6dd12b1912abf5b31af0162cc3b65465d1bcb419007d2c3c2048d6",
+    "Evidence172/Forward-point-shadow-after.png": "431c6cf2dfcaecbeee5a2172f0c06bb964c1a736b9a33ad74f3a36b6ef9feb51",
+    "Evidence172/Forward-point-shadow-before.png": "7661f0142d6dd12b1912abf5b31af0162cc3b65465d1bcb419007d2c3c2048d6",
+    "Evidence172/Forward-SH-only-after.png": "c79a755e36c66e4c9f72b5db12f5a87738d5d69c9dd06a11ceb75c9588843f03",
+    "Evidence172/Forward-SH-only-before.png": "c79a755e36c66e4c9f72b5db12f5a87738d5d69c9dd06a11ceb75c9588843f03",
+    "Evidence172/ForwardPlus-actual-mine-point-after.png": "f0fe0369233531e52203748051c194c50a20dba01be8b146d435653d06243368",
+    "Evidence172/ForwardPlus-actual-mine-point-before.png": "d337fd7e5012cf3b8f419b18918026a21c0efd6a967845c1d28fdbe5fa7dce0a",
+    "Evidence172/ForwardPlus-all-off-after.png": "20a6c0f408fb2bbed638e2a9c68bdccb2c48da8dd834bfa8baaf20757b4a8325",
+    "Evidence172/ForwardPlus-all-off-before.png": "20a6c0f408fb2bbed638e2a9c68bdccb2c48da8dd834bfa8baaf20757b4a8325",
+    "Evidence172/ForwardPlus-cutaway-main-shadow-after.png": "97f9b5f2694c74c8ec183a12f16ba914fb9ed86d77db52890c5866877552622b",
+    "Evidence172/ForwardPlus-cutaway-main-shadow-before.png": "ffd32a9620427d4e0b9a19fc6bda746cd17720b59896834aa695be12902ea48c",
+    "Evidence172/ForwardPlus-cutaway-point-shadow-after.png": "18623907fd85aaae43ccbbccd45492f762d67e54207e2345719d7df5bac26582",
+    "Evidence172/ForwardPlus-cutaway-point-shadow-before.png": "20a6c0f408fb2bbed638e2a9c68bdccb2c48da8dd834bfa8baaf20757b4a8325",
+    "Evidence172/ForwardPlus-main-no-shadow-after.png": "804c8b6e68c05c17fece0b263e8d8b0943b82df192bd34e7fb75f1c4492a6f39",
+    "Evidence172/ForwardPlus-main-no-shadow-before.png": "804c8b6e68c05c17fece0b263e8d8b0943b82df192bd34e7fb75f1c4492a6f39",
+    "Evidence172/ForwardPlus-main-shadow-after.png": "5fb1451618020b81c0c831a109cf078ef6f3063b1f739391a818c3fa601bf810",
+    "Evidence172/ForwardPlus-main-shadow-before.png": "804c8b6e68c05c17fece0b263e8d8b0943b82df192bd34e7fb75f1c4492a6f39",
+    "Evidence172/ForwardPlus-point-no-shadow-after.png": "7661f0142d6dd12b1912abf5b31af0162cc3b65465d1bcb419007d2c3c2048d6",
+    "Evidence172/ForwardPlus-point-no-shadow-before.png": "20a6c0f408fb2bbed638e2a9c68bdccb2c48da8dd834bfa8baaf20757b4a8325",
+    "Evidence172/ForwardPlus-point-shadow-after.png": "431c6cf2dfcaecbeee5a2172f0c06bb964c1a736b9a33ad74f3a36b6ef9feb51",
+    "Evidence172/ForwardPlus-point-shadow-before.png": "20a6c0f408fb2bbed638e2a9c68bdccb2c48da8dd834bfa8baaf20757b4a8325",
+    "Evidence172/ForwardPlus-SH-only-after.png": "c79a755e36c66e4c9f72b5db12f5a87738d5d69c9dd06a11ceb75c9588843f03",
+    "Evidence172/ForwardPlus-SH-only-before.png": "c79a755e36c66e4c9f72b5db12f5a87738d5d69c9dd06a11ceb75c9588843f03",
+    "Evidence173/before-close.png": "4b3d26b0c7053c53c2230ec6048ac765da2a967194f722c95eeab43127cdf051",
+    "Evidence173/before-dark-close.png": "98f19a5987f260f0d8d08eb334aeccbfe09bca4dbb6d449be6c8453d07584628",
+    "Evidence173/before-normal.png": "ecd498f4a18750727929fa22bb7fd50562e4b1b057fde831cbd8185d6e3503e2",
+    "Evidence173/glass-alpha06-close.png": "f23670c74850d3d1d1963ca1d88a380f27e952e18a61d59ec1a7e9352697bf62",
+    "Evidence173/glass-alpha06-dark-close.png": "6ea07548e52279709f54942be6ee89b6d25c3d21aeecaeae90c7dbd2d38d1b23",
+    "Evidence173/glass-alpha06-normal.png": "e8238cc9e5a9186c98c383c019adb66a8c803385f3f744c6b2c183ddd00f17fc",
+    "Evidence173/glass-no-specular-close.png": "f33bc791f92786e8e82dd3f2fc116814577485ac6ea40885d7d5f167bf99dac1",
+    "Evidence173/glass-no-specular-dark-close.png": "abd6f1939ad75c137c30a91a5e628f82e2e97588d2866035f5ee3b51723a8154",
+    "Evidence173/glass-no-specular-normal.png": "1b14eec4c0cb894310e0b7cebc480d78a7d236b624689159647aa5b9ecfa7849",
+    "Evidence173/glass-off-diagnostic-close.png": "a8b544e2fe98d18d101813941315ff1978b3c7ea9fc8709d600f2b8461903801",
+    "Evidence173/glass-off-diagnostic-dark-close.png": "bf52911f3754cc9b2f716beefe4cbedb583efdefe0016f85d30039059541a7a3",
+    "Evidence173/glass-off-diagnostic-normal.png": "0cb3a98e208ad1f7f6c59753bc952547bade82dc95f2187bb2733f07719bec42",
+    "Evidence175/before-close.png": "4b3d26b0c7053c53c2230ec6048ac765da2a967194f722c95eeab43127cdf051",
+    "Evidence175/before-dark-close.png": "98f19a5987f260f0d8d08eb334aeccbfe09bca4dbb6d449be6c8453d07584628",
+    "Evidence175/before-normal.png": "ecd498f4a18750727929fa22bb7fd50562e4b1b057fde831cbd8185d6e3503e2",
+    "Evidence175/point-proxy062-close.png": "2a7992d43d03dc634a30ad6fb337d77cf8e08bf97b5faeaea5e01c85b60ff128",
+    "Evidence175/point-proxy062-dark-close.png": "066c3d05450442a5bb1db6eece5be39d84be0a0aad85fbad7148fb1b8f3a373b",
+    "Evidence175/point-proxy062-normal.png": "66aa69128e9b8ffa21db39bc9e418aa9e817b86d6e96b3e1b1af343a911a6d35"
+  }
+}

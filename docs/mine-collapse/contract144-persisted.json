@@ -1,0 +1,50 @@
+{
+  "pass": true,
+  "cases": [
+    {
+      "tag": "valid",
+      "prefabs": 51
+    },
+    {
+      "tag": "missing",
+      "prefabs": 50
+    },
+    {
+      "tag": "badVersion",
+      "prefabs": 50
+    },
+    {
+      "tag": "badIndex",
+      "prefabs": 50
+    },
+    {
+      "tag": "badPng",
+      "prefabs": 50
+    },
+    {
+      "tag": "nonfinite",
+      "prefabs": 50
+    },
+    {
+      "tag": "nonSolid",
+      "prefabs": 51
+    },
+    {
+      "tag": "compact",
+      "prefabs": 51
+    },
+    {
+      "tag": "customCircle",
+      "prefabs": 51
+    },
+    {
+      "tag": "customHeight",
+      "prefabs": 51
+    },
+    {
+      "tag": "customShape",
+      "prefabs": 51
+    }
+  ],
+  "scope": "Reopened persisted output after all 11 initial contract cases reached the subsequent shared-library fixture assertion"
+}

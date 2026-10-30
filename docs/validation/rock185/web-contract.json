@@ -1,0 +1,168 @@
+{
+  "pass": true,
+  "rows": [
+    {
+      "mode": "pending",
+      "initial": {
+        "status": "loading",
+        "error": null
+      },
+      "status": {
+        "status": "ready",
+        "error": null
+      },
+      "geometrySame": true,
+      "mapsSame": false,
+      "textureObjectsSame": true,
+      "versions": [
+        2,
+        2,
+        2
+      ],
+      "initialVersions": [
+        1,
+        1,
+        1
+      ],
+      "exportEqualsDisplay": true,
+      "dims": [
+        512,
+        256
+      ],
+      "readyChannels": true,
+      "sourceStatus": {
+        "status": "ready",
+        "error": null
+      },
+      "sharing": [
+        {
+          "count": 9,
+          "calls": 5,
+          "triangles": 8358,
+          "textures": 11,
+          "meshTriangles": 372
+        },
+        {
+          "count": 225,
+          "calls": 5,
+          "triangles": 88710,
+          "textures": 11,
+          "meshTriangles": 372
+        }
+      ]
+    },
+    {
+      "mode": "missing",
+      "initial": {
+        "status": "fallback",
+        "error": "shared Rock050 source not ready"
+      },
+      "status": {
+        "status": "fallback",
+        "error": "shared Rock050 source not ready"
+      },
+      "geometrySame": true,
+      "mapsSame": true,
+      "textureObjectsSame": true,
+      "versions": [
+        1,
+        1,
+        1
+      ],
+      "initialVersions": [
+        1,
+        1,
+        1
+      ],
+      "exportEqualsDisplay": true,
+      "dims": [
+        512,
+        256
+      ],
+      "readyChannels": true,
+      "sourceStatus": {
+        "status": "fallback",
+        "error": null
+      },
+      "sharing": [
+        {
+          "count": 9,
+          "calls": 5,
+          "triangles": 8358,
+          "textures": 11,
+          "meshTriangles": 372
+        },
+        {
+          "count": 225,
+          "calls": 5,
+          "triangles": 88710,
+          "textures": 11,
+          "meshTriangles": 372
+        }
+      ]
+    },
+    {
+      "mode": "corrupt",
+      "initial": {
+        "status": "fallback",
+        "error": "shared Rock050 source not ready"
+      },
+      "status": {
+        "status": "fallback",
+        "error": "shared Rock050 source not ready"
+      },
+      "geometrySame": true,
+      "mapsSame": true,
+      "textureObjectsSame": true,
+      "versions": [
+        1,
+        1,
+        1
+      ],
+      "initialVersions": [
+        1,
+        1,
+        1
+      ],
+      "exportEqualsDisplay": true,
+      "dims": [
+        512,
+        256
+      ],
+      "readyChannels": true,
+      "sourceStatus": {
+        "status": "fallback",
+        "error": "Failed to execute 'atob' on 'Window': The string to be decoded is not correctly encoded."
+      },
+      "sharing": [
+        {
+          "count": 9,
+          "calls": 5,
+          "triangles": 8358,
+          "textures": 11,
+          "meshTriangles": 372
+        },
+        {
+          "count": 225,
+          "calls": 5,
+          "triangles": 88710,
+          "textures": 11,
+          "meshTriangles": 372
+        }
+      ]
+    }
+  ],
+  "assetHash": "fb3bb0b74354e663b22a0306bd431bbde559ca663cdf4c63cf835142de6f4b26",
+  "triangles": 372,
+  "maps": 3,
+  "width": 512,
+  "height": 256,
+  "webDrawCallsBefore": 3,
+  "webDrawCallsAfter": 3,
+  "webTexturesBefore": 17,
+  "webTexturesAfter": 17,
+  "exportBytesBefore": 673457,
+  "exportBytesAfter": 984273,
+  "newSourceDownloadBytes": 0,
+  "newGPUMaps": 0
+}

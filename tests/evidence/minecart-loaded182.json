@@ -1,0 +1,625 @@
+{
+  "baselineCommit": "93d772ca0d5884e20ae9e0667425a33ab7b41fc2",
+  "state": "local-review-candidate-not-published",
+  "catalogId": "minecart_loaded",
+  "score": {
+    "appearance": 27,
+    "material": 17,
+    "structurePlacement": 19,
+    "webFormalUnity": 20,
+    "lightweight": 8,
+    "total": 91
+  },
+  "productHashes": {
+    "app.js": "362146080391cfb1153c880bbdc905038aca2e5639f95f59c36e72f0370eaad9",
+    "index.html": "1629426e3bdfaa8584cc2c449dcac1da98817d2160160f41ee39337305773b79",
+    "props/minecart.js": "987e9bad0429e2f06943d56997e05105d16ccaedeb09819ba6db5a6166b0b011",
+    "props/minecart-loaded.js": "88c6d18253556b5cebc700c2386437f8a94c5036e96b1bc9e6669f2bb6827a01",
+    "props/small-prop-export.js": "665c734a910f44b56723bd5d47608f13802a89d75a155a9dd97498dfc12a977a",
+    "unity/Assets/MapSharedProps/Editor/MineCartV1.cs": "ec3559f3c54216f8b9b0196bf083412fb922d550b133a6b108c9193c123de114",
+    "unity/Assets/MapSharedProps/Editor/SmallPropsV1.cs": "8f392803872227043f98e71dec5fd81d89f5db8e2afa43df192d197d1bd52812"
+  },
+  "testHashes": {
+    "tests/minecart-loaded.cjs": "7be8147df2b245533a61df030ae25c1968318317bb02386eb942ed3187d50b03",
+    "tests/minecart-loaded-placement.cjs": "c0fb289f70c24411cdefd8ddbfb137dca1e1e3aa600842b0a95b1a52970d502a",
+    "tests/unity/Loaded182Checks.cs": "57f6a5060c60747047348dac53b7639ad99b697d94aebf5c686026f0078bc8c2",
+    "tests/unity/Loaded182Legacy.cs": "c84b08187629e7d2ebd79fae0d9e33a7f0d219a7536175b6fc23c3838cdf03b5",
+    "tests/unity/Loaded182Supplement.cs": "7eb09009c689a0173939907abfa954703909244ed50152cfbd86b209687f054a"
+  },
+  "unityVersion": "6000.5.9f1",
+  "urp": "17.5",
+  "colourSpace": "Linear",
+  "renderPath": "Forward+",
+  "playerRun": false,
+  "gpuMeasured": false,
+  "mobileTested": false,
+  "fixedRockRegeneration": 0,
+  "results": {
+    "web/loaded182-final/checks.json": {
+      "sha256": "6007db142de73af525a5d7fe9d85ea673759001fbcc15037ddb876ccfd0ee5ff",
+      "result": {
+        "pass": true,
+        "tests": {
+          "pass": true,
+          "emptyTriangles": 2200,
+          "loadedTriangles": 2440,
+          "cargoTriangles": 240,
+          "cargoVertices": 720,
+          "bounds": [
+            [
+              -0.5254999995231628,
+              -0.02500000037252903,
+              -0.8880000114440918
+            ],
+            [
+              0.5254999995231628,
+              1.1622706651687622,
+              0.8880000114440918
+            ]
+          ]
+        },
+        "save": {
+          "save": true,
+          "collider": true
+        },
+        "oldSave": {
+          "pass": true,
+          "ids": [
+            "mine_rail_straight",
+            "minecart",
+            "mine_cobweb"
+          ]
+        },
+        "shares": [
+          {
+            "instances": 9,
+            "sharedMaterial": true,
+            "meshes": 1,
+            "materials": 1,
+            "textures": 3,
+            "gl": 0,
+            "drawCalls": 5,
+            "triangles": 26970
+          },
+          {
+            "instances": 225,
+            "sharedMaterial": true,
+            "meshes": 1,
+            "materials": 1,
+            "textures": 3,
+            "gl": 0,
+            "drawCalls": 5,
+            "triangles": 554010
+          }
+        ],
+        "extensionBytes": 2201489,
+        "limits": [
+          "No GPU time or mobile execution",
+          "Formal Unity tested separately"
+        ]
+      }
+    },
+    "web/loaded182-input/interaction.json": {
+      "sha256": "ec0a8de40335aa9d321d992dfa724406c41480f20ad4cb85de6e0c523374c9e5",
+      "result": {
+        "pass": true,
+        "placed": {
+          "count": 2,
+          "id": "minecart_loaded",
+          "pose": [
+            0,
+            1.0000001985293068,
+            0,
+            1,
+            0,
+            1,
+            0.14
+          ],
+          "previewY": 0.14,
+          "previewMaterial": "ore-cart-with-spoil"
+        },
+        "scaleMismatchRejected": true,
+        "underground": {
+          "id": "minecart_loaded",
+          "y": 0.14,
+          "terrain": 3.5,
+          "count": 2
+        },
+        "saved": true,
+        "privateHeadless": true,
+        "guiUsed": false
+      }
+    },
+    "web/loaded182-old-input/interaction.json": {
+      "sha256": "b8e57b1a2af416466d9eb7d38b83f0ad2aa9455067914c56b54648bbc5618136",
+      "result": {
+        "pass": true,
+        "placed": {
+          "count": 2,
+          "id": "minecart",
+          "pose": [
+            0,
+            1.0000001985293068,
+            0,
+            1,
+            0,
+            1,
+            0.14
+          ],
+          "previewY": 0.14,
+          "previewMaterial": "ore-cart-steel"
+        },
+        "scaleMismatchRejected": true,
+        "underground": {
+          "id": "minecart",
+          "y": 0.14,
+          "terrain": 3.5,
+          "count": 2
+        },
+        "saved": true,
+        "privateHeadless": true,
+        "guiUsed": false
+      }
+    },
+    "web/loaded182-rails/checks.json": {
+      "sha256": "dcdcd09fdc4b954477b73144bfbe8816155ee28e27f9b02b52999413ce0c3050",
+      "result": {
+        "pass": true,
+        "pure": [
+          "three straights",
+          "replace provisional tail with -1 turn",
+          "actual mesh port -1",
+          "actual mesh port -1",
+          "actual mesh port -1",
+          "actual mesh port -1",
+          "actual mesh port -1",
+          "actual mesh port -1",
+          "continuous -1 1",
+          "continuous -1 2",
+          "replace provisional tail with 1 turn",
+          "actual mesh port 1",
+          "actual mesh port 1",
+          "actual mesh port 1",
+          "actual mesh port 1",
+          "actual mesh port 1",
+          "actual mesh port 1",
+          "continuous 1 1",
+          "continuous 1 2",
+          "two successive bends",
+          "four curves closed loop",
+          "closed loop stable on pointer release",
+          "retract to earlier endpoint",
+          "existing start sets outward tangent",
+          "finish at matching existing port",
+          "perpendicular end rejected",
+          "end scale mismatch rejected",
+          "end height mismatch rejected",
+          "duplicate/interior overlap rejected",
+          "occupied start rejected",
+          "uneven ground rejected",
+          "impossible short sideways move rejected",
+          "scale and QE heading",
+          "bounded stroke",
+          "map bounds rejected",
+          "225 existing rail scene"
+        ],
+        "final": [
+          [
+            136,
+            2.184924952075562e-08,
+            -1.5200453340469267e-07,
+            0,
+            1,
+            0,
+            1,
+            0
+          ],
+          [
+            136,
+            2.184924952075562e-08,
+            1.9999998479954666,
+            0,
+            1,
+            0,
+            1,
+            0
+          ],
+          [
+            136,
+            2.184924952075562e-08,
+            3.9999998479954666,
+            0,
+            1,
+            0,
+            1,
+            0
+          ],
+          [
+            137,
+            2.184924952075562e-08,
+            5.999999847995467,
+            0,
+            1,
+            0,
+            1,
+            0
+          ],
+          [
+            136,
+            2.0000000218492495,
+            7.999999847995467,
+            1.5707963267948966,
+            1,
+            0,
+            1,
+            0
+          ],
+          [
+            136,
+            4.0000000218492495,
+            7.999999847995467,
+            1.5707963267948966,
+            1,
+            0,
+            1,
+            0
+          ]
+        ],
+        "reload": {
+          "success": true,
+          "equal": true,
+          "count": 6
+        },
+        "cancelModes": [
+          "escape",
+          "cancel",
+          "blur",
+          "type",
+          "tool",
+          "mode",
+          "capture"
+        ],
+        "oneStrokeOneUndo": true,
+        "dragScaleHeadingLocked": true,
+        "ordinaryPropUnchanged": true,
+        "undergroundFloor": true,
+        "timing": {
+          "existing": 225,
+          "maxStroke": 64,
+          "updateMedianMs": 0.5,
+          "updateMaxMs": 1,
+          "gpuMeasured": false
+        },
+        "errors": [],
+        "privateHeadless": true,
+        "gui": false
+      }
+    },
+    "web/loaded182-bundles/bundles.json": {
+      "sha256": "338abffc44bc61c01f896a619d56a6529670f54556100a4cb5ced78a1946ffe9",
+      "result": {
+        "pass": true,
+        "rows": [
+          {
+            "kind": "sample",
+            "ok": true,
+            "source": "bundle",
+            "fitStats": null,
+            "walkReused": true,
+            "fitCalls": 0,
+            "props": 5761
+          },
+          {
+            "kind": "sample2",
+            "ok": true,
+            "source": "bundle",
+            "fitStats": null,
+            "walkReused": true,
+            "fitCalls": 0,
+            "props": 536
+          }
+        ],
+        "rockRegeneration": 0
+      }
+    },
+    "unity/Evidence182/checks.json": {
+      "sha256": "b32c38deab6be449b43b2843a15c9d4da2aff8704dd641f1788ebfbc060d9f9e",
+      "result": {
+        "pass": true,
+        "formal74": true,
+        "old73GeometryCollider": true,
+        "bodyUnchanged": true,
+        "saveReinstantiateScene": true,
+        "noLights": true,
+        "triangles": 2440,
+        "assetDirectory": "Assets/MapSharedPropsGenerated/Pilot 10",
+        "player": false
+      }
+    },
+    "unity/Evidence182/fallback.json": {
+      "sha256": "e93acb196a41bdcc53c09f8625018e7bbaad627c13cc28aca5e9b698f5a62664",
+      "result": {
+        "pass": true,
+        "invalidOld53Generated": true,
+        "cases": [
+          "missing",
+          "version",
+          "png",
+          "index",
+          "nan",
+          "nonSolid",
+          "circle",
+          "customHeight"
+        ]
+      }
+    },
+    "unity/Evidence182/field.json": {
+      "sha256": "ec441ed028e076a7d7042eee58a433d327fce354408cbdab7f71b1eb5126460c",
+      "result": {
+        "formalProductTunnel": true,
+        "input": "Input123Mine",
+        "width": 2.4,
+        "height": 2.8,
+        "cart": [
+          12,
+          0.14,
+          11.4
+        ],
+        "existingLights": 2,
+        "originalGameSceneChanged": false
+      }
+    },
+    "unity/Evidence182/load.json": {
+      "sha256": "1a44d36d2e15f4b83143f0afa118232d5c912713675b913ea8b18487fd8b7f87",
+      "result": {
+        "gpuMeasured": false,
+        "cpuSubmissionNotFrameGuarantee": true,
+        "rows": [
+          {
+            "id": "minecart",
+            "placed": 9,
+            "visible": 9,
+            "meshes": 1,
+            "materials": 1,
+            "textures": 3,
+            "meshBytes": 978384,
+            "textureBytes": 4022545,
+            "cpuMedianMs": 0.4787
+          },
+          {
+            "id": "minecart",
+            "placed": 225,
+            "visible": 210,
+            "meshes": 1,
+            "materials": 1,
+            "textures": 3,
+            "meshBytes": 978384,
+            "textureBytes": 4022545,
+            "cpuMedianMs": 0.9716
+          },
+          {
+            "id": "minecart_loaded",
+            "placed": 9,
+            "visible": 9,
+            "meshes": 1,
+            "materials": 1,
+            "textures": 3,
+            "meshBytes": 1084944,
+            "textureBytes": 8042071,
+            "cpuMedianMs": 0.5031
+          },
+          {
+            "id": "minecart_loaded",
+            "placed": 225,
+            "visible": 210,
+            "meshes": 1,
+            "materials": 1,
+            "textures": 3,
+            "meshBytes": 1084944,
+            "textureBytes": 8042071,
+            "cpuMedianMs": 0.6428
+          }
+        ]
+      }
+    },
+    "unity/Evidence182Legacy/checks.json": {
+      "sha256": "5aa1d467a72d9d328a486ee7cd1977cacad452a10e449551d8ef7b97eecc41ed",
+      "result": {
+        "pass": true,
+        "readerSource": "93d772c",
+        "prefabs": 73,
+        "newOptionalIgnored": true,
+        "emptyCartRetained": true,
+        "recompiledPreviousSourceNotOldPlayerBinary": true
+      }
+    },
+    "unity/Evidence182Supplement/checks.json": {
+      "sha256": "5221c27af43b10868e4556d170b351cf2303e28a977c987c8c7de6a76970937e",
+      "result": {
+        "pass": true,
+        "compactReadAndPrefab": true,
+        "sameAuthoredLights": true,
+        "cartMovedAlongExistingRailAwayFromLamp": true,
+        "productChanges": false
+      }
+    },
+    "unity/Evidence182Supplement/field.json": {
+      "sha256": "d7559184e0dabd4748df98aa6478a947def5989c079dda98814d955c0b9c6839",
+      "result": {
+        "formalProductTunnel": true,
+        "input": "Input123Mine",
+        "width": 2.4,
+        "height": 2.8,
+        "cart": [
+          12,
+          0.14,
+          10.5
+        ],
+        "existingLights": 2,
+        "originalGameSceneChanged": false
+      }
+    }
+  },
+  "images": {
+    "web/loaded182-final/close-minecart.png": {
+      "sha256": "0a8d8382b16a81c924789e4fd3599d869cd3e2a1965cb59d886adbab3085d2e9",
+      "bytes": 955976
+    },
+    "web/loaded182-final/close-minecart_loaded.png": {
+      "sha256": "14b56f698dce0b66d61454eb477b2b002c88b420a2613c62b38dd232b052e04e",
+      "bytes": 1039410
+    },
+    "web/loaded182-final/curve-loaded.png": {
+      "sha256": "a13449fbce4aa48b6adcfc72b38bd8ec919b152b3906e6d75cb74270f12913d8",
+      "bytes": 1098255
+    },
+    "web/loaded182-final/night-minecart.png": {
+      "sha256": "7e2fc8d23ee3917369f4d33958b7110dfc7d2f1cb9551603ed37e4443328f45b",
+      "bytes": 1183382
+    },
+    "web/loaded182-final/night-minecart_loaded.png": {
+      "sha256": "98a6f83530fec400f85f6f5dd1176b62eadcc7da25b79c3d843218d8be6cfc35",
+      "bytes": 1196583
+    },
+    "web/loaded182-final/normal-minecart.png": {
+      "sha256": "7e2fc8d23ee3917369f4d33958b7110dfc7d2f1cb9551603ed37e4443328f45b",
+      "bytes": 1183382
+    },
+    "web/loaded182-final/normal-minecart_loaded.png": {
+      "sha256": "f0db71c21aaf42bd060bad1392107457f2076f6245dc509a772db175b29f54d2",
+      "bytes": 1196579
+    },
+    "web/loaded182-final/opposite-minecart.png": {
+      "sha256": "80c4b0a8992ffb322800da26220e595a13d0704385c903498e098e1a7a6d4f28",
+      "bytes": 1054395
+    },
+    "web/loaded182-final/opposite-minecart_loaded.png": {
+      "sha256": "732f962cf5c0b38a34284e49e350d206faec06e67c9d6b34351fc9cecdad5a12",
+      "bytes": 1107199
+    },
+    "unity/Evidence182/curve-close-minecart.png": {
+      "sha256": "a5a1ca7e58699a1934f5e4cddec7dd362375598084b8cdb1207f0fbf38aeadcf",
+      "bytes": 250300
+    },
+    "unity/Evidence182/curve-close-minecart_loaded.png": {
+      "sha256": "209f8b6da60413e0d646ee26d03ec18e47c9cb0fa28f18a12d766a7da8f9795b",
+      "bytes": 272931
+    },
+    "unity/Evidence182/curve-normal-minecart.png": {
+      "sha256": "b83ad2752b3ab1ae73cc414dd7d7b710039c1882b09e7c8de2dfc406be8d9a80",
+      "bytes": 211344
+    },
+    "unity/Evidence182/curve-normal-minecart_loaded.png": {
+      "sha256": "98f8e3e0a67c388d36cca86bdd37b01ae178354a386d76f22717b1a99ea3f83b",
+      "bytes": 218541
+    },
+    "unity/Evidence182/curve-opposite-minecart.png": {
+      "sha256": "702542b4368af89647c7861e5493b53acf0684ca09a7512037bcf6e27f848178",
+      "bytes": 252316
+    },
+    "unity/Evidence182/curve-opposite-minecart_loaded.png": {
+      "sha256": "91b22017b2ca94e8d0b072168a5faa872e76e0e09d8f2775f5e4a69f4ccb4721",
+      "bytes": 272572
+    },
+    "unity/Evidence182/mine-close-minecart.png": {
+      "sha256": "b2412ffe500ba5588d883da58c03c72d0c28a13533e3cf8e4ddcd3d8dd47227b",
+      "bytes": 357138
+    },
+    "unity/Evidence182/mine-close-minecart_loaded.png": {
+      "sha256": "7ad98597c13b59b78cf163d519a20eed872ac9638480c5a412a3c1b41eb23c62",
+      "bytes": 392795
+    },
+    "unity/Evidence182/mine-normal-minecart.png": {
+      "sha256": "d2e74ec49529e8bc2d98cfa1d325b6719b3e45c691e599883f3777e7ac4c0fb9",
+      "bytes": 116127
+    },
+    "unity/Evidence182/mine-normal-minecart_loaded.png": {
+      "sha256": "365cd765230a09a40c49ede8e04be287235958cca91853ef0eecb29a75714c00",
+      "bytes": 121533
+    },
+    "unity/Evidence182/mine-reverse-minecart.png": {
+      "sha256": "7ca69032eb8fc0bebafc4dfb1a9863b55470d27a2f0e9b450f911ede70a4784f",
+      "bytes": 466195
+    },
+    "unity/Evidence182/mine-reverse-minecart_loaded.png": {
+      "sha256": "b14028df01d7e83f500fa787c0f836d3acb25932624ecd9e668d0c3599c00ee6",
+      "bytes": 523757
+    },
+    "unity/Evidence182/straight-close-minecart.png": {
+      "sha256": "16c090b60cdfd9acfec8654b895d4ca15a685761bb6601434cd649e2230d014c",
+      "bytes": 253659
+    },
+    "unity/Evidence182/straight-close-minecart_loaded.png": {
+      "sha256": "55ccaf33d868e17c994421569e30dd838abd811387f113c02d47ec998c35089a",
+      "bytes": 275374
+    },
+    "unity/Evidence182/straight-normal-minecart.png": {
+      "sha256": "29dad5780572b03af179e91a83c8d966be511cc4d579f6faa6414799f341ce42",
+      "bytes": 203012
+    },
+    "unity/Evidence182/straight-normal-minecart_loaded.png": {
+      "sha256": "eb0bb117653ae2e326c7533483cb15867c34fa4110646c128bd84f326a2c6dfc",
+      "bytes": 211714
+    },
+    "unity/Evidence182/straight-opposite-minecart.png": {
+      "sha256": "90ddd09ca8b65d9248b827e01b9a22098542c040861b8506e0b2d33023d15e3d",
+      "bytes": 247742
+    },
+    "unity/Evidence182/straight-opposite-minecart_loaded.png": {
+      "sha256": "085a4d526ecc453c4650bfa76e531d1e9e3b76667debc874ab586c966ada913e",
+      "bytes": 268730
+    },
+    "unity/Evidence182Supplement/mine-close-minecart.png": {
+      "sha256": "bf6c189bb8cfd3d8424f55efab87507b47227865b2a51c007f94e033fc64953a",
+      "bytes": 328255
+    },
+    "unity/Evidence182Supplement/mine-close-minecart_loaded.png": {
+      "sha256": "54a74f86010d1d11a508007f1b6a26ba42c99fc033ab96b893ee2eb1e6bd3a3d",
+      "bytes": 379121
+    },
+    "unity/Evidence182Supplement/mine-normal-minecart.png": {
+      "sha256": "6f082bbd2b11e4eadc7e60fd2ecbfdcc8b66c2a1265a8193fb0ec7044b2c1a53",
+      "bytes": 124585
+    },
+    "unity/Evidence182Supplement/mine-normal-minecart_loaded.png": {
+      "sha256": "7e41aa1cb6715b52fb49fdf89185cc5fe33d6561fc683d882c3445a206aeedf4",
+      "bytes": 132039
+    },
+    "unity/Evidence182Supplement/mine-reverse-minecart.png": {
+      "sha256": "9d450b1a0349ce6b7146b44199bdea0a3f1f451a01c499b37fdfd870d8a919ed",
+      "bytes": 402388
+    },
+    "unity/Evidence182Supplement/mine-reverse-minecart_loaded.png": {
+      "sha256": "3b79db3070a3a9cebb2f8f87a9c80abaf394694c470476782180044c188fef30",
+      "bytes": 470516
+    }
+  },
+  "payload": {
+    "formalWebBytes": 2201489,
+    "formalWebSha256": "65291fe5f8aa2493a4fe68ad91aad877c6cf6442845d781c256b1ed4f63b671e",
+    "sameAsUnityFixture": true,
+    "input182Sha256": "7e1820a94acfbd51fc8553cb4a5241ff374b6179b42c5a777969e897e8c542a2",
+    "oldLibraryFixture": "Input177-mixed: 73 prefabs; final178 cobweb surface is not claimed re-exported by this fixture"
+  },
+  "limits": [
+    "Independent review pending",
+    "Directional diagnostic scene plus product Input123Mine; not a full gameplay session",
+    "9/225 load test: 210 of 225 visible; short CPU render submission sample, not FPS or GPU guarantee",
+    "New optional payload ignored by previous reader; new loaded cart omitted, old73 retained",
+    "Legacy reader executed by compiling previous source; no old Player binary used",
+    "Initial field position overlaps authored hanging lamp; retained as diagnostic, use Supplement non-interfering position",
+    "Candidate does not yet synchronize release.json or existing script cache URLs; mandatory before publication"
+  ],
+  "fixedSamples": {
+    "prepared/manifest.js": "009438222fae7c3a3e1eef7418db160f5a501d400c2273155b151b6bdf268866",
+    "prepared/sample-64-7-63953be40eab.js": "900a18b8ed97538fa0d6553f0017ad28532424509d80eef1e721c5294f624eff",
+    "prepared/sample-64-7-8dd662146443.js": "06fe3f8f63cdbfdb01cf3f32649c049761707a3c408b14a4d14a65d65f7147bb",
+    "prepared/sample-64-7-da62656b0ab9.js": "38c1fcfdabe6e9724705e592f374f9069a3a444156fff6b6eaa93ce942dffd7b",
+    "prepared/sample-64-7-dabae8cefccc.js": "7c895bcb4fa6c008610297f410955c7430a919d40d7f46ee6001fa3b517e84a2",
+    "prepared/sample2-48-11-120b6b123ed7.js": "5dcbb80d8f5436a6a6ecb11915b743ab6b57e2cce16e7084d7c1708e9c153404",
+    "prepared/sample2-48-11-12fa28949d2e.js": "28bd549f16c43084d0bc1cba0e58b687c58cea67fcd844cf3f0eb658970f1afb",
+    "prepared/sample2-48-11-64c3ed35b328.js": "c3aec44b1c41072f91d564633e3936779a613774faeebfbcb628b5b707e534df",
+    "prepared/sample2-48-11-b9ee80d8b56c.js": "460e2752afc7406547526e440a9a4aadaeda1990aa260999559f860653d444e6"
+  },
+  "fixedSampleTrackedDiff": ""
+}
