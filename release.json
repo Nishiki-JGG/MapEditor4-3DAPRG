@@ -1,5 +1,5 @@
 {
-  "release": "organic-cobweb-20261031-191",
+  "release": "cart-steel-20261031-193",
   "files": {
     "app.js": "fbee0574d46114805d3d682cbaf7484747a7e17ce5848cd11afeb4248fb7a369",
     "props/chest-presentation.js": "02d054f76798bdf6599156ffb0655085c919b3df733386a47a11f458d3aa5233",
@@ -33,7 +33,7 @@
     "props/seafan-surface.js": "3ad1b8c71a2b92f20b3fab9e75d4fa362e6aff183b89fd771431f7daf3e5b612",
     "props/obsidian-reflection.js": "db926e0da7a344f731911d299ae2ee2353db95c387efdd6d8934ac7683d23ee0",
     "props/mine-rails.js": "a64ac22e284c820939cd7e33b26e44f933e5455365b2709fa07387a99b018bde",
-    "props/minecart.js": "987e9bad0429e2f06943d56997e05105d16ccaedeb09819ba6db5a6166b0b011",
+    "props/minecart.js": "9e387fe8173b9a6ec80f8bceb44679f54754c899cc0d79c2efeed2d96631ed61",
     "props/mine-rail-drag.js": "7103ee81b1d164a608c14c0701e3fc728f060a0ed0034bb76fd4c92ed3d5241a",
     "props/mine-cut-rock.js": "bc0aa43a2cbbd567c913ec43ff8b32c2ef3549ad4ecf03f4a15e2d5709edc156",
     "unity/Assets/MapSharedProps/Editor/MineCutRockV1.cs": "192558bef384f83dd23fdb3550070eefa7626a156371deaf47f0b4f1292c280e",
@@ -41,8 +41,8 @@
     "unity/Assets/MapSharedProps/Editor/MineSpoilV1.cs": "18413514bdf454f98e9acc696b736cce2bf9017894b0b901ece2f597573f463e",
     "props/cave-decor.js": "abf74ab0b78918409e80854060e0291cda33f30ed758a7c4d46a29e12ddaead1",
     "props/shared/cave-decor-data.js": "5939db717735b0bc3400f5decf360bc3e6aaec12c75f0abbbb26c616269ba57c",
-    "index.html": "cdcc1221f99fd9d12b7dcc00b40b70052f2dec361975af8b35077ca24835d20e",
-    "prepared/manifest.js": "29a6d6340fd6f363e433d4c6dbb6103861b32075386b880e8d03d97be7b1ebcc",
+    "index.html": "61a3b6be22ad83fe4964d8759af5f8e2f489e73fb046a759b2ef1019bb2cf3e2",
+    "prepared/manifest.js": "dd4dd1230f13ee7d7e9ef6368910e1e35b06080684a47648a7fa7709ac1c6f49",
     "terrain/cliff-shoulder.js": "e437f1ffb0ab47fa4b243f7408f4ed3de759508b0f1dfef49eaf217b1630ac59",
     "props/mine-collapse.js": "49ff2562ce9a97766c4f664c3b283d0f25762b9edb6df370308c150769baafd8",
     "props/mine-collapse-pbr.js": "e90181e4ba56831e286649539dcc05197180e32199a07c675fb5d4da0630a6cd",
@@ -72,6 +72,6 @@
     "unity/Assets/MapSharedProps/Editor/SmallPropsV1.cs": "6434989293660f94ad0299f6e8b50d8123432dbaff7e7c024ce69f47abad6319"
   },
   "sourceBase": "5fc4fc09490551a92329ab737e3710168111cb80",
-  "integratedMain": "61e352869bfb9c384ba446987382d36d68014e0a",
-  "candidateProductSha256": "abeb8091c733137431044121d3bb4aa6e1449f723c942e83858e9d527c1d5203"
+  "integratedMain": "7d04928072cb005607a3e5cba1ebc87bfde08ec6",
+  "candidateProductSha256": "9e387fe8173b9a6ec80f8bceb44679f54754c899cc0d79c2efeed2d96631ed61"
 }

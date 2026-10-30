@@ -5,8 +5,11 @@ window.TDMineCart=(()=>{
  let textureSet,shared;
  const regions={panel:[3,3,253,125],inside:[3,131,253,253],frame:[259,3,509,125],tread:[259,131,509,253]};
  function maps(){if(textureSet)return textureSet;const w=512,h=256,colour=new Uint8Array(w*h*4),packed=new Uint8Array(w*h*4),normal=new Uint8Array(w*h*4),height=new Float32Array(w*h),noise=(x,y)=>{const n=Math.sin(x*127.1+y*311.7)*43758.5453;return n-Math.floor(n);};
+ // 連続した正弦波の帯でなく、尺度の違う不均一な酸化・摩耗を鋼板だけに用いる。
+ const value=(x,y)=>{const a=Math.floor(x),b=Math.floor(y),u=x-a,v=y-b,s=u*u*(3-2*u),t=v*v*(3-2*v),mix=(a,b,t)=>a+(b-a)*t;return mix(mix(noise(a,b),noise(a+1,b),s),mix(noise(a,b+1),noise(a+1,b+1),s),t);};
+ const steelCloud=(x,y)=>(value(x*.027,y*.031)*.55+value(x*.071+9,y*.066+3)*.30+value(x*.16-7,y*.15+2)*.15)*2-1;
  for(let y=0;y<h;y++)for(let x=0;x<w;x++){const i=(y*w+x)*4,u=(x%256)/255,v=(y%128)/127,n=noise(x,y),cloud=(Math.sin(x*.038+Math.sin(y*.057)*1.2)+Math.sin(x*.081-y*.026))*.5,edge=Math.max(0,1-Math.min(u,1-u,v,1-v)*12),scratch=Math.pow(Math.max(0,Math.sin(y*.89+Math.sin(x*.028))),24)*.35;let rgb,metal,rough,ht;
- if(x<256){const inside=y>=128,rust=Math.min(.85,edge*(.4+.3*noise(x>>3,y>>3))+.09*Math.max(0,cloud)),base=inside?67:96;rgb=[base+cloud*8+rust*37,base+5+cloud*8-rust*25,base+8+cloud*7-rust*45];metal=.86-rust*.65;rough=(inside?.65:.48)+rust*.25+cloud*.035;ht=cloud*.025+rust*.035-scratch*.02;}
+ if(x<256){const inside=y>=128,c=steelCloud(x,y),rust=Math.min(.85,edge*(.27+.55*value(x*.055+11,y*.063-5))+.11*Math.max(0,c)),base=inside?67:96;rgb=[base+c*13+rust*37,base+5+c*13-rust*25,base+8+c*11-rust*45];metal=.86-rust*.65;rough=(inside?.65:.48)+rust*.25+c*.055;ht=c*.025+rust*.035-scratch*.02;}
  else if(y<128){const rust=Math.max(0,cloud*.22+noise(x>>3,y>>3)*.22-.13);rgb=[91+cloud*8+rust*40,94+cloud*9-rust*24,94+cloud*8-rust*41];metal=.9-rust*.55;rough=.42+rust*.35;ht=rust*.03;}
  else{const stripe=Math.sin(y*.38+Math.sin(x*.02))*.5;rgb=[143+cloud*7+stripe*6,148+cloud*7+stripe*6,150+cloud*7+stripe*6];metal=.98;rough=.25+stripe*.025;ht=stripe*.018;}
  for(let k=0;k<3;k++)colour[i+k]=Math.max(0,Math.min(255,Math.round(rgb[k])));colour[i+3]=255;packed[i]=Math.round(metal*255);packed[i+1]=255;packed[i+2]=0;packed[i+3]=Math.round((1-Math.min(.95,rough))*255);height[y*w+x]=ht;

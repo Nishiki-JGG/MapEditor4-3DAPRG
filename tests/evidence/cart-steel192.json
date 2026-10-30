@@ -1,0 +1,491 @@
+{
+  "base": "7d04928072cb005607a3e5cba1ebc87bfde08ec6",
+  "sourceSha256": "9e387fe8173b9a6ec80f8bceb44679f54754c899cc0d79c2efeed2d96631ed61",
+  "review": {
+    "empty": 93,
+    "loaded": 92,
+    "partsEmpty": [
+      27,
+      18,
+      19,
+      20,
+      9
+    ],
+    "partsLoaded": [
+      27,
+      18,
+      19,
+      20,
+      8
+    ],
+    "P1P2": false
+  },
+  "mapComparison": {
+    "pass": true,
+    "allMetadataGeometryUnchanged": true,
+    "maps": {
+      "colour": {
+        "outsidePanelByteEqual": true,
+        "changedPanelBytes": 182987,
+        "meanBefore": [
+          86.24885559082031,
+          84.18820190429688,
+          84.84736633300781
+        ],
+        "meanAfter": [
+          85.91497802734375,
+          84.22445678710938,
+          84.99832153320312
+        ]
+      },
+      "packed": {
+        "outsidePanelByteEqual": true,
+        "changedPanelBytes": 117370,
+        "meanBefore": [
+          200.32484436035156,
+          255.0,
+          0.0
+        ],
+        "meanAfter": [
+          201.31973266601562,
+          255.0,
+          0.0
+        ]
+      },
+      "normal": {
+        "outsidePanelByteEqual": true,
+        "changedPanelBytes": 55763,
+        "meanBefore": [
+          127.50828552246094,
+          127.50056457519531,
+          255.0
+        ],
+        "meanAfter": [
+          127.49896240234375,
+          127.49327087402344,
+          255.0
+        ]
+      }
+    }
+  },
+  "webBefore": {
+    "pass": true,
+    "tests": {
+      "pass": true,
+      "emptyTriangles": 2200,
+      "loadedTriangles": 2440,
+      "cargoTriangles": 240,
+      "cargoVertices": 720,
+      "bounds": [
+        [
+          -0.5254999995231628,
+          -0.02500000037252903,
+          -0.8880000114440918
+        ],
+        [
+          0.5254999995231628,
+          1.1580204963684082,
+          0.8880000114440918
+        ]
+      ]
+    },
+    "save": {
+      "save": true,
+      "collider": true
+    },
+    "oldSave": {
+      "pass": true,
+      "ids": [
+        "mine_rail_straight",
+        "minecart",
+        "mine_cobweb"
+      ]
+    },
+    "shares": [
+      {
+        "instances": 9,
+        "sharedMaterial": true,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 3,
+        "gl": 0,
+        "drawCalls": 5,
+        "triangles": 26970
+      },
+      {
+        "instances": 225,
+        "sharedMaterial": true,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 3,
+        "gl": 0,
+        "drawCalls": 5,
+        "triangles": 554010
+      }
+    ],
+    "extensionBytes": 2201550,
+    "limits": [
+      "No GPU time or mobile execution",
+      "Formal Unity tested separately"
+    ]
+  },
+  "webAfter": {
+    "pass": true,
+    "tests": {
+      "pass": true,
+      "emptyTriangles": 2200,
+      "loadedTriangles": 2440,
+      "cargoTriangles": 240,
+      "cargoVertices": 720,
+      "bounds": [
+        [
+          -0.5254999995231628,
+          -0.02500000037252903,
+          -0.8880000114440918
+        ],
+        [
+          0.5254999995231628,
+          1.1580204963684082,
+          0.8880000114440918
+        ]
+      ]
+    },
+    "save": {
+      "save": true,
+      "collider": true
+    },
+    "oldSave": {
+      "pass": true,
+      "ids": [
+        "mine_rail_straight",
+        "minecart",
+        "mine_cobweb"
+      ]
+    },
+    "shares": [
+      {
+        "instances": 9,
+        "sharedMaterial": true,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 3,
+        "gl": 0,
+        "drawCalls": 5,
+        "triangles": 26970
+      },
+      {
+        "instances": 225,
+        "sharedMaterial": true,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 3,
+        "gl": 0,
+        "drawCalls": 5,
+        "triangles": 554010
+      }
+    ],
+    "extensionBytes": 2246194,
+    "limits": [
+      "No GPU time or mobile execution",
+      "Formal Unity tested separately"
+    ]
+  },
+  "unity": {
+    "pass": true,
+    "formalTargets": 2,
+    "allCatalogueRegenerated": false,
+    "geometryUVNormalsColoursUnchanged": true,
+    "actualCollidersUnchanged": true,
+    "railTreadHeight": 0.14,
+    "prefabSceneReload": true,
+    "nonemissive": true,
+    "player": false
+  },
+  "loadBefore": {
+    "gpuMeasured": false,
+    "cpuSubmissionNotFrameGuarantee": true,
+    "rows": [
+      {
+        "id": "minecart",
+        "placed": 9,
+        "visible": 9,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 3,
+        "meshBytes": 978384,
+        "textureBytes": 4022545,
+        "cpuMedianMs": 0.5817
+      },
+      {
+        "id": "minecart",
+        "placed": 225,
+        "visible": 210,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 3,
+        "meshBytes": 978384,
+        "textureBytes": 4022545,
+        "cpuMedianMs": 0.8345
+      },
+      {
+        "id": "minecart_loaded",
+        "placed": 9,
+        "visible": 9,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 3,
+        "meshBytes": 1084944,
+        "textureBytes": 8042071,
+        "cpuMedianMs": 0.4267
+      },
+      {
+        "id": "minecart_loaded",
+        "placed": 225,
+        "visible": 210,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 3,
+        "meshBytes": 1084944,
+        "textureBytes": 8042071,
+        "cpuMedianMs": 0.6784
+      }
+    ]
+  },
+  "loadAfter": {
+    "gpuMeasured": false,
+    "cpuSubmissionNotFrameGuarantee": true,
+    "rows": [
+      {
+        "id": "minecart",
+        "placed": 9,
+        "visible": 9,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 3,
+        "meshBytes": 978384,
+        "textureBytes": 4022545,
+        "cpuMedianMs": 0.4907
+      },
+      {
+        "id": "minecart",
+        "placed": 225,
+        "visible": 210,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 3,
+        "meshBytes": 978384,
+        "textureBytes": 4022545,
+        "cpuMedianMs": 0.5619000000000001
+      },
+      {
+        "id": "minecart_loaded",
+        "placed": 9,
+        "visible": 9,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 3,
+        "meshBytes": 1084944,
+        "textureBytes": 8042071,
+        "cpuMedianMs": 0.5192
+      },
+      {
+        "id": "minecart_loaded",
+        "placed": 225,
+        "visible": 210,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 3,
+        "meshBytes": 1084944,
+        "textureBytes": 8042071,
+        "cpuMedianMs": 0.6097
+      }
+    ]
+  },
+  "coexist": {
+    "gpuMeasured": false,
+    "rows": [
+      {
+        "placed": 9,
+        "materials": 2,
+        "textureReferences": 6,
+        "textureBytes": 12064616,
+        "textures": [
+          {
+            "name": "a34f845261d4b4affbabc342eb0462a0f78ba4343534ecb58aedf26b2e238079",
+            "path": "Assets/MapSharedAssetCache/a34f845261d4b4affbabc342eb0462a0f78ba4343534ecb58aedf26b2e238079.png",
+            "width": 512,
+            "height": 256,
+            "readable": false,
+            "bytes": 1224334
+          },
+          {
+            "name": "a5e918ee55637d23119b5b25fc2a0e36dfbccda650bbfcc9ba63df5370613f87",
+            "path": "Assets/MapSharedAssetCache/a5e918ee55637d23119b5b25fc2a0e36dfbccda650bbfcc9ba63df5370613f87.png",
+            "width": 512,
+            "height": 256,
+            "readable": false,
+            "bytes": 1399097
+          },
+          {
+            "name": "mine-cart-normal-0c59d601f8cb67d736376e3f37f72eb1927296d264902f23ab34c659830c0831",
+            "path": "Assets/MapSharedAssetCache/mine-cart-normal-0c59d601f8cb67d736376e3f37f72eb1927296d264902f23ab34c659830c0831.png",
+            "width": 512,
+            "height": 256,
+            "readable": false,
+            "bytes": 1399114
+          },
+          {
+            "name": "b7a5e481445ef5dfc334ba4dfb4ba4d34063a38c711af2ebc8a61980e2e2796b",
+            "path": "Assets/MapSharedAssetCache/b7a5e481445ef5dfc334ba4dfb4ba4d34063a38c711af2ebc8a61980e2e2796b.png",
+            "width": 512,
+            "height": 512,
+            "readable": false,
+            "bytes": 2447668
+          },
+          {
+            "name": "e1cd4539b378d47f79dbd2a2a4adec2538272560636caf21677ea030ed19f013",
+            "path": "Assets/MapSharedAssetCache/e1cd4539b378d47f79dbd2a2a4adec2538272560636caf21677ea030ed19f013.png",
+            "width": 512,
+            "height": 512,
+            "readable": false,
+            "bytes": 2797193
+          },
+          {
+            "name": "mine-cart-normal-dd23d3213b09457f304f68530b75181e4861d70c689fb4816e08265c9a63bc35",
+            "path": "Assets/MapSharedAssetCache/mine-cart-normal-dd23d3213b09457f304f68530b75181e4861d70c689fb4816e08265c9a63bc35.png",
+            "width": 512,
+            "height": 512,
+            "readable": false,
+            "bytes": 2797210
+          }
+        ]
+      },
+      {
+        "placed": 225,
+        "materials": 2,
+        "textureReferences": 6,
+        "textureBytes": 12064616,
+        "textures": [
+          {
+            "name": "a34f845261d4b4affbabc342eb0462a0f78ba4343534ecb58aedf26b2e238079",
+            "path": "Assets/MapSharedAssetCache/a34f845261d4b4affbabc342eb0462a0f78ba4343534ecb58aedf26b2e238079.png",
+            "width": 512,
+            "height": 256,
+            "readable": false,
+            "bytes": 1224334
+          },
+          {
+            "name": "a5e918ee55637d23119b5b25fc2a0e36dfbccda650bbfcc9ba63df5370613f87",
+            "path": "Assets/MapSharedAssetCache/a5e918ee55637d23119b5b25fc2a0e36dfbccda650bbfcc9ba63df5370613f87.png",
+            "width": 512,
+            "height": 256,
+            "readable": false,
+            "bytes": 1399097
+          },
+          {
+            "name": "mine-cart-normal-0c59d601f8cb67d736376e3f37f72eb1927296d264902f23ab34c659830c0831",
+            "path": "Assets/MapSharedAssetCache/mine-cart-normal-0c59d601f8cb67d736376e3f37f72eb1927296d264902f23ab34c659830c0831.png",
+            "width": 512,
+            "height": 256,
+            "readable": false,
+            "bytes": 1399114
+          },
+          {
+            "name": "b7a5e481445ef5dfc334ba4dfb4ba4d34063a38c711af2ebc8a61980e2e2796b",
+            "path": "Assets/MapSharedAssetCache/b7a5e481445ef5dfc334ba4dfb4ba4d34063a38c711af2ebc8a61980e2e2796b.png",
+            "width": 512,
+            "height": 512,
+            "readable": false,
+            "bytes": 2447668
+          },
+          {
+            "name": "e1cd4539b378d47f79dbd2a2a4adec2538272560636caf21677ea030ed19f013",
+            "path": "Assets/MapSharedAssetCache/e1cd4539b378d47f79dbd2a2a4adec2538272560636caf21677ea030ed19f013.png",
+            "width": 512,
+            "height": 512,
+            "readable": false,
+            "bytes": 2797193
+          },
+          {
+            "name": "mine-cart-normal-dd23d3213b09457f304f68530b75181e4861d70c689fb4816e08265c9a63bc35",
+            "path": "Assets/MapSharedAssetCache/mine-cart-normal-dd23d3213b09457f304f68530b75181e4861d70c689fb4816e08265c9a63bc35.png",
+            "width": 512,
+            "height": 512,
+            "readable": false,
+            "bytes": 2797210
+          }
+        ]
+      }
+    ]
+  },
+  "images": {
+    "before/curve-close-minecart.png": "a5a1ca7e58699a1934f5e4cddec7dd362375598084b8cdb1207f0fbf38aeadcf",
+    "before/curve-close-minecart_loaded.png": "47e0d26b2cdb84e36a98583131a1a22adc88b7e48d692c7b548fcea0d9a29672",
+    "before/curve-normal-minecart.png": "b83ad2752b3ab1ae73cc414dd7d7b710039c1882b09e7c8de2dfc406be8d9a80",
+    "before/curve-normal-minecart_loaded.png": "2ea30fb921891ed046ef5ff2055c86030176f409060739ced647f43e2cbe23d7",
+    "before/curve-opposite-minecart.png": "702542b4368af89647c7861e5493b53acf0684ca09a7512037bcf6e27f848178",
+    "before/curve-opposite-minecart_loaded.png": "cfc2dd50f92973bc5a9b37db46de1995c6e13474123d7f6d9f1de16151fccc57",
+    "before/mine-close-minecart.png": "bf6c189bb8cfd3d8424f55efab87507b47227865b2a51c007f94e033fc64953a",
+    "before/mine-close-minecart_loaded.png": "953ab419c1d20f8103d95919b8b220ef10065d4d3d4c359fc2547125ac6ff996",
+    "before/mine-normal-minecart.png": "6f082bbd2b11e4eadc7e60fd2ecbfdcc8b66c2a1265a8193fb0ec7044b2c1a53",
+    "before/mine-normal-minecart_loaded.png": "8b7dacbf7928c9ae134c95e2beaebe40d75a877e6e52861f3e4c0cfe3e250992",
+    "before/mine-reverse-minecart.png": "9d450b1a0349ce6b7146b44199bdea0a3f1f451a01c499b37fdfd870d8a919ed",
+    "before/mine-reverse-minecart_loaded.png": "40aababd6db6e4dae46893ef1f9dcc5dc4dbf781d8dfc6cb9a9a9d89be02680f",
+    "before/straight-close-minecart.png": "16c090b60cdfd9acfec8654b895d4ca15a685761bb6601434cd649e2230d014c",
+    "before/straight-close-minecart_loaded.png": "65a7e75456bace934b3f454411a28cf5d0941ea531ccb3ec5dd7ad06a5dd5987",
+    "before/straight-normal-minecart.png": "29dad5780572b03af179e91a83c8d966be511cc4d579f6faa6414799f341ce42",
+    "before/straight-normal-minecart_loaded.png": "2dab5066cb1a1d0c16151e300ea77f25e84d7fdc5f0eef5e54f9b2b9c8f451a0",
+    "before/straight-opposite-minecart.png": "90ddd09ca8b65d9248b827e01b9a22098542c040861b8506e0b2d33023d15e3d",
+    "before/straight-opposite-minecart_loaded.png": "537e9e3b6be8b36f1ffded2371c595f40cc6e59f88ec1edcc82bfaf285b0c212",
+    "after/curve-close-minecart.png": "a21c36a060ef5f25bee6a37741dac42c54e22a2855cc7fa62d06cc445949448c",
+    "after/curve-close-minecart_loaded.png": "537d2190d9388ca6f8ba4465c0437e4cf2d134c6c7e1734230b7832845327a4b",
+    "after/curve-normal-minecart.png": "5343c4d4653d65d762631c3b838547681d52d4810c0bb96d4249be7afb040d13",
+    "after/curve-normal-minecart_loaded.png": "58a05dcd8465ea0ea35aa3db45d36d700a356ca29f6d0dd20951f885665d25b5",
+    "after/curve-opposite-minecart.png": "a48e06a3a99dda9318fa2661451521523e7f20e99357e4cf941e2c7ac9b65fcc",
+    "after/curve-opposite-minecart_loaded.png": "78e3207a7115dc14a61e5ecb4e93dd0cbb50dfe3d6bd275a4252c3236797f928",
+    "after/mine-close-minecart.png": "b663db8e6d15e3a38b3a8aecc7dee965a12906d8cfcbe4e20cc7d670ee4916f6",
+    "after/mine-close-minecart_loaded.png": "373e0f9ede88a0d0b530227949b4eee5f7c4b9317f0509563a8cc4bf82d0c138",
+    "after/mine-normal-minecart.png": "4dd744b80e0b8fb4d73f2a335353c2efa0d94c856b94fcc1a136c7841791e837",
+    "after/mine-normal-minecart_loaded.png": "c57724c2cf3b4137a6bd0604f418b9cb4f2a18fff2f76ad9a410153b71cc946c",
+    "after/mine-reverse-minecart.png": "60a2d8be364510ce83d0aae2797248faaebe9cb2231dbfd0628220f8f89e9150",
+    "after/mine-reverse-minecart_loaded.png": "8077449d0d6e3780b744af0c0a5dde29ec83cf6370be58f4879b532b1f953fe6",
+    "after/straight-close-minecart.png": "9d77272670cf1a54d25f15979be2d561872f5d3aab129b85df09901051e82d50",
+    "after/straight-close-minecart_loaded.png": "e083a4e060fdaa09cd8c899cb72cb4cdf5bc301d285890044c7989bca4426aeb",
+    "after/straight-normal-minecart.png": "c9ce85f9900c943348018a17f84c499ac5751c9a5eb7f3987092ca4e02dcccac",
+    "after/straight-normal-minecart_loaded.png": "7eb474df86ce511ffc759c6b95251ea1e5f2dfa58606a08d176f94dc809bd319",
+    "after/straight-opposite-minecart.png": "079e1024f502f0f4934f0e74615954bc69b3597fb272ecfd936b7a5bfb71863e",
+    "after/straight-opposite-minecart_loaded.png": "57c23827d0f71c831f0446f38d145069a63b971fbd52d6329809505fe89cb6b5"
+  },
+  "limits": [
+    "normal-distance change modest; close-up steel periodicity reduction",
+    "GPU/mobile/Player not measured",
+    "225 placements/210 visible",
+    "shared atlas coexist cost12064616B unchanged",
+    "mine-view legacy flame core differs; not whole-screen fixed-light comparison",
+    "only two formal target Prefabs regenerated; optional/legacy fallback reused from182/183"
+  ],
+  "mapGenerationCpu": {
+    "rows": [
+      {
+        "phase": "before",
+        "onceColdMapCpuMs": 30.799999952316284
+      },
+      {
+        "phase": "after",
+        "onceColdMapCpuMs": 48.60000002384186
+      }
+    ],
+    "notGpuOrMobile": true,
+    "singleColdSample": true
+  },
+  "exportPayloadBytes": {
+    "empty": {
+      "before": 1162629,
+      "candidate": 1208381
+    },
+    "load": {
+      "before": 2201550,
+      "candidate": 2246194
+    }
+  }
+}
