@@ -48,14 +48,26 @@ namespace MapSharedProps.EditorTools
             }
         }
 
-        public static string Resolve(string directory, string name, bool optional = false)
+        // Resolve and validate once, then hand the exact validated text to the importer.
+        // No persistent cache: later imports still detect changed or missing shared sources.
+        public static string Read(string directory, string name, bool optional = false)
         {
+            ResolveCore(directory, name, optional, true, out var text);
+            return text;
+        }
+        public static string Resolve(string directory, string name, bool optional = false)
+            => ResolveCore(directory, name, optional, false, out _);
+        static string ResolveCore(string directory, string name, bool optional, bool readLocal, out string text)
+        {
+            text = null;
             Check(Names.Contains(name), "未対応の共通ファイル名");
             string local = Path.Combine(directory, name), reference = Path.Combine(directory, "shared_assets.json");
             if (!File.Exists(reference))
             {
                 if (optional && !File.Exists(local)) return null;
-                Check(File.Exists(local), name + " がありません"); return local;
+                Check(File.Exists(local), name + " がありません");
+                if (readLocal) text = ReadText(local);
+                return local;
             }
             Check(new FileInfo(reference).Length <= 65536, "参照が大きすぎます");
             var r = JsonUtility.FromJson<Reference>(File.ReadAllText(reference));
@@ -64,8 +76,8 @@ namespace MapSharedProps.EditorTools
             var ordered = r.files.Select(e => e.name).ToArray();
             Check(ordered.Distinct().Count() == ordered.Length && ordered.SequenceEqual(ordered.OrderBy(n => n, StringComparer.Ordinal))
                 && r.files.All(e => Names.Contains(e.name) && Hex(e.sha256) && e.bytes >= 0 && e.bytes <= 128L*1024*1024), "ファイル一覧が不正です");
-            string text = "tdj-shared-assets/1\n" + string.Join("\n", r.files.Select(e => e.name + " " + e.sha256));
-            Check(Hash(Encoding.UTF8.GetBytes(text)) == r.bundleHash, "参照IDが一致しません");
+            string identity = "tdj-shared-assets/1\n" + string.Join("\n", r.files.Select(e => e.name + " " + e.sha256));
+            Check(Hash(Encoding.UTF8.GetBytes(identity)) == r.bundleHash, "参照IDが一致しません");
             var entry = r.files.SingleOrDefault(e => e.name == name);
             if (optional && entry == null) return null;
             Check(entry != null && !File.Exists(local), "共通参照が無いか、ローカルの同名ファイルと競合しています");
@@ -78,12 +90,16 @@ namespace MapSharedProps.EditorTools
                 Check(!(File.Exists(candidate) && File.Exists(recipe)), "旧素材とレシピが競合しています");
                 if (File.Exists(recipe))
                 {
-                    var raw = Encoding.UTF8.GetBytes(ReadText(recipe));
+                    text = ReadText(recipe);
+                    var raw = Encoding.UTF8.GetBytes(text);
                     Check(raw.LongLength == entry.bytes && Hash(raw) == entry.sha256, name + " の素材版が違います");
                     return recipe;
                 }
                 if (!File.Exists(candidate)) continue;
-                Check(new FileInfo(candidate).Length == entry.bytes && Hash(File.ReadAllBytes(candidate)) == entry.sha256, name + " の内容が参照と一致しません");
+                Check(new FileInfo(candidate).Length == entry.bytes, name + " の内容が参照と一致しません");
+                var bytes = File.ReadAllBytes(candidate);
+                Check(bytes.LongLength == entry.bytes && Hash(bytes) == entry.sha256, name + " の内容が参照と一致しません");
+                if (readLocal) text = Encoding.UTF8.GetString(bytes).TrimStart('\ufeff');
                 return candidate;
             }
             throw new FileNotFoundException("共通資産がありません。receive-room.pyで共通ZIPと一緒に受付してください: " + r.bundleHash + "/" + name);

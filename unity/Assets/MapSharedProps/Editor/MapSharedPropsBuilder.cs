@@ -46,8 +46,9 @@ public static class MapSharedPropsBuilder {
  static bool CaveKit(string id) { return id == "flowstone" || id == "cavebreakdown"; }
  static bool DrySoil(string id) { return id == "drysoil_curl" || id == "drysoil_cup" || id == "drysoil_flake"; }
  static bool MineralTexture(string id) { return id == "placed-rock-mineral-v3" || id == "dry-clay-grain-v1"; }
- public static LibraryDto ReadLibrary(string file) {
-  var d = JsonUtility.FromJson<LibraryDto>(SharedAssetFiles.ReadText(file));
+ public static LibraryDto ReadLibrary(string file) => ParseLibrary(SharedAssetFiles.ReadText(file));
+ static LibraryDto ParseLibrary(string text) {
+  var d = JsonUtility.FromJson<LibraryDto>(text);
   bool registry=d!=null&&d.libraryVersion=="shared-registry/1";
   if(registry)Require(d.schemaVersion==1&&d.units=="metres","registry schema/units");else Require(d != null && d.schemaVersion == 1 && (d.libraryVersion == "shared-rock-fern/4" || d.libraryVersion == "shared-nature/1" || d.libraryVersion == "shared-plants/1" || d.libraryVersion == "shared-plants/2" || (d.libraryVersion == "shared-plants/3" || (d.libraryVersion == "shared-plants/4" || (d.libraryVersion == "shared-plants/5" || (d.libraryVersion == "shared-plants/6" || d.libraryVersion == "shared-plants/7"))))) && d.units == "metres", "unsupported library/version/units");
   int optionalCave=d.assets==null?0:Array.FindAll(d.assets,a=>a!=null&&CaveKit(a.id)).Length;
@@ -111,7 +112,7 @@ public static class MapSharedPropsBuilder {
  public static Result Build(string exportDirectory, Transform parent = null) {return Build(exportDirectory,parent,null);}
  public static Result Build(string exportDirectory, Transform parent, IReadOnlyDictionary<string,GameObject> externalPrefabs) {
   FibrePrefabImport.Validate(exportDirectory,externalPrefabs);
-  var lib = ReadLibrary(SharedAssetFiles.Resolve(exportDirectory, "shared_props.json"));
+  var lib = ParseLibrary(SharedAssetFiles.Read(exportDirectory, "shared_props.json"));
   var cat = JsonUtility.FromJson<CatalogDto>(File.ReadAllText(Path.Combine(exportDirectory, "asset_catalog.json")));
   Require(cat != null && cat.types != null, "missing asset catalog types");
   string bindingsFile=Path.Combine(exportDirectory,"asset_bindings.json");
@@ -120,8 +121,8 @@ public static class MapSharedPropsBuilder {
    cat.dynamicTypes=new Dictionary<string,TypeDto>();foreach(var item in list.bindings){Require(item!=null&&SafeId(item.id)&&!cat.dynamicTypes.ContainsKey(item.id),"asset bindings ID");cat.dynamicTypes.Add(item.id,item);}
   }
   if(lib.libraryVersion=="shared-registry/1")Require(cat.dynamicTypes!=null,"registry requires asset bindings");
-  string windFile=SharedAssetFiles.Resolve(exportDirectory,"pine_wind.json",true);PineWindDto wind=null;
-  if(File.Exists(windFile)){wind=JsonUtility.FromJson<PineWindDto>(SharedAssetFiles.ReadText(windFile));Require(wind!=null&&(wind.version==1||wind.version==2)&&wind.id=="pine"&&wind.minY==2.15f&&wind.maxY==6.408f&&wind.maxDisplacementMetres==(wind.version==1?.12f:.16f)&&wind.waves!=null&&wind.waves.Length==4&&wind.phase!=null&&wind.phase.Length==2,"pine wind contract");}
+  string windText=SharedAssetFiles.Read(exportDirectory,"pine_wind.json",true);PineWindDto wind=null;
+  if(windText!=null){wind=JsonUtility.FromJson<PineWindDto>(windText);Require(wind!=null&&(wind.version==1||wind.version==2)&&wind.id=="pine"&&wind.minY==2.15f&&wind.maxY==6.408f&&wind.maxDisplacementMetres==(wind.version==1?.12f:.16f)&&wind.waves!=null&&wind.waves.Length==4&&wind.phase!=null&&wind.phase.Length==2,"pine wind contract");}
   if(wind!=null&&wind.version==2)Require(wind.response!=null&&wind.response.version==1&&wind.response.linear==.25f&&wind.response.quadratic==.75f&&wind.response.mean==.65f&&wind.response.gust==.35f,"wind response contract");
   RootPaintDto rootPaint=null;var surfaces=new Dictionary<string,Vector4>();var rootPlanes=new Dictionary<string,Vector2>();string rootFile=Path.Combine(exportDirectory,"root_grounding.json");
   if(File.Exists(rootFile)){var planes=JsonUtility.FromJson<RootPlanesDto>(File.ReadAllText(rootFile));Require(planes!=null&&planes.version==1&&planes.axes=="Unity world XZ"&&planes.instances!=null,"root planes");rootPaint=planes.paint;if(rootPaint!=null&&rootPaint.resolution==0)rootPaint=null;foreach(var plane in planes.instances){Floats(plane.slope,2,"root slope");var slope=new Vector2(plane.slope[0],plane.slope[1]);Require(slope.magnitude<=.15001f&&!rootPlanes.ContainsKey(plane.instanceId),"root slope range/unique ID");rootPlanes.Add(plane.instanceId,slope);if(plane.terrain!=null){Floats(plane.terrain,4,"root terrain");Require(plane.terrain[0]>=0&&plane.terrain[1]>=0&&plane.terrain[2]>=0&&plane.terrain[0]+plane.terrain[1]+plane.terrain[2]<=1.00001f,"root terrain range");surfaces.Add(plane.instanceId,new Vector4(plane.terrain[0],plane.terrain[1],plane.terrain[2],plane.terrain[3]));}}}
@@ -133,7 +134,7 @@ public static class MapSharedPropsBuilder {
   r.assetDirectory = AssetDatabase.GenerateUniqueAssetPath(rootDir + "/Pilot");
   AssetDatabase.CreateFolder(rootDir, Path.GetFileName(r.assetDirectory));
   try {
-   if(Array.Exists(lib.assets,a=>a.rootSurface!=null)&&SharedAssetFiles.Resolve(exportDirectory,"shared_ground.json",true)!=null)r.ground=MapSharedGroundBuilder.Build(SharedAssetFiles.Resolve(exportDirectory,"shared_ground.json"),GroundEditorZero(Path.Combine(exportDirectory,"meta.json")),exportDirectory);
+   if(Array.Exists(lib.assets,a=>a.rootSurface!=null)){var groundText=SharedAssetFiles.Read(exportDirectory,"shared_ground.json",true);if(groundText!=null)r.ground=MapSharedGroundBuilder.BuildJson(groundText,GroundEditorZero(Path.Combine(exportDirectory,"meta.json")),exportDirectory);}
    if(rootPaint!=null){Require(rootPaint.file=="root_paint.png"&&rootPaint.resolution>=2&&rootPaint.resolution<=1025,"root paint filename/resolution");Floats(rootPaint.sizeMetres,2,"root paint size");Require(rootPaint.sizeMetres[0]>0&&rootPaint.sizeMetres[1]>0,"root paint extent");string path=r.assetDirectory+"/root_paint.png";File.Copy(Path.Combine(exportDirectory,rootPaint.file),path);AssetDatabase.ImportAsset(path,ImportAssetOptions.ForceSynchronousImport);var importer=(TextureImporter)AssetImporter.GetAtPath(path);importer.sRGBTexture=false;importer.mipmapEnabled=false;importer.textureCompression=TextureImporterCompression.Uncompressed;importer.wrapMode=TextureWrapMode.Clamp;importer.filterMode=FilterMode.Bilinear;importer.npotScale=TextureImporterNPOTScale.None;importer.maxTextureSize=2048;importer.SaveAndReimport();r.rootPaint=AssetDatabase.LoadAssetAtPath<Texture2D>(path);Require(r.rootPaint&&r.rootPaint.width==rootPaint.resolution&&r.rootPaint.height==rootPaint.resolution,"root paint dimensions");}
    var textures = new Dictionary<string, Texture2D>();
    foreach (var t in lib.textures) {
