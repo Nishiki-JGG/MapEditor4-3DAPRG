@@ -10,6 +10,8 @@ using UnityEngine.Rendering;
 namespace MapSharedProps.EditorTools {
 // Visual-only pilot importer. Does not replace a game's prefab resolver, physics or water importer.
 public static class MapSharedPropsBuilder {
+ // Opt in only the authored cave-decoration pack; other shared assets keep their lighting contract.
+ static readonly HashSet<string> CaveDecorLocalLightIds = new HashSet<string>(StringComparer.Ordinal){"cnd001","cnd002","cnd003","cnd004","cnd005","cnd006","cnd007","cnd008","cnd009","cnd010","cnd011","cnd012","cnd013","cnd014","cnd015","cnd016","cnd017","cnd018","cnd019","cnd020"};
  [Serializable] public class TextureDto { public string id, png, colorSpace, wrap, filter; public int width, height, anisotropy; public bool mipmaps; }
  [Serializable] public class MaterialDto { public string texture, lighting; public float[] baseColor; public float alphaCutoff; public bool doubleSided; }
  [Serializable] public class GroundOffsetDto { public int firstVertex, count; public float deltaY; }
@@ -162,6 +164,7 @@ int n = a.positions.Length / 3; var vertices = new Vector3[n]; var normals = new
     if(a.motionWeights!=null){var mask=new Vector2[n];for(int i=0;i<n;i++)mask[i]=new Vector2(a.motionWeights[i*2],a.motionWeights[i*2+1]);candidate.uv2=mask;}if(a.glow!=null){var emission=new Vector2[n];for(int i=0;i<n;i++)emission[i]=new Vector2(a.glow[i],0);candidate.uv3=emission;}if(a.rootGrounding!=null){var roots=new Vector2[n];for(int i=0;i<n;i++)roots[i]=new Vector2(a.rootWeights[i],a.rootWood!=null?a.rootWood[i]:0);candidate.uv4=roots;}candidate.RecalculateBounds();if(a.rootGrounding!=null){var b=candidate.bounds;float radius=Mathf.Max(Mathf.Abs(b.min.x),Mathf.Abs(b.max.x))+Mathf.Max(Mathf.Abs(b.min.z),Mathf.Abs(b.max.z));b.Expand(new Vector3(0,radius*.3f,0));candidate.bounds=b;}if((a.wind!=null&&a.wind.maxDisplacementMetres>0)||(a.id=="pine"&&wind!=null)){var bounds=candidate.bounds;float pad=(a.wind!=null&&a.wind.maxDisplacementMetres>0?a.wind.maxDisplacementMetres:wind.maxDisplacementMetres)+(a.contact!=null?a.contact.maxDisplacementMetres:0);bounds.Expand(new Vector3(pad*2,0,pad*2));candidate.bounds=bounds;} return candidate;
     });
     var d = a.material; var mat = new Material(shader) { name = a.id + "/v" + a.version };
+    if(shader.name=="MapSharedProps/Lit" && d.texture=="cave-decor-atlas-v1" && CaveDecorLocalLightIds.Contains(a.id))mat.EnableKeyword("SMALL_PROP_LOCAL_LIGHTS");
     if(a.id=="bush"&&a.version==2)mat.EnableKeyword("SHARED_BUSH_LEAF");
     mat.SetTexture("_BaseMap", textures[d.texture]); mat.SetColor("_BaseColor", new Color(d.baseColor[0],d.baseColor[1],d.baseColor[2],d.baseColor[3]));
     if(a.id=="pine"&&wind!=null){mat.SetVector("_PineBand",new Vector4(wind.minY,wind.maxY,wind.maxDisplacementMetres,1));mat.SetVector("_PineWaves",new Vector4(wind.waves[0],wind.waves[1],wind.waves[2],wind.waves[3]));mat.SetVector("_PinePhase",new Vector4(wind.phase[0],wind.phase[1],0,0));}
