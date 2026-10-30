@@ -15,6 +15,22 @@ namespace MapSharedProps.EditorTools
             if (!AssetDatabase.IsValidFolder(Root)) AssetDatabase.CreateFolder("Assets", "MapSharedAssetCache");
             return Root + "/" + SharedAssetFiles.Hash(Encoding.UTF8.GetBytes("shared-import/1\n" + key)) + extension;
         }
+        // The key and path are identical to StoreMesh: existing GUIDs remain valid.
+        public static Mesh GetOrCreateMesh(string key, Func<Mesh> create)
+        {
+            if (create == null) throw new ArgumentNullException(nameof(create));
+            string path = PathFor("mesh\n" + key, ".asset");
+            var saved = AssetDatabase.LoadAssetAtPath<Mesh>(path);
+            if (saved) return saved;
+            if (File.Exists(path) || File.Exists(path + ".meta"))
+                throw new IOException("共通Meshの保存先が不正です: " + path);
+            Mesh candidate = create();
+            if (!candidate) throw new InvalidOperationException("共通Meshを生成できませんでした");
+            if (AssetDatabase.Contains(candidate))
+                throw new InvalidOperationException("既存の資産を共通Meshの新規候補にできません");
+            try { AssetDatabase.CreateAsset(candidate, path); return candidate; }
+            catch { UnityEngine.Object.DestroyImmediate(candidate); throw; }
+        }
         public static Mesh StoreMesh(Mesh candidate, string key)
         {
             string path = PathFor("mesh\n" + key, ".asset");
