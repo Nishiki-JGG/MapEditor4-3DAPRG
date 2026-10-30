@@ -4,9 +4,13 @@
 const memory = new Map();
 const abort = () => new DOMException('準備を中止しました', 'AbortError');
 function check(job) { if (job && !job.valid()) throw abort(); }
+const yields=[];
+const yieldChannel=typeof MessageChannel==='function'?new MessageChannel():null;
+if(yieldChannel)yieldChannel.port1.onmessage=()=>yields.shift()?.();
 async function pause(job) {
   check(job);
-  await new Promise(r => setTimeout(r, 0));
+  // Yield to UI/cancellation between 6ms work slices without a 4ms timer tax per slice.
+  await new Promise(r=>{if(yieldChannel){yields.push(r);yieldChannel.port2.postMessage(0);}else setTimeout(r,0);});
   check(job);
 }
 async function each(items, fn, job) {

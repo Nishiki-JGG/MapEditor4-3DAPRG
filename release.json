@@ -1,7 +1,7 @@
 {
-  "release": "placement-wheel-20261030",
+  "release": "history-load-20261030",
   "files": {
-    "app.js": "66430c05ac891257944e6b99fd1e7d3f68e41dce938119af385b5c25e724b326",
+    "app.js": "403c2b5fa3d5f8c48518215796ecd58ae8e7dbe31a9d780af7b5bd4736cd940e",
     "props/chest-presentation.js": "02d054f76798bdf6599156ffb0655085c919b3df733386a47a11f458d3aa5233",
     "props/chest-surface.js": "bf7137cd3c64c736bc50d0dbd2a7b62f4fce1c48db73f6473fc6b9522b24f025",
     "props/chest-relief.js": "2f6d152ccd4c0dfd43d34c9867118d5060704b01ea93cfeafcdf826c479e8f94",
@@ -42,10 +42,12 @@
     "unity/Assets/MapSharedProps/Editor/MineSpoilV1.cs": "18413514bdf454f98e9acc696b736cce2bf9017894b0b901ece2f597573f463e",
     "props/cave-decor.js": "abf74ab0b78918409e80854060e0291cda33f30ed758a7c4d46a29e12ddaead1",
     "props/shared/cave-decor-data.js": "5939db717735b0bc3400f5decf360bc3e6aaec12c75f0abbbb26c616269ba57c",
-    "index.html": "466cbe27c92e3bc3a59988a753914330300c05b17da2618748f44c06dda12a8c",
-    "prepared/manifest.js": "6551c17591721827aef2287b00a7ace26c5d0dc34b76adb767957626e749497c",
-    "terrain/cliff-shoulder.js": "71e49d1ee7d85f2164431f9a23bde42d1c07daf472c4f6960124d98c3ee91094"
+    "index.html": "40e454a150f4501520aa1bc9d5e8fb748027b86871de97523c9fca8113331d95",
+    "prepared/manifest.js": "fbe8440f0c97323443008afa2c747b1b5c3fcb92c1b5e0e6e3862ffa8c5668cb",
+    "terrain/cliff-shoulder.js": "71e49d1ee7d85f2164431f9a23bde42d1c07daf472c4f6960124d98c3ee91094",
+    "terrain/cliff-fits.js": "af45187ef4fde865a1298cc6fd8cda8a02c165ab56bb42f550f95d1ad9946c1a",
+    "terrain/preparation.js": "da67a70b50fa0d0cb0b35af74fd0e2352b6a6d56ae447eaed2723604e86757ac"
   },
-  "sourceCandidate": "39b3de974e7edc440661a415d2cb3fb4dede7266",
-  "integratedMain": "39b3de974e7edc440661a415d2cb3fb4dede7266"
+  "sourceCandidate": "d9ed98e54fe53d28a28fb51540508619bee1e022",
+  "integratedMain": "d9ed98e54fe53d28a28fb51540508619bee1e022"
 }

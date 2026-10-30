@@ -347,12 +347,12 @@ function fillCliffAttrs() {
   }
   tGeo.attributes.cliffT.needsUpdate = tGeo.attributes.cliffM.needsUpdate = tGeo.attributes.cliffW.needsUpdate = true;
 }
-function applyCliffStyle() {
+function applyCliffStyle(deferRebuild=false) {
   const st = (CLIFF_STYLES.find(c => c[0] === state.cliffStyle) || CLIFF_STYLES[0])[2];
   BU.uCliffTint.value.setRGB(...st.tint); BU.uCliffMoss.value.setRGB(...(st.moss || [.30, .42, .15])); BU.uCliffMossOn.value = st.moss ? 1 : 0;
   BU.uCliffMossK.value = st.mossK ?? 1; BU.uCliffWet.value = st.wet || 0; BU.uCliffSnow.value = st.snow || 0;
-  fillCliffAttrs(); if (typeof rebuildProps === 'function' && typeof propMeshes !== 'undefined') rebuildProps(true);
-  if(typeof cliffRelief!=='undefined')scheduleCliffRelief();
+  fillCliffAttrs(); if (!deferRebuild && typeof rebuildProps === 'function' && typeof propMeshes !== 'undefined') rebuildProps(true);
+  if(!deferRebuild&&typeof cliffRelief!=='undefined')scheduleCliffRelief();
 }
 // Shared grass (4 m) and soil (2 m); mipmapped raw sRGB enters the existing single terrain decode.
 const groundTexture = TDGround.texture;
@@ -692,6 +692,7 @@ function bedrockReady(){
 }
 let cliffReliefTimer=0;
 function rebuildCliffRelief(){
+  completedSerial++;
   clearTimeout(cliffReliefTimer);cliffReliefTimer=0;
   // Reconstruct only steep cells and their shoulder ring; never change editable H.
   const oldSurface=terrain.geometry;
@@ -717,7 +718,7 @@ function shoulderMask(){
   rocks.query(x,z,4,p=>keep(Math.hypot(x-p[1],z-p[2]),Math.max(1.5,PROP[p[0]].r||0)*p[4]+.6));
   memo.set(key,m);return m;};
 }
-function scheduleCliffRelief(){clearTimeout(cliffReliefTimer);cliffRelief.visible=false;cliffReliefTimer=setTimeout(rebuildCliffRelief,100);}
+function scheduleCliffRelief(){if(!cliffReliefTimer)cliffReliefTimer=setTimeout(rebuildCliffRelief,100);}
 
 
 // outer wall (skirt) so the map reads as a floating block
@@ -758,7 +759,7 @@ const WATERU = {
 };
 let waterTimer = 0, waterInfo = null;
 function refreshWaterData() {
-  waterTimer = 0;
+  completedSerial++;clearTimeout(waterTimer);waterTimer = 0;
   const res = TDWater.analyze({ TN: N, TS: CELL, HALF, TH: H, level: state.water, falls: falls.map(f => ({ id: f.id, x: f.x, z: f.z, w: f.w })), sea: seaMaskFor(N, CELL) });
   const pk = TDWater.pack(res);
   WFLOW.set(pk.flow); WMASK.set(pk.mask);
@@ -1294,6 +1295,7 @@ function placeSpring(x, z, preset) {
 
 function refreshGroundWeights(){TDTerrainPaint.resolve(S,effectiveS,NS);}
 function updateTerrain() {
+  completedSerial++;
   refreshGroundWeights();
   walkDirty = true;
   if (typeof linkGroup !== 'undefined') for (const g of linkGroup.children) g.position.y = heightAt(g.userData.m.x, g.userData.m.z);
@@ -1315,8 +1317,8 @@ function updateTerrain() {
   computeShoreField();
   tGeo.computeVertexNormals();
   const slopeField=tGeo.attributes.reliefSlope;for(let k=0;k<N*N;k++)slopeField.array[k]=1-tGeo.attributes.normal.getY(k);slopeField.needsUpdate=true;
-  if(terrain.geometry!==tGeo){terrain.geometry.dispose();terrain.geometry=tGeo;}
-  if(water.geometry!==wGeo){water.geometry.dispose();water.geometry=wGeo;}
+  // Keep the last complete surface until its replacement is ready. Undo must not
+  // flash the coarse editing grid or a separate stair-stepped water shoreline.
   tGeo.computeBoundingSphere(); tGeo.computeBoundingBox();
   scheduleCliffRelief();
   const spos = sGeo.attributes.position.array;
@@ -1609,7 +1611,7 @@ function effectiveGeometry(p){return cliffFits.effectiveGeometry(p);}
 function refreshCliffFits(visualOnly=false){if(!visualOnly){const stale=cliffFits.synchronize(cliffInputSignature(),props);if(stale)toast('地形または岩を変更したため、密着加工を解除しました。岩を自動配置で更新できます。');}for(const c of cliffFits.cache.values())if(c.mesh)c.mesh.visible=false;}
 function cliffTintAt(x,z){const v=.86+.28*hash2(x*97|0,z*89|0);return[v*(.95+.1*hash2(x*13|0,7)),v,v*(.95+.1*hash2(3,z*17|0))];}
 function savedCliffTint(p){return cliffFits.valid(p)?cliffFits.records.get(p[8]).instanceTint:null;}
-function drawCliffFit(p,matrix,color,ghost){const c=cliffFits.get(p);if(!c)return false;const record=cliffFits.records.get(p[8]);if(record.affine){if(!c.affine)c.affine=new THREE.Matrix4().fromArray(record.affine);matrix.multiply(c.affine);return false;}if(!c.mesh){const g=c.geometry;g.setAttribute('cliffI',new THREE.InstancedBufferAttribute(new Float32Array([cliffIndexNear(p[1],p[2])]),1));const m=new THREE.InstancedMesh(g,propMeshes[p[0]].material,1);m.instanceColor=new THREE.InstancedBufferAttribute(new Float32Array(3),3);m.castShadow=m.receiveShadow=true;m.frustumCulled=false;c.mesh=m;scene.add(m);}const m=c.mesh;m.material=ghost?ghostMat:propMeshes[p[0]].material;m.renderOrder=ghost?8:0;m.visible=true;m.setMatrixAt(0,matrix);m.setColorAt(0,color);m.instanceMatrix.needsUpdate=m.instanceColor.needsUpdate=true;c.geometry.attributes.cliffI.array[0]=cliffIndexNear(p[1],p[2]);c.geometry.attributes.cliffI.needsUpdate=true;return true;}
+function drawCliffFit(p,matrix,color,ghost){const c=cliffFits.get(p);if(!c)return false;const record=cliffFits.records.get(p[8]);if(record.affine){if(!c.affine)c.affine=new THREE.Matrix4().fromArray(record.affine);matrix.multiply(c.affine);return false;}if(!c.mesh){const g=c.geometry;g.setAttribute('cliffI',new THREE.InstancedBufferAttribute(new Float32Array([cliffIndexNear(p[1],p[2])]),1));const m=new THREE.InstancedMesh(g,propMeshes[p[0]].material,1);m.instanceColor=new THREE.InstancedBufferAttribute(new Float32Array(3),3);m.castShadow=m.receiveShadow=true;m.frustumCulled=false;c.mesh=m;scene.add(m);}const m=c.mesh;if(!m.parent)scene.add(m);m.material=ghost?ghostMat:propMeshes[p[0]].material;m.renderOrder=ghost?8:0;m.visible=true;m.setMatrixAt(0,matrix);m.setColorAt(0,color);m.instanceMatrix.needsUpdate=m.instanceColor.needsUpdate=true;c.geometry.attributes.cliffI.array[0]=cliffIndexNear(p[1],p[2]);c.geometry.attributes.cliffI.needsUpdate=true;return true;}
 function makeFittedFootprint(p,c){if(c.footprint)return c.footprint;const g=c.geometry.clone(),P=g.attributes.position;for(let i=0;i<P.count;i++){const w=TDCliffContact.world(p,[P.getX(i),P.getY(i),P.getZ(i)]);P.setXYZ(i,w[0]-p[1],w[1],w[2]-p[2]);}g.computeBoundingBox();const f=shapeFootprint({geo:g,sharedAsset:true});for(let j=0;j<f.nz;j++)for(let i=0;i<f.nx;i++){const k=j*f.nx+i;if(f.top[k]>-1e8)f.top[k]-=heightAt(p[1]+f.x0+i*SHAPE_CELL,p[2]+f.z0+j*SHAPE_CELL);}const box=g.boundingBox;f.R=Math.hypot(Math.max(Math.abs(box.min.x),Math.abs(box.max.x)),Math.max(Math.abs(box.min.z),Math.abs(box.max.z)));c.y0=box.min.y;c.y1=box.max.y;g.dispose();return c.footprint=f;}
 
 // A bounded local plane moves only the root collar. Recomputed on placement/terrain rebuild, never per vertex/frame.
@@ -3206,12 +3208,67 @@ const TOOLS = [
   { id: 'secret', name: '隠し通路', key: 'k', hint: '茂み・岩・崖の中を通り抜けられる隠し通路を塗ります（水色）。通路の床は入口と出口の地面の高さでつながり、キャラが入ると重なった物が透けます。' },
   { id: 'walkAuto', name: '自動に戻す', key: 'j', hint: '塗った所の上書きを消し、自動判定に戻します。' },
 ];
+let completedSerial=0,lastCompletedSerial=-1,lastCompleted=null;
+function captureCompletedSurface(){
+ // Finish only pending edits; an unchanged save/history capture has no generation work.
+ if(waterTimer)refreshWaterData();if(cliffReliefTimer)rebuildCliffRelief();
+ if(lastCompleted&&lastCompletedSerial===completedSerial)return lastCompleted;
+ const take=TDCompletedState.capture;
+ const surfaces=TDCompletedState.share({base:take(tGeo,true),baseWater:take(wGeo,true),skirt:take(sGeo,true),terrain:take(terrain.geometry),water:take(water.geometry),relief:take(cliffRelief.geometry),sides:take(waterSides.geometry,true),spring:take(spGeo,true)},lastCompleted?.surfaces);
+ const info=waterInfo?Object.fromEntries(['stats','wetCount','hasFlow','falls','inflows','warnings'].map(k=>[k,waterInfo[k]])):null;
+ lastCompleted={version:1,vertices:N,surfaces,springResult:springRes,flow:TDCompletedState.share(WFLOW.slice(),lastCompleted?.flow),mask:TDCompletedState.share(WMASK.slice(),lastCompleted?.mask),info,waterUniforms:{flowMax:WATERU.uFlowMax.value,bankRange:WATERU.uBankRange.value,trailMax:WATERU.uTrailMax.value,fallCount:WATERU.uFallCount.value,springCount:WATERU.uSpringCount.value,falls:WATERU.uFalls.value.map(v=>v.toArray()),springs:WATERU.uSprings.value.map(v=>v.toArray())}};
+ lastCompletedSerial=completedSerial;return lastCompleted;
+}
+function validateCompletedSurface(v,vertices=N){
+ if(v?.version!==1||v.vertices!==vertices)throw Error('完成地形のサイズが一致しません');
+ for(const k of ['base','baseWater','skirt','terrain','water','relief','sides','spring'])TDCompletedState.validate(v.surfaces?.[k]);
+ if(v.surfaces.base.attributes.position.array.length!==vertices*vertices*3||v.surfaces.baseWater.attributes.position.array.length!==vertices*vertices*3||!(v.flow instanceof Uint8Array)||v.flow.length!==vertices*vertices*4||!(v.mask instanceof Uint8Array)||v.mask.length!==vertices*vertices*4)throw Error('完成地形の格子または水が不正です');
+ const w=v.waterUniforms;if(!w||![w.flowMax,w.bankRange,w.trailMax,w.fallCount,w.springCount].every(Number.isFinite)||!Number.isInteger(w.fallCount)||w.fallCount<0||w.fallCount>8||!Number.isInteger(w.springCount)||w.springCount<0||w.springCount>8||![w.falls,w.springs].every(a=>Array.isArray(a)&&a.length===8&&a.every(v=>Array.isArray(v)&&v.length===4&&v.every(Number.isFinite))))throw Error('完成状態の水設定が不正です');
+}
+function installCompletedSurface(v){
+ clearTimeout(cliffReliefTimer);clearTimeout(waterTimer);cliffReliefTimer=waterTimer=0;
+ const put=TDCompletedState.copyInto,read=TDCompletedState.read,q=v.surfaces;
+ for(let k=0;k<N*N;k++)if(tGeo.attributes.position.array[k*3+1]!==H[k])propGrounding.changed(k);
+ put(tGeo,q.base);put(wGeo,q.baseWater);put(sGeo,q.skirt);put(spGeo,q.spring);
+ for(const [mesh,data,base]of [[terrain,q.terrain,tGeo],[water,q.water,wGeo],[cliffRelief,q.relief,null],[waterSides,q.sides,null]]){if(mesh.geometry!==base)mesh.geometry.dispose();mesh.geometry=read(data,mesh===waterSides);}
+ springRes=v.springResult;springLiftOn=!!springRes;springWater.visible=spGeo.index.count>0;cliffRelief.visible=cliffRelief.geometry.index.count>0;waterSides.visible=waterSides.geometry.index.count>0&&BU.uLava.value<.5;
+ WFLOW.set(v.flow);WMASK.set(v.mask);WATERU.uFlow.value.needsUpdate=WATERU.uMask.value.needsUpdate=true;
+ const w=v.waterUniforms;WATERU.uFlowMax.value=w.flowMax;WATERU.uBankRange.value=w.bankRange;WATERU.uTrailMax.value=w.trailMax;WATERU.uFallCount.value=w.fallCount;WATERU.uSpringCount.value=w.springCount;
+ WATERU.uFalls.value.forEach((a,i)=>a.fromArray(w.falls[i]));WATERU.uSprings.value.forEach((a,i)=>a.fromArray(w.springs[i]));waterInfo=v.info;showWaterInfo();
+ water.position.y=state.water;waterU.value=state.water;refreshGroundWeights();TDPavingMask.updateMask(pavingMask,effectiveS,NS);
+ bedrockPainted=false;for(let k=0;k<N*N;k++)if(effectiveS[k*NS+9]>0){bedrockPainted=true;break;}setBedrockVariant(bedrockPainted&&bedrockPrepared);if(bedrockPainted&&!bedrockPrepared&&!bedrockPreparation)void bedrockReady().catch(()=>{});
+ completedSerial++;lastCompletedSerial=completedSerial;lastCompleted=v;
+ rebuildPoolWater();rebuildSpringFalls();rebuildSpringMarks();
+}
 const undoStack = [], redoStack = [];
-const snapshot = () => ({ ...(tunnels.length ? { TU: JSON.parse(JSON.stringify(tunnels)) } : {}), ...(springs.length ? { SP: springs.map(s => ({ ...s })) } : {}), ...(pools.length ? { PL: pools.map(p => ({ ...p })) } : {}), ...(SC.some(v => v) ? { SC: SC.slice() } : {}), H: H.slice(), S: S.slice(), O: O.slice(), C: C.slice(), CF: cliffFits.save(), P: props.map(p => p.slice()), F: falls.map(f => ({ ...f })), B: bridges.map(b => ({ ...b })), T: stairs.map(st => ({ ...st })), W: state.water, sp: { ...state.spawn }, bi: state.biome, at: { ...state.atmo }, sea: state.sea, we: { ...state.weather }, sun: state.sunOn, tod: state.timeOfDay, dk: state.darkness, M: markers.map(m => ({ ...m })), nid: state.nextId, rid: state.roomId, cat: JSON.stringify(state.catalog), ag: { ...state.agent }, cs: state.cliffStyle });
-function restore(s,prepared,deferMarkers=false) { cancelRailDrag(); cliffFits.clear();H.set(s.H); tunnels = s.TU ? JSON.parse(JSON.stringify(s.TU)) : []; springs = (s.SP || []).map(q => ({ ...q })); pools = (s.PL || []).map(q => ({ ...q })); if (s.SC) SC.set(s.SC); else SC.fill(0); rebuildPools(); S.set(s.S); O.set(s.O); if (s.C) C.set(s.C); else C.fill(0); walkDirty = true; props = s.P.map(p => p.slice()); falls = s.F.map(f => ({ ...f })); bridges = s.B.map(b => ({ ...b })); stairs = (s.T || []).map(st => ({ ...st })); state.water = s.W; state.spawn = { ...s.sp }; if (s.at) state.atmo = { ...s.at }; if (s.we) state.weather = { ...s.we }; state.sunOn = s.sun !== false; state.timeOfDay = timeId(s.tod); state.darkness = s.dk || 'dark'; markers = (s.M || []).map(m => ({ ...m })); state.nextId = s.nid || state.nextId; state.roomId = s.rid || state.roomId; if (s.cat) { state.catalog = JSON.parse(s.cat); applyCatalog(); } if (s.ag) { state.agent = { ...s.ag }; syncAgentUI(); colliders = null; } state.cliffStyle = s.cs || 'standard'; applyCliffStyle(); if ($('cliffStyle')) $('cliffStyle').value = state.cliffStyle; if(!deferMarkers)rebuildMarkers(); state.sea = !!s.sea; applyBiome(s.bi || state.biome); syncUI(); updateTerrain(); rebuildTunnels(); solveSprings(); rebuildSpringMarks(); rebuildProps(); rebuildFalls(); rebuildBridges(); rebuildStairs();if(prepared)cliffFits.installPrepared(prepared,props,cliffInputSignature());else cliffFits.load(s.CF,props,cliffInputSignature());rebuildProps(); }
-function pushUndo() { undoStack.push(snapshot()); if (undoStack.length > 40) undoStack.shift(); redoStack.length = 0; }
-function undo() { cancelRailDrag(); if (!undoStack.length) return; redoStack.push(snapshot()); restore(undoStack.pop()); toast('取り消し'); }
-function redo() { cancelRailDrag(); if (!redoStack.length) return; undoStack.push(snapshot()); restore(redoStack.pop()); toast('やり直し'); }
+const snapshot = () => {const completed=captureCompletedSurface();const value=({ VS:completed, ...(tunnels.length ? { TU: JSON.parse(JSON.stringify(tunnels)) } : {}), ...(springs.length ? { SP: springs.map(s => ({ ...s })) } : {}), ...(pools.length ? { PL: pools.map(p => ({ ...p })) } : {}), ...(SC.some(v => v) ? { SC: SC.slice() } : {}), H: H.slice(), S: S.slice(), O: O.slice(), C: C.slice(), CF: cliffFits.save(), P: props.map(p => p.slice()), F: falls.map(f => ({ ...f })), B: bridges.map(b => ({ ...b })), T: stairs.map(st => ({ ...st })), W: state.water, sp: { ...state.spawn }, bi: state.biome, at: { ...state.atmo }, sea: state.sea, we: { ...state.weather }, sun: state.sunOn, tod: state.timeOfDay, dk: state.darkness, M: markers.map(m => ({ ...m })), nid: state.nextId, rid: state.roomId, cat: JSON.stringify(state.catalog), ag: { ...state.agent }, cs: state.cliffStyle });Object.defineProperty(value,'runtimeFits',{value:new Map([...cliffFits.cache].map(([id,c])=>[id,{record:cliffFits.records.get(id),cache:c}]))});return value;};
+// A prop-only edit has no reason to regenerate terrain, water, bridges or markers.
+function historyValueEqual(a,b){
+ if(a===b)return true;
+ if(ArrayBuffer.isView(a)&&ArrayBuffer.isView(b))return a.constructor===b.constructor&&a.length===b.length&&a.every((v,i)=>v===b[i]);
+ return JSON.stringify(a)===JSON.stringify(b);
+}
+function propOnlyHistory(s){
+ const current=snapshot(),a=current.CF?.instances||{},b=s.CF?.instances||{};
+ if(Object.keys(a).length!==Object.keys(b).length||Object.keys(a).some(k=>a[k]!==b[k]))return false;
+ return [...new Set([...Object.keys(current),...Object.keys(s)])].every(k=>['P','CF','nid','VS'].includes(k)||historyValueEqual(current[k],s[k]));
+}
+function restore(s,prepared,deferMarkers=false) { cancelRailDrag();
+ if(!prepared&&!deferMarkers&&propOnlyHistory(s)){
+  props=s.P.map(p=>p.slice());state.nextId=s.nid||state.nextId;
+  cliffFits.load(s.CF,props,cliffInputSignature(),true,s.runtimeFits);rebuildProps();return;
+ }
+ H.set(s.H); tunnels = s.TU ? JSON.parse(JSON.stringify(s.TU)) : []; springs = (s.SP || []).map(q => ({ ...q })); pools = (s.PL || []).map(q => ({ ...q })); if (s.SC) SC.set(s.SC); else SC.fill(0); rebuildPools(); S.set(s.S); O.set(s.O); if (s.C) C.set(s.C); else C.fill(0); walkDirty = true; props = s.P.map(p => p.slice()); falls = s.F.map(f => ({ ...f })); bridges = s.B.map(b => ({ ...b })); stairs = (s.T || []).map(st => ({ ...st })); state.water = s.W; state.spawn = { ...s.sp }; if (s.at) state.atmo = { ...s.at }; if (s.we) state.weather = { ...s.we }; state.sunOn = s.sun !== false; state.timeOfDay = timeId(s.tod); state.darkness = s.dk || 'dark'; markers = (s.M || []).map(m => ({ ...m })); state.nextId = s.nid || state.nextId; state.roomId = s.rid || state.roomId; if (s.cat) { state.catalog = JSON.parse(s.cat); applyCatalog(); } if (s.ag) { state.agent = { ...s.ag }; syncAgentUI(); colliders = null; } state.cliffStyle = s.cs || 'standard'; applyCliffStyle(true); if ($('cliffStyle')) $('cliffStyle').value = state.cliffStyle; state.sea = !!s.sea; applyBiome(s.bi || state.biome,true); syncUI(); if(prepared)cliffFits.installPrepared(prepared,props,cliffInputSignature());else cliffFits.load(s.CF,props,cliffInputSignature(),true,s.runtimeFits); if(s.VS)installCompletedSurface(s.VS);else updateTerrain(); rebuildTunnels(); if(!s.VS)solveSprings(); rebuildFalls(); rebuildBridges(); rebuildStairs(); rebuildProps(); if(!deferMarkers)rebuildMarkers(); if(s.VS){clearTimeout(cliffReliefTimer);clearTimeout(waterTimer);cliffReliefTimer=waterTimer=0;} }
+function trimHistory(){
+ // At most 40 steps and approximately 192 MiB of additional retained payloads;
+ // preserve the nearest undo/redo even if a single large map exceeds the budget.
+ while(undoStack.length>40)undoStack.shift();while(redoStack.length>40)redoStack.shift();
+ const current={VS:lastCompleted,CF:cliffFits.save()};Object.defineProperty(current,'runtimeFits',{value:new Map([...cliffFits.cache].map(([id,cache])=>[id,{cache}]))});
+ while(undoStack.length+redoStack.length>1&&TDCompletedState.historyBytes([...undoStack,...redoStack],[current])>192*1024*1024){const stack=undoStack.length>1?undoStack:redoStack.length>1?redoStack:null;if(!stack)break;stack.shift();}
+}
+function pushUndo() { undoStack.push(snapshot()); redoStack.length = 0;trimHistory(); }
+function undo() { cancelRailDrag(); if (!undoStack.length) return; redoStack.push(snapshot()); restore(undoStack.pop()); trimHistory();toast('取り消し'); }
+function redo() { cancelRailDrag(); if (!redoStack.length) return; undoStack.push(snapshot()); restore(redoStack.pop()); trimHistory();toast('やり直し'); }
 
 const stroke = { rail: null, railCamera: false, active: false, base: 0, lower: false, lastStamp: null };
 let hit = null, placementPointerType = 'mouse';
@@ -4232,7 +4289,7 @@ const uPos = (x, z) => `Unity (${(x + HALF).toFixed(2)}, ${(HALF - z).toFixed(2)
 function runValidation() {
   ensureIds(); if (walkDirty) computeWalk();
   const errors = [], warnings = [], ag = state.agent;
-  for (const v of valueIssues({ agent: ag, waterLevel: state.water, spawn: state.spawn, props, bridges, stairs, falls, markers })) errors.push('不正な値 ' + v);
+  for (const v of valueIssues({ agent: ag, waterLevel: state.water, spawn: {...state.spawn}, props, bridges, stairs, falls, markers })) errors.push('不正な値 ' + v);
   const ids = [state.spawn.id, ...props.map(p => p[8]), ...bridges.map(b => b.id), ...stairs.map(st => st.id), ...falls.map(f => f.id), ...markers.map(m => m.id)], seen = new Set();
   for (const id of ids) { if (!id) errors.push('IDのない要素があります'); else if (seen.has(id)) errors.push(`IDが重複しています: ${id}`); seen.add(id); }
   if (tunnels.length) for (const w of TDTunnels.check(TDTunnels.prepare(tunnels, heightAt), heightAt, { agent: ag, water: state.water })) warnings.push(w);
@@ -4346,9 +4403,9 @@ function serialize() {
   cliffFits.synchronize(cliffInputSignature(),props);
   return {
     format: 'map-editor-proto', version: 2, size: SIZE, resolution: RES, vertices: N,
-    roomId: (ensureIds(), state.roomId), nextId: state.nextId, revision: state.revision, lastExportHash: state.lastExportHash, agent: { ...state.agent }, catalog: state.catalog,
+    roomId: (ensureIds(), state.roomId), nextId: state.nextId, revision: state.revision, lastExportHash: state.lastExportHash, agent: { ...state.agent }, catalog: structuredClone(state.catalog),
     markers: markers.map(m => ({ ...m })),
-    waterLevel: state.water, spawn: state.spawn, biome: state.biome, cliffStyle: state.cliffStyle, sea: state.sea, atmosphere: { ...state.atmo }, weather: { ...state.weather }, sunlight: state.sunOn, timeOfDay: state.timeOfDay, darkness: state.darkness, name: state.mapName,
+    waterLevel: state.water, spawn: {...state.spawn}, biome: state.biome, cliffStyle: state.cliffStyle, sea: state.sea, atmosphere: { ...state.atmo }, weather: { ...state.weather }, sunlight: state.sunOn, timeOfDay: state.timeOfDay, darkness: state.darkness, name: state.mapName,
     heightsF32: b64(new Uint8Array(H.slice().buffer)), splat: b64(S), walkOverride: b64(O), cliffMap: b64(C),   // exact heights: save → load → export reproduces the RAW
     propTypes: PROP.map(p => p.id),
     cliffFits: cliffFits.records.size?cliffFits.save():undefined,
@@ -4360,6 +4417,14 @@ function serialize() {
     springs: springs.length ? springs.map(q => ({ ...q })) : undefined, pools: pools.length ? pools.map(q => ({ ...q })) : undefined,
     springCarve: SC.some(v => v) ? b64(new Uint8Array(SC.slice().buffer)) : undefined,
   };
+}
+async function serializeCompleted(){
+ const surface=captureCompletedSurface(),source=serialize();
+ // Complete still-pending collision work for the edited state once, then persist it.
+ await primeCollisionFields(props);if(walkDirty)computeWalk();
+ if(JSON.stringify(source)!==JSON.stringify(serialize()))throw Error('保存準備中に編集が変わりました。もう一度保存してください（元のファイルは変更していません）');
+ const value={version:1,surface,collision:captureCollisionPreparation()};
+ return{...source,completedState:await TDCompletedState.pack(source,value)};
 }
 // props hold a type index. A saved map also lists its type ids (propTypes), so map them onto this editor's order:
 // adding, removing or reordering the prop files (props/*.js) keeps old maps intact.
@@ -4408,6 +4473,7 @@ function decodeMap(d,size=SIZE){
   return{data:d,newH,sp,spLayers,wo,cm,sc};
 }
 function deserialize(d,prepared) {
+  if(d.completedState&&!prepared)return prepareMap('load',0,{data:d});
   if (d.format !== 'map-editor-proto') throw new Error('形式が違います');
   if (d.vertices !== N) {
     if (d.resolution === RES && MAP_SIZES.includes(d.size)) return prepareMap('load',0,{data:d});
@@ -4417,12 +4483,12 @@ function deserialize(d,prepared) {
   if(!prepared){cliffFits.validate(d.cliffFits,d.props,cliffInputSignature(newH,d.falls||[],d.waterLevel));cancelMapPreparation(false);}
   cliffFits.clear();H.set(newH);
   if (spLayers === NS) S.set(sp); else { S.fill(0); for (let k = 0; k < N * N; k++) for (let c = 0; c < spLayers; c++) S[k * NS + c] = sp[k * spLayers + c]; }
-  O.set(wo); C.set(cm); walkDirty = true; tunnels = d.tunnels ? JSON.parse(JSON.stringify(d.tunnels)) : []; springs = (d.springs || []).map(q => ({ ...q })); pools = (d.pools || []).map(q => ({ ...q })); if (sc) SC.set(sc); else SC.fill(0); rebuildPools(); props = d.props.map(p => p.slice()); falls = (d.falls || []).map(f => ({ ...f })); bridges = (d.bridges || []).map(b => ({ ...b })); stairs = (d.stairs || []).map(st => ({ ...st })); rebuildFalls(); rebuildBridges(); rebuildStairs(); state.water = d.waterLevel; state.spawn = d.spawn; state.sea = !!d.sea; state.weather = d.weather ? { ...d.weather } : { kind: 'none', amount: .7 }; state.sunOn = d.sunlight !== false; state.timeOfDay = timeId(d.timeOfDay); state.darkness = DARK_LEVELS[d.darkness] ? d.darkness : 'dark'; setMapName(typeof d.name === 'string' ? d.name : ''); state.cliffStyle = CLIFF_STYLES.some(c => c[0] === d.cliffStyle) ? d.cliffStyle : 'standard'; applyCliffStyle(); if ($('cliffStyle')) $('cliffStyle').value = state.cliffStyle; state.atmo = d.atmosphere ? { ...d.atmosphere } : { kind: 'none', amount: .6, height: 3 };
+  O.set(wo); C.set(cm); walkDirty = true; tunnels = d.tunnels ? JSON.parse(JSON.stringify(d.tunnels)) : []; springs = (d.springs || []).map(q => ({ ...q })); pools = (d.pools || []).map(q => ({ ...q })); if (sc) SC.set(sc); else SC.fill(0); rebuildPools(); props = d.props.map(p => p.slice()); falls = (d.falls || []).map(f => ({ ...f })); bridges = (d.bridges || []).map(b => ({ ...b })); stairs = (d.stairs || []).map(st => ({ ...st })); rebuildFalls(); rebuildBridges(); rebuildStairs(); state.water = d.waterLevel; state.spawn = d.spawn; state.sea = !!d.sea; state.weather = d.weather ? { ...d.weather } : { kind: 'none', amount: .7 }; state.sunOn = d.sunlight !== false; state.timeOfDay = timeId(d.timeOfDay); state.darkness = DARK_LEVELS[d.darkness] ? d.darkness : 'dark'; setMapName(typeof d.name === 'string' ? d.name : ''); state.cliffStyle = CLIFF_STYLES.some(c => c[0] === d.cliffStyle) ? d.cliffStyle : 'standard'; applyCliffStyle(true); if ($('cliffStyle')) $('cliffStyle').value = state.cliffStyle; state.atmo = d.atmosphere ? { ...d.atmosphere } : { kind: 'none', amount: .6, height: 3 };
   state.roomId = d.roomId || newRoomId(); state.nextId = d.nextId || 1; state.revision = d.revision || 0;
   state.agent = { ...state.agent, ...(d.agent || {}) }; state.catalog = normalizeCatalog(d.catalog); state.lastExportHash = d.lastExportHash || ''; applyCatalog(); syncAgentUI();
   markers = (d.markers || []).map(m => ({ ...m })); ensureIds();
-  applyBiome(d.biome || 'forest');
-  syncUI(); updateTerrain(); rebuildTunnels(); solveSprings(); rebuildSpringMarks();if(prepared)cliffFits.installPrepared(prepared,props,cliffInputSignature());else cliffFits.load(d.cliffFits,props,cliffInputSignature()); rebuildProps(); rebuildMarkers();
+  applyBiome(d.biome || 'forest',true);
+  syncUI();if(prepared)cliffFits.installPrepared(prepared,props,cliffInputSignature());else cliffFits.load(d.cliffFits,props,cliffInputSignature()); if(prepared?.completed)installCompletedSurface(prepared.completed.surface);else updateTerrain(); rebuildTunnels();if(!prepared?.completed)solveSprings();rebuildSpringMarks();rebuildProps();rebuildMarkers();if(prepared?.completed){clearTimeout(cliffReliefTimer);clearTimeout(waterTimer);cliffReliefTimer=waterTimer=0;}
 }
 function download(name, blob) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); }
 const CRC = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
@@ -4479,7 +4545,7 @@ async function buildExport({sharedAssets = false} = {}) {
   if(mapPreparation||cliffContactDisabled)throw Error('崖の岩を調整中です。完了後に書き出してください');
   ensureIds(); applyCatalog(); if (walkDirty) computeWalk();
   const validation = runValidation();
-  rebuildCliffRelief();
+  captureCompletedSurface();
   // ---- export grid: Unity Terrain heightmap resolution (2^n + 1), independent of the editor's 0.5 m grid.
   // Heights and walk floor are sampled at the export vertices (bilinear on the editor grid; the walk floor is the editor's floorAt);
   // walkability is evaluated again at every export vertex with the same walkable() (never interpolated).
@@ -4764,7 +4830,7 @@ async function buildExport({sharedAssets = false} = {}) {
     validation: { errors: validation.errors.length, warnings: validation.warnings.length, file: 'validation.json' },
   };
   // map.json in the export leaves out revision / lastExportHash so that an unedited re-export is byte-identical
-  const { revision: _rv, lastExportHash: _lh, ...mapData } = serialize(), mapJson = JSON.stringify(mapData);
+  const { revision: _rv, lastExportHash: _lh, ...mapData } = await serializeCompleted(), mapJson = JSON.stringify(mapData);
   const readme = `マップエディター 書き出しデータ (schemaVersion 3, ${EXPORTER_VERSION})
 roomId: ${state.roomId}
 revision・書き出し日時・ファイルごとの SHA-256・contentHash は manifest.json にあります。
@@ -5056,7 +5122,7 @@ function showVariants() {
     list.appendChild(d);
   }
 }
-function applyBiome(id) {
+function applyBiome(id,deferTerrain=false) {
   state.biome = (BIOMES.find(b => b.id === id) || BIOMES[1]).id;
   groundTrial.value = TDGroundData.biomes.includes(state.biome) && !location.hash.includes('ground=legacy') ? 1 : 0;
   const B = BIOME(), v3 = (u, c) => u.value.setRGB(c[0], c[1], c[2]);
@@ -5066,7 +5132,7 @@ function applyBiome(id) {
   v3(BU.uG0, B.g[0]); v3(BU.uG1, B.g[1]); v3(BU.uGH, B.g[2]); v3(BU.uRockTint, B.rock || [1, 1, 1]); v3(BU.uPropTint, B.prop || [1, 1, 1]);
   v3(BU.uShallow, B.water[0]); v3(BU.uDeep, B.water[1]);
   if (B.moss) v3(BU.uMoss, B.moss); BU.uMossAmt.value = B.moss ? 1 : 0;
-  BU.uLava.value = B.lava ? 1 : 0; BU.uSea.value = state.sea || B.id === 'beach' ? 1 : 0; computeShoreField(); rebuildWaterSides(); BU.uFlowers.value = B.flowers ?? 1; BU.uSnow.value = B.snow || 0; BU.uSnowLine.value = B.snowLine ?? -100;
+  BU.uLava.value = B.lava ? 1 : 0; BU.uSea.value = state.sea || B.id === 'beach' ? 1 : 0; if(!deferTerrain){computeShoreField(); rebuildWaterSides();} BU.uFlowers.value = B.flowers ?? 1; BU.uSnow.value = B.snow || 0; BU.uSnowLine.value = B.snowLine ?? -100;
   if ($('biome')) $('biome').value = B.id;
   walkDirty = true;
   applyAtmo();
@@ -5169,17 +5235,17 @@ function setMapName(v) {
 }
 $('mapName').oninput = e => setMapName(e.target.value);
 const baseName = () => fileSafe(state.mapName) || 'map';
-const mapBlob = () => new Blob([JSON.stringify(serialize())], { type: 'application/json' });
+const mapBlob = async () => new Blob([JSON.stringify(await serializeCompleted())], { type: 'application/json' });
 // 名前を付けて保存 picks a file (Chrome / Edge: File System Access API) that 保存 then overwrites; elsewhere both download
 let saveHandle = null;
 const showSaveTarget = () => { $('saveTarget').textContent = saveHandle ? `保存先: ${saveHandle.name}（「保存」で上書きします）` : ''; };
-async function writeHandle(h) { const w = await h.createWritable(); await w.write(mapBlob()); await w.close(); }
+async function writeHandle(h) { const blob=await mapBlob();const w = await h.createWritable();try{await w.write(blob);await w.close();}catch(e){await w.abort().catch(()=>{});throw e;} }
 async function saveMap() {
   if (saveHandle) {
     try { await writeHandle(saveHandle); toast(`${saveHandle.name} に上書き保存しました`); return; }
     catch (err) { saveHandle = null; showSaveTarget(); toast('上書きできなかったので、ダウンロードで保存します'); }
   }
-  download(baseName() + '.json', mapBlob()); toast(`${baseName()}.json を保存しました`);
+  download(baseName() + '.json', await mapBlob()); toast(`${baseName()}.json を保存しました`);
 }
 async function saveMapAs() {
   if (window.showSaveFilePicker) {
@@ -5191,7 +5257,7 @@ async function saveMapAs() {
     return;
   }
   const v = prompt('マップの名前（ファイル名になります）', state.mapName); if (v === null) return;
-  setMapName(v); download(baseName() + '.json', mapBlob()); toast(`${baseName()}.json を保存しました`);
+  setMapName(v); download(baseName() + '.json', await mapBlob()); toast(`${baseName()}.json を保存しました`);
 }
 const forgetSaveTarget = name => { saveHandle = null; showSaveTarget(); setMapName(name); };   // a new or loaded map is not the file chosen before
 $('save').onclick = saveMap;
@@ -5952,18 +6018,18 @@ async function prepareMap(kind,seed=7,options={}){
    const incoming=kind==='pending'?await TDPreparation.pending(options.token):options.data;TDPreparation.check(job);if(!incoming)throw Error('読み込むマップの一時データがありません');
    const d=remapPropTypes(incoming),targetSize=MAP_SIZES.includes(d.size)?d.size:SIZE;
    if(d.format!=='map-editor-proto'||d.vertices!==targetSize*RES+1)throw Error('サイズまたは形式が違います');
-   const decoded=decodeMap(d,targetSize);job.progress('保存マップの岩を読み込み',0,0);
+   const decoded=decodeMap(d,targetSize);job.progress('保存済み完成状態を読み込み',0,0);const completed=await TDCompletedState.unpack(incoming);if(completed){if(completed.version!==1)throw Error('完成状態の版が違います');validateCompletedSurface(completed.surface,d.vertices);await installPrototypePreparation(completed.collision,job);}job.progress('保存マップの岩を読み込み',0,0);
    staged=await cliffFits.prepareLoad(d.cliffFits,d.props,cliffInputSignature(decoded.newH,d.falls||[],d.waterLevel,targetSize),job);TDPreparation.check(job);
    if(d.vertices!==N){
     if(d.resolution!==RES||!MAP_SIZES.includes(d.size))throw Error('サイズまたは形式が違います');
-    // 不正な入力は現在のマップを保ったまま拒否。形状の一時メモリはページ変更前に解放する。
+    // Reject invalid input while the current map is intact; release temporary geometry before navigation.
     for(const c of staged.cache.values())c.geometry.dispose();staged=null;
     job.progress('サイズ変更後へ保存マップを引き継ぐ',0,0);outgoingToken=crypto.randomUUID();
-    if(!await TDPreparation.stash(outgoingToken,d))throw Error('サイズ変更用の一時保存ができません（ブラウザの保存容量・設定を確認してください）');
+    if(!await TDPreparation.stash(outgoingToken,incoming))throw Error('サイズ変更用の一時保存ができません（ブラウザの保存容量・設定を確認してください）');
     TDPreparation.check(job);if(kind==='pending')await TDPreparation.clearPending(options.token);TDPreparation.check(job);
     if(!reloadAtSize(d.size,'prepared:'+outgoingToken))throw Error('サイズ変更の識別子を保存できません');return 'redirected';
    }
-   TDPreparation.check(job);deserialize(d,staged);staged=null;
+   TDPreparation.check(job);staged.completed=completed;deserialize(d,staged);staged=null;if(completed)await installCollisionPreparation(completed.collision,job);
   }else{
    if(kind==='sample'||kind==='sample2'){
     job.progress('完成済みサンプルを照合',0,0);cacheKey=await preparationKey(kind,seed,job);let cached=options.build?null:await TDPreparation.get(cacheKey);TDPreparation.check(job);
@@ -5998,7 +6064,7 @@ async function prepareMap(kind,seed=7,options={}){
   }
   await compilePreparedMap(job);TDPreparation.check(job);job.progress('最初の画面を描画',0,0);await TDPreparation.pause(job);const firstRender=performance.now();renderer.render(scene,camera);job.firstRenderMs=performance.now()-firstRender;await TDPreparation.pause(job);
   if(kind==='pending'){await TDPreparation.clearPending(options.token);if(sessionStorage.getItem('me_pending')==='prepared:'+options.token)sessionStorage.removeItem('me_pending');TDPreparation.check(job);}
-  if(!options.boot){undoStack.push(backup);if(undoStack.length>40)undoStack.shift();redoStack.length=0;if(kind!=='rocks'&&kind!=='load')forgetSaveTarget(kind==='sample'?'サンプル':kind==='sample2'?'サンプル2（隠し通路）':'');}
+  if(!options.boot){undoStack.push(backup);redoStack.length=0;trimHistory();if(kind!=='rocks'&&kind!=='load')forgetSaveTarget(kind==='sample'?'サンプル':kind==='sample2'?'サンプル2（隠し通路）':'');}
   lastPreparedState={kind,seed,cacheHit:cacheHit&&preparedSource==='cache',persistent,persistentStored,preparedSource,bundleBytes,walkReused,elapsedMs:performance.now()-job.start,firstRenderMs:job.firstRenderMs,props:props.length,fits:cliffFits.records.size,fitStats};
   mapPreparation=null;unlockPreparation(job);hud();toast(kind==='restore'?'元のマップに戻しました':'準備が完了しました（'+(lastPreparedState.elapsedMs/1000).toFixed(1)+'秒）');return true;
  }catch(e){
@@ -6037,7 +6103,7 @@ window.__app = { chestPresentation, wallTorches, bedrockReady, splatAt,get tunne
   moonStrength, waterMat, water, waterSides, sun,
   render() { renderer.render(scene, camera); },
   setTime(t) { timeU.value = t; }, get time() { return timeU.value; },
-  serialize, deserialize, buildExport, makeZip, undo, redo, refreshWaterData, WATERU, get waterInfo() { return waterInfo; }, syncWaterShow,
+  serialize, serializeCompleted, deserialize, buildExport, makeZip, undo, redo, refreshWaterData, WATERU, get waterInfo() { return waterInfo; }, syncWaterShow,
   TOUCH, view, joy, setPanel, setRotated, toLocal, get strokeActive() { return stroke.active; },
 };
 })();

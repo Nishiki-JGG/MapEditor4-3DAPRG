@@ -1,10 +1,10 @@
-// 完成サンプル専用の損失なしパック。既存の保存JSON形式は変更しない。
+// 完成メッシュ・配置・通行状態の損失なしパック。旧形式も読み込める。
 (function(root){'use strict';
 const enc=new TextEncoder(),dec=new TextDecoder('utf-8',{fatal:true}),MAGIC=[84,68,80,83,2,0,0,0],align=n=>(n+7)&~7;
 const little=new Uint8Array(new Uint32Array([1]).buffer)[0]===1;
 function from64(s){if(typeof Buffer!=='undefined')return new Uint8Array(Buffer.from(s,'base64'));return Uint8Array.from(atob(s),c=>c.charCodeAt(0));}
 function to64(b){if(typeof Buffer!=='undefined')return Buffer.from(b.buffer,b.byteOffset,b.byteLength).toString('base64');let s='';for(let i=0;i<b.length;i+=16384)s+=String.fromCharCode(...b.subarray(i,i+16384));return btoa(s);}
-const types={u8:Uint8Array,f32:Float32Array,f64:Float64Array,i32:Int32Array,u16:Uint16Array};
+const types={u8:Uint8Array,f32:Float32Array,f64:Float64Array,i32:Int32Array,u16:Uint16Array,u32:Uint32Array};
 function encode(value){
  if(!little)throw Error('完成データのバイト順に未対応です');
  const pool=[],buckets=new Map();
@@ -16,7 +16,7 @@ function encode(value){
   if(v===null||typeof v==='string'||typeof v==='boolean')return v;
   if(typeof v==='number'){if(!Number.isFinite(v))throw Error('完成データの数値が不正です');return Object.is(v,-0)?['n','-0']:v;}
   if(v===undefined)return['u'];
-  if(v instanceof Uint8Array||v instanceof Float32Array||v instanceof Float64Array||v instanceof Int32Array||v instanceof Uint16Array){const type=v instanceof Uint8Array?'u8':v instanceof Float32Array?'f32':v instanceof Int32Array?'i32':v instanceof Uint16Array?'u16':'f64';return['b',buffer(new Uint8Array(v.buffer,v.byteOffset,v.byteLength),v.BYTES_PER_ELEMENT),type];}
+  if(v instanceof Uint8Array||v instanceof Float32Array||v instanceof Float64Array||v instanceof Int32Array||v instanceof Uint16Array||v instanceof Uint32Array){const type=v instanceof Uint8Array?'u8':v instanceof Float32Array?'f32':v instanceof Int32Array?'i32':v instanceof Uint16Array?'u16':v instanceof Uint32Array?'u32':'f64';return['b',buffer(new Uint8Array(v.buffer,v.byteOffset,v.byteLength),v.BYTES_PER_ELEMENT),type];}
   if(v instanceof Map)return['m',[...v].map(([k,x])=>[node(k,depth+1),node(x,depth+1)])];
   if(Array.isArray(v))return['a',v.map(x=>node(x,depth+1))];
   // 属性のbase64はバイナリに戻し、同一の色・UVなどを1回だけ持つ。

@@ -6,7 +6,7 @@
     return name;
   }
   function authoringState(map) {
-    const { revision, lastExportHash, ...content } = map;
+    const { revision, lastExportHash, completedState, ...content } = map;
     return JSON.stringify(content);
   }
   async function create({ name, snapshot, buildExport, makeZip }) {
