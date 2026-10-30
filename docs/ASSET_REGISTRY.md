@@ -1,5 +1,7 @@
 # ゲーム向けの素材台帳と保存・取り込み
 
+2026-10-30：編集保存は圧縮した `.map`、Unity用ZIPはschema 5です。旧JSON/旧ZIPも開けます。
+
 ## 普段の操作
 編集内容は「保存」または「名前を付けて保存」で残し、「開く」で編集を再開します。Unityへ渡すときは次の操作を行います。
 
@@ -15,7 +17,7 @@ Maps/
     <共通版SHA>/shared_assets.json
     <共通版SHA>/*.recipe.json
   room-部屋名-内容ID/
-    map.json
+    map.map
     map_export_unity.zip
     saved.txt
 ```

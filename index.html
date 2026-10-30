@@ -216,7 +216,7 @@
   <div class="row" style="margin-top:6px"><button id="validate">検証</button><button id="loadCatalog">資産対応表を読み込み</button></div>
   <input id="catalogFile" type="file" accept=".json,application/json" hidden>
   <div id="valReport" hidden></div>
-  <input id="file" type="file" accept=".json,application/json" hidden>
+  <input id="file" type="file" accept=".map,.json,application/json,application/zip" hidden>
 
   <div class="hint" id="hint"></div>
   <div class="hint">右ドラッグ: 回転 / 中ドラッグ: 移動 / ホイール: ズーム / WASD: 移動<br>[ ] : 半径 / Ctrl+Z, Ctrl+Y : 取り消し・やり直し<br>1〜9 : 登録したブラシを使う / Shift+1〜9 : いまの設定を登録<br>歩くモード（Tab）でも、左クリックで編集できます</div>
@@ -395,14 +395,14 @@
 <script src="terrain/cliff-relief.js?v=cliff-fit10"></script>
 <script src="terrain/paving-mask.js?v=bare-soil1"></script>
 <script src="terrain/cliff-contact.js?v=cliff-fit10-startup1"></script>
-<script src="terrain/cliff-fits.js?v=e987a99aedb0"></script>
+<script src="terrain/cliff-fits.js?v=e987a99aedb0&mapArchive=compact1"></script>
 <script src="terrain/cliff-layering.js?v=layer12-startup1"></script>
 <script src="terrain/preparation.js?v=da67a70b50fa"></script>
-<script src="terrain/prepared-codec.js?v=2a6e0c33597d"></script>
+<script src="terrain/prepared-codec.js?v=2a6e0c33597d&mapArchive=compact1"></script>
 <script src="terrain/prepared-samples.js?v=prepared1"></script>
-<script src="asset-registry.js?v=registry1"></script>
+<script src="asset-registry.js?v=registry1&mapArchive=compact1"></script>
 <script src="map-storage.js?v=shared1"></script>
-<script src="map-package.js?v=8d1dece0e92a"></script>
+<script src="map-package.js?v=8d1dece0e92a&mapArchive=compact1"></script>
 <script src="props/treasurechest.js?v=chest3"></script>
 <script src="props/chest-series.js?lid-ink1&v=series2"></script>
 <script data-presentation-only src="props/chest-relief.js?v=1&rev=2f6d152ccd4c"></script>
@@ -440,7 +440,8 @@
 <script data-presentation-only src="props/mine-collapse.js?v=49ff2562ce9a"></script>
 <script data-presentation-only src="props/mine-lantern.js?v=87e69f27a2e1"></script>
 <script data-presentation-only src="props/mine-cobweb.js?v=ca64915412a7"></script>
+<script data-presentation-only src="terrain/map-archive.js?v=compact-map-1"></script>
 <script src="terrain/completed-state.js?v=41480e908365"></script>
-<script src="app.js?v=e17272d6eab5"></script>
+<script src="app.js?v=e17272d6eab5&mapArchive=compact1"></script>
 </body>
 </html>

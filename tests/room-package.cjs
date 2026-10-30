@@ -29,6 +29,10 @@ function readZip(buffer) {
   map.heightsF32 = 'abc';
   await assert.rejects(create({ ...options, buildExport: async () => ({ ...result, files: [{ name: 'map.json', data: '{"roomId":"other"}' }] }) }), /一致/);
   await assert.rejects(create({ ...options, buildExport: async () => { throw Error('export failed'); } }), /export failed/);
+  const archive=new Uint8Array([80,75,1,2]),compact={files:[{name:'source_ref.json',data:'{}'}],authoring:{name:'map.map',data:archive},sourceState:require('../map-package.js').authoringState(map),validation:{errors:[]}};
+  const compactPack=await create({...options,buildExport:async()=>compact}),compactFiles=readZip(Buffer.from(await compactPack.blob.arrayBuffer()));
+  assert.deepEqual(compactFiles['森の部屋/map.map'],Buffer.from(archive));assert(!readZip(compactFiles['森の部屋/森の部屋_export_unity.zip'])['map.json']);
+  await assert.rejects(create({...options,buildExport:async()=>({...compact,sourceState:'different'})}),/一致/);
   assert.equal(safeName('../CON.'), '.._CON'); assert.equal(safeName('CON'), 'map_CON');
   assert.equal(safeName('..'), 'map_');
   console.log('PASS: 原稿一致、日本語ZIP、編集中断、不一致拒否、失敗伝播、ファイル名');

@@ -15,7 +15,8 @@ def convert(source, output):
     reports=[];shared_hashes=set()
     try:
         for archive in archives:
-            raw_sha=sha(archive.read_bytes());data=checked_zip(archive);check_export(data)
+            raw_sha=sha(archive.read_bytes());data=checked_zip(archive);manifest=check_export(data)
+            require(manifest['schemaVersion']==3,'既に軽量化された出力です。再変換は不要です。')
             base=archive.name.removesuffix('_export_unity.zip');original=source/(base+'.json')
             embedded=json.loads(data['map.json'])
             if original.exists():

@@ -46,9 +46,14 @@ def verify_listing(data, listing):
         require(len(b) == item['bytes'] and sha(b) == item['sha256'], '内容が変更されています: '+item['name'])
 
 def check_export(data):
-    require({'manifest.json', 'map.json', 'meta.json', 'validation.json'} <= data.keys(), '必須ファイル不足')
+    require({'manifest.json', 'meta.json', 'validation.json'} <= data.keys(), '必須ファイル不足')
     m = json.loads(data['manifest.json'])
-    require(m.get('format') == 'tdj-map-export-manifest' and m.get('schemaVersion') in (3, 4), '未対応の書き出し形式')
+    require(m.get('format') == 'tdj-map-export-manifest' and m.get('schemaVersion') in (3, 4, 5), '未対応の書き出し形式')
+    if m['schemaVersion'] == 5:
+        require(m.get('requiredFeatures') == ['separateAuthoringV1'], '未対応の必須機能')
+        require('source_ref.json' in data and 'map.json' not in data and 'map.map' not in data, '編集原稿の分離が不正です')
+    else:
+        require('map.json' in data, '旧形式の原稿がありません')
     verify_listing({n:b for n,b in data.items() if n != 'manifest.json'}, m['files'])
     digest = '\n'.join([m['exporterVersion']] + [f"{f['name']} {f['sha256']}" for f in m['files']])
     require(sha(digest.encode()) == m['contentHash'], '書き出し全体のハッシュ不一致')

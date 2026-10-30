@@ -22,13 +22,13 @@ const server = http.createServer((q, r) => {
     advanced.querySelector('summary').click();
     if(!$('export').checkVisibility())throw Error('補助書き出しを開けない');
     advanced.querySelector('summary').click();
-    const sourceFile=await root.getFileHandle('editable.json',{create:true});
+    const sourceFile=await root.getFileHandle('editable.map',{create:true});
     window.showSaveFilePicker=async()=>sourceFile;
     await $('saveAs').onclick();
-    const beforeSave=JSON.parse(await(await sourceFile.getFile()).text()),oldName=$('mapName').value;
+    const beforeSave=await TDMapArchive.read(new Uint8Array(await(await sourceFile.getFile()).arrayBuffer()),__app.archiveGeometry),oldName=$('mapName').value;
     $('mapName').value='保存確認';$('mapName').dispatchEvent(new Event('input'));
     await $('save').onclick();
-    const afterSave=JSON.parse(await(await sourceFile.getFile()).text());
+    const afterSave=await TDMapArchive.read(new Uint8Array(await(await sourceFile.getFile()).arrayBuffer()),__app.archiveGeometry);
     if(afterSave.name!=='保存確認'||afterSave.roomId!==beforeSave.roomId||folderPicks!==0)throw Error('編集保存がUnity書き出しと混同されている');
     $('mapName').value=oldName;$('mapName').dispatchEvent(new Event('input'));
     await document.getElementById('saveGameFolder').onclick();const first=document.getElementById('sharedAssetsHint').textContent;
@@ -36,7 +36,7 @@ const server = http.createServer((q, r) => {
     const folders=[];for await(const [n,h]of root.entries())if(n.startsWith('room-'))folders.push(h);
     if(folders.length!==1)throw Error('繰り返し保存で部屋が重複: '+folders.length+' '+first+' '+second);
     const room=folders[0],receipt=JSON.parse(await(await(await room.getFileHandle('saved.txt')).getFile()).text());
-    const source=await(await(await room.getFileHandle('map.json')).getFile()).text();
+    const sourceBytes=new Uint8Array(await(await(await room.getFileHandle('map.map')).getFile()).arrayBuffer()),source={bytes:sourceBytes.length,sha256:__app.sha256(sourceBytes)};
     const b=new Uint8Array(await(await(await room.getFileHandle('map_export_unity.zip')).getFile()).arrayBuffer());let s='';for(let i=0;i<b.length;i+=16384)s+=String.fromCharCode(...b.subarray(i,i+16384));
     const objects=await(await root.getDirectoryHandle('_shared')).getDirectoryHandle('objects');let count=0;for await(const x of objects.entries())count++;
     return{labels,editorSave:true,folderPicks,first,second,receipt,source,zip:btoa(s),objects:count,disabled:document.getElementById('saveGameFolder').disabled};
@@ -44,7 +44,7 @@ const server = http.createServer((q, r) => {
   })()`);
   assert(result.editorSave);assert.equal(result.folderPicks,1);assert(result.objects>50);assert.match(result.second,/素材追加 0 件/);assert(!result.disabled);
   const zip=Buffer.from(result.zip,'base64'),files={};for(let p=0;zip.readUInt32LE(p)===0x04034b50;){const len=zip.readUInt32LE(p+18),n=zip.readUInt16LE(p+26),e=zip.readUInt16LE(p+28),start=p+30+n+e;files[zip.subarray(p+30,p+30+n).toString()]=zip.readUInt16LE(p+8)===8?require('zlib').inflateRawSync(zip.subarray(start,start+len)):zip.subarray(start,start+len);p=start+len;}
-  assert.equal(files['map.json'].toString(),result.source);assert(files['asset_bindings.json']);assert.deepEqual(page.errors,[]);
+  assert(!files['map.json']);const ref=JSON.parse(files['source_ref.json']);assert.equal(ref.sha256,result.source.sha256);assert.equal(ref.bytes,result.source.bytes);assert(files['asset_bindings.json']);assert.deepEqual(page.errors,[]);
   if(process.env.SAVE_UI_SCREENSHOT){
    await page.eval("document.getElementById('mapFileActions').scrollIntoView({block:'center'});");
    const clip=await page.eval("(()=>{const r=document.getElementById('mapFileActions').getBoundingClientRect();return{x:r.x,y:r.y,width:r.width,height:r.height,scale:1}})()");

@@ -3261,7 +3261,7 @@ function propOnlyHistory(s){
 function restore(s,prepared,deferMarkers=false) { cancelRailDrag();
  if(!prepared&&!deferMarkers&&propOnlyHistory(s)){
   props=s.P.map(p=>p.slice());state.nextId=s.nid||state.nextId;
-  cliffFits.load(s.CF,props,cliffInputSignature(),true,s.runtimeFits);rebuildProps();return;
+  cliffFits.load(s.CF,props,cliffInputSignature(),true,s.runtimeFits);if(s.VS&&(s.VS!==lastCompleted||completedSerial!==lastCompletedSerial||waterTimer||cliffReliefTimer))installCompletedSurface(s.VS);rebuildProps();return;
  }
  H.set(s.H); tunnels = s.TU ? JSON.parse(JSON.stringify(s.TU)) : []; springs = (s.SP || []).map(q => ({ ...q })); pools = (s.PL || []).map(q => ({ ...q })); if (s.SC) SC.set(s.SC); else SC.fill(0); rebuildPools(); S.set(s.S); O.set(s.O); if (s.C) C.set(s.C); else C.fill(0); walkDirty = true; props = s.P.map(p => p.slice()); falls = s.F.map(f => ({ ...f })); bridges = s.B.map(b => ({ ...b })); stairs = (s.T || []).map(st => ({ ...st })); state.water = s.W; state.spawn = { ...s.sp }; if (s.at) state.atmo = { ...s.at }; if (s.we) state.weather = { ...s.we }; state.sunOn = s.sun !== false; state.timeOfDay = timeId(s.tod); state.darkness = s.dk || 'dark'; markers = (s.M || []).map(m => ({ ...m })); state.nextId = s.nid || state.nextId; state.roomId = s.rid || state.roomId; if (s.cat) { state.catalog = JSON.parse(s.cat); applyCatalog(); } if (s.ag) { state.agent = { ...s.ag }; syncAgentUI(); colliders = null; } state.cliffStyle = s.cs || 'standard'; applyCliffStyle(true); if ($('cliffStyle')) $('cliffStyle').value = state.cliffStyle; state.sea = !!s.sea; applyBiome(s.bi || state.biome,true); syncUI(); if(prepared)cliffFits.installPrepared(prepared,props,cliffInputSignature());else cliffFits.load(s.CF,props,cliffInputSignature(),true,s.runtimeFits); if(s.VS)installCompletedSurface(s.VS);else updateTerrain(); rebuildTunnels(); if(!s.VS)solveSprings(); rebuildFalls(); rebuildBridges(); rebuildStairs(); rebuildProps(); if(!deferMarkers)rebuildMarkers(); if(s.VS){clearTimeout(cliffReliefTimer);clearTimeout(waterTimer);cliffReliefTimer=waterTimer=0;} }
 function trimHistory(){
@@ -4431,6 +4431,19 @@ async function serializeCompleted(){
  const value={version:1,surface,collision:captureCollisionPreparation()};
  return{...source,completedState:await TDCompletedState.pack(source,value)};
 }
+function archiveGeometry(type,sourceHash){
+ const index=PROP.findIndex(t=>t.id===type);
+ if(index<0||cliffFits.sourceHash(index)!==sourceHash)throw Error('共通岩の版がありません: '+type+' / '+sourceHash+'。同じ版の共通素材が必要です');
+ return PROP[index].geo;
+}
+async function serializeArchive(forExport=false){
+ if(mapPreparation||cliffContactDisabled||stroke.active)throw Error('編集の処理が終わってから保存してください');
+ const surface=captureCompletedSurface(),source=serialize();
+ await primeCollisionFields(props);if(walkDirty)computeWalk();
+ if(JSON.stringify(source)!==JSON.stringify(serialize()))throw Error('保存準備中に編集が変わりました。もう一度保存してください');
+ if(forExport){delete source.revision;delete source.lastExportHash;}
+ return TDMapArchive.create(source,{version:1,surface,collision:captureCollisionPreparation()},archiveGeometry,makeZip);
+}
 // props hold a type index. A saved map also lists its type ids (propTypes), so map them onto this editor's order:
 // adding, removing or reordering the prop files (props/*.js) keeps old maps intact.
 function remapPropTypes(d) {
@@ -4545,7 +4558,9 @@ function sha256(bytes) {
 }
 const GROUND_EFFECT = { sand: 'slow_light', rubble: 'slow_light', swamp: 'slow', poison: 'poison', lava: 'lava', snowfield: 'slow_light', ice: 'ice' };
 const WEIGHT_LAYERS = ['grass', 'dirt', 'cobble', 'sand', 'rubble', 'swamp', 'poison', 'lava', 'snowfield', 'ice', 'cliff', 'bedrock', 'pureblack'];
-async function buildExport({sharedAssets = false} = {}) {
+async function buildExport({sharedAssets = false, compact = false} = {}) {
+  const sourceBefore=TDMapPackage.authoringState(serialize());
+  await TDChestSurface.prepare(); // Lazy atlases must be ready before their shared export, not at application startup.
   await TDMineCollapse.prepare(); // Export exactly the ready shared maps, or the intact fallback.
   await TDMineCutRock.prepare(); // Reuse the same decoded source before serializing the three rock maps.
   refreshGroundWeights();
@@ -4837,7 +4852,9 @@ async function buildExport({sharedAssets = false} = {}) {
     validation: { errors: validation.errors.length, warnings: validation.warnings.length, file: 'validation.json' },
   };
   // map.json in the export leaves out revision / lastExportHash so that an unedited re-export is byte-identical
-  const { revision: _rv, lastExportHash: _lh, ...mapData } = await serializeCompleted(), mapJson = JSON.stringify(mapData);
+  let mapJson=null,authoring=null;
+  if(compact){const data=new Uint8Array(await(await serializeArchive(true)).arrayBuffer());authoring={name:'map.map',data};}
+  else {const { revision: _rv, lastExportHash: _lh, ...mapData }=await serializeCompleted();mapJson=JSON.stringify(mapData);}
   const readme = `マップエディター 書き出しデータ (schemaVersion 3, ${EXPORTER_VERSION})
 roomId: ${state.roomId}
 revision・書き出し日時・ファイルごとの SHA-256・contentHash は manifest.json にあります。
@@ -4929,7 +4946,8 @@ revision・書き出し日時・ファイルごとの SHA-256・contentHash は 
     {name:'root_grounding.json',data:JSON.stringify({version:1,axes:'Unity world XZ',paint:{file:'root_paint.png',resolution:N,sizeMetres:[SIZE,SIZE]},instances:props.filter(p=>PROP[p[0]].sharedAsset&&TDSharedProps.asset(PROP[p[0]].sharedAsset).rootGrounding).map(p=>{const v=rootSlopeAt(p);return{instanceId:p[8],slope:[v[0],-v[1]],terrain:rootTerrainAt(p)};})})},
     { name: 'shared_ground.json', data: JSON.stringify(TDGroundData) },
     { name: 'meta.json', data: JSON.stringify(meta, null, 2) }, { name: 'validation.json', data: JSON.stringify(validation, null, 2) },
-    { name: 'map.json', data: mapJson }, { name: 'README.txt', data: readme },
+    ...(compact?[{name:'source_ref.json',data:JSON.stringify({format:'map-editor-source-reference',version:1,roomId:state.roomId,file:'map.map',bytes:authoring.data.length,sha256:sha256(authoring.data)})}]:[{name:'map.json',data:mapJson}]),
+    {name:'README.txt',data:compact?readme.replace('schemaVersion 3','schemaVersion 5').replace('map.json だけがそれを使います','別保存の編集原稿だけがそれを使います').replace('- map.json         : エディター用の元データ（座標はエディター内部の中心基準。Unity では使いません）。','- source_ref.json  : 別保存の編集原稿（.map）のSHA-256。Unity用ZIPには編集原稿・UNDO・Web用完成状態を同梱しません。'):readme},
   ];
   const packedExport = sharedAssets ? TDMapStorage.partition(files, sha256) : {sharedFiles:[],sharedName:null};
   if(sharedAssets)files.splice(0, files.length, ...packedExport.files);
@@ -4938,12 +4956,13 @@ revision・書き出し日時・ファイルごとの SHA-256・contentHash は 
   const contentHash = sha256(enc.encode([EXPORTER_VERSION, ...listing.map(l => `${l.name} ${l.sha256}`)].join('\n')));
   if (contentHash !== state.lastExportHash) { if (state.lastExportHash || !state.revision) state.revision++; state.lastExportHash = contentHash; }
   const manifest = {
-    format: 'tdj-map-export-manifest', schemaVersion: sharedAssets ? 4 : 3, exporterVersion: EXPORTER_VERSION, roomId: state.roomId, revision: state.revision, exportedAt: new Date().toISOString(),
+    format: 'tdj-map-export-manifest', schemaVersion: compact ? 5 : sharedAssets ? 4 : 3, ...(compact?{requiredFeatures:['separateAuthoringV1']}:{}), exporterVersion: EXPORTER_VERSION, roomId: state.roomId, revision: state.revision, exportedAt: new Date().toISOString(),
     contentHash, contentHashDefinition: 'SHA-256 of the UTF-8 text: exporterVersion, then one line "<name> <sha256>" per entry of files in order, joined with \\n. manifest.json itself is not included; exportedAt and revision live only here.',
     files: listing,
   };
   files.push({ name: 'manifest.json', data: JSON.stringify(manifest, null, 2) });
-  return { validation, manifest, files, sharedFiles:packedExport.sharedFiles, sharedName:packedExport.sharedName };
+  if(sourceBefore!==TDMapPackage.authoringState(serialize()))throw Error('書き出し中に地図が変更されました。もう一度書き出してください');
+  return { validation, manifest, files, authoring, sourceState:sourceBefore, sharedFiles:packedExport.sharedFiles, sharedName:packedExport.sharedName };
 }
 
 // ============================================================
@@ -5242,47 +5261,48 @@ function setMapName(v) {
 }
 $('mapName').oninput = e => setMapName(e.target.value);
 const baseName = () => fileSafe(state.mapName) || 'map';
-const mapBlob = async () => new Blob([JSON.stringify(await serializeCompleted())], { type: 'application/json' });
+const mapBlob = serializeArchive;
 // 名前を付けて保存 picks a file (Chrome / Edge: File System Access API) that 保存 then overwrites; elsewhere both download
 let saveHandle = null;
 const showSaveTarget = () => { $('saveTarget').textContent = saveHandle ? `保存先: ${saveHandle.name}（「保存」で上書きします）` : ''; };
-async function writeHandle(h) { const blob=await mapBlob();const w = await h.createWritable();try{await w.write(blob);await w.close();}catch(e){await w.abort().catch(()=>{});throw e;} }
+async function writeHandle(h) { if(!/\.map$/i.test(h.name))throw Error('編集原稿は .map の名前で保存してください');const blob=await mapBlob();const w = await h.createWritable();try{await w.write(blob);await w.close();}catch(e){await w.abort().catch(()=>{});throw e;} }
 async function saveMap() {
   if (saveHandle) {
     try { await writeHandle(saveHandle); toast(`${saveHandle.name} に上書き保存しました`); return; }
     catch (err) { saveHandle = null; showSaveTarget(); toast('上書きできなかったので、ダウンロードで保存します'); }
   }
-  download(baseName() + '.json', await mapBlob()); toast(`${baseName()}.json を保存しました`);
+  download(baseName() + '.map', await mapBlob()); toast(`${baseName()}.map を保存しました`);
 }
 async function saveMapAs() {
   if (window.showSaveFilePicker) {
     try {
-      const h = await window.showSaveFilePicker({ suggestedName: baseName() + '.json', types: [{ description: 'マップ (JSON)', accept: { 'application/json': ['.json'] } }] });
-      if (!state.mapName) setMapName(h.name.replace(/\.json$/i, ''));
+      const h = await window.showSaveFilePicker({ suggestedName: baseName() + '.map', types: [{ description: '編集用マップ', accept: { 'application/zip': ['.map'] } }] });
+      if (!state.mapName) setMapName(h.name.replace(/\.(json|map)$/i, ''));
       await writeHandle(h); saveHandle = h; showSaveTarget(); toast(`${h.name} に保存しました`);
     } catch (err) { if (err.name !== 'AbortError') toast('保存できませんでした: ' + err.message); }
     return;
   }
   const v = prompt('マップの名前（ファイル名になります）', state.mapName); if (v === null) return;
-  setMapName(v); download(baseName() + '.json', await mapBlob()); toast(`${baseName()}.json を保存しました`);
+  setMapName(v); download(baseName() + '.map', await mapBlob()); toast(`${baseName()}.map を保存しました`);
 }
 const forgetSaveTarget = name => { saveHandle = null; showSaveTarget(); setMapName(name); };   // a new or loaded map is not the file chosen before
-$('save').onclick = saveMap;
+$('save').onclick = ()=>saveMap().catch(e=>toast('保存できませんでした: '+e.message));
 $('saveAs').onclick = saveMapAs;
 $('load').onclick = () => $('file').click();
 $('file').onchange = async e => {
   const f = e.target.files[0]; if (!f) return;
   try {
-    const d = JSON.parse(await f.text()); if(await prepareMap('load',0,{data:d})!==true){e.target.value='';return;}
-    forgetSaveTarget(state.mapName || f.name.replace(/\.json$/i, '')); toast(`${state.mapName} を読み込みました`);
+    const d = /\.map$/i.test(f.name)?{format:'map-editor-archive-input',bytes:new Uint8Array(await f.arrayBuffer())}:JSON.parse(await f.text()); if(await prepareMap('load',0,{data:d})!==true){e.target.value='';return;}
+    forgetSaveTarget(state.mapName || f.name.replace(/\.(json|map)$/i, '')); toast(`${state.mapName} を読み込みました`);
   } catch (err) { toast('読み込み失敗: ' + err.message); }
   e.target.value = '';
 };
 $('export').onclick = async () => {
   const button=$('export');if(button.disabled)return;button.disabled=true;
-  try { const { files, validation } = await buildExport({sharedAssets:true}); showValidation(validation);
+  try { const { files, validation, authoring } = await buildExport({sharedAssets:true,compact:true}); showValidation(validation);
     download(baseName() + '_export_unity.zip', await makeZip(files));
-    toast('UnityデータのZIPを書き出しました。初回・素材更新時は「共通素材（ZIP）」も書き出してください');
+    if(authoring)download(baseName()+'.map',new Blob([authoring.data],{type:'application/zip'}));
+    toast('UnityデータのZIPと対応する編集原稿を書き出しました。同じ部屋フォルダに保管してください。初回・素材更新時は「共通素材（ZIP）」も書き出してください');
   } catch(err) { toast('書き出し失敗: '+err.message); } finally {button.disabled=false;}
 };
 let gameFolderHandle=null, gameFolderBusy=false;
@@ -5292,7 +5312,7 @@ $('saveGameFolder').onclick=async()=>{
  gameFolderBusy=true;$('saveGameFolder').disabled=true;
  try{
   if(!gameFolderHandle)gameFolderHandle=await window.showDirectoryPicker({id:'totsudan-maps',mode:'readwrite'});
-  const before=TDMapPackage.authoringState(serialize()),result=await buildExport({sharedAssets:true});
+  const before=TDMapPackage.authoringState(serialize()),result=await buildExport({sharedAssets:true,compact:true});
   if(TDMapPackage.authoringState(serialize())!==before)throw Error('書き出し中に地図が変わりました。もう一度書き出してください。');
   const saved=await TDAssetRegistry.save(gameFolderHandle,result,baseName(),makeZip,sha256);
   showValidation(result.validation);$('sharedAssetsHint').textContent='書き出し先: '+gameFolderHandle.name+'/'+saved.folder+'。素材追加 '+saved.added+' 件、再利用 '+saved.reused+' 件。';
@@ -5302,7 +5322,7 @@ $('saveGameFolder').onclick=async()=>{
 };
 $('saveSharedAssets').onclick = async () => {
   const button=$('saveSharedAssets');if(button.disabled)return;button.disabled=true;
-  try {const result=await buildExport({sharedAssets:true});download(result.sharedName,await makeZip(result.sharedFiles));
+  try {const result=await buildExport({sharedAssets:true,compact:true});download(result.sharedName,await makeZip(result.sharedFiles));
     $('sharedAssetsHint').textContent='共通素材 '+result.sharedName+' を書き出しました。同名ファイルは1つだけ保管してください。';
   } catch(err) {toast('共通素材の書き出し失敗: '+err.message);} finally {button.disabled=false;}
 };
@@ -5314,7 +5334,7 @@ $('saveRoom').onclick = async () => {
   try {
     ensureIds(); applyCatalog();
     toast('編集データとUnityデータを書き出しています。完了まで編集をお待ちください');
-    const pack = await TDMapPackage.create({ name: baseName(), snapshot: serialize, buildExport:()=>buildExport({sharedAssets:true}), makeZip });
+    const pack = await TDMapPackage.create({ name: baseName(), snapshot: serialize, buildExport:()=>buildExport({sharedAssets:true,compact:true}), makeZip });
     showValidation(pack.validation); download(pack.name, pack.blob);
     toast(pack.validation.errors.length ? '編集データとUnityデータのZIPを書き出しました。検証エラーの修正が必要です' : '編集データとUnityデータのZIPを書き出しました。共通素材も一緒に保管してください');
   } catch (err) { toast('編集データとUnityデータを書き出せませんでした: ' + err.message); }
@@ -5975,7 +5995,7 @@ function installWalkPreparation(w){
  for(const n of ['position','walk','forced','secret'])wkGeo.attributes[n].needsUpdate=true;wkGeo.computeBoundingSphere();walkDirty=false;
 }
 async function preparationKey(kind,seed,job){
- const config=JSON.stringify([kind,seed,SIZE,kind==='sample2'?'ruins':state.biome,state.agent,state.cliffStyle,state.catalog,TDPreparation.version,TDPreparedSamples.recipeVersion,[...document.scripts].filter(s=>!s.dataset.preparedSample&&!s.hasAttribute('data-presentation-only')).map(s=>(s.getAttribute('src')||'').replace(/&collapsePBR=[a-f0-9]+/,'').replace(/&wallLamp=[a-f0-9]+/,'').replace(/&cobweb=[a-f0-9]+/,'').replace(/&mineCartLoad=[a-f0-9]+/,'').replace(/&cutRockSurface=[a-f0-9]+/,'').replace('moon-reflection1&','').replace('time-of-day1&','').replace(/app.js\?(walltorch1|firequality1)&/,'app.js?public-label1&')).filter(Boolean)]);
+ const config=JSON.stringify([kind,seed,SIZE,kind==='sample2'?'ruins':state.biome,state.agent,state.cliffStyle,state.catalog,TDPreparation.version,TDPreparedSamples.recipeVersion,[...document.scripts].filter(s=>!s.dataset.preparedSample&&!s.hasAttribute('data-presentation-only')).map(s=>(s.getAttribute('src')||'').replace(/&mapArchive=[a-z0-9-]+/,'').replace(/&collapsePBR=[a-f0-9]+/,'').replace(/&wallLamp=[a-f0-9]+/,'').replace(/&cobweb=[a-f0-9]+/,'').replace(/&mineCartLoad=[a-f0-9]+/,'').replace(/&cutRockSurface=[a-f0-9]+/,'').replace('moon-reflection1&','').replace('time-of-day1&','').replace(/app.js\?(walltorch1|firequality1)&/,'app.js?public-label1&')).filter(Boolean)]);
  if(preparationKeys.has(config))return preparationKeys.get(config);
  const hashes=[];
  await TDPreparation.each(PROP,async t=>{if(t.r<=0||t.manualOnly)return;const prep=t.preparationGeo||t.geo,a=prep.attributes.position.array,ix=prep.index?.array;const hash=async a=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new Uint8Array(a.buffer,a.byteOffset,a.byteLength))),v=>v.toString(16).padStart(2,'0')).join('');hashes.push([t.id,t.r,t.height,t.yawOffset,await hash(a),ix?await hash(ix):'']);},job);
@@ -6030,17 +6050,17 @@ async function prepareMap(kind,seed=7,options={}){
    staged=await stageSnapshot(options.snapshot,job);TDPreparation.check(job);restore(options.snapshot,staged);staged=null;
    await installCollisionPreparation(options.collision,job);Object.assign(state,{revision:options.metadata.revision,lastExportHash:options.metadata.lastExportHash});setMapName(options.metadata.name);saveHandle=options.metadata.saveHandle;showSaveTarget();
   }else if(kind==='load'||kind==='pending'){
-   const incoming=kind==='pending'?await TDPreparation.pending(options.token):options.data;TDPreparation.check(job);if(!incoming)throw Error('読み込むマップの一時データがありません');
+   const stored=kind==='pending'?await TDPreparation.pending(options.token):options.data;const incoming=stored?.format==='map-editor-archive-input'?await TDMapArchive.read(stored.bytes,archiveGeometry):stored;TDPreparation.check(job);if(!incoming)throw Error('読み込むマップの一時データがありません');
    const d=remapPropTypes(incoming),targetSize=MAP_SIZES.includes(d.size)?d.size:SIZE;
    if(d.format!=='map-editor-proto'||d.vertices!==targetSize*RES+1)throw Error('サイズまたは形式が違います');
-   const decoded=decodeMap(d,targetSize);job.progress('保存済み完成状態を読み込み',0,0);const completed=await TDCompletedState.unpack(incoming);if(completed){if(completed.version!==1)throw Error('完成状態の版が違います');validateCompletedSurface(completed.surface,d.vertices);await installPrototypePreparation(completed.collision,job);}job.progress('保存マップの岩を読み込み',0,0);
+   const decoded=decodeMap(d,targetSize);job.progress('保存済み完成状態を読み込み',0,0);const completed=TDMapArchive.completedFor(incoming)||await TDCompletedState.unpack(incoming);if(completed){if(completed.version!==1)throw Error('完成状態の版が違います');validateCompletedSurface(completed.surface,d.vertices);await installPrototypePreparation(completed.collision,job);}job.progress('保存マップの岩を読み込み',0,0);
    staged=await cliffFits.prepareLoad(d.cliffFits,d.props,cliffInputSignature(decoded.newH,d.falls||[],d.waterLevel,targetSize),job);TDPreparation.check(job);
    if(d.vertices!==N){
     if(d.resolution!==RES||!MAP_SIZES.includes(d.size))throw Error('サイズまたは形式が違います');
     // Reject invalid input while the current map is intact; release temporary geometry before navigation.
     for(const c of staged.cache.values())c.geometry.dispose();staged=null;
     job.progress('サイズ変更後へ保存マップを引き継ぐ',0,0);outgoingToken=crypto.randomUUID();
-    if(!await TDPreparation.stash(outgoingToken,incoming))throw Error('サイズ変更用の一時保存ができません（ブラウザの保存容量・設定を確認してください）');
+    if(!await TDPreparation.stash(outgoingToken,stored))throw Error('サイズ変更用の一時保存ができません（ブラウザの保存容量・設定を確認してください）');
     TDPreparation.check(job);if(kind==='pending')await TDPreparation.clearPending(options.token);TDPreparation.check(job);
     if(!reloadAtSize(d.size,'prepared:'+outgoingToken))throw Error('サイズ変更の識別子を保存できません');return 'redirected';
    }
@@ -6118,7 +6138,7 @@ window.__app = {mineLanterns, chestPresentation, wallTorches, bedrockReady, spla
   moonStrength, waterMat, water, waterSides, sun,
   render() { renderer.render(scene, camera); },
   setTime(t) { timeU.value = t; }, get time() { return timeU.value; },
-  serialize, serializeCompleted, deserialize, buildExport, makeZip, undo, redo, refreshWaterData, WATERU, get waterInfo() { return waterInfo; }, syncWaterShow,
+  serialize, serializeCompleted, serializeArchive, archiveGeometry, deserialize, buildExport, makeZip, undo, redo, refreshWaterData, WATERU, get waterInfo() { return waterInfo; }, syncWaterShow,
   TOUCH, view, joy, setPanel, setRotated, toLocal, get strokeActive() { return stroke.active; },
 };
 })();

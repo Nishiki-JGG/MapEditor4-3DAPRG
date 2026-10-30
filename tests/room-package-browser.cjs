@@ -31,10 +31,11 @@ const server = http.createServer((q, r) => {
       const buffer = Buffer.from(result.zip, 'base64');
       function entries(b) { const out = {}; for (let offset = 0; b.readUInt32LE(offset) === 0x04034b50;) { const size = b.readUInt32LE(offset + 18), n = b.readUInt16LE(offset + 26), extra = b.readUInt16LE(offset + 28), start = offset + 30 + n + extra; out[b.subarray(offset + 30, offset + 30 + n).toString()] = b.readUInt16LE(offset+8) === 8 ? require('node:zlib').inflateRawSync(b.subarray(start,start+size)) : b.subarray(start,start+size); offset = start + size; } return out; }
       const outer = entries(buffer), inner = entries(outer['森の部屋/森の部屋_export_unity.zip']);
-      assert.deepEqual(outer['森の部屋/森の部屋.json'], inner['map.json']);
-      const embeddedMap=JSON.parse(inner['map.json']);assert(embeddedMap.completedState);assert(await page.eval('(async()=>!!(await TDCompletedState.unpack('+JSON.stringify(embeddedMap)+')))()'));
+      assert(!inner['map.json']);const original=outer['森の部屋/map.map'];assert(original);
+      const sourceRef=JSON.parse(inner['source_ref.json']);assert.equal(require('crypto').createHash('sha256').update(original).digest('hex'),sourceRef.sha256);assert.equal(original.length,sourceRef.bytes);
+      const archive=entries(original);assert.equal(JSON.parse(archive['manifest.json']).roomId,sourceRef.roomId);
       const manifest = JSON.parse(inner['manifest.json']);
-      assert.equal(manifest.schemaVersion,4);assert(!inner['shared_props.json']);
+      assert.equal(manifest.schemaVersion,5);assert(!inner['shared_props.json']);
       const ref=JSON.parse(inner['shared_assets.json']);assert.equal(ref.format,'tdj-shared-assets');
       for (const file of manifest.files) assert.equal(require('crypto').createHash('sha256').update(inner[file.name]).digest('hex'), file.sha256);
       const common = await page.eval(`(async()=>{let blob,name;const create=URL.createObjectURL,click=HTMLAnchorElement.prototype.click;

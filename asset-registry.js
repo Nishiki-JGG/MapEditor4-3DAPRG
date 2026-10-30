@@ -41,8 +41,10 @@
   await put(set,'shared_assets.json',refFile.data,sha);
   const safe=String(name||'map').replace(/[\\/:*?"<>|\u0000-\u001f]/g,'_').replace(/[. ]+$/,'').slice(0,60)||'map';
   const folder='room-'+safe+'-'+result.manifest.contentHash.slice(0,16),room=await directory(root,folder);
-  const map=result.files.find(f=>f.name==='map.json');
-  await put(room,'map.json',map.data,sha);
+  const map=result.authoring||result.files.find(f=>f.name==='map.json');
+  if(!map)throw Error('編集原稿がありません');
+  if(result.authoring){const ref=JSON.parse(result.files.find(f=>f.name==='source_ref.json').data);if(sha(map.data)!==ref.sha256||map.data.length!==ref.bytes)throw Error('編集原稿の照合に失敗しました');}
+  await put(room,map.name,map.data,sha);
   // exportedAt is intentionally excluded from contentHash: retain an already verified same-content ZIP.
   const zipName='map_export_unity.zip';let receipt=null;
   for(const file of ['saved.txt','saving.txt']){

@@ -34,6 +34,9 @@ function decode(input){
  const bytes=input instanceof Uint8Array?input:new Uint8Array(input);if(bytes.length<16||MAGIC.some((v,i)=>bytes[i]!==v))throw Error('完成サンプルの形式が違います');
  const n=new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength).getUint32(8,true);if(n>16*1024*1024||12+n>bytes.length)throw Error('完成サンプルのヘッダー長が不正です');
  const meta=JSON.parse(dec.decode(bytes.subarray(12,12+n))),start=align(12+n);if(meta.version!==2||!Array.isArray(meta.buffers)||meta.buffers.length>10000)throw Error('完成サンプルの版が違います');
+ let end=0;
+ for(const d of meta.buffers){if(!d||![1,2,4,8].includes(d.width)||!Number.isSafeInteger(d.offset)||d.offset!==align(end)||!Number.isSafeInteger(d.length)||d.length<0||d.length%d.width||start+d.offset+d.length>bytes.length)throw Error('完成サンプルの配列範囲が不正です');end=d.offset+d.length;}
+ if(start+end!==bytes.length)throw Error('完成サンプルの末尾が不正です');
  const raw=new Map(),typed=new Map(),strings=new Map();
  function data(id){if(raw.has(id))return raw.get(id);const d=meta.buffers[id];if(!d||![1,2,4,8].includes(d.width)||!Number.isInteger(d.offset)||d.offset<0||d.offset%8||!Number.isInteger(d.length)||d.length<0||d.length%d.width||start+d.offset+d.length>bytes.length)throw Error('完成サンプルの配列範囲が不正です');const b=new Uint8Array(d.length),count=d.length/d.width;if(d.width===4){const view=new DataView(b.buffer);let previous=0;for(let j=0;j<count;j++){let delta=0;for(let byte=0;byte<4;byte++)delta|=bytes[start+d.offset+byte*count+j]<<(byte*8);previous=(previous+delta)>>>0;view.setUint32(j*4,previous,true);}}else for(let byte=0;byte<d.width;byte++)for(let j=0;j<count;j++)b[j*d.width+byte]=bytes[start+d.offset+byte*count+j];raw.set(id,b);return b;}
  function node(v,depth=0){if(depth>64)throw Error('完成サンプルの階層が不正です');if(!Array.isArray(v)){if(v===null||['number','string','boolean'].includes(typeof v))return v;throw Error('完成サンプルの値が不正です');}
