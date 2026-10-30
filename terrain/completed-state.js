@@ -18,6 +18,15 @@ function historyBytes(states,baseline=[]){
  function state(s){count(s);for(const {cache}of s.runtimeFits?.values()||[]){count(cache.geometry.attributes);count(cache.geometry.index);count(cache.footprint);}}
  baseline.forEach(state);bytes=0;states.forEach(state);return bytes;
 }
+// Fitted rocks are already transformed to world scale and always query field 20.
+// Keep that exact field and its off-grid edges; the height grid was only its input.
+// Prototype footprints still need their heights for other scales and are not passed here.
+function compactFittedFootprint(f){
+ if(!f||f.fieldOnly||f.sink!==0||!(f.fields instanceof Map)||f.fields.size!==1||!f.fields.has(20))return f;
+ const n=f.nx*f.nz,field=f.fields.get(20);
+ if(!Number.isSafeInteger(n)||n<=0||!(f.top instanceof Float32Array)||f.top.length!==n||!(field?.dist instanceof Float32Array)||field.dist.length!==n||!(Array.isArray(field.edge)||field.edge instanceof Float64Array)||field.edge.length%2)return f;
+ return{...f,top:undefined,fieldOnly:true};
+}
 function validate(d){
  if(!d?.attributes?.position)throw Error('完成地形の頂点がありません');let count=null;
  for(const a of Object.values(d.attributes)){
@@ -54,5 +63,5 @@ async function unpack(map){
  if(length!==d.rawBytes)throw Error('完成状態の長さが一致しません');
  const joined=new Uint8Array(length);let offset=0;for(const c of chunks){joined.set(c,offset);offset+=c.length;}return TDPreparedCodec.decode(joined);
 }
-window.TDCompletedState={share,historyBytes,capture,validate,read,copyInto,pack,unpack};
+window.TDCompletedState={compactFittedFootprint,share,historyBytes,capture,validate,read,copyInto,pack,unpack};
 })();

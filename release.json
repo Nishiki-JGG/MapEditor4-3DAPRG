@@ -1,7 +1,7 @@
 {
-  "release": "compact-authoring-lazy-import-20261030",
+  "release": "compact-fitted-collision-20261031",
   "files": {
-    "app.js": "6c097304464e49f32c01099613bef45d55e4d21d0d5bffb318125f88df8b4c12",
+    "app.js": "fbee0574d46114805d3d682cbaf7484747a7e17ce5848cd11afeb4248fb7a369",
     "props/chest-presentation.js": "02d054f76798bdf6599156ffb0655085c919b3df733386a47a11f458d3aa5233",
     "props/chest-surface.js": "bf7137cd3c64c736bc50d0dbd2a7b62f4fce1c48db73f6473fc6b9522b24f025",
     "props/chest-relief.js": "2f6d152ccd4c0dfd43d34c9867118d5060704b01ea93cfeafcdf826c479e8f94",
@@ -60,7 +60,7 @@
     "props/minecart-loaded.js": "fd316b07809e791671aa0609541852fd48d64808c9a386498a3ee028c2ea6e60",
     "unity/Assets/MapSharedProps/Editor/MineCartV1.cs": "ec3559f3c54216f8b9b0196bf083412fb922d550b133a6b108c9193c123de114",
     "unity/Assets/MapSharedProps/Editor/GroundedPropsV1.cs": "4f800dd6b1701e3de149c2d524ddcc8baac9e2cd50aadc19539b79ff11765d14",
-    "terrain/completed-state.js": "41480e9083651272a7268e134c8fc5246781635c3f1e4cc3cc4335307d48ac22",
+    "terrain/completed-state.js": "6a80f8456c09abbfd0005045b8039878f19fd1229704d32aaec852e9632ba929",
     "terrain/prepared-codec.js": "d1926b8746c78dabeb7d4ffa62df4cd2797cb257cf1121f6f5baf46d1164b05c",
     "terrain/cliff-fits.js": "94a6af7a0dc277388fae0fef49020589bc04d2d0fa900ac5c528ca1a027d25b3",
     "terrain/preparation.js": "da67a70b50fa0d0cb0b35af74fd0e2352b6a6d56ae447eaed2723604e86757ac",
@@ -71,5 +71,5 @@
     "unity/Assets/MapSharedProps/Editor/MapSharedPropsBuilder.cs": "4154022bd7c76d441b5d7fb28fa01aae44cedb80c99c292c7f5d3f0953f79fbb",
     "unity/Assets/MapSharedProps/Editor/SmallPropsV1.cs": "6434989293660f94ad0299f6e8b50d8123432dbaff7e7c024ce69f47abad6319"
   },
-  "sourceBase": "1af441f77a5cfdf7efe9c70ffbbba42ebdd094b3"
+  "sourceBase": "5fc4fc09490551a92329ab737e3710168111cb80"
 }

@@ -5965,7 +5965,7 @@ function cancelMapPreparation(restoreMap=true){
  if(restoreMap)return prepareMap('restore',0,{snapshot:old.backup,collision:old.backupCollision,metadata:old.backupMetadata,boot:true});
 }
 function captureCollisionPreparation(){
- const fitted=[];for(const [id,c]of cliffFits.cache){if(c.footprint)fitted.push([id,{pose:cliffFits.records.get(id)?.pose,input:cliffFits.input,footprint:c.footprint,y0:c.y0,y1:c.y1}]);}
+ const fitted=[];for(const [id,c]of cliffFits.cache){if(c.footprint)fitted.push([id,{pose:cliffFits.records.get(id)?.pose,input:cliffFits.input,footprint:TDCompletedState.compactFittedFootprint(c.footprint),y0:c.y0,y1:c.y1}]);}
  const prototypes=PROP.map(t=>t.footprint?[t.id,t.footprint.fields]:null).filter(Boolean);
  return {version:1,fitted,prototypes,walk:walkDirty?undefined:{signature:walkPreparationSignature(),auto:A.slice(),floor:F.slice(),walk:Uint8Array.from(wkGeo.attributes.walk.array),forced:Uint8Array.from(wkGeo.attributes.forced.array),secret:Uint8Array.from(wkGeo.attributes.secret.array)}};
 }
@@ -5976,7 +5976,7 @@ function validFields(fields,n){return fields instanceof Map&&[...fields].every((
 async function installCollisionPreparation(data,job){
  if(!data||data.version!==1||!Array.isArray(data.fitted)||!Array.isArray(data.prototypes))throw Error('衝突準備の形式が違います');
  const ids=new Map(props.map(p=>[p[8],p]));
- await TDPreparation.each(data.fitted,([id,v])=>{const p=ids.get(id),r=cliffFits.records.get(id);if(!p||!r||v.pose!==r.pose||v.input!==cliffFits.input||!validFootprint(v.footprint)||!validFields(v.footprint.fields,v.footprint.nx*v.footprint.nz)||![v.y0,v.y1].every(Number.isFinite))throw Error('衝突準備と岩が一致しません');Object.assign(cliffFits.get(p),{footprint:v.footprint,y0:v.y0,y1:v.y1});},job);
+ await TDPreparation.each(data.fitted,([id,v])=>{const p=ids.get(id),r=cliffFits.records.get(id);if(!p||!r||v.pose!==r.pose||v.input!==cliffFits.input||!validFootprint(v.footprint)||!validFields(v.footprint.fields,v.footprint.nx*v.footprint.nz)||![v.y0,v.y1].every(Number.isFinite))throw Error('衝突準備と岩が一致しません');Object.assign(cliffFits.get(p),{footprint:TDCompletedState.compactFittedFootprint(v.footprint),y0:v.y0,y1:v.y1});},job);
  await installPrototypePreparation(data,job);
  if(data.walk)installWalkPreparation(data.walk);
 }
