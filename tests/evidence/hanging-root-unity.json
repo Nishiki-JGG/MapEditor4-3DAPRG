@@ -1,0 +1,70 @@
+{
+    "pass": true,
+    "other19Exact": true,
+    "other19AtlasShared": true,
+    "prefabReload": true,
+    "sceneReload": true,
+    "boundsExact": true,
+    "colliderUnchanged": true,
+    "formalBefore": 20,
+    "formalAfter": 20,
+    "placedBefore": 20,
+    "placedAfter": 20,
+    "triBefore": 58,
+    "triAfter": 168,
+    "beforeFolder": "Assets/MapSharedPropsGenerated/Pilot 45",
+    "afterFolder": "Assets/MapSharedPropsGenerated/Pilot 46",
+    "loads": [
+        {
+            "stage": "before",
+            "count": 9,
+            "visible": 9,
+            "meshes": 1,
+            "materials": 1,
+            "textures": 1,
+            "triangles": 58,
+            "meshBytes": 5892,
+            "cpuMedianMs": 0.6535000000000001
+        },
+        {
+            "stage": "before",
+            "count": 225,
+            "visible": 225,
+            "meshes": 1,
+            "materials": 1,
+            "textures": 1,
+            "triangles": 58,
+            "meshBytes": 5892,
+            "cpuMedianMs": 0.7055
+        },
+        {
+            "stage": "after",
+            "count": 9,
+            "visible": 9,
+            "meshes": 1,
+            "materials": 1,
+            "textures": 1,
+            "triangles": 168,
+            "meshBytes": 7344,
+            "cpuMedianMs": 0.6365000000000001
+        },
+        {
+            "stage": "after",
+            "count": 225,
+            "visible": 225,
+            "meshes": 1,
+            "materials": 1,
+            "textures": 1,
+            "triangles": 168,
+            "meshBytes": 7344,
+            "cpuMedianMs": 0.6066
+        }
+    ],
+    "limits": [
+        "Cave-decoration20 formal route, not whole catalog reimport",
+        "Existing cave decorative prefabs are visual-only; Web existing IDs/placement collider tested separately",
+        "GPU/mobile/Player not measured",
+        "CPU Camera.Render samples are diagnostic only",
+        "Root attachment manually embedded in existing mine; no automatic ceiling snapping"
+    ]
+}

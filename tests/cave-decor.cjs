@@ -8,7 +8,7 @@ const {withPage}=require(path.join(root,'tests/cdp.js'));
  A.rebuildProps();A.setPanel(false);A.cam.target.set(0,.6,0);A.cam.dist=17;A.cam.pitch=.82;A.cam.yaw=.15;A.update(0);A.render();})()`);
  await new Promise(r=>setTimeout(r,800));
  const info=await p.eval(`(()=>{const A=__app;A.render();A.render();return TDCaveDecor.ids.map(id=>{const t=A.PROP.findIndex(x=>x.id===id),m=A.propMeshes[t],g=m.geometry;return{id,triangles:g.index.count/3,count:m.count,textureLoaded:m.material.map.image.complete,cutoff:m.material.alphaTest,side:m.material.side,wind:!!TDSharedProps.asset(id).wind};});})()`);
- assert.equal(info.length,20);assert.equal(info.reduce((s,x)=>s+x.triangles,0),1271);assert(info.every(x=>x.count===1&&x.textureLoaded&&x.cutoff===.5&&x.side===2));
+ assert.equal(info.length,20);assert.equal(info.reduce((s,x)=>s+x.triangles,0),1381);assert(info.every(x=>x.count===1&&x.textureLoaded&&x.cutoff===.5&&x.side===2));
  await p.screenshot(path.join(out,'gallery.png'));
  // Save restores stable type IDs, transforms and authored mounting pivot height.
  const roundtrip=await p.eval(`(()=>{const A=__app;A.ensureIds();const before=JSON.stringify(A.props);A.deserialize(A.serialize());return before===JSON.stringify(A.props);})()`);assert(roundtrip);

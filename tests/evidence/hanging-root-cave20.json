@@ -1,0 +1,204 @@
+{
+  "info": [
+    {
+      "id": "cnd001",
+      "triangles": 55,
+      "count": 1,
+      "textureLoaded": true,
+      "cutoff": 0.5,
+      "side": 2,
+      "wind": true
+    },
+    {
+      "id": "cnd002",
+      "triangles": 52,
+      "count": 1,
+      "textureLoaded": true,
+      "cutoff": 0.5,
+      "side": 2,
+      "wind": true
+    },
+    {
+      "id": "cnd003",
+      "triangles": 36,
+      "count": 1,
+      "textureLoaded": true,
+      "cutoff": 0.5,
+      "side": 2,
+      "wind": true
+    },
+    {
+      "id": "cnd004",
+      "triangles": 72,
+      "count": 1,
+      "textureLoaded": true,
+      "cutoff": 0.5,
+      "side": 2,
+      "wind": false
+    },
+    {
+      "id": "cnd005",
+      "triangles": 65,
+      "count": 1,
+      "textureLoaded": true,
+      "cutoff": 0.5,
+      "side": 2,
+      "wind": false
+    },
+    {
+      "id": "cnd006",
+      "triangles": 19,
+      "count": 1,
+      "textureLoaded": true,
+      "cutoff": 0.5,
+      "side": 2,
+      "wind": false
+    },
+    {
+      "id": "cnd007",
+      "triangles": 64,
+      "count": 1,
+      "textureLoaded": true,
+      "cutoff": 0.5,
+      "side": 2,
+      "wind": false
+    },
+    {
+      "id": "cnd008",
+      "triangles": 168,
+      "count": 1,
+      "textureLoaded": true,
+      "cutoff": 0.5,
+      "side": 2,
+      "wind": false
+    },
+    {
+      "id": "cnd009",
+      "triangles": 58,
+      "count": 1,
+      "textureLoaded": true,
+      "cutoff": 0.5,
+      "side": 2,
+      "wind": false
+    },
+    {
+      "id": "cnd010",
+      "triangles": 45,
+      "count": 1,
+      "textureLoaded": true,
+      "cutoff": 0.5,
+      "side": 2,
+      "wind": false
+    },
+    {
+      "id": "cnd011",
+      "triangles": 65,
+      "count": 1,
+      "textureLoaded": true,
+      "cutoff": 0.5,
+      "side": 2,
+      "wind": false
+    },
+    {
+      "id": "cnd012",
+      "triangles": 32,
+      "count": 1,
+      "textureLoaded": true,
+      "cutoff": 0.5,
+      "side": 2,
+      "wind": false
+    },
+    {
+      "id": "cnd013",
+      "triangles": 102,
+      "count": 1,
+      "textureLoaded": true,
+      "cutoff": 0.5,
+      "side": 2,
+      "wind": false
+    },
+    {
+      "id": "cnd014",
+      "triangles": 51,
+      "count": 1,
+      "textureLoaded": true,
+      "cutoff": 0.5,
+      "side": 2,
+      "wind": false
+    },
+    {
+      "id": "cnd015",
+      "triangles": 172,
+      "count": 1,
+      "textureLoaded": true,
+      "cutoff": 0.5,
+      "side": 2,
+      "wind": false
+    },
+    {
+      "id": "cnd016",
+      "triangles": 82,
+      "count": 1,
+      "textureLoaded": true,
+      "cutoff": 0.5,
+      "side": 2,
+      "wind": true
+    },
+    {
+      "id": "cnd017",
+      "triangles": 60,
+      "count": 1,
+      "textureLoaded": true,
+      "cutoff": 0.5,
+      "side": 2,
+      "wind": true
+    },
+    {
+      "id": "cnd018",
+      "triangles": 78,
+      "count": 1,
+      "textureLoaded": true,
+      "cutoff": 0.5,
+      "side": 2,
+      "wind": false
+    },
+    {
+      "id": "cnd019",
+      "triangles": 45,
+      "count": 1,
+      "textureLoaded": true,
+      "cutoff": 0.5,
+      "side": 2,
+      "wind": false
+    },
+    {
+      "id": "cnd020",
+      "triangles": 60,
+      "count": 1,
+      "textureLoaded": true,
+      "cutoff": 0.5,
+      "side": 2,
+      "wind": false
+    }
+  ],
+  "roundtrip": true,
+  "appendOnly": true,
+  "exported": 20,
+  "atlasCount": 2,
+  "packed": {
+    "sharedCount": 5,
+    "sharedBytes": 60934155,
+    "roomHasLibrary": false
+  },
+  "placed": {
+    "id": "cnd012",
+    "height": 2.9042944431304933,
+    "bottom": 1.2000000476837158,
+    "ground": 0,
+    "visible": true
+  },
+  "gpu": {
+    "gl": 0,
+    "shaderErrors": 0
+  }
+}

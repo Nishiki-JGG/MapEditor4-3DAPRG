@@ -1,0 +1,25 @@
+{
+  "productSHA256": "a09e769c8bd70a37fc934d7d67f89235d23031be1ea6a2d713c60444099ccda7",
+  "formal20": "Evidence218: assertions passed, process shutdown c0000005",
+  "field219": "Saved formal Prefabs loaded, same-scene field comparison passed, process exit0 with standard -quit",
+  "scopeCorrection": "Evidence219/checks.json scope says formal reload in219 by typo; formal reload evidence is218. Original evidence preserved.",
+  "earlier217": "Assertions passed, shutdown c0000005; 218 delayed Exit did not resolve it. Root cause unconfirmed.",
+  "eventLog": "Additional Windows event-log read returned UnauthorizedAccess; not retried.",
+  "meshBytesEstimate": [
+    5892,
+    7344
+  ],
+  "triangles": [
+    58,
+    168
+  ],
+  "vertices": [
+    126,
+    144
+  ],
+  "textureCountDelta": 0,
+  "materialCountDelta": 0,
+  "gpuMobilePlayer": "not measured",
+  "dedicatedEditorExited": true,
+  "publicRailCertificateBlock": "Existing public extra rail read ERR_CERT_VERIFIER_CHANGED remains unresolved. No bypass or retry."
+}

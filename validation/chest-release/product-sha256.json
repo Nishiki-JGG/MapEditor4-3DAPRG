@@ -1,6 +1,6 @@
 {
   "app.js": "dae055d620c0a67397167d405c825e4d50377df044e86bf41f5b3b2b7c7289c9",
-  "index.html": "8a7399d6ed1b1162b2370cc1b91775f3cfc53d0813f9bc4b4c1aca2603c07557",
+  "index.html": "fa10dd4ea9d46ab3538c2de70f133f33a7673f3e312ba48df54a9914ae2d7d72",
   "props/brokenpot.js": "a019b0eb7361c61d282ea6b32555df59b432c70e554858dd6439b3072d657a6b",
   "props/chest-gold-data.js": "2270c479053cbd000cdcf8d1c2bda1f84756b56d48526edf889302155b3ccd2a",
   "props/chest-gold-surface.js": "217f899d88375e1de7c986e3f35614a22b361aa29839e3a3297ad8e11e19504b",
@@ -42,7 +42,7 @@
   "props/stone-surface.js": "b13d9f8dacad368b4f91aa9a227eef9c68c2d5ead8af91e03a74d59b20049218",
   "props/storagepot.js": "a438c43030411e625765317acecc89ee1cf0e7beec47bcfa7dd7a65296747fe3",
   "props/wall-torch-source.js": "26b9c2078ffbfa7a000e9dc2fda0720934d4c7a372f75bdd3337153e4814cc9a",
-  "release.json": "cea14c1cc8d6c505a34672ad3877932b2cec57c9724f495adf8466dfcf988371",
+  "release.json": "d7367c5d55a5badea1d359565b55ea4eb62d0a7a2522eeb37f74f02c22e03086",
   "sea.js": "9c929f4f08ac4cf1555ea8f13f58620fd2efaadfb588da56bc64858c5b7d56fb",
   "unity/Assets/MapSharedProps/Editor/ChestPresentationBuilder.cs": "4266b553a28dd80b1dd7f8eee401325e9b7cf5e0957b8a842c3909cf48d84cbf",
   "unity/Assets/MapSharedProps/Editor/ChestRoyalLitBuilder.cs": "4a7eac30ed8966eac116b421a4d6acd0dbda9d8d40e54bb961e33a1cc95ac939",
