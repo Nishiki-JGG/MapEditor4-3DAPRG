@@ -1,26 +1,32 @@
-# 支保枠196・洞窟局所光202の統合候補208
+# 支保枠196・洞窟局所光202の統合208
 
-最新main `c62f48d41a42c08b719591c4fb45b9072991e555` に、独立合格済み支保枠196と洞窟小物局所光202を統合したローカル候補。公開前のUnity統合検証待ちであり、pushしていない。
+最新main `c62f48d41a42c08b719591c4fb45b9072991e555` の共有資産読込・mesh再利用を保ち、支保枠196と洞窟小物局所光202を統合。製品検証対象は `6cf618fa7aa22a78c19a42263fbaf8b1e53d28e6`。その後は本記録と証拠だけを追加した。ガラス206は別保全し、含めていない。
 
-## 並行更新と対象範囲
+## 変更
 
-SmallPropsV1のlibrary読込1箇所が競合した。mainのSharedAssetFiles.ReadとGetOrCreateMeshによる共有読込・mesh再利用を維持し、timberのData/library代入/Optional/Buildの4追加だけを重ねた。独立読取監査で、その4追加を除けばmainと全文一致。MapSharedPropsBuilderの局所光条件はcnd001〜020、既存atlas、既存shaderに限定。ガラス206は別作業ツリーに保持し、本候補に混入していない。既存ID、他担当水面・氷、原ゲームは変更していない。
+- 支保枠は364tri、レールの木材・鉄材質を共有し追加texture/lightなし。既存ID・保存・通路・2柱Colliderを維持。
+- 洞窟装飾はcnd001〜020、既存atlasとshaderが一致するときだけ追加光keywordを有効化。Webの見た目を変更する修正ではない。
+- SmallPropsV1の競合はtimberのData/library代入/Optional/Buildの4追加を残して解消。それを除くとmainと全文一致し、SharedAssetFiles.Read/GetOrCreateMeshを保持。独立監査で新規P1/P2なし。
+- 固定サンプルはcacheキーのみ再梱包。展開データはkey以外完全一致、元ファイル保持、岩再生成0。
 
-## 今回実行済み
+## Web・公開前検証
 
-- 現在配信中mainの71ファイルhash一致。公開ページのレールドラッグ、曲線、端点、保存復元、一筆Undo、取消をheadlessで確認。
-- 統合候補で支保枠364tri、レール材質共有、追加texture 0、9/225配置のdrawCalls 5・GLエラー0。GPU/スマホの性能保証ではない。
-- Q/E、Ctrl+wheel、プレビューと確定、地下配置、旧保存ID、scale/rotation各条件の2柱Colliderを確認。
-- レール通常経路とtouch曲線・複数ボタン・WASD境界回帰pass。
-- 16種類28配置の正式保存・読込・export。実Collider内容一致、車体2payload不変。小物と坑道を含む共有灯6、影灯2。小物除去後は常設2、全除去後0。画面の禁止固有語0。
-- 固定サンプル2種のキーだけを再梱包。展開データはkey以外完全一致、元ファイル保持。正式bundle読込・walk再利用・岩再生成0。キャッシュURL/release/hash同期。
+現在配信中mainの71ファイルhash一致、公開ページのレールドラッグ・曲線・端点・一筆Undo・取消・保存復元を確認。候補では支保枠のQ/E、Ctrl+wheel、プレビュー、地下配置、旧保存ID、回転/scale別Colliderを検査した。9/225配置は材質共有・drawCalls5・GLエラー0で、GPU性能保証ではない。
 
-## Unityの適用範囲と未完
+16種類28配置の保存・読込・正式exportと実Collider内容一致、既存車体payload2種不変。小物と坑道の共有灯6、影灯2、小物除去後は常設2、全除去後0。touch曲線・複数ボタン・WASD入力境界pass。固定サンプル2種はbundle読込・walk再利用・岩再生成0。画面の禁止固有語0。
 
-196の正式55Prefab/25配置、202の正式20対象と54照明条件はそれぞれ当時の証拠として保持する。206はガラス修正版での別構成なので本候補の検証に流用しない。mainの新しい共有読込・mesh生成cacheとtimberを組み合わせた正式importはまだ未実行。
+## 統合後Unity検証
 
-公開前に専用Editorを非表示で1回だけ起動し、統合sourceのcompile、正式import、timberとレールの材質共有、実Collider、cndのkeyword、Prefab/Scene再読込と既存cache参照を確認する必要がある。全75種や大規模負荷の再測定は不要。追加起動は未承認のため行っていない。ガラス近景や旧版A/Bの不足を合格扱いにしない。
+Unity6000.5.9f1/URP17.5、専用Editorの非表示直接起動。MapSharedProps46 sourceを候補とbyte一致させた。正式58Prefab/28配置/skip0、対象7種類・複製込み8実体の材質・Collider共有、cnd keywordを確認。custom支柱半径で実Colliderのcold生成/warm再利用も一致。
 
-通信アクセスは正式手順で回復。トロッコ193のPages成功を確認した。196/202のこの統合候補は未公開。利用者向け更新は公開後にImporterを更新し、元exportを別出力先へ再importする。既存Prefab/Sceneは自動更新されない。
+最初の実行はPrefab保存再instantiateまでpassし、Scene再読込後のテストが保存前の名前を検索して停止した。製品変更せず、追加承認された1回で保存PrefabのGUID/pathによる一意検索へ切替え、残るScene共有/snapshot検査を完了した。生成直後→Prefab→Sceneの画像RGB最大差はともに0。独立診断でも最初の停止は検証コードの名前検索不備と確認した。失敗記録を成功へ上書きせず残している。
 
-実行ログ・実画像はローカル保全、集約結果は `tests/evidence/publication208.json`。GUI/入力/フォーカス操作、Player、AV変更、画像upload、forcepushは実施していない。
+局所光そのもののForward/Forward+実描画は202の54条件を根拠とし、今回の画像は主光のみ。Input203のローカルlibrary参照を使い、外部shared-recipeの全分岐まで検証したとはしない。全カタログ再生成、全PrefabのScene状態、GPU/スマホ/Player/実ゲーム全体は未検証。ガラス206やその近景不足を本検証で合格と扱わない。Unityは終了した。
+
+## 更新手順と証拠
+
+公開されたImporterを更新し、新しいWeb exportを別出力先へimportして生成Prefabを確認する。既存Prefab/Sceneは自動更新されない。旧Importerは新支保枠を扱えず、洞窟装飾も旧来の照明応答のままとなる。
+
+`tests/evidence/publication208.json` はWebと当初の検証待ち状態、`publication208-unity.json` はその後に閉じたUnity検証の記録。196/202文書の公開保留は当時の履歴。実画像・実行ログはローカル保全。公開完了は最終SHA・Actions・配信hashと公開ページ操作を別途照合する。
+
+GUI/入力/フォーカス操作、Player、AV/ExecutionPolicy変更、画像upload、forcepushは行っていない。
