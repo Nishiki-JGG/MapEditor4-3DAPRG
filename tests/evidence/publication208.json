@@ -1,0 +1,1229 @@
+{
+  "timber": {
+    "pass": true,
+    "geometry": {
+      "triangles": 364,
+      "vertices": 1092,
+      "bounds": [
+        [
+          -1.2899999618530273,
+          0,
+          -0.17000000178813934
+        ],
+        [
+          1.2899999618530273,
+          2.852774143218994,
+          0.17000000178813934
+        ]
+      ],
+      "radius": 0.17,
+      "height": 2.86,
+      "offsets": [
+        [
+          -1.11,
+          0
+        ],
+        [
+          1.11,
+          0
+        ]
+      ],
+      "materialShared": true,
+      "textureNew": 0
+    },
+    "save": {
+      "props": true,
+      "collider": true
+    },
+    "shares": [
+      {
+        "instances": 9,
+        "materialShared": true,
+        "drawCalls": 5,
+        "gl": 0
+      },
+      {
+        "instances": 225,
+        "materialShared": true,
+        "drawCalls": 5,
+        "gl": 0
+      }
+    ],
+    "payloadBytes": 139511,
+    "errors": []
+  },
+  "placement": {
+    "pass": true,
+    "keyboardScale": true,
+    "legacyIds": true,
+    "collision": [
+      {
+        "scale": 0.8,
+        "rot": 0,
+        "proxies": [
+          [
+            -0.8880000000000001,
+            0,
+            0.136,
+            0,
+            2.288
+          ],
+          [
+            0.8880000000000001,
+            0,
+            0.136,
+            0,
+            2.288
+          ]
+        ],
+        "centralClear": true
+      },
+      {
+        "scale": 0.8,
+        "rot": 1.5707963267948966,
+        "proxies": [
+          [
+            -5.437431788214249e-17,
+            0.8880000000000001,
+            0.136,
+            0,
+            2.288
+          ],
+          [
+            5.437431788214249e-17,
+            -0.8880000000000001,
+            0.136,
+            0,
+            2.288
+          ]
+        ],
+        "centralClear": true
+      },
+      {
+        "scale": 1,
+        "rot": 0,
+        "proxies": [
+          [
+            -1.11,
+            0,
+            0.17,
+            0,
+            2.86
+          ],
+          [
+            1.11,
+            0,
+            0.17,
+            0,
+            2.86
+          ]
+        ],
+        "centralClear": true
+      },
+      {
+        "scale": 1,
+        "rot": 1.5707963267948966,
+        "proxies": [
+          [
+            -6.796789735267811e-17,
+            1.11,
+            0.17,
+            0,
+            2.86
+          ],
+          [
+            6.796789735267811e-17,
+            -1.11,
+            0.17,
+            0,
+            2.86
+          ]
+        ],
+        "centralClear": true
+      },
+      {
+        "scale": 1.5,
+        "rot": 0,
+        "proxies": [
+          [
+            -1.665,
+            0,
+            0.255,
+            0,
+            4.29
+          ],
+          [
+            1.665,
+            0,
+            0.255,
+            0,
+            4.29
+          ]
+        ],
+        "centralClear": true
+      },
+      {
+        "scale": 1.5,
+        "rot": 1.5707963267948966,
+        "proxies": [
+          [
+            -1.0195184602901717e-16,
+            1.665,
+            0.255,
+            0,
+            4.29
+          ],
+          [
+            1.0195184602901717e-16,
+            -1.665,
+            0.255,
+            0,
+            4.29
+          ]
+        ],
+        "centralClear": true
+      }
+    ],
+    "placed": {
+      "count": 2,
+      "id": "mine_timber_frame",
+      "pose": [
+        0.04000010381433672,
+        1.0000001985293068,
+        0,
+        1,
+        0,
+        1,
+        0
+      ],
+      "previewY": 0,
+      "previewMaterial": "mine-rail-iron-and-timber"
+    },
+    "scaledRotation": true,
+    "underground": {
+      "id": "mine_timber_frame",
+      "y": 0,
+      "terrain": 3.5,
+      "count": 2
+    },
+    "saved": true,
+    "privateHeadless": true,
+    "guiUsed": false
+  },
+  "railDrag": {
+    "pass": true,
+    "pure": [
+      "three straights",
+      "replace provisional tail with -1 turn",
+      "actual mesh port -1",
+      "actual mesh port -1",
+      "actual mesh port -1",
+      "actual mesh port -1",
+      "actual mesh port -1",
+      "actual mesh port -1",
+      "continuous -1 1",
+      "continuous -1 2",
+      "replace provisional tail with 1 turn",
+      "actual mesh port 1",
+      "actual mesh port 1",
+      "actual mesh port 1",
+      "actual mesh port 1",
+      "actual mesh port 1",
+      "actual mesh port 1",
+      "continuous 1 1",
+      "continuous 1 2",
+      "two successive bends",
+      "four curves closed loop",
+      "closed loop stable on pointer release",
+      "retract to earlier endpoint",
+      "existing start sets outward tangent",
+      "finish at matching existing port",
+      "perpendicular end rejected",
+      "end scale mismatch rejected",
+      "end height mismatch rejected",
+      "duplicate/interior overlap rejected",
+      "occupied start rejected",
+      "uneven ground rejected",
+      "impossible short sideways move rejected",
+      "scale and QE heading",
+      "bounded stroke",
+      "map bounds rejected",
+      "225 existing rail scene"
+    ],
+    "final": [
+      [
+        136,
+        2.184924952075562e-08,
+        -1.5200453340469267e-07,
+        0,
+        1,
+        0,
+        1,
+        0
+      ],
+      [
+        136,
+        2.184924952075562e-08,
+        1.9999998479954666,
+        0,
+        1,
+        0,
+        1,
+        0
+      ],
+      [
+        136,
+        2.184924952075562e-08,
+        3.9999998479954666,
+        0,
+        1,
+        0,
+        1,
+        0
+      ],
+      [
+        137,
+        2.184924952075562e-08,
+        5.999999847995467,
+        0,
+        1,
+        0,
+        1,
+        0
+      ],
+      [
+        136,
+        2.0000000218492495,
+        7.999999847995467,
+        1.5707963267948966,
+        1,
+        0,
+        1,
+        0
+      ],
+      [
+        136,
+        4.0000000218492495,
+        7.999999847995467,
+        1.5707963267948966,
+        1,
+        0,
+        1,
+        0
+      ]
+    ],
+    "reload": {
+      "success": true,
+      "equal": true,
+      "count": 6
+    },
+    "cancelModes": [
+      "escape",
+      "cancel",
+      "blur",
+      "type",
+      "tool",
+      "mode",
+      "capture"
+    ],
+    "oneStrokeOneUndo": true,
+    "dragScaleHeadingLocked": true,
+    "ordinaryPropUnchanged": true,
+    "undergroundFloor": true,
+    "timing": {
+      "existing": 225,
+      "maxStroke": 64,
+      "updateMedianMs": 0.3999999761581421,
+      "updateMaxMs": 1,
+      "gpuMeasured": false
+    },
+    "errors": [],
+    "privateHeadless": true,
+    "gui": false
+  },
+  "inputBoundary": {
+    "pass": true,
+    "cases": [
+      {
+        "name": "touch curve preview equals committed geometry and pose",
+        "pass": true,
+        "before": {
+          "geometryMatches": true,
+          "position": [
+            7.370881949242403e-08,
+            0,
+            -2.7849011985381367e-09
+          ],
+          "rotation": 1.5707963267948966,
+          "scale": 1,
+          "visible": true
+        },
+        "placed": [
+          {
+            "id": "mine_rail_curve",
+            "position": [
+              7.370881949242403e-08,
+              0,
+              -2.7849011985381367e-09
+            ],
+            "rotation": 1.5707963267948966,
+            "scale": 1
+          }
+        ]
+      },
+      {
+        "name": "left + right chord cancels and hands off camera",
+        "pass": true,
+        "canceled": true,
+        "cameraMoved": true,
+        "stoppedAfterButtonRelease": true,
+        "count": 0,
+        "onlyFirstDown": true,
+        "trace": [
+          {
+            "type": "pointermove",
+            "button": -1,
+            "buttons": 0,
+            "pointerType": "mouse"
+          },
+          {
+            "type": "pointerdown",
+            "button": 0,
+            "buttons": 1,
+            "pointerType": "mouse"
+          },
+          {
+            "type": "pointermove",
+            "button": -1,
+            "buttons": 1,
+            "pointerType": "mouse"
+          },
+          {
+            "type": "pointermove",
+            "button": 2,
+            "buttons": 3,
+            "pointerType": "mouse"
+          },
+          {
+            "type": "pointermove",
+            "button": -1,
+            "buttons": 3,
+            "pointerType": "mouse"
+          },
+          {
+            "type": "pointermove",
+            "button": 2,
+            "buttons": 1,
+            "pointerType": "mouse"
+          },
+          {
+            "type": "pointermove",
+            "button": -1,
+            "buttons": 1,
+            "pointerType": "mouse"
+          },
+          {
+            "type": "pointerup",
+            "button": 0,
+            "buttons": 0,
+            "pointerType": "mouse"
+          }
+        ]
+      },
+      {
+        "name": "left + middle chord cancels and hands off camera",
+        "pass": true,
+        "canceled": true,
+        "cameraMoved": true,
+        "stoppedAfterButtonRelease": true,
+        "count": 0,
+        "onlyFirstDown": true,
+        "trace": [
+          {
+            "type": "pointermove",
+            "button": -1,
+            "buttons": 0,
+            "pointerType": "mouse"
+          },
+          {
+            "type": "pointerdown",
+            "button": 0,
+            "buttons": 1,
+            "pointerType": "mouse"
+          },
+          {
+            "type": "pointermove",
+            "button": -1,
+            "buttons": 1,
+            "pointerType": "mouse"
+          },
+          {
+            "type": "pointermove",
+            "button": 1,
+            "buttons": 5,
+            "pointerType": "mouse"
+          },
+          {
+            "type": "pointermove",
+            "button": -1,
+            "buttons": 5,
+            "pointerType": "mouse"
+          },
+          {
+            "type": "pointermove",
+            "button": 1,
+            "buttons": 1,
+            "pointerType": "mouse"
+          },
+          {
+            "type": "pointermove",
+            "button": -1,
+            "buttons": 1,
+            "pointerType": "mouse"
+          },
+          {
+            "type": "pointerup",
+            "button": 0,
+            "buttons": 0,
+            "pointerType": "mouse"
+          }
+        ]
+      },
+      {
+        "name": "stationary pointer with WASD movement cancels pending rails",
+        "pass": true,
+        "motion": {
+          "active": false,
+          "target": [
+            -1.4813185282075498,
+            0,
+            -2.058090119500677
+          ],
+          "previewCount": 0
+        },
+        "count": 0
+      }
+    ],
+    "errors": [],
+    "privateHeadless": true,
+    "gui": false
+  },
+  "fixedBundles": {
+    "pass": true,
+    "rows": [
+      {
+        "kind": "sample",
+        "ok": true,
+        "source": "bundle",
+        "fitStats": null,
+        "walkReused": true,
+        "fitCalls": 0,
+        "props": 5761
+      },
+      {
+        "kind": "sample2",
+        "ok": true,
+        "source": "bundle",
+        "fitStats": null,
+        "walkReused": true,
+        "fitCalls": 0,
+        "props": 536
+      }
+    ],
+    "rockRegeneration": 0
+  },
+  "mixed": {
+    "pass": true,
+    "save": {
+      "props": true,
+      "tunnels": true,
+      "collider": true,
+      "count": 28,
+      "types": [
+        "mine_rail_straight",
+        "mine_rail_curve",
+        "mine_rail_end",
+        "minecart",
+        "minecart_loaded",
+        "mine_cut_rock",
+        "mine_spoil",
+        "mine_collapsed_wall",
+        "mine_cobweb",
+        "mine_wall_lantern",
+        "wall_torch",
+        "shells",
+        "mine_timber_frame",
+        "cnd001",
+        "cnd014",
+        "cnd020"
+      ]
+    },
+    "check": {
+      "payloads": {
+        "mineCartV1": {
+          "hash": "c552c945f0653afb8517e13b10f8a8ba1be1f1d317a61f481c408626054093f0",
+          "bytes": 1208381
+        },
+        "mineCartLoadV1": {
+          "hash": "fae23b3d4498466a78bc532442b353d4b7853ad2f9cb6cba58a15fbee4fb9b88",
+          "bytes": 2246194
+        },
+        "mineCobwebV1": {
+          "hash": "ed3aeed7fdb30915ee489f44f685fbff19bb9a89e65cdf67cbd8ce9b6568bd61",
+          "bytes": 182892
+        },
+        "mineTimberV1": {
+          "hash": "c9b7f26af12238df420cb47a02b1ac1a36ad2ab09ee0d5bbedc6c3ae18074b6b",
+          "bytes": 139511
+        }
+      },
+      "lights": {
+        "lit": 6,
+        "shadow": 2,
+        "propsRemoved": 2,
+        "tunnelFixtures": 2,
+        "removed": 0
+      },
+      "gl": 0,
+      "exportNames": [
+        "room_torches.json",
+        "root_paint.png",
+        "heightmap_r16.raw",
+        "walk_floor_r16.raw",
+        "weights_0.png",
+        "weights_1.png",
+        "weights_2.png",
+        "weights_3.png",
+        "weights_4.png",
+        "mask_0.png",
+        "mask_1.png",
+        "mask_2.png",
+        "mask_3.png",
+        "tunnels_mesh.json",
+        "walkable.png",
+        "cliff_style.png",
+        "props.csv",
+        "asset_catalog.json",
+        "grounded_props.json",
+        "shared_props.json",
+        "asset_bindings.json",
+        "small_props.json",
+        "pine_wind.json",
+        "root_grounding.json",
+        "shared_ground.json",
+        "meta.json",
+        "validation.json",
+        "map.json",
+        "README.txt",
+        "manifest.json"
+      ]
+    },
+    "forbiddenNameInUI": false,
+    "errors": []
+  },
+  "currentPublicHashes": {
+    "utc": "2026-10-31T02:40:08.014378+00:00",
+    "sha": "c62f48d41a42c08b719591c4fb45b9072991e555",
+    "pass": true,
+    "count": 71,
+    "hashes": {
+      "app.js": {
+        "expected": "fbee0574d46114805d3d682cbaf7484747a7e17ce5848cd11afeb4248fb7a369",
+        "actual": "fbee0574d46114805d3d682cbaf7484747a7e17ce5848cd11afeb4248fb7a369",
+        "bytes": 534298,
+        "pass": true
+      },
+      "props/chest-presentation.js": {
+        "expected": "02d054f76798bdf6599156ffb0655085c919b3df733386a47a11f458d3aa5233",
+        "actual": "02d054f76798bdf6599156ffb0655085c919b3df733386a47a11f458d3aa5233",
+        "bytes": 15435,
+        "pass": true
+      },
+      "props/chest-surface.js": {
+        "expected": "bf7137cd3c64c736bc50d0dbd2a7b62f4fce1c48db73f6473fc6b9522b24f025",
+        "actual": "bf7137cd3c64c736bc50d0dbd2a7b62f4fce1c48db73f6473fc6b9522b24f025",
+        "bytes": 14642,
+        "pass": true
+      },
+      "props/chest-relief.js": {
+        "expected": "2f6d152ccd4c0dfd43d34c9867118d5060704b01ea93cfeafcdf826c479e8f94",
+        "actual": "2f6d152ccd4c0dfd43d34c9867118d5060704b01ea93cfeafcdf826c479e8f94",
+        "bytes": 12650,
+        "pass": true
+      },
+      "props/chest-part-data.js": {
+        "expected": "1db60b32768e7f47a046f16496c8c302f781d27737b0587f7bdfd3ccf2a68380",
+        "actual": "1db60b32768e7f47a046f16496c8c302f781d27737b0587f7bdfd3ccf2a68380",
+        "bytes": 578592,
+        "pass": true
+      },
+      "props/chest-part-surface.js": {
+        "expected": "bf2906a85b978a2c407436d3964767b787ff10ec85b0f0b1c3f3ecad0660c75d",
+        "actual": "bf2906a85b978a2c407436d3964767b787ff10ec85b0f0b1c3f3ecad0660c75d",
+        "bytes": 5973,
+        "pass": true
+      },
+      "props/chest-silver-trim.js": {
+        "expected": "618ccbf1842f0712ea52956c1c4604b36d03d7b6190ad970b6039cb174936774",
+        "actual": "618ccbf1842f0712ea52956c1c4604b36d03d7b6190ad970b6039cb174936774",
+        "bytes": 645,
+        "pass": true
+      },
+      "props/chest-sanctum-data.js": {
+        "expected": "cb5e96c1769bce67ef72c6e28dbd7a3e978e26dd277a660d8f747c59f62e1e8c",
+        "actual": "cb5e96c1769bce67ef72c6e28dbd7a3e978e26dd277a660d8f747c59f62e1e8c",
+        "bytes": 938551,
+        "pass": true
+      },
+      "props/chest-sanctum.js": {
+        "expected": "374e42cb1827725e38d850aaa3120ab9737864b8db37abe2721d7837de109bba",
+        "actual": "374e42cb1827725e38d850aaa3120ab9737864b8db37abe2721d7837de109bba",
+        "bytes": 11014,
+        "pass": true
+      },
+      "props/gravestone.js": {
+        "expected": "0481e45ab815819bf15f28dad6799b3231d8e86f98d682111cf742c6e6e478c6",
+        "actual": "0481e45ab815819bf15f28dad6799b3231d8e86f98d682111cf742c6e6e478c6",
+        "bytes": 1417,
+        "pass": true
+      },
+      "props/crossgrave.js": {
+        "expected": "5b7d0bf7aafd131db0293a97620b6850474bd28802435b4fb2cce9c28ff89ef5",
+        "actual": "5b7d0bf7aafd131db0293a97620b6850474bd28802435b4fb2cce9c28ff89ef5",
+        "bytes": 1841,
+        "pass": true
+      },
+      "props/stone-surface.js": {
+        "expected": "b13d9f8dacad368b4f91aa9a227eef9c68c2d5ead8af91e03a74d59b20049218",
+        "actual": "b13d9f8dacad368b4f91aa9a227eef9c68c2d5ead8af91e03a74d59b20049218",
+        "bytes": 2968,
+        "pass": true
+      },
+      "props/marker-parts.js": {
+        "expected": "4ac17ad5905dd9bdd9d6ffc9724613d9e296df9c28e2dfd4049dee29e2954303",
+        "actual": "4ac17ad5905dd9bdd9d6ffc9724613d9e296df9c28e2dfd4049dee29e2954303",
+        "bytes": 4643,
+        "pass": true
+      },
+      "props/shells.js": {
+        "expected": "c16f1f1c4c7a60bfcf500d1179b2e668c487c1dd1c39de947a6c6a186929a199",
+        "actual": "c16f1f1c4c7a60bfcf500d1179b2e668c487c1dd1c39de947a6c6a186929a199",
+        "bytes": 4270,
+        "pass": true
+      },
+      "props/grounding.js": {
+        "expected": "23b4519947dde1e315c1db1f53db18f3b336155310a336223bff4685fb369c4b",
+        "actual": "23b4519947dde1e315c1db1f53db18f3b336155310a336223bff4685fb369c4b",
+        "bytes": 6209,
+        "pass": true
+      },
+      "props/shell-surface.js": {
+        "expected": "d8250789cc78f5fea3f66a12494c63128b73dbdccca861c2b3a2aa7d5025af76",
+        "actual": "d8250789cc78f5fea3f66a12494c63128b73dbdccca861c2b3a2aa7d5025af76",
+        "bytes": 1977,
+        "pass": true
+      },
+      "sea.js": {
+        "expected": "9c929f4f08ac4cf1555ea8f13f58620fd2efaadfb588da56bc64858c5b7d56fb",
+        "actual": "9c929f4f08ac4cf1555ea8f13f58620fd2efaadfb588da56bc64858c5b7d56fb",
+        "bytes": 13615,
+        "pass": true
+      },
+      "props/smallbarrel.js": {
+        "expected": "7fd520c0a8f009eef421480176c25ca725d3f2afcc6c28785df02caded2b1045",
+        "actual": "7fd520c0a8f009eef421480176c25ca725d3f2afcc6c28785df02caded2b1045",
+        "bytes": 3268,
+        "pass": true
+      },
+      "props/foliage2.js": {
+        "expected": "c6fe188ee25ddc96abf87ceaf6046bd862b6c5060efb2939b09b64769e41bf25",
+        "actual": "c6fe188ee25ddc96abf87ceaf6046bd862b6c5060efb2939b09b64769e41bf25",
+        "bytes": 10724,
+        "pass": true
+      },
+      "props/practical-parts.js": {
+        "expected": "881f1402590d3c41bb236da6b4497a544b3222a91e102bb923d23b4b0739d16b",
+        "actual": "881f1402590d3c41bb236da6b4497a544b3222a91e102bb923d23b4b0739d16b",
+        "bytes": 5239,
+        "pass": true
+      },
+      "props/storagepot.js": {
+        "expected": "a438c43030411e625765317acecc89ee1cf0e7beec47bcfa7dd7a65296747fe3",
+        "actual": "a438c43030411e625765317acecc89ee1cf0e7beec47bcfa7dd7a65296747fe3",
+        "bytes": 273,
+        "pass": true
+      },
+      "props/brokenpot.js": {
+        "expected": "a019b0eb7361c61d282ea6b32555df59b432c70e554858dd6439b3072d657a6b",
+        "actual": "a019b0eb7361c61d282ea6b32555df59b432c70e554858dd6439b3072d657a6b",
+        "bytes": 1323,
+        "pass": true
+      },
+      "props/small-prop-export.js": {
+        "expected": "665c734a910f44b56723bd5d47608f13802a89d75a155a9dd97498dfc12a977a",
+        "actual": "665c734a910f44b56723bd5d47608f13802a89d75a155a9dd97498dfc12a977a",
+        "bytes": 6899,
+        "pass": true
+      },
+      "props/lantern.js": {
+        "expected": "bbeab0d3138ba12c9d1b9242d0f5c241d8b8d0e476ece144fd727da5a6be3168",
+        "actual": "bbeab0d3138ba12c9d1b9242d0f5c241d8b8d0e476ece144fd727da5a6be3168",
+        "bytes": 4944,
+        "pass": true
+      },
+      "props/miningtools.js": {
+        "expected": "c6c110711d24f5aa00298099790c77c146f94461614964f24bbf599793e09057",
+        "actual": "c6c110711d24f5aa00298099790c77c146f94461614964f24bbf599793e09057",
+        "bytes": 4841,
+        "pass": true
+      },
+      "props/coiledrope.js": {
+        "expected": "79f301028e149761ad4451a038929e2f55fc2fd8bed97e6062651c06bad22916",
+        "actual": "79f301028e149761ad4451a038929e2f55fc2fd8bed97e6062651c06bad22916",
+        "bytes": 2109,
+        "pass": true
+      },
+      "props/fibre-finish.js": {
+        "expected": "47d4d689f148c5398c1afe4d4c45fd5ef069364c061294aad7963683c7217759",
+        "actual": "47d4d689f148c5398c1afe4d4c45fd5ef069364c061294aad7963683c7217759",
+        "bytes": 2549,
+        "pass": true
+      },
+      "props/banner.js": {
+        "expected": "7deff215438df91f1676848c2eea5e197135ee78f9cd1b0c119448fcc8e4548d",
+        "actual": "7deff215438df91f1676848c2eea5e197135ee78f9cd1b0c119448fcc8e4548d",
+        "bytes": 2534,
+        "pass": true
+      },
+      "props/rowboat.js": {
+        "expected": "bc1da495dc784f81836870e879ec908016e906cac987acc77371a2eac7ecf1c7",
+        "actual": "bc1da495dc784f81836870e879ec908016e906cac987acc77371a2eac7ecf1c7",
+        "bytes": 4326,
+        "pass": true
+      },
+      "props/seafan-surface.js": {
+        "expected": "3ad1b8c71a2b92f20b3fab9e75d4fa362e6aff183b89fd771431f7daf3e5b612",
+        "actual": "3ad1b8c71a2b92f20b3fab9e75d4fa362e6aff183b89fd771431f7daf3e5b612",
+        "bytes": 2507,
+        "pass": true
+      },
+      "props/obsidian-reflection.js": {
+        "expected": "db926e0da7a344f731911d299ae2ee2353db95c387efdd6d8934ac7683d23ee0",
+        "actual": "db926e0da7a344f731911d299ae2ee2353db95c387efdd6d8934ac7683d23ee0",
+        "bytes": 1204,
+        "pass": true
+      },
+      "props/mine-rails.js": {
+        "expected": "a64ac22e284c820939cd7e33b26e44f933e5455365b2709fa07387a99b018bde",
+        "actual": "a64ac22e284c820939cd7e33b26e44f933e5455365b2709fa07387a99b018bde",
+        "bytes": 12735,
+        "pass": true
+      },
+      "props/minecart.js": {
+        "expected": "9e387fe8173b9a6ec80f8bceb44679f54754c899cc0d79c2efeed2d96631ed61",
+        "actual": "9e387fe8173b9a6ec80f8bceb44679f54754c899cc0d79c2efeed2d96631ed61",
+        "bytes": 12530,
+        "pass": true
+      },
+      "props/mine-rail-drag.js": {
+        "expected": "7103ee81b1d164a608c14c0701e3fc728f060a0ed0034bb76fd4c92ed3d5241a",
+        "actual": "7103ee81b1d164a608c14c0701e3fc728f060a0ed0034bb76fd4c92ed3d5241a",
+        "bytes": 6999,
+        "pass": true
+      },
+      "props/mine-cut-rock.js": {
+        "expected": "bc0aa43a2cbbd567c913ec43ff8b32c2ef3549ad4ecf03f4a15e2d5709edc156",
+        "actual": "bc0aa43a2cbbd567c913ec43ff8b32c2ef3549ad4ecf03f4a15e2d5709edc156",
+        "bytes": 12955,
+        "pass": true
+      },
+      "unity/Assets/MapSharedProps/Editor/MineCutRockV1.cs": {
+        "expected": "192558bef384f83dd23fdb3550070eefa7626a156371deaf47f0b4f1292c280e",
+        "actual": "192558bef384f83dd23fdb3550070eefa7626a156371deaf47f0b4f1292c280e",
+        "bytes": 7901,
+        "pass": true
+      },
+      "props/mine-spoil.js": {
+        "expected": "efdde095fd8c6636b89522a56e7cd739efc49574c0ba89c82635217e4dec9078",
+        "actual": "efdde095fd8c6636b89522a56e7cd739efc49574c0ba89c82635217e4dec9078",
+        "bytes": 7731,
+        "pass": true
+      },
+      "unity/Assets/MapSharedProps/Editor/MineSpoilV1.cs": {
+        "expected": "18413514bdf454f98e9acc696b736cce2bf9017894b0b901ece2f597573f463e",
+        "actual": "18413514bdf454f98e9acc696b736cce2bf9017894b0b901ece2f597573f463e",
+        "bytes": 7752,
+        "pass": true
+      },
+      "props/cave-decor.js": {
+        "expected": "abf74ab0b78918409e80854060e0291cda33f30ed758a7c4d46a29e12ddaead1",
+        "actual": "abf74ab0b78918409e80854060e0291cda33f30ed758a7c4d46a29e12ddaead1",
+        "bytes": 1112,
+        "pass": true
+      },
+      "props/shared/cave-decor-data.js": {
+        "expected": "5939db717735b0bc3400f5decf360bc3e6aaec12c75f0abbbb26c616269ba57c",
+        "actual": "5939db717735b0bc3400f5decf360bc3e6aaec12c75f0abbbb26c616269ba57c",
+        "bytes": 607627,
+        "pass": true
+      },
+      "index.html": {
+        "expected": "61a3b6be22ad83fe4964d8759af5f8e2f489e73fb046a759b2ef1019bb2cf3e2",
+        "actual": "61a3b6be22ad83fe4964d8759af5f8e2f489e73fb046a759b2ef1019bb2cf3e2",
+        "bytes": 32368,
+        "pass": true
+      },
+      "prepared/manifest.js": {
+        "expected": "dd4dd1230f13ee7d7e9ef6368910e1e35b06080684a47648a7fa7709ac1c6f49",
+        "actual": "dd4dd1230f13ee7d7e9ef6368910e1e35b06080684a47648a7fa7709ac1c6f49",
+        "bytes": 3748,
+        "pass": true
+      },
+      "terrain/cliff-shoulder.js": {
+        "expected": "e437f1ffb0ab47fa4b243f7408f4ed3de759508b0f1dfef49eaf217b1630ac59",
+        "actual": "e437f1ffb0ab47fa4b243f7408f4ed3de759508b0f1dfef49eaf217b1630ac59",
+        "bytes": 5483,
+        "pass": true
+      },
+      "props/mine-collapse.js": {
+        "expected": "49ff2562ce9a97766c4f664c3b283d0f25762b9edb6df370308c150769baafd8",
+        "actual": "49ff2562ce9a97766c4f664c3b283d0f25762b9edb6df370308c150769baafd8",
+        "bytes": 15243,
+        "pass": true
+      },
+      "props/mine-collapse-pbr.js": {
+        "expected": "e90181e4ba56831e286649539dcc05197180e32199a07c675fb5d4da0630a6cd",
+        "actual": "e90181e4ba56831e286649539dcc05197180e32199a07c675fb5d4da0630a6cd",
+        "bytes": 962970,
+        "pass": true
+      },
+      "unity/Assets/MapSharedProps/Editor/MineCollapseV1.cs": {
+        "expected": "1df8252d14d02122170d6e0ff67e6e0cd13292cab14086e8f8c86793bf3d6cfd",
+        "actual": "1df8252d14d02122170d6e0ff67e6e0cd13292cab14086e8f8c86793bf3d6cfd",
+        "bytes": 7814,
+        "pass": true
+      },
+      "props/mine-lantern.js": {
+        "expected": "87e69f27a2e15f788ca745588ab732d58a3f191bca074c2accf13fb10cc58602",
+        "actual": "87e69f27a2e15f788ca745588ab732d58a3f191bca074c2accf13fb10cc58602",
+        "bytes": 8584,
+        "pass": true
+      },
+      "props/wall_torch.js": {
+        "expected": "825d25e5f0b8fe27d49f03f329f76ce4b402c99ff4354cfda9b37ee7cc37e5c8",
+        "actual": "825d25e5f0b8fe27d49f03f329f76ce4b402c99ff4354cfda9b37ee7cc37e5c8",
+        "bytes": 17727,
+        "pass": true
+      },
+      "unity/Assets/MapSharedProps/Editor/MineLanternV1.cs": {
+        "expected": "d2f39052548bb3708a253d10999ffe8278d54c214618386d13fd762b0255002b",
+        "actual": "d2f39052548bb3708a253d10999ffe8278d54c214618386d13fd762b0255002b",
+        "bytes": 10840,
+        "pass": true
+      },
+      "unity/Assets/MapSharedProps/Editor/MineLanternV1.cs.meta": {
+        "expected": "220f472af88facac694fa87162b10e1e7c611210b816ad657ffd63e9e5f8e8bb",
+        "actual": "220f472af88facac694fa87162b10e1e7c611210b816ad657ffd63e9e5f8e8bb",
+        "bytes": 60,
+        "pass": true
+      },
+      "unity/Assets/MapSharedProps/Runtime/RoomTorchBudget.cs": {
+        "expected": "ae1b5ba98f39c533ce72917f5eefff531cc5e018c4283e17255194b5a1e54dff",
+        "actual": "ae1b5ba98f39c533ce72917f5eefff531cc5e018c4283e17255194b5a1e54dff",
+        "bytes": 7120,
+        "pass": true
+      },
+      "unity/Assets/MapSharedProps/Runtime/RoomTorchInstance.cs": {
+        "expected": "0e06f0be2b12eebbccd0a04c992ea781db6f039e038f6626685a1f6dcd139ec6",
+        "actual": "0e06f0be2b12eebbccd0a04c992ea781db6f039e038f6626685a1f6dcd139ec6",
+        "bytes": 4880,
+        "pass": true
+      },
+      "unity/Assets/MapTunnels/Runtime/Shaders/MapTunnel.shader": {
+        "expected": "6b10c51126121db637c4b8bc533095f80914189e58d1c78009cff755c9fcabe5",
+        "actual": "6b10c51126121db637c4b8bc533095f80914189e58d1c78009cff755c9fcabe5",
+        "bytes": 4685,
+        "pass": true
+      },
+      "props/mine-cobweb.js": {
+        "expected": "abeb8091c733137431044121d3bb4aa6e1449f723c942e83858e9d527c1d5203",
+        "actual": "abeb8091c733137431044121d3bb4aa6e1449f723c942e83858e9d527c1d5203",
+        "bytes": 5615,
+        "pass": true
+      },
+      "unity/Assets/MapSharedProps/Editor/MineCobwebV1.cs": {
+        "expected": "c25a03fd01c24a833d0ea203fc98dd95994980b4bc04d91268408b0b86eeae64",
+        "actual": "c25a03fd01c24a833d0ea203fc98dd95994980b4bc04d91268408b0b86eeae64",
+        "bytes": 6363,
+        "pass": true
+      },
+      "unity/Assets/MapSharedProps/Editor/MineCobwebV1.cs.meta": {
+        "expected": "0888a1ea48459bf3906dbf74f87223c8158accce4243a93e0d39e33e4a0b827a",
+        "actual": "0888a1ea48459bf3906dbf74f87223c8158accce4243a93e0d39e33e4a0b827a",
+        "bytes": 60,
+        "pass": true
+      },
+      "props/minecart-loaded.js": {
+        "expected": "fd316b07809e791671aa0609541852fd48d64808c9a386498a3ee028c2ea6e60",
+        "actual": "fd316b07809e791671aa0609541852fd48d64808c9a386498a3ee028c2ea6e60",
+        "bytes": 6187,
+        "pass": true
+      },
+      "unity/Assets/MapSharedProps/Editor/MineCartV1.cs": {
+        "expected": "ec3559f3c54216f8b9b0196bf083412fb922d550b133a6b108c9193c123de114",
+        "actual": "ec3559f3c54216f8b9b0196bf083412fb922d550b133a6b108c9193c123de114",
+        "bytes": 8088,
+        "pass": true
+      },
+      "unity/Assets/MapSharedProps/Editor/GroundedPropsV1.cs": {
+        "expected": "4f800dd6b1701e3de149c2d524ddcc8baac9e2cd50aadc19539b79ff11765d14",
+        "actual": "4f800dd6b1701e3de149c2d524ddcc8baac9e2cd50aadc19539b79ff11765d14",
+        "bytes": 9435,
+        "pass": true
+      },
+      "terrain/completed-state.js": {
+        "expected": "6a80f8456c09abbfd0005045b8039878f19fd1229704d32aaec852e9632ba929",
+        "actual": "6a80f8456c09abbfd0005045b8039878f19fd1229704d32aaec852e9632ba929",
+        "bytes": 6410,
+        "pass": true
+      },
+      "terrain/prepared-codec.js": {
+        "expected": "d1926b8746c78dabeb7d4ffa62df4cd2797cb257cf1121f6f5baf46d1164b05c",
+        "actual": "d1926b8746c78dabeb7d4ffa62df4cd2797cb257cf1121f6f5baf46d1164b05c",
+        "bytes": 6775,
+        "pass": true
+      },
+      "terrain/cliff-fits.js": {
+        "expected": "94a6af7a0dc277388fae0fef49020589bc04d2d0fa900ac5c528ca1a027d25b3",
+        "actual": "94a6af7a0dc277388fae0fef49020589bc04d2d0fa900ac5c528ca1a027d25b3",
+        "bytes": 9920,
+        "pass": true
+      },
+      "terrain/preparation.js": {
+        "expected": "da67a70b50fa0d0cb0b35af74fd0e2352b6a6d56ae447eaed2723604e86757ac",
+        "actual": "da67a70b50fa0d0cb0b35af74fd0e2352b6a6d56ae447eaed2723604e86757ac",
+        "bytes": 4253,
+        "pass": true
+      },
+      "map-package.js": {
+        "expected": "9e782b5128d9de1b338bb536349a6e9431ee9abdd3460d908b71787db5fbe650",
+        "actual": "9e782b5128d9de1b338bb536349a6e9431ee9abdd3460d908b71787db5fbe650",
+        "bytes": 2874,
+        "pass": true
+      },
+      "asset-registry.js": {
+        "expected": "aaccc295ff957a8acfcc91ccdb5fedc3324b20400ff42980dd5732f8bbbf7d3e",
+        "actual": "aaccc295ff957a8acfcc91ccdb5fedc3324b20400ff42980dd5732f8bbbf7d3e",
+        "bytes": 5903,
+        "pass": true
+      },
+      "terrain/map-archive.js": {
+        "expected": "9842f2c654700b47af33b1f0585c1a7f83b0364df15871bcd2875a1a813ca56e",
+        "actual": "9842f2c654700b47af33b1f0585c1a7f83b0364df15871bcd2875a1a813ca56e",
+        "bytes": 9805,
+        "pass": true
+      },
+      "unity/Assets/MapSharedProps/Editor/SharedImportCache.cs": {
+        "expected": "8d3c51c09400e7e27db7fcff7ef13330573152b742c297ecd5eb050f1399cef7",
+        "actual": "8d3c51c09400e7e27db7fcff7ef13330573152b742c297ecd5eb050f1399cef7",
+        "bytes": 3948,
+        "pass": true
+      },
+      "unity/Assets/MapSharedProps/Editor/MapSharedPropsBuilder.cs": {
+        "expected": "c7bcb84de5060a4d90c5194587246c2d4cdbeb6f6c89cb9d42be66128e655bcc",
+        "actual": "c7bcb84de5060a4d90c5194587246c2d4cdbeb6f6c89cb9d42be66128e655bcc",
+        "bytes": 35466,
+        "pass": true
+      },
+      "unity/Assets/MapSharedProps/Editor/SmallPropsV1.cs": {
+        "expected": "528dba0c5b8097dacf3f5ea29c915c2856419c2400b1410acb87d47643056df6",
+        "actual": "528dba0c5b8097dacf3f5ea29c915c2856419c2400b1410acb87d47643056df6",
+        "bytes": 22595,
+        "pass": true
+      },
+      "unity/Assets/MapSharedProps/Editor/SharedAssetFiles.cs": {
+        "expected": "63c7a78fb62973de99b3f474a4acf93dd119fcf3cb99b3c5631d7b05db3cd3ca",
+        "actual": "63c7a78fb62973de99b3f474a4acf93dd119fcf3cb99b3c5631d7b05db3cd3ca",
+        "bytes": 7218,
+        "pass": true
+      },
+      "release.json": {
+        "expected": "4e02d4cb6609073ac090e665d108c468a1250467d982480611e8744b99f8d264",
+        "actual": "4e02d4cb6609073ac090e665d108c468a1250467d982480611e8744b99f8d264",
+        "bytes": 7429,
+        "pass": true
+      }
+    }
+  },
+  "currentPublicOperations": {
+    "pass": true,
+    "pure": [
+      "three straights",
+      "replace provisional tail with -1 turn",
+      "actual mesh port -1",
+      "actual mesh port -1",
+      "actual mesh port -1",
+      "actual mesh port -1",
+      "actual mesh port -1",
+      "actual mesh port -1",
+      "continuous -1 1",
+      "continuous -1 2",
+      "replace provisional tail with 1 turn",
+      "actual mesh port 1",
+      "actual mesh port 1",
+      "actual mesh port 1",
+      "actual mesh port 1",
+      "actual mesh port 1",
+      "actual mesh port 1",
+      "continuous 1 1",
+      "continuous 1 2",
+      "two successive bends",
+      "four curves closed loop",
+      "closed loop stable on pointer release",
+      "retract to earlier endpoint",
+      "existing start sets outward tangent",
+      "finish at matching existing port",
+      "perpendicular end rejected",
+      "end scale mismatch rejected",
+      "end height mismatch rejected",
+      "duplicate/interior overlap rejected",
+      "occupied start rejected",
+      "uneven ground rejected",
+      "impossible short sideways move rejected",
+      "scale and QE heading",
+      "bounded stroke",
+      "map bounds rejected",
+      "225 existing rail scene"
+    ],
+    "final": [
+      [
+        136,
+        2.184924952075562e-08,
+        -1.5200453340469267e-07,
+        0,
+        1,
+        0,
+        1,
+        0
+      ],
+      [
+        136,
+        2.184924952075562e-08,
+        1.9999998479954666,
+        0,
+        1,
+        0,
+        1,
+        0
+      ],
+      [
+        136,
+        2.184924952075562e-08,
+        3.9999998479954666,
+        0,
+        1,
+        0,
+        1,
+        0
+      ],
+      [
+        137,
+        2.184924952075562e-08,
+        5.999999847995467,
+        0,
+        1,
+        0,
+        1,
+        0
+      ],
+      [
+        136,
+        2.0000000218492495,
+        7.999999847995467,
+        1.5707963267948966,
+        1,
+        0,
+        1,
+        0
+      ],
+      [
+        136,
+        4.0000000218492495,
+        7.999999847995467,
+        1.5707963267948966,
+        1,
+        0,
+        1,
+        0
+      ]
+    ],
+    "reload": {
+      "success": true,
+      "equal": true,
+      "count": 6
+    },
+    "cancelModes": [
+      "escape",
+      "cancel",
+      "blur",
+      "type",
+      "tool",
+      "mode",
+      "capture"
+    ],
+    "oneStrokeOneUndo": true,
+    "dragScaleHeadingLocked": true,
+    "ordinaryPropUnchanged": true,
+    "undergroundFloor": true,
+    "timing": {
+      "existing": 225,
+      "maxStroke": 64,
+      "updateMedianMs": 0.5,
+      "updateMaxMs": 1.100000023841858,
+      "gpuMeasured": false
+    },
+    "errors": [],
+    "privateHeadless": true,
+    "gui": false
+  },
+  "keyOnlyRepack": {
+    "pass": true,
+    "rows": [
+      {
+        "kind": "sample",
+        "oldFile": "sample-64-7-a155aa274a1a.js",
+        "file": "sample-64-7-eacb7f0a138f.js",
+        "decodedDataExceptKeyUnchanged": true,
+        "rockRegeneration": 0,
+        "bytes": 10688134
+      },
+      {
+        "kind": "sample2",
+        "oldFile": "sample2-48-11-a877d168eaa8.js",
+        "file": "sample2-48-11-43067d91b9dc.js",
+        "decodedDataExceptKeyUnchanged": true,
+        "rockRegeneration": 0,
+        "bytes": 6290048
+      }
+    ]
+  },
+  "scope": {
+    "unity208Executed": false,
+    "unity206NotReusedAs208": true,
+    "glass206Excluded": true,
+    "pushAttempted": false,
+    "gpuMeasured": false,
+    "mobileTested": false,
+    "playerTested": false
+  },
+  "independentReview": {
+    "newP1P2": false,
+    "mergeStaticValid": true,
+    "publicationGate": "One formal Unity compile/import and Prefab/Scene reload of merged importer required; not authorized yet."
+  },
+  "failuresBeforeCorrection": [
+    "Old prepared-key-audit harness did not serve current dynamic assets: __app undefined; replaced only diagnostic harness with complete local asset server.",
+    "First fixed bundle validation failed due stale embedded key; reencoded key only and asserted full decoded data except key unchanged.",
+    "Mixed harness helper hash was missing after relocation; fixed helper/path and retained original cart-payload byte hash checks."
+  ]
+}

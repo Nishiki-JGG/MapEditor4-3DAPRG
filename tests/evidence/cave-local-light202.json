@@ -1,0 +1,585 @@
+{
+  "base": "8a19566b80f533b52ec2e8f712a027c8b2198977",
+  "sourceSHA256": "a2e99b977960d85ab1f5a0728aa6c0e98cfcec8be34b056bca1f1f36fa8d3148",
+  "webAssetSHA256": "5939db717735b0bc3400f5decf360bc3e6aaec12c75f0abbbb26c616269ba57c",
+  "diagnostic": {
+    "pass": true,
+    "rows": [
+      {
+        "id": "cnd001",
+        "mode": "0",
+        "light": "off",
+        "before": 0.0,
+        "after": 0.0,
+        "exact": true
+      },
+      {
+        "id": "cnd001",
+        "mode": "0",
+        "light": "ambient",
+        "before": 0.0001649797341087833,
+        "after": 0.0001649797341087833,
+        "exact": true
+      },
+      {
+        "id": "cnd001",
+        "mode": "0",
+        "light": "day",
+        "before": 0.002375045558437705,
+        "after": 0.002375045558437705,
+        "exact": true
+      },
+      {
+        "id": "cnd001",
+        "mode": "0",
+        "light": "point",
+        "before": 0.0,
+        "after": 0.001607669168151915,
+        "exact": false
+      },
+      {
+        "id": "cnd001",
+        "mode": "0",
+        "light": "far",
+        "before": 0.0,
+        "after": 0.00015170358528848737,
+        "exact": false
+      },
+      {
+        "id": "cnd001",
+        "mode": "0",
+        "light": "spot",
+        "before": 0.0,
+        "after": 0.001607669168151915,
+        "exact": false
+      },
+      {
+        "id": "cnd001",
+        "mode": "0",
+        "light": "spotOutside",
+        "before": 0.0,
+        "after": 0.0,
+        "exact": true
+      },
+      {
+        "id": "cnd001",
+        "mode": "0",
+        "light": "pointShadow",
+        "before": 0.0,
+        "after": 0.0,
+        "exact": true
+      },
+      {
+        "id": "cnd001",
+        "mode": "0",
+        "light": "spotShadow",
+        "before": 0.0,
+        "after": 0.0,
+        "exact": true
+      },
+      {
+        "id": "cnd014",
+        "mode": "0",
+        "light": "off",
+        "before": 0.0,
+        "after": 0.0,
+        "exact": true
+      },
+      {
+        "id": "cnd014",
+        "mode": "0",
+        "light": "ambient",
+        "before": 0.0018997065490111709,
+        "after": 0.0018997065490111709,
+        "exact": true
+      },
+      {
+        "id": "cnd014",
+        "mode": "0",
+        "light": "day",
+        "before": 0.01296077761799097,
+        "after": 0.01296077761799097,
+        "exact": true
+      },
+      {
+        "id": "cnd014",
+        "mode": "0",
+        "light": "point",
+        "before": 0.0,
+        "after": 0.009670260362327099,
+        "exact": false
+      },
+      {
+        "id": "cnd014",
+        "mode": "0",
+        "light": "far",
+        "before": 0.0,
+        "after": 0.0015236928593367338,
+        "exact": false
+      },
+      {
+        "id": "cnd014",
+        "mode": "0",
+        "light": "spot",
+        "before": 0.0,
+        "after": 0.009670260362327099,
+        "exact": false
+      },
+      {
+        "id": "cnd014",
+        "mode": "0",
+        "light": "spotOutside",
+        "before": 0.0,
+        "after": 0.0,
+        "exact": true
+      },
+      {
+        "id": "cnd014",
+        "mode": "0",
+        "light": "pointShadow",
+        "before": 0.0,
+        "after": 0.0,
+        "exact": true
+      },
+      {
+        "id": "cnd014",
+        "mode": "0",
+        "light": "spotShadow",
+        "before": 0.0,
+        "after": 0.0,
+        "exact": true
+      },
+      {
+        "id": "cnd020",
+        "mode": "0",
+        "light": "off",
+        "before": 0.0,
+        "after": 0.0,
+        "exact": true
+      },
+      {
+        "id": "cnd020",
+        "mode": "0",
+        "light": "ambient",
+        "before": 0.0013215551152825356,
+        "after": 0.0013215551152825356,
+        "exact": true
+      },
+      {
+        "id": "cnd020",
+        "mode": "0",
+        "light": "day",
+        "before": 0.014827607199549675,
+        "after": 0.014827607199549675,
+        "exact": true
+      },
+      {
+        "id": "cnd020",
+        "mode": "0",
+        "light": "point",
+        "before": 0.0,
+        "after": 0.004102056380361319,
+        "exact": false
+      },
+      {
+        "id": "cnd020",
+        "mode": "0",
+        "light": "far",
+        "before": 0.0,
+        "after": 0.0012202176731079817,
+        "exact": false
+      },
+      {
+        "id": "cnd020",
+        "mode": "0",
+        "light": "spot",
+        "before": 0.0,
+        "after": 0.004102056380361319,
+        "exact": false
+      },
+      {
+        "id": "cnd020",
+        "mode": "0",
+        "light": "spotOutside",
+        "before": 0.0,
+        "after": 0.0,
+        "exact": true
+      },
+      {
+        "id": "cnd020",
+        "mode": "0",
+        "light": "pointShadow",
+        "before": 0.0,
+        "after": 0.0,
+        "exact": true
+      },
+      {
+        "id": "cnd020",
+        "mode": "0",
+        "light": "spotShadow",
+        "before": 0.0,
+        "after": 0.0,
+        "exact": true
+      },
+      {
+        "id": "cnd001",
+        "mode": "2",
+        "light": "off",
+        "before": 0.0,
+        "after": 0.0,
+        "exact": true
+      },
+      {
+        "id": "cnd001",
+        "mode": "2",
+        "light": "ambient",
+        "before": 0.0001649797341087833,
+        "after": 0.0001649797341087833,
+        "exact": true
+      },
+      {
+        "id": "cnd001",
+        "mode": "2",
+        "light": "day",
+        "before": 0.002375045558437705,
+        "after": 0.002375045558437705,
+        "exact": true
+      },
+      {
+        "id": "cnd001",
+        "mode": "2",
+        "light": "point",
+        "before": 0.0,
+        "after": 0.001607669168151915,
+        "exact": false
+      },
+      {
+        "id": "cnd001",
+        "mode": "2",
+        "light": "far",
+        "before": 0.0,
+        "after": 0.00015170358528848737,
+        "exact": false
+      },
+      {
+        "id": "cnd001",
+        "mode": "2",
+        "light": "spot",
+        "before": 0.0,
+        "after": 0.001607669168151915,
+        "exact": false
+      },
+      {
+        "id": "cnd001",
+        "mode": "2",
+        "light": "spotOutside",
+        "before": 0.0,
+        "after": 0.0,
+        "exact": true
+      },
+      {
+        "id": "cnd001",
+        "mode": "2",
+        "light": "pointShadow",
+        "before": 0.0,
+        "after": 0.0,
+        "exact": true
+      },
+      {
+        "id": "cnd001",
+        "mode": "2",
+        "light": "spotShadow",
+        "before": 0.0,
+        "after": 0.0,
+        "exact": true
+      },
+      {
+        "id": "cnd014",
+        "mode": "2",
+        "light": "off",
+        "before": 0.0,
+        "after": 0.0,
+        "exact": true
+      },
+      {
+        "id": "cnd014",
+        "mode": "2",
+        "light": "ambient",
+        "before": 0.0018997065490111709,
+        "after": 0.0018997065490111709,
+        "exact": true
+      },
+      {
+        "id": "cnd014",
+        "mode": "2",
+        "light": "day",
+        "before": 0.01296077761799097,
+        "after": 0.01296077761799097,
+        "exact": true
+      },
+      {
+        "id": "cnd014",
+        "mode": "2",
+        "light": "point",
+        "before": 0.0,
+        "after": 0.009670260362327099,
+        "exact": false
+      },
+      {
+        "id": "cnd014",
+        "mode": "2",
+        "light": "far",
+        "before": 0.0,
+        "after": 0.0015236928593367338,
+        "exact": false
+      },
+      {
+        "id": "cnd014",
+        "mode": "2",
+        "light": "spot",
+        "before": 0.0,
+        "after": 0.009670260362327099,
+        "exact": false
+      },
+      {
+        "id": "cnd014",
+        "mode": "2",
+        "light": "spotOutside",
+        "before": 0.0,
+        "after": 0.0,
+        "exact": true
+      },
+      {
+        "id": "cnd014",
+        "mode": "2",
+        "light": "pointShadow",
+        "before": 0.0,
+        "after": 0.0,
+        "exact": true
+      },
+      {
+        "id": "cnd014",
+        "mode": "2",
+        "light": "spotShadow",
+        "before": 0.0,
+        "after": 0.0,
+        "exact": true
+      },
+      {
+        "id": "cnd020",
+        "mode": "2",
+        "light": "off",
+        "before": 0.0,
+        "after": 0.0,
+        "exact": true
+      },
+      {
+        "id": "cnd020",
+        "mode": "2",
+        "light": "ambient",
+        "before": 0.0013215551152825356,
+        "after": 0.0013215551152825356,
+        "exact": true
+      },
+      {
+        "id": "cnd020",
+        "mode": "2",
+        "light": "day",
+        "before": 0.014827607199549675,
+        "after": 0.014827607199549675,
+        "exact": true
+      },
+      {
+        "id": "cnd020",
+        "mode": "2",
+        "light": "point",
+        "before": 0.0,
+        "after": 0.004102056380361319,
+        "exact": false
+      },
+      {
+        "id": "cnd020",
+        "mode": "2",
+        "light": "far",
+        "before": 0.0,
+        "after": 0.0012202176731079817,
+        "exact": false
+      },
+      {
+        "id": "cnd020",
+        "mode": "2",
+        "light": "spot",
+        "before": 0.0,
+        "after": 0.004102056380361319,
+        "exact": false
+      },
+      {
+        "id": "cnd020",
+        "mode": "2",
+        "light": "spotOutside",
+        "before": 0.0,
+        "after": 0.0,
+        "exact": true
+      },
+      {
+        "id": "cnd020",
+        "mode": "2",
+        "light": "pointShadow",
+        "before": 0.0,
+        "after": 0.0,
+        "exact": true
+      },
+      {
+        "id": "cnd020",
+        "mode": "2",
+        "light": "spotShadow",
+        "before": 0.0,
+        "after": 0.0,
+        "exact": true
+      }
+    ],
+    "scope": "Existing formal baseline cnd001/014/020; only cloned material keyword toggled in memory; no product/source/assets saved"
+  },
+  "formal": {
+    "pass": true,
+    "formalPrefabs": 20,
+    "placed": 20,
+    "triangles": 1123,
+    "materials": 20,
+    "textures": 1,
+    "colliders": 0,
+    "prefabSceneReload": true,
+    "folder": "Assets/MapSharedPropsGenerated/Pilot 23",
+    "loads": [
+      {
+        "count": 9,
+        "visible": 9,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 1,
+        "meshBytes": 14976,
+        "cpuMedianMs": 0.45430000000000004
+      },
+      {
+        "count": 225,
+        "visible": 223,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 1,
+        "meshBytes": 14976,
+        "cpuMedianMs": 0.7506
+      }
+    ],
+    "limits": [
+      "Exact cave-decoration20 route only; old small-prop55 preserved by separate201 checks and static code branch exclusion",
+      "Native cave pack is existing visual-only route: zero Collider, not newly removed",
+      "Forward/Forward+ point/spot/SH/main/off/shadow diagnostic202; vertex-light mode untested",
+      "CPU Camera.Render short samples only; GPU/mobile/Player not tested",
+      "No new Web assets/export schema; existing Web output unchanged"
+    ]
+  },
+  "oppositeAzimuthSameWind": {
+    "pass": true,
+    "rows": [
+      {
+        "side": "front",
+        "light": "point",
+        "before": 0.0,
+        "after": 0.005303589161485434,
+        "exact": false
+      },
+      {
+        "side": "front",
+        "light": "day",
+        "before": 0.007876498624682426,
+        "after": 0.007876498624682426,
+        "exact": true
+      },
+      {
+        "side": "front",
+        "light": "off",
+        "before": 0.0,
+        "after": 0.0,
+        "exact": true
+      },
+      {
+        "side": "back",
+        "light": "point",
+        "before": 0.0,
+        "after": 0.0053025828674435616,
+        "exact": false
+      },
+      {
+        "side": "back",
+        "light": "day",
+        "before": 0.007627012673765421,
+        "after": 0.007627012673765421,
+        "exact": true
+      },
+      {
+        "side": "back",
+        "light": "off",
+        "before": 0.0,
+        "after": 0.0,
+        "exact": true
+      }
+    ],
+    "scope": "Formal old/new fern; front/back; same nonzero wind vector and time; main/off exact"
+  },
+  "actualBackface": {
+    "pass": true,
+    "before": 0.0,
+    "after": 0.04126744717359543,
+    "litPixels": 30996,
+    "condition": "Camera and point light below fern; diagnostic cloned material culls all front faces, so only back-facing triangles contribute; fixed nonzero wind; no product material saved"
+  },
+  "loadBefore": [
+    {
+      "count": 9,
+      "visible": 9,
+      "meshes": 1,
+      "materials": 1,
+      "textures": 1,
+      "meshBytes": 14976,
+      "cpuMedianMs": 0.5173
+    },
+    {
+      "count": 225,
+      "visible": 223,
+      "meshes": 1,
+      "materials": 1,
+      "textures": 1,
+      "meshBytes": 14976,
+      "cpuMedianMs": 0.7961
+    }
+  ],
+  "loadAfter": [
+    {
+      "count": 9,
+      "visible": 9,
+      "meshes": 1,
+      "materials": 1,
+      "textures": 1,
+      "meshBytes": 14976,
+      "cpuMedianMs": 0.5045000000000001
+    },
+    {
+      "count": 225,
+      "visible": 223,
+      "meshes": 1,
+      "materials": 1,
+      "textures": 1,
+      "meshBytes": 14976,
+      "cpuMedianMs": 0.7596
+    }
+  ],
+  "independentReview": {
+    "adoptionSupported": true,
+    "newP1P2Found": false,
+    "newAssetArtScore": null,
+    "note": "Existing importer defect repair; rejected log geometry not adopted; opposite azimuth caveat closed by front-cull diagnostic"
+  },
+  "networkAttempted": false,
+  "publicStatus": "not pushed; network blocker retained",
+  "fixedRockRegenerated": 0
+}
