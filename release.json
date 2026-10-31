@@ -1,7 +1,7 @@
 {
-  "release": "map-reference-storage-v2-20261031",
+  "release": "startup-sample-compatibility-20261031",
   "files": {
-    "app.js": "af8da656d88bdac9b2c76ec20f3f8ee83f53e4815f6b33678f23fd50996e1229",
+    "app.js": "ddc7e3819e28c85048c5c2727761dd5df146c18f7d546018959b1a83a0651524",
     "props/chest-presentation.js": "fcc605e14c0ed96d5292607515a829fd94f156d24b084cacaadeadc9e41f629e",
     "props/chest-surface.js": "85ca3008dadb83fdf87691b5835cc7590e4b0e800bcf1827a0ad02719e343646",
     "props/chest-relief.js": "0938b91c27d0fdedf4cd49ca8c46eb9a4e6eb887c403c3743f8496aa76094cac",
@@ -41,7 +41,7 @@
     "unity/Assets/MapSharedProps/Editor/MineSpoilV1.cs": "4d61dd750934ec7d54b23045fccfcbb288fc6f63a902c648ddf1157bc29f1793",
     "props/cave-decor.js": "db1e9fabae542080bd90e5fa2d48ab83b5653427bcf5bfa493490aebb7f0a781",
     "props/shared/cave-decor-data.js": "e24a4aee5e6e0b83b22d21283afdb822789331614a5951175eb833457b5ca642",
-    "index.html": "98903416aebeb1d04be1603f55891cd6723a724dfe6fdece604463c38b3344e1",
+    "index.html": "5429901baa5a0efe511dbe1480b9c495fd429de2d9ea53bca9fe34aac8501c32",
     "prepared/manifest.js": "d070377762fb920fd604f556243b4334abe8352d370b8db642a88748cb750851",
     "terrain/cliff-shoulder.js": "71e49d1ee7d85f2164431f9a23bde42d1c07daf472c4f6960124d98c3ee91094",
     "props/mine-collapse.js": "f4abf116daed734e0c1908b824fbe8364c6c387b4e25b7d38f17ff9792537c09",

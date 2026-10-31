@@ -5995,8 +5995,11 @@ function installWalkPreparation(w){
  const pos=wkGeo.attributes.position.array;for(let j=0;j<N;j++)for(let i=0;i<N;i++){const k=idx(i,j);pos[k*3]=vx(i);pos[k*3+1]=Math.max(H[k],state.water)+.06;pos[k*3+2]=vx(j);}
  for(const n of ['position','walk','forced','secret'])wkGeo.attributes[n].needsUpdate=true;wkGeo.computeBoundingSphere();walkDirty=false;
 }
+// Download cache versions and completed-sample compatibility are separate.
+// A data-preparation-key changes only when this script changes generation/collision semantics.
+// Actual model positions/indices and agent/profile settings are still hashed below.
 async function preparationKey(kind,seed,job){
- const config=JSON.stringify([kind,seed,SIZE,kind==='sample2'?'ruins':state.biome,state.agent,state.cliffStyle,state.catalog,TDPreparation.version,TDPreparedSamples.recipeVersion,[...document.scripts].filter(s=>!s.dataset.preparedSample&&!s.hasAttribute('data-presentation-only')).map(s=>(s.getAttribute('src')||'').replace(/&mapArchive=[a-z0-9-]+/,'').replace(/&collapsePBR=[a-f0-9]+/,'').replace(/&wallLamp=[a-f0-9]+/,'').replace(/&cobweb=[a-f0-9]+/,'').replace(/&mineCartLoad=[a-f0-9]+/,'').replace(/&cutRockSurface=[a-f0-9]+/,'').replace('moon-reflection1&','').replace('time-of-day1&','').replace(/app.js\?(walltorch1|firequality1)&/,'app.js?public-label1&')).filter(Boolean)]);
+ const config=JSON.stringify([kind,seed,SIZE,kind==='sample2'?'ruins':state.biome,state.agent,state.cliffStyle,state.catalog,TDPreparation.version,TDPreparedSamples.recipeVersion,[...document.scripts].filter(s=>!s.dataset.preparedSample&&!s.hasAttribute('data-presentation-only')).map(s=>(s.dataset.preparationKey||s.getAttribute('src')||'').replace(/&mapArchive=[a-z0-9-]+/,'').replace(/&collapsePBR=[a-f0-9]+/,'').replace(/&wallLamp=[a-f0-9]+/,'').replace(/&cobweb=[a-f0-9]+/,'').replace(/&mineCartLoad=[a-f0-9]+/,'').replace(/&cutRockSurface=[a-f0-9]+/,'').replace('moon-reflection1&','').replace('time-of-day1&','').replace(/app.js\?(walltorch1|firequality1)&/,'app.js?public-label1&')).filter(Boolean)]);
  if(preparationKeys.has(config))return preparationKeys.get(config);
  const hashes=[];
  await TDPreparation.each(PROP,async t=>{if(t.r<=0||t.manualOnly)return;const prep=t.preparationGeo||t.geo,a=prep.attributes.position.array,ix=prep.index?.array;const hash=async a=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new Uint8Array(a.buffer,a.byteOffset,a.byteLength))),v=>v.toString(16).padStart(2,'0')).join('');hashes.push([t.id,t.r,t.height,t.yawOffset,await hash(a),ix?await hash(ix):'']);},job);

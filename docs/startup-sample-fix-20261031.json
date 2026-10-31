@@ -1,0 +1,93 @@
+{
+  "tests": [
+    {
+      "kind": "sample",
+      "run": "cold",
+      "stats": {
+        "kind": "sample",
+        "seed": 7,
+        "cacheHit": false,
+        "persistent": true,
+        "persistentStored": true,
+        "preparedSource": "bundle",
+        "bundleBytes": 8016053,
+        "walkReused": true,
+        "elapsedMs": 9037.899999976158,
+        "firstRenderMs": 218.60000002384186,
+        "props": 5761,
+        "fits": 552,
+        "fitStats": null
+      },
+      "errors": [],
+      "gl": 0,
+      "totalMs": 11425.099999904633
+    },
+    {
+      "kind": "sample",
+      "run": "reload",
+      "stats": {
+        "kind": "sample",
+        "seed": 7,
+        "cacheHit": true,
+        "persistent": false,
+        "persistentStored": false,
+        "preparedSource": "cache",
+        "bundleBytes": 0,
+        "walkReused": true,
+        "elapsedMs": 1442.1000000238419,
+        "firstRenderMs": 112.79999995231628,
+        "props": 5761,
+        "fits": 552,
+        "fitStats": null
+      },
+      "errors": [],
+      "gl": 0,
+      "totalMs": 3850.2000000476837
+    },
+    {
+      "kind": "sample2",
+      "run": "cold",
+      "stats": {
+        "kind": "sample2",
+        "seed": 11,
+        "cacheHit": false,
+        "persistent": true,
+        "persistentStored": true,
+        "preparedSource": "bundle",
+        "bundleBytes": 4717488,
+        "walkReused": true,
+        "elapsedMs": 7358.399999976158,
+        "firstRenderMs": 153,
+        "props": 536,
+        "fits": 226,
+        "fitStats": null
+      },
+      "errors": [],
+      "gl": 0,
+      "totalMs": 9567.199999928474
+    },
+    {
+      "kind": "sample2",
+      "run": "reload",
+      "stats": {
+        "kind": "sample2",
+        "seed": 11,
+        "cacheHit": true,
+        "persistent": false,
+        "persistentStored": false,
+        "preparedSource": "cache",
+        "bundleBytes": 0,
+        "walkReused": true,
+        "elapsedMs": 873.5,
+        "firstRenderMs": 91.79999995231628,
+        "props": 536,
+        "fits": 226,
+        "fitStats": null
+      },
+      "errors": [],
+      "gl": 0,
+      "totalMs": 3076.899999976158
+    }
+  ],
+  "pass": true
+}
