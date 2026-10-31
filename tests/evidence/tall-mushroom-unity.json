@@ -1,0 +1,70 @@
+{
+    "pass": true,
+    "other19Exact": true,
+    "other19AtlasShared": true,
+    "prefabReload": true,
+    "sceneReload": true,
+    "boundsExact": true,
+    "colliderUnchanged": true,
+    "formalBefore": 20,
+    "formalAfter": 20,
+    "placedBefore": 20,
+    "placedAfter": 20,
+    "triBefore": 51,
+    "triAfter": 254,
+    "beforeFolder": "Assets/MapSharedPropsGenerated/Pilot 55",
+    "afterFolder": "Assets/MapSharedPropsGenerated/Pilot 56",
+    "loads": [
+        {
+            "stage": "before",
+            "count": 9,
+            "visible": 9,
+            "meshes": 1,
+            "materials": 1,
+            "textures": 1,
+            "triangles": 51,
+            "meshBytes": 6246,
+            "cpuMedianMs": 0.6184000000000001
+        },
+        {
+            "stage": "before",
+            "count": 225,
+            "visible": 225,
+            "meshes": 1,
+            "materials": 1,
+            "textures": 1,
+            "triangles": 51,
+            "meshBytes": 6246,
+            "cpuMedianMs": 0.638
+        },
+        {
+            "stage": "after",
+            "count": 9,
+            "visible": 9,
+            "meshes": 1,
+            "materials": 1,
+            "textures": 1,
+            "triangles": 254,
+            "meshBytes": 9752,
+            "cpuMedianMs": 0.5538000000000001
+        },
+        {
+            "stage": "after",
+            "count": 225,
+            "visible": 225,
+            "meshes": 1,
+            "materials": 1,
+            "textures": 1,
+            "triangles": 254,
+            "meshBytes": 9752,
+            "cpuMedianMs": 0.7124
+        }
+    ],
+    "limits": [
+        "Cave-decoration20 formal route, not whole catalog reimport",
+        "Existing cave decorative prefabs are visual-only; Web existing IDs/placement collider tested separately",
+        "GPU/mobile/Player not measured",
+        "CPU Camera.Render samples are diagnostic only",
+        "Mushrooms manually placed on existing mine floor; no game scene modified"
+    ]
+}

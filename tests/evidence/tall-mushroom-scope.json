@@ -1,0 +1,28 @@
+{
+  "productSHA256": "d964eefecf59b322bcf5bc0a7248c75474afdad88f6f17d3df55a6a0abca0188",
+  "baseline": "43315a98da4a06c651ed0b17d39ab837721a2258",
+  "formal": "Evidence224 formal20 before/after, Prefab/Scene reload, same-scene real mine, lighting, 9/225 sharing",
+  "exitCode": 0,
+  "dedicatedEditorEnded": true,
+  "earlierCandidates": "220 independent90;221 independent91;222 self-rejected flat pigment;223 atlas overlap P2 and independent91. Only224 eligible.",
+  "earlier217and218": "Root shutdown c0000005 remains cause-unconfirmed; no event-log retry. 220-224 standard -quit all exit0, not proof of original cause.",
+  "triangles": [
+    51,
+    254
+  ],
+  "vertices": [
+    135,
+    187
+  ],
+  "meshBytesEstimate": [
+    6246,
+    9752
+  ],
+  "textureDelta": 1,
+  "textureNewPngBytes": 13675,
+  "newRGBA8MipEstimate": 87381,
+  "materialDelta": 0,
+  "other19Exact": true,
+  "gpuMobilePlayer": "not measured",
+  "publicDelivery": "Existing ERR_CERT_VERIFIER_CHANGED, not retried or bypassed; public UI/hash pending."
+}

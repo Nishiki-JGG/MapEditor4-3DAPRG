@@ -1,0 +1,29 @@
+{
+  "pass": true,
+  "beforeFailedAfterPassed": [
+    {
+      "revision": 223,
+      "gillSampleCount": 2289,
+      "contaminated": 195,
+      "knownTexel80x80": [
+        174,
+        130,
+        86,
+        255
+      ]
+    },
+    {
+      "revision": 224,
+      "gillSampleCount": 2289,
+      "contaminated": 0,
+      "knownTexel80x80": [
+        202,
+        179,
+        141,
+        255
+      ]
+    }
+  ],
+  "islandPaddingGapPx": 2.953318805774032,
+  "limits": "Coarse mips intentionally lose fine gill detail; visual near/far checks remain required."
+}

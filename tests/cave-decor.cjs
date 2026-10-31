@@ -8,7 +8,7 @@ const {withPage}=require(path.join(root,'tests/cdp.js'));
  A.rebuildProps();A.setPanel(false);A.cam.target.set(0,.6,0);A.cam.dist=17;A.cam.pitch=.82;A.cam.yaw=.15;A.update(0);A.render();})()`);
  await new Promise(r=>setTimeout(r,800));
  const info=await p.eval(`(()=>{const A=__app;A.render();A.render();return TDCaveDecor.ids.map(id=>{const t=A.PROP.findIndex(x=>x.id===id),m=A.propMeshes[t],g=m.geometry;return{id,triangles:g.index.count/3,count:m.count,textureLoaded:m.material.map.image.complete,cutoff:m.material.alphaTest,side:m.material.side,wind:!!TDSharedProps.asset(id).wind};});})()`);
- assert.equal(info.length,20);assert.equal(info.reduce((s,x)=>s+x.triangles,0),1381);assert(info.every(x=>x.count===1&&x.textureLoaded&&x.cutoff===.5&&x.side===2));
+ assert.equal(info.length,20);assert.equal(info.reduce((s,x)=>s+x.triangles,0),1584);assert(info.every(x=>x.count===1&&x.textureLoaded&&x.cutoff===.5&&x.side===2));
  await p.screenshot(path.join(out,'gallery.png'));
  // Save restores stable type IDs, transforms and authored mounting pivot height.
  const roundtrip=await p.eval(`(()=>{const A=__app;A.ensureIds();const before=JSON.stringify(A.props);A.deserialize(A.serialize());return before===JSON.stringify(A.props);})()`);assert(roundtrip);
@@ -34,7 +34,7 @@ const {withPage}=require(path.join(root,'tests/cdp.js'));
  const placed=await p.eval(`(()=>{const A=__app,p=A.props.at(-1);if(!p)return null;const t=A.PROP[p[0]],m=new THREE.Matrix4();A.propMeshes[p[0]].getMatrixAt(0,m);return{id:t.id,height:p[7],bottom:m.elements[13]+t.sourceMinY*p[4],ground:A.heightAt(p[1],p[2]),visible:!document.getElementById('caveDecorHeightRow').hidden};})()`);
  assert.equal(placed.id,'cnd012');assert(Math.abs(placed.bottom-placed.ground-1.2)<1e-5);assert(placed.visible);
  const gpu=await p.eval(`(()=>{const A=__app;A.render();return{gl:A.renderer.getContext().getError(),shaderErrors:A.renderer.info.programs.filter(p=>p.diagnostics?.runnable===false).length};})()`);assert.equal(gpu.gl,0);assert.equal(gpu.shaderErrors,0);assert.deepEqual(p.errors,[]);
- return{info,roundtrip,appendOnly,exported:20,atlasCount:2,packed,placed,gpu};
+ return{info,roundtrip,appendOnly,exported:20,atlasCount:lib.textures.filter(t=>lib.assets.some(a=>/^cnd/.test(a.id)&&a.material.texture===t.id)).length,packed,placed,gpu};
  },{hardware:true,wait:3000,w:1200,h:900,exactViewport:true,initScript:"sessionStorage.setItem('me_pending','flat');"});
  fs.writeFileSync(path.join(out,'RESULT.json'),JSON.stringify(result,null,2));console.log(JSON.stringify(result));
 })().catch(e=>{console.error(e);process.exitCode=1;});
