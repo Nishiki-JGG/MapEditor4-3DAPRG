@@ -1,0 +1,51 @@
+{
+  "productSHA256": "467bcb904da21105e3259548308f566f92eb7751b024c02af10bd50d323490b5",
+  "baselineCommit": "5651f75be2265792d81749ce1101ed57acca585a",
+  "independentScore": 92,
+  "independentBreakdown": [
+    27,
+    17,
+    19,
+    20,
+    9
+  ],
+  "triangles": [
+    58,
+    186
+  ],
+  "vertices": [
+    126,
+    155
+  ],
+  "cave20Triangles": [
+    1584,
+    1712
+  ],
+  "meshBytesEstimate": [
+    5892,
+    7936
+  ],
+  "texturesDelta": 0,
+  "materialsDelta": 0,
+  "reproductionExact": true,
+  "Unity237Exit": 0,
+  "fieldOcclusion": [
+    "before-close/0.22/none/1.907197/1.907197",
+    "before-close/1.15/none/1.665083/1.665083",
+    "before-close/2.05/none/1.89275/1.89275",
+    "before-opposite/0.22/none/1.586632/1.586632",
+    "before-opposite/1.15/none/1.285496/1.285496",
+    "before-opposite/2.05/none/1.569236/1.569236",
+    "after-close/0.22/none/1.907197/1.907197",
+    "after-close/1.15/none/1.665083/1.665083",
+    "after-close/2.05/none/1.89275/1.89275",
+    "after-opposite/0.22/none/1.586632/1.586632",
+    "after-opposite/1.15/none/1.285496/1.285496",
+    "after-opposite/2.05/none/1.569236/1.569236"
+  ],
+  "scope": "Cave20 formal import, actual mine, Prefab/Scene reload, 9/225 all visible; not all-catalog reimport",
+  "earlier236": "Close mine views obstructed/excluded, replaced by237",
+  "earlier217218": "Shutdown c0000005 remains unexplained",
+  "gpuMobilePlayer": "not measured",
+  "publicUIHash": "Pending existing ERR_CERT_VERIFIER_CHANGED; no retry/bypass"
+}

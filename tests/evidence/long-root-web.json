@@ -1,0 +1,716 @@
+{
+  "before": {
+    "pass": true,
+    "detail": {
+      "sameSave": true,
+      "sameCollision": true,
+      "collision": {
+        "cs": 4,
+        "m": {
+          "$map": [
+            [
+              19349663,
+              [
+                {
+                  "$array": [
+                    3.3109326345572465,
+                    5.876767837470152,
+                    0.2,
+                    0,
+                    0.5999999642372131
+                  ],
+                  "properties": {
+                    "prop": [
+                      163,
+                      4,
+                      6,
+                      270,
+                      1,
+                      0,
+                      1,
+                      0,
+                      "shelf-reg-19"
+                    ]
+                  }
+                },
+                {
+                  "$array": [
+                    3.6554663172786235,
+                    5.938383918735076,
+                    0.2,
+                    0,
+                    0.5999999642372131
+                  ],
+                  "properties": {
+                    "prop": [
+                      163,
+                      4,
+                      6,
+                      270,
+                      1,
+                      0,
+                      1,
+                      0,
+                      "shelf-reg-19"
+                    ]
+                  }
+                }
+              ]
+            ],
+            [
+              88192194,
+              [
+                {
+                  "$array": [
+                    4,
+                    6,
+                    0.2,
+                    0,
+                    0.5999999642372131
+                  ],
+                  "properties": {
+                    "prop": [
+                      163,
+                      4,
+                      6,
+                      270,
+                      1,
+                      0,
+                      1,
+                      0,
+                      "shelf-reg-19"
+                    ]
+                  }
+                },
+                {
+                  "$array": [
+                    4.3445336827213765,
+                    6.061616081264924,
+                    0.2,
+                    0,
+                    0.5999999642372131
+                  ],
+                  "properties": {
+                    "prop": [
+                      163,
+                      4,
+                      6,
+                      270,
+                      1,
+                      0,
+                      1,
+                      0,
+                      "shelf-reg-19"
+                    ]
+                  }
+                },
+                {
+                  "$array": [
+                    4.689067365442753,
+                    6.123232162529848,
+                    0.2,
+                    0,
+                    0.5999999642372131
+                  ],
+                  "properties": {
+                    "prop": [
+                      163,
+                      4,
+                      6,
+                      270,
+                      1,
+                      0,
+                      1,
+                      0,
+                      "shelf-reg-19"
+                    ]
+                  }
+                }
+              ]
+            ]
+          ]
+        }
+      },
+      "ids": [
+        144,
+        145,
+        146,
+        147,
+        148,
+        149,
+        150,
+        151,
+        152,
+        153,
+        154,
+        155,
+        156,
+        157,
+        158,
+        159,
+        160,
+        161,
+        162,
+        163
+      ],
+      "materials": [
+        {
+          "id": "cnd001",
+          "type": "MeshLambertMaterial",
+          "map": "ccfe972d-ecd3-44fd-8464-5f36de89242e",
+          "width": 512,
+          "height": 512,
+          "alphaTest": 0.5,
+          "side": 2
+        },
+        {
+          "id": "cnd002",
+          "type": "MeshLambertMaterial",
+          "map": "ccfe972d-ecd3-44fd-8464-5f36de89242e",
+          "width": 512,
+          "height": 512,
+          "alphaTest": 0.5,
+          "side": 2
+        },
+        {
+          "id": "cnd003",
+          "type": "MeshLambertMaterial",
+          "map": "ccfe972d-ecd3-44fd-8464-5f36de89242e",
+          "width": 512,
+          "height": 512,
+          "alphaTest": 0.5,
+          "side": 2
+        },
+        {
+          "id": "cnd004",
+          "type": "MeshLambertMaterial",
+          "map": "ccfe972d-ecd3-44fd-8464-5f36de89242e",
+          "width": 512,
+          "height": 512,
+          "alphaTest": 0.5,
+          "side": 2
+        },
+        {
+          "id": "cnd005",
+          "type": "MeshLambertMaterial",
+          "map": "ccfe972d-ecd3-44fd-8464-5f36de89242e",
+          "width": 512,
+          "height": 512,
+          "alphaTest": 0.5,
+          "side": 2
+        },
+        {
+          "id": "cnd006",
+          "type": "MeshLambertMaterial",
+          "map": "ccfe972d-ecd3-44fd-8464-5f36de89242e",
+          "width": 512,
+          "height": 512,
+          "alphaTest": 0.5,
+          "side": 2
+        },
+        {
+          "id": "cnd007",
+          "type": "MeshLambertMaterial",
+          "map": "ccfe972d-ecd3-44fd-8464-5f36de89242e",
+          "width": 512,
+          "height": 512,
+          "alphaTest": 0.5,
+          "side": 2
+        },
+        {
+          "id": "cnd008",
+          "type": "MeshLambertMaterial",
+          "map": "ccfe972d-ecd3-44fd-8464-5f36de89242e",
+          "width": 512,
+          "height": 512,
+          "alphaTest": 0.5,
+          "side": 2
+        },
+        {
+          "id": "cnd009",
+          "type": "MeshLambertMaterial",
+          "map": "ccfe972d-ecd3-44fd-8464-5f36de89242e",
+          "width": 512,
+          "height": 512,
+          "alphaTest": 0.5,
+          "side": 2
+        },
+        {
+          "id": "cnd010",
+          "type": "MeshLambertMaterial",
+          "map": "ccfe972d-ecd3-44fd-8464-5f36de89242e",
+          "width": 512,
+          "height": 512,
+          "alphaTest": 0.5,
+          "side": 2
+        },
+        {
+          "id": "cnd011",
+          "type": "MeshLambertMaterial",
+          "map": "ccfe972d-ecd3-44fd-8464-5f36de89242e",
+          "width": 512,
+          "height": 512,
+          "alphaTest": 0.5,
+          "side": 2
+        },
+        {
+          "id": "cnd012",
+          "type": "MeshLambertMaterial",
+          "map": "ccfe972d-ecd3-44fd-8464-5f36de89242e",
+          "width": 512,
+          "height": 512,
+          "alphaTest": 0.5,
+          "side": 2
+        },
+        {
+          "id": "cnd013",
+          "type": "MeshLambertMaterial",
+          "map": "ccfe972d-ecd3-44fd-8464-5f36de89242e",
+          "width": 512,
+          "height": 512,
+          "alphaTest": 0.5,
+          "side": 2
+        },
+        {
+          "id": "cnd014",
+          "type": "MeshLambertMaterial",
+          "map": "6d85c4be-ae79-46dd-8de6-396818180163",
+          "width": 128,
+          "height": 128,
+          "alphaTest": 0.5,
+          "side": 2
+        },
+        {
+          "id": "cnd015",
+          "type": "MeshLambertMaterial",
+          "map": "45580164-683d-4625-a630-6be4eb5c8493",
+          "width": 128,
+          "height": 128,
+          "alphaTest": 0.5,
+          "side": 2
+        },
+        {
+          "id": "cnd016",
+          "type": "MeshLambertMaterial",
+          "map": "ccfe972d-ecd3-44fd-8464-5f36de89242e",
+          "width": 512,
+          "height": 512,
+          "alphaTest": 0.5,
+          "side": 2
+        },
+        {
+          "id": "cnd017",
+          "type": "MeshLambertMaterial",
+          "map": "ccfe972d-ecd3-44fd-8464-5f36de89242e",
+          "width": 512,
+          "height": 512,
+          "alphaTest": 0.5,
+          "side": 2
+        },
+        {
+          "id": "cnd018",
+          "type": "MeshLambertMaterial",
+          "map": "ccfe972d-ecd3-44fd-8464-5f36de89242e",
+          "width": 512,
+          "height": 512,
+          "alphaTest": 0.5,
+          "side": 2
+        },
+        {
+          "id": "cnd019",
+          "type": "MeshLambertMaterial",
+          "map": "ccfe972d-ecd3-44fd-8464-5f36de89242e",
+          "width": 512,
+          "height": 512,
+          "alphaTest": 0.5,
+          "side": 2
+        },
+        {
+          "id": "cnd020",
+          "type": "MeshLambertMaterial",
+          "map": "ccfe972d-ecd3-44fd-8464-5f36de89242e",
+          "width": 512,
+          "height": 512,
+          "alphaTest": 0.5,
+          "side": 2
+        }
+      ]
+    },
+    "shares": [
+      {
+        "count": 9,
+        "instanced": true,
+        "geometry": "5d9e2a74-68f1-432c-b0f1-fea7a22ec106",
+        "material": "408863be-d058-4209-a901-792945540588",
+        "texture": "ccfe972d-ecd3-44fd-8464-5f36de89242e",
+        "gl": 0
+      },
+      {
+        "count": 225,
+        "instanced": true,
+        "geometry": "5d9e2a74-68f1-432c-b0f1-fea7a22ec106",
+        "material": "408863be-d058-4209-a901-792945540588",
+        "texture": "ccfe972d-ecd3-44fd-8464-5f36de89242e",
+        "gl": 0
+      }
+    ],
+    "errors": []
+  },
+  "after": {
+    "pass": true,
+    "detail": {
+      "sameSave": true,
+      "sameCollision": true,
+      "collision": {
+        "cs": 4,
+        "m": {
+          "$map": [
+            [
+              19349663,
+              [
+                {
+                  "$array": [
+                    3.3109326345572465,
+                    5.876767837470152,
+                    0.2,
+                    0,
+                    0.5999999642372131
+                  ],
+                  "properties": {
+                    "prop": [
+                      163,
+                      4,
+                      6,
+                      270,
+                      1,
+                      0,
+                      1,
+                      0,
+                      "shelf-reg-19"
+                    ]
+                  }
+                },
+                {
+                  "$array": [
+                    3.6554663172786235,
+                    5.938383918735076,
+                    0.2,
+                    0,
+                    0.5999999642372131
+                  ],
+                  "properties": {
+                    "prop": [
+                      163,
+                      4,
+                      6,
+                      270,
+                      1,
+                      0,
+                      1,
+                      0,
+                      "shelf-reg-19"
+                    ]
+                  }
+                }
+              ]
+            ],
+            [
+              88192194,
+              [
+                {
+                  "$array": [
+                    4,
+                    6,
+                    0.2,
+                    0,
+                    0.5999999642372131
+                  ],
+                  "properties": {
+                    "prop": [
+                      163,
+                      4,
+                      6,
+                      270,
+                      1,
+                      0,
+                      1,
+                      0,
+                      "shelf-reg-19"
+                    ]
+                  }
+                },
+                {
+                  "$array": [
+                    4.3445336827213765,
+                    6.061616081264924,
+                    0.2,
+                    0,
+                    0.5999999642372131
+                  ],
+                  "properties": {
+                    "prop": [
+                      163,
+                      4,
+                      6,
+                      270,
+                      1,
+                      0,
+                      1,
+                      0,
+                      "shelf-reg-19"
+                    ]
+                  }
+                },
+                {
+                  "$array": [
+                    4.689067365442753,
+                    6.123232162529848,
+                    0.2,
+                    0,
+                    0.5999999642372131
+                  ],
+                  "properties": {
+                    "prop": [
+                      163,
+                      4,
+                      6,
+                      270,
+                      1,
+                      0,
+                      1,
+                      0,
+                      "shelf-reg-19"
+                    ]
+                  }
+                }
+              ]
+            ]
+          ]
+        }
+      },
+      "ids": [
+        144,
+        145,
+        146,
+        147,
+        148,
+        149,
+        150,
+        151,
+        152,
+        153,
+        154,
+        155,
+        156,
+        157,
+        158,
+        159,
+        160,
+        161,
+        162,
+        163
+      ],
+      "materials": [
+        {
+          "id": "cnd001",
+          "type": "MeshLambertMaterial",
+          "map": "1e718d07-ea1a-40e9-aecd-4a30145422b1",
+          "width": 512,
+          "height": 512,
+          "alphaTest": 0.5,
+          "side": 2
+        },
+        {
+          "id": "cnd002",
+          "type": "MeshLambertMaterial",
+          "map": "1e718d07-ea1a-40e9-aecd-4a30145422b1",
+          "width": 512,
+          "height": 512,
+          "alphaTest": 0.5,
+          "side": 2
+        },
+        {
+          "id": "cnd003",
+          "type": "MeshLambertMaterial",
+          "map": "1e718d07-ea1a-40e9-aecd-4a30145422b1",
+          "width": 512,
+          "height": 512,
+          "alphaTest": 0.5,
+          "side": 2
+        },
+        {
+          "id": "cnd004",
+          "type": "MeshLambertMaterial",
+          "map": "1e718d07-ea1a-40e9-aecd-4a30145422b1",
+          "width": 512,
+          "height": 512,
+          "alphaTest": 0.5,
+          "side": 2
+        },
+        {
+          "id": "cnd005",
+          "type": "MeshLambertMaterial",
+          "map": "1e718d07-ea1a-40e9-aecd-4a30145422b1",
+          "width": 512,
+          "height": 512,
+          "alphaTest": 0.5,
+          "side": 2
+        },
+        {
+          "id": "cnd006",
+          "type": "MeshLambertMaterial",
+          "map": "1e718d07-ea1a-40e9-aecd-4a30145422b1",
+          "width": 512,
+          "height": 512,
+          "alphaTest": 0.5,
+          "side": 2
+        },
+        {
+          "id": "cnd007",
+          "type": "MeshLambertMaterial",
+          "map": "1e718d07-ea1a-40e9-aecd-4a30145422b1",
+          "width": 512,
+          "height": 512,
+          "alphaTest": 0.5,
+          "side": 2
+        },
+        {
+          "id": "cnd008",
+          "type": "MeshLambertMaterial",
+          "map": "1e718d07-ea1a-40e9-aecd-4a30145422b1",
+          "width": 512,
+          "height": 512,
+          "alphaTest": 0.5,
+          "side": 2
+        },
+        {
+          "id": "cnd009",
+          "type": "MeshLambertMaterial",
+          "map": "1e718d07-ea1a-40e9-aecd-4a30145422b1",
+          "width": 512,
+          "height": 512,
+          "alphaTest": 0.5,
+          "side": 2
+        },
+        {
+          "id": "cnd010",
+          "type": "MeshLambertMaterial",
+          "map": "1e718d07-ea1a-40e9-aecd-4a30145422b1",
+          "width": 512,
+          "height": 512,
+          "alphaTest": 0.5,
+          "side": 2
+        },
+        {
+          "id": "cnd011",
+          "type": "MeshLambertMaterial",
+          "map": "1e718d07-ea1a-40e9-aecd-4a30145422b1",
+          "width": 512,
+          "height": 512,
+          "alphaTest": 0.5,
+          "side": 2
+        },
+        {
+          "id": "cnd012",
+          "type": "MeshLambertMaterial",
+          "map": "1e718d07-ea1a-40e9-aecd-4a30145422b1",
+          "width": 512,
+          "height": 512,
+          "alphaTest": 0.5,
+          "side": 2
+        },
+        {
+          "id": "cnd013",
+          "type": "MeshLambertMaterial",
+          "map": "1e718d07-ea1a-40e9-aecd-4a30145422b1",
+          "width": 512,
+          "height": 512,
+          "alphaTest": 0.5,
+          "side": 2
+        },
+        {
+          "id": "cnd014",
+          "type": "MeshLambertMaterial",
+          "map": "09f08178-9f17-480c-b83b-8a98f56c2ddc",
+          "width": 128,
+          "height": 128,
+          "alphaTest": 0.5,
+          "side": 2
+        },
+        {
+          "id": "cnd015",
+          "type": "MeshLambertMaterial",
+          "map": "62c1d6a1-d22c-4266-b9bf-02ee5ab9581a",
+          "width": 128,
+          "height": 128,
+          "alphaTest": 0.5,
+          "side": 2
+        },
+        {
+          "id": "cnd016",
+          "type": "MeshLambertMaterial",
+          "map": "1e718d07-ea1a-40e9-aecd-4a30145422b1",
+          "width": 512,
+          "height": 512,
+          "alphaTest": 0.5,
+          "side": 2
+        },
+        {
+          "id": "cnd017",
+          "type": "MeshLambertMaterial",
+          "map": "1e718d07-ea1a-40e9-aecd-4a30145422b1",
+          "width": 512,
+          "height": 512,
+          "alphaTest": 0.5,
+          "side": 2
+        },
+        {
+          "id": "cnd018",
+          "type": "MeshLambertMaterial",
+          "map": "1e718d07-ea1a-40e9-aecd-4a30145422b1",
+          "width": 512,
+          "height": 512,
+          "alphaTest": 0.5,
+          "side": 2
+        },
+        {
+          "id": "cnd019",
+          "type": "MeshLambertMaterial",
+          "map": "1e718d07-ea1a-40e9-aecd-4a30145422b1",
+          "width": 512,
+          "height": 512,
+          "alphaTest": 0.5,
+          "side": 2
+        },
+        {
+          "id": "cnd020",
+          "type": "MeshLambertMaterial",
+          "map": "1e718d07-ea1a-40e9-aecd-4a30145422b1",
+          "width": 512,
+          "height": 512,
+          "alphaTest": 0.5,
+          "side": 2
+        }
+      ]
+    },
+    "shares": [
+      {
+        "count": 9,
+        "instanced": true,
+        "geometry": "abc217ac-848d-4b09-bb53-04b45383ee6f",
+        "material": "90ddc69f-a5f5-42a4-950d-8bbdfc7db8eb",
+        "texture": "1e718d07-ea1a-40e9-aecd-4a30145422b1",
+        "gl": 0
+      },
+      {
+        "count": 225,
+        "instanced": true,
+        "geometry": "abc217ac-848d-4b09-bb53-04b45383ee6f",
+        "material": "90ddc69f-a5f5-42a4-950d-8bbdfc7db8eb",
+        "texture": "1e718d07-ea1a-40e9-aecd-4a30145422b1",
+        "gl": 0
+      }
+    ],
+    "errors": []
+  }
+}
