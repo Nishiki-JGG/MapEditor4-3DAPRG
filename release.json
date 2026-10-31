@@ -1,7 +1,7 @@
 {
-  "release": "cave-tall-mushroom-20261101",
+  "release": "cave-tall-mushroom-preview-20261101",
   "files": {
-    "app.js": "dae055d620c0a67397167d405c825e4d50377df044e86bf41f5b3b2b7c7289c9",
+    "app.js": "74be8be6321f2b558256a56585af498db4aa8967444044e5082b59d25acc84eb",
     "props/chest-presentation.js": "02a2cc0c23060f822e0e1bfe5abfc5c6803cedee2e2deb0fdb4b5b445915b4d3",
     "props/chest-surface.js": "bf7137cd3c64c736bc50d0dbd2a7b62f4fce1c48db73f6473fc6b9522b24f025",
     "props/chest-relief.js": "2f6d152ccd4c0dfd43d34c9867118d5060704b01ea93cfeafcdf826c479e8f94",
@@ -41,7 +41,7 @@
     "unity/Assets/MapSharedProps/Editor/MineSpoilV1.cs": "18413514bdf454f98e9acc696b736cce2bf9017894b0b901ece2f597573f463e",
     "props/cave-decor.js": "abf74ab0b78918409e80854060e0291cda33f30ed758a7c4d46a29e12ddaead1",
     "props/shared/cave-decor-data.js": "d964eefecf59b322bcf5bc0a7248c75474afdad88f6f17d3df55a6a0abca0188",
-    "index.html": "36ebf04590da8e609f24c137c6e0f727c6335f3d6ff5710d2d00bbcff5bdafbe",
+    "index.html": "3adb2d611ff85fe8362449992b41fdacaafc2ff4c642efb14d0b84399d4f5fe6",
     "prepared/manifest.js": "22746c17c51d36a34c3008ccaee554ad33385e98e3bc5f77671f9abc1bb5489a",
     "terrain/cliff-shoulder.js": "e437f1ffb0ab47fa4b243f7408f4ed3de759508b0f1dfef49eaf217b1630ac59",
     "props/mine-collapse.js": "49ff2562ce9a97766c4f664c3b283d0f25762b9edb6df370308c150769baafd8",

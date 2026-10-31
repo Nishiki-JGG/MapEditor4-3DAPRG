@@ -5463,6 +5463,7 @@ function updateRing() {
 
 const emptyPreviewGeometry=new THREE.BufferGeometry();
 const preview = new THREE.Mesh(emptyPreviewGeometry, new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, transparent: true, opacity: .6, depthWrite: false }));
+preview.visible=false; preview.renderOrder=9; scene.add(preview);
 const standardPreviewMat=preview.material;
 const lazyPreviewMaterials={};
 function assetPreviewMaterial(name){if(lazyPreviewMaterials[name])return lazyPreviewMaterials[name];

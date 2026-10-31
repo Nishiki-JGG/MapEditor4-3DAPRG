@@ -1,0 +1,434 @@
+{
+  "baseline": "6d6a9a0ccfa6888f5749ea9d48ac2fdd183378f5",
+  "preExistingSince": "c9610c7",
+  "before": {
+    "pass": false,
+    "cases": [
+      {
+        "id": "cnd014",
+        "touch": false,
+        "pass": false,
+        "preview": {
+          "visible": true,
+          "attached": false,
+          "sceneChildren": 0,
+          "geometry": true,
+          "position": [
+            0.5900788723967776,
+            0,
+            1.9047380153766014
+          ],
+          "rotation": 1.5707963267948966,
+          "scale": 1,
+          "order": 0,
+          "ready": true
+        },
+        "placed": [
+          {
+            "id": "cnd014",
+            "position": [
+              7.370881949242403e-08,
+              0,
+              -2.7849011985381367e-09
+            ],
+            "rotation": 1.5707963267948966,
+            "scale": 1
+          }
+        ]
+      },
+      {
+        "id": "smallbarrel",
+        "touch": false,
+        "pass": false,
+        "preview": {
+          "visible": true,
+          "attached": false,
+          "sceneChildren": 0,
+          "geometry": true,
+          "position": [
+            7.370881949242403e-08,
+            0,
+            -2.7849011985381367e-09
+          ],
+          "rotation": 1.5707963267948966,
+          "scale": 1,
+          "order": 0,
+          "ready": true
+        },
+        "placed": [
+          {
+            "id": "smallbarrel",
+            "position": [
+              7.370881949242403e-08,
+              0,
+              -2.7849011985381367e-09
+            ],
+            "rotation": 1.5707963267948966,
+            "scale": 1
+          }
+        ]
+      },
+      {
+        "id": "mine_rail_curve",
+        "touch": true,
+        "pass": false,
+        "preview": {
+          "visible": true,
+          "attached": false,
+          "sceneChildren": 0,
+          "geometry": true,
+          "position": [
+            7.370881949242403e-08,
+            0,
+            -2.7849011985381367e-09
+          ],
+          "rotation": 1.5707963267948966,
+          "scale": 1,
+          "order": 0,
+          "ready": true
+        },
+        "placed": [
+          {
+            "id": "mine_rail_curve",
+            "position": [
+              7.370881949242403e-08,
+              0,
+              -2.7849011985381367e-09
+            ],
+            "rotation": 1.5707963267948966,
+            "scale": 1
+          }
+        ]
+      }
+    ],
+    "errors": [],
+    "scope": "Real headless mouse/touch; only a read-only closure getter instrumented in served app."
+  },
+  "after": {
+    "pass": true,
+    "cases": [
+      {
+        "id": "cnd014",
+        "touch": false,
+        "pass": true,
+        "preview": {
+          "visible": true,
+          "attached": true,
+          "sceneChildren": 1,
+          "geometry": true,
+          "position": [
+            7.370881949242403e-08,
+            0,
+            -2.7849011985381367e-09
+          ],
+          "rotation": 1.5707963267948966,
+          "scale": 1,
+          "order": 9,
+          "ready": true
+        },
+        "placed": [
+          {
+            "id": "cnd014",
+            "position": [
+              7.370881949242403e-08,
+              0,
+              -2.7849011985381367e-09
+            ],
+            "rotation": 1.5707963267948966,
+            "scale": 1
+          }
+        ]
+      },
+      {
+        "id": "smallbarrel",
+        "touch": false,
+        "pass": true,
+        "preview": {
+          "visible": true,
+          "attached": true,
+          "sceneChildren": 1,
+          "geometry": true,
+          "position": [
+            7.370881949242403e-08,
+            0,
+            -2.7849011985381367e-09
+          ],
+          "rotation": 1.5707963267948966,
+          "scale": 1,
+          "order": 9,
+          "ready": true
+        },
+        "placed": [
+          {
+            "id": "smallbarrel",
+            "position": [
+              7.370881949242403e-08,
+              0,
+              -2.7849011985381367e-09
+            ],
+            "rotation": 1.5707963267948966,
+            "scale": 1
+          }
+        ]
+      },
+      {
+        "id": "mine_rail_curve",
+        "touch": true,
+        "pass": true,
+        "preview": {
+          "visible": true,
+          "attached": true,
+          "sceneChildren": 1,
+          "geometry": true,
+          "position": [
+            7.370881949242403e-08,
+            0,
+            -2.7849011985381367e-09
+          ],
+          "rotation": 1.5707963267948966,
+          "scale": 1,
+          "order": 9,
+          "ready": true
+        },
+        "placed": [
+          {
+            "id": "mine_rail_curve",
+            "position": [
+              7.370881949242403e-08,
+              0,
+              -2.7849011985381367e-09
+            ],
+            "rotation": 1.5707963267948966,
+            "scale": 1
+          }
+        ]
+      }
+    ],
+    "guards": {
+      "pendingHidden": true,
+      "readyVisible": true,
+      "otherToolHidden": true,
+      "playHidden": true,
+      "editRestored": true
+    },
+    "errors": [],
+    "scope": "Real headless mouse/touch; read-only closure getter instrumented in served app. ready guard tested by temporarily toggling existing ready state; no delayed network-load claim."
+  },
+  "renderPixelDifference": {
+    "before": {
+      "cnd014": {
+        "changedPixels": 0,
+        "bbox": null
+      },
+      "smallbarrel": {
+        "changedPixels": 0,
+        "bbox": null
+      },
+      "mine_rail_curve": {
+        "changedPixels": 0,
+        "bbox": null
+      }
+    },
+    "after": {
+      "cnd014": {
+        "changedPixels": 310,
+        "bbox": [
+          661,
+          303,
+          683,
+          330
+        ]
+      },
+      "smallbarrel": {
+        "changedPixels": 770,
+        "bbox": [
+          659,
+          297,
+          686,
+          333
+        ]
+      },
+      "mine_rail_curve": {
+        "changedPixels": 4258,
+        "bbox": [
+          660,
+          266,
+          813,
+          354
+        ]
+      }
+    }
+  },
+  "railInputBoundary": {
+    "pass": true,
+    "cases": [
+      {
+        "name": "touch curve preview equals committed geometry and pose",
+        "pass": true,
+        "before": {
+          "geometryMatches": true,
+          "position": [
+            7.370881949242403e-08,
+            0,
+            -2.7849011985381367e-09
+          ],
+          "rotation": 1.5707963267948966,
+          "scale": 1,
+          "visible": true
+        },
+        "placed": [
+          {
+            "id": "mine_rail_curve",
+            "position": [
+              7.370881949242403e-08,
+              0,
+              -2.7849011985381367e-09
+            ],
+            "rotation": 1.5707963267948966,
+            "scale": 1
+          }
+        ]
+      },
+      {
+        "name": "left + right chord cancels and hands off camera",
+        "pass": true,
+        "canceled": true,
+        "cameraMoved": true,
+        "stoppedAfterButtonRelease": true,
+        "count": 0,
+        "onlyFirstDown": true,
+        "trace": [
+          {
+            "type": "pointermove",
+            "button": -1,
+            "buttons": 0,
+            "pointerType": "mouse"
+          },
+          {
+            "type": "pointerdown",
+            "button": 0,
+            "buttons": 1,
+            "pointerType": "mouse"
+          },
+          {
+            "type": "pointermove",
+            "button": -1,
+            "buttons": 1,
+            "pointerType": "mouse"
+          },
+          {
+            "type": "pointermove",
+            "button": 2,
+            "buttons": 3,
+            "pointerType": "mouse"
+          },
+          {
+            "type": "pointermove",
+            "button": -1,
+            "buttons": 3,
+            "pointerType": "mouse"
+          },
+          {
+            "type": "pointermove",
+            "button": 2,
+            "buttons": 1,
+            "pointerType": "mouse"
+          },
+          {
+            "type": "pointermove",
+            "button": -1,
+            "buttons": 1,
+            "pointerType": "mouse"
+          },
+          {
+            "type": "pointerup",
+            "button": 0,
+            "buttons": 0,
+            "pointerType": "mouse"
+          }
+        ]
+      },
+      {
+        "name": "left + middle chord cancels and hands off camera",
+        "pass": true,
+        "canceled": true,
+        "cameraMoved": true,
+        "stoppedAfterButtonRelease": true,
+        "count": 0,
+        "onlyFirstDown": true,
+        "trace": [
+          {
+            "type": "pointermove",
+            "button": -1,
+            "buttons": 0,
+            "pointerType": "mouse"
+          },
+          {
+            "type": "pointerdown",
+            "button": 0,
+            "buttons": 1,
+            "pointerType": "mouse"
+          },
+          {
+            "type": "pointermove",
+            "button": -1,
+            "buttons": 1,
+            "pointerType": "mouse"
+          },
+          {
+            "type": "pointermove",
+            "button": 1,
+            "buttons": 5,
+            "pointerType": "mouse"
+          },
+          {
+            "type": "pointermove",
+            "button": -1,
+            "buttons": 5,
+            "pointerType": "mouse"
+          },
+          {
+            "type": "pointermove",
+            "button": 1,
+            "buttons": 1,
+            "pointerType": "mouse"
+          },
+          {
+            "type": "pointermove",
+            "button": -1,
+            "buttons": 1,
+            "pointerType": "mouse"
+          },
+          {
+            "type": "pointerup",
+            "button": 0,
+            "buttons": 0,
+            "pointerType": "mouse"
+          }
+        ]
+      },
+      {
+        "name": "stationary pointer with WASD movement cancels pending rails",
+        "pass": true,
+        "motion": {
+          "active": false,
+          "target": [
+            -1.4813185282075498,
+            0,
+            -2.058090119500677
+          ],
+          "previewCount": 0
+        },
+        "count": 0
+      }
+    ],
+    "errors": [],
+    "privateHeadless": true,
+    "gui": false
+  },
+  "harnessCorrections": [
+    "First diagnostic used nonexistent barrel ID; corrected to smallbarrel.",
+    "Guard diagnostic initially omitted update after pausing animation loop; added normal update/render before reading state. No product changes to make assertions pass."
+  ],
+  "scope": "Local private headless only; ready branch simulated via existing ready boolean, not delayed network response. Public certificate-blocked UI not retried. Native unchanged."
+}
