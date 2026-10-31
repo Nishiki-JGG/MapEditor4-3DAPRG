@@ -6128,7 +6128,7 @@ applyCatalog(); applyBiome(state.biome); applyCliffStyle(); applyPalette(); setT
 requestAnimationFrame(frame);
 let bootData=null;if(bootPending?.[0]==='{')try{bootData=JSON.parse(bootPending);}catch(e){toast('読み込み失敗: '+e.message);bootPending='flat';}
 const bootReady=bootPending?.startsWith('prepared:')?prepareMap('pending',0,{token:bootPending.slice(9),boot:true}):bootData?prepareMap('load',0,{data:bootData,boot:true}):
-  prepareMap(bootPending==='sample2'&&SIZE===SAMPLE2_SIZE?'sample2':bootPending==='flat'||SIZE!==64?'flat':'sample',bootPending==='sample2'?11:7,{boot:true});
+  prepareMap(bootPending==='sample2'&&SIZE===SAMPLE2_SIZE?'sample2':bootPending==='sample'&&SIZE===64?'sample':'flat',bootPending==='sample2'?11:7,{boot:true});
 
 // hooks for automated checks
 window.__app = {mineLanterns, chestPresentation, wallTorches, bedrockReady, splatAt,get tunnels() { return tunnels; }, set tunnels(v) { tunnels = v; }, get tunnelPrep() { return tunnelPrep; }, get tunnelLamps() { return tunnelLamps; }, placeTunnel, rebuildTunnels, tunnelGroup, tunnelHoleTex, cutU, refitFalls, placeFall, springFallGroup, fallGroup, get springs() { return springs; }, set springs(v) { springs = v; }, get pools() { return pools; }, get springRes() { return springRes; }, SC, placeSpring, placePool, applySprings, solveSprings, waterAt, springLevelAt, poolDist, poolWallAt, POOL_WALL, deckAt, fillGroundAll,buildPreparedSample,prepareMap,cancelMapPreparation,bootReady,get preparation(){return mapPreparation?{id:mapPreparation.id,phase:mapPreparation.phase,requestedMode:mapPreparation.requestedMode,elapsedMs:performance.now()-mapPreparation.start}:null;},get preparationStats(){return lastPreparedState;},
