@@ -1,0 +1,21 @@
+{
+  "library": "meshoptimizer",
+  "version": "v1.0",
+  "files": [
+    {
+      "name": "meshopt_encoder.mjs",
+      "url": "https://raw.githubusercontent.com/zeux/meshoptimizer/v1.0/js/meshopt_encoder.js",
+      "sha256": "e79ba4a73a758f315ab153dc50c389c7b0bea2b5c1fdcfcaa62ad6d0c27cb25c"
+    },
+    {
+      "name": "meshopt_decoder.js",
+      "url": "https://raw.githubusercontent.com/zeux/meshoptimizer/v1.0/js/meshopt_decoder.cjs",
+      "sha256": "74188840936594a7161be0bb8822927279ec72ed9e4585e482f2c47c40d1aa80"
+    },
+    {
+      "name": "LICENSE.md",
+      "url": "https://raw.githubusercontent.com/zeux/meshoptimizer/v1.0/LICENSE.md",
+      "sha256": "e4a26033e3551fb2722888949fbb41e77aee628e8e8f04dcffeee301aa7e5634"
+    }
+  ]
+}

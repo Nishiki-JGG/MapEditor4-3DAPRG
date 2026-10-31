@@ -47,6 +47,22 @@ class Store{
   for(const[id,c]of this.cache)if(!kept.has(id)){c.geometry.dispose();c.mesh?.removeFromParent();}
   this.records=new Map(Object.entries(data?.instances||{}));this.cache=new Map([...kept,...created]);this.input=input;
  }
+ exportReferences(props,half,yZero){
+  const fitted=props.filter(p=>this.valid(p));
+  // Preserve old non-affine deformation verbatim; never approximate it with a transform.
+  if(fitted.some(p=>{const r=this.records.get(p[8]);if(!r.affine)return true;
+   const expected=this.types[p[0]].geo.clone().applyMatrix4(new THREE.Matrix4().fromArray(r.affine)),actual=this.get(p).geometry;
+   try{for(const[n,a]of Object.entries(actual.attributes)){if(a.isInstancedBufferAttribute)continue;const b=expected.attributes[n];if(!b||b.array.length!==a.array.length)return true;const limit=n==='position'||n==='normal'?1e-4:0;for(let i=0;i<a.array.length;i++)if(Math.abs(a.array[i]-b.array[i])>limit)return true;}return false;}finally{expected.dispose();}
+  }))return this.export(props,half,yZero);
+  const sources=new Map(),instances=[];
+  for(const p of fitted){const r=this.records.get(p[8]),g=this.types[p[0]].geo;
+   if(!sources.has(r.sourceSha256)){const a=g.attributes;sources.set(r.sourceSha256,{id:r.sourceSha256,type:r.type,positions:Array.from(a.position.array),normals:Array.from(a.normal.array),colors:Array.from(a.color?.array||[]),uvs:Array.from(a.uv?.array||[]),triangles:g.index?Array.from(g.index.array):Array.from({length:a.position.count},(_,i)=>i)});}
+   const instance=new THREE.Matrix4().compose(new THREE.Vector3(p[1],p[7],p[2]),new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),p[3]),new THREE.Vector3(p[4],p[4]*(p[6]??1),p[4]));
+   const frame=new THREE.Matrix4().set(1,0,0,half,0,1,0,-yZero,0,0,-1,half,0,0,0,1),matrix=frame.multiply(instance).multiply(new THREE.Matrix4().fromArray(r.affine));
+   instances.push({instanceId:p[8],type:r.type,sourceSha256:r.sourceSha256,instanceTint:r.instanceTint,matrix:matrix.toArray(),material:'rock',replaceRenderer:true,replaceCollider:true});
+  }
+  return{format:'tdj-cliff-fits-reference',formatVersion:2,requiredFeature:'cliffFitsReferenceV2',library:'cliff_sources.json',instances,sources:{format:'map-cliff-sources',version:1,assets:[...sources.values()].sort((a,b)=>a.id.localeCompare(b.id))}};
+ }
  export(props,half,yZero){const instances=[];for(const p of props){const r=this.records.get(p[8]),c=this.get(p);if(!c)continue;const g=c.geometry,P=g.attributes.position,N=g.attributes.normal,C=g.attributes.color,UV=g.attributes.uv,positions=[],normals=[],colors=[],uvs=[],triangles=[],cos=Math.cos(p[3]),sin=Math.sin(p[3]),sy=p[6]??1;for(let i=0;i<P.count;i++){const w=TDCliffContact.world(p,[P.getX(i),P.getY(i),P.getZ(i)]);positions.push(w[0]+half,w[1]-yZero,half-w[2]);const n=[N.getX(i)*cos+N.getZ(i)*sin,N.getY(i)/sy,-N.getX(i)*sin+N.getZ(i)*cos],len=Math.hypot(...n);normals.push(n[0]/len,n[1]/len,-n[2]/len);if(C)colors.push(C.getX(i),C.getY(i),C.getZ(i));if(UV)uvs.push(UV.getX(i),UV.getY(i));}for(let i=0;i<(g.index?.count??P.count);i+=3){const a=g.index?g.index.getX(i):i,b=g.index?g.index.getX(i+1):i+1,c=g.index?g.index.getX(i+2):i+2;triangles.push(a,c,b);}instances.push({instanceId:p[8],type:r.type,sourceSha256:r.sourceSha256,instanceTint:r.instanceTint,positions,normals,colors,uvs,triangles,material:'rock',replaceRenderer:true,replaceCollider:true});}return{format:'tdj-cliff-fits-mesh',formatVersion:1,requiredFeature:'cliffFitsMeshV1',coordinateSystem:'Unity world metres; same origin as meta.json',instances};}
 }
 window.TDCliffFits={Store,describe,geometry,attributeArray};})();

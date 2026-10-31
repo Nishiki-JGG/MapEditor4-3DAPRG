@@ -7,7 +7,7 @@ import shutil
 import tempfile
 import zipfile
 
-SHARED = {'shared_props.json', 'shared_ground.json', 'pine_wind.json', 'small_props_library.json'}
+SHARED = {'shared_props.json', 'shared_ground.json', 'pine_wind.json', 'small_props_library.json', 'cliff_sources.json'}
 LIMIT = 512 * 1024 * 1024
 
 def require(ok, message):

@@ -12,7 +12,8 @@ public static class CliffFitsMeshV1 {
  [Serializable] sealed class Document { public string format; public int formatVersion; public string requiredFeature; public Entry[] instances; }
  [Serializable] sealed class Entry { public string instanceId, type, sourceSha256, material; public float[] positions,normals,colors,uvs,instanceTint; public int[] triangles; public bool replaceRenderer,replaceCollider; }
  // 呼出側はprops.csvと同じIDで配置したオブジェクトと、元部品の検証済みSHAを渡す。
- public static void Apply(string metaJson,string meshJson,IReadOnlyDictionary<string,GameObject> byId,IReadOnlyDictionary<string,string> sourceHashes,Material rockMaterial,Transform mapRoot) {
+ public static void Apply(string metaJson,string meshJson,IReadOnlyDictionary<string,GameObject> byId,IReadOnlyDictionary<string,string> sourceHashes,Material rockMaterial,Transform mapRoot,string sourceJson=null) {
+  if(JsonUtility.FromJson<Meta>(metaJson)?.requiredFeatures is string[] required&&Array.IndexOf(required,"cliffFitsReferenceV2")>=0){CliffFitsReferenceV2.Apply(metaJson,meshJson,sourceJson,byId,sourceHashes,rockMaterial,mapRoot);return;}
   if(!rockMaterial||!mapRoot) throw new ArgumentException("岩の材質とマップ原点が必要です");
   if(mapRoot.position!=Vector3.zero||mapRoot.rotation!=Quaternion.identity||mapRoot.lossyScale!=Vector3.one) throw new ArgumentException("マップ原点のTransformは単位行列が必要です");
   var meta=JsonUtility.FromJson<Meta>(metaJson);var d=JsonUtility.FromJson<Document>(meshJson);

@@ -2959,7 +2959,7 @@ function shapeField(f, s) {
 function shapeDist(c, x, z) {
   const f = c[5], s = c[8], F = shapeField(f, s), dx = x - c[0], dz = z - c[1], lx = (dx * c[6] - dz * c[7]) / s, lz = (dx * c[7] + dz * c[6]) / s;
   const i = Math.round((lx - f.x0) / SHAPE_CELL), j = Math.round((lz - f.z0) / SHAPE_CELL);
-  if (i >= 0 && j >= 0 && i < f.nx && j < f.nz) return F.dist[j * f.nx + i] * s;
+  if (i >= 0 && j >= 0 && i < f.nx && j < f.nz) return (F.kind==='saved-boundary-field-v1'?TDSavedBoundary.distanceAt(F,f,j*f.nx+i):F.dist[j * f.nx + i]) * s;
   let d = 1e9; for (let e = 0; e < F.edge.length; e += 2) d = Math.min(d, Math.hypot(F.edge[e] - lx, F.edge[e + 1] - lz));
   return d * s;
 }
@@ -4895,7 +4895,7 @@ revision・書き出し日時・ファイルごとの SHA-256・contentHash は 
 - Prefab のローカル +Z = プレイヤーが入っていく向き、-Z = 近づいてくる側。回転は yawDeg + yawOffsetDeg。
 - 当たり判定（radius / offsets / solid）も同じローカル座標。エディター内部のローカル座標とは z の符号だけが違います。
 `;
-  const fittedExport=cliffFits.export(props,HALF,mn);for(const f of fittedExport.instances){const p=props.find(p=>p[8]===f.instanceId),v=.86+.28*hash2(p[1]*97|0,p[2]*89|0);f.instanceTint=f.instanceTint||[v*(.95+.1*hash2(p[1]*13|0,7)),v,v*(.95+.1*hash2(3,p[2]*17|0))];f.cliffStyleIndex=cliffIndexNear(p[1],p[2]);}if(fittedExport.instances.length){meta.requiredFeatures=[...(meta.requiredFeatures||[]),'cliffFitsMeshV1'];meta.cliffFits={file:'cliff_fits_mesh.json',instanceIds:fittedExport.instances.map(x=>x.instanceId),replacement:'Replace original renderer and collider per ID; unsupported readers must reject'};}
+  const fittedExport=cliffFits.exportReferences(props,HALF,mn);const fittedSources=fittedExport.sources;delete fittedExport.sources;for(const f of fittedExport.instances){const p=props.find(p=>p[8]===f.instanceId),v=.86+.28*hash2(p[1]*97|0,p[2]*89|0);f.instanceTint=f.instanceTint||[v*(.95+.1*hash2(p[1]*13|0,7)),v,v*(.95+.1*hash2(3,p[2]*17|0))];f.cliffStyleIndex=cliffIndexNear(p[1],p[2]);}if(fittedExport.instances.length){meta.requiredFeatures=[...(meta.requiredFeatures||[]),fittedExport.requiredFeature];meta.cliffFits={file:'cliff_fits_mesh.json',instanceIds:fittedExport.instances.map(x=>x.instanceId),replacement:'Replace original renderer and collider per ID; unsupported readers must reject'};}
   const visualFile=terrain.geometry.userData.refinedCells?'terrain_visual_mesh.json':null;
   if(visualFile)meta.terrain.visualSurface={file:visualFile,requiredForVisualParity:true,replace:'terrain renderer only; retain heightmap collider',clipHoles:holesPng?'holes.png':null,stats:terrain.geometry.userData,note:'Apply with the same ground splats, cliff styles and continuous cliffCoverageSlope; do not overlay the old terrain renderer.'};
   const reliefFile=cliffRelief.geometry.index.count?'cliff_relief_mesh.json':null;
@@ -4923,6 +4923,7 @@ revision・書き出し日時・ファイルごとの SHA-256・contentHash は 
     ...(bedrockPng?[{name:'bedrock.png',data:bedrockPng}]:[]),
     {name:'root_paint.png',data:rootPaintPng},
     ...(fittedExport.instances.length?[{name:'cliff_fits_mesh.json',data:JSON.stringify(fittedExport)}]:[]),
+    ...(fittedSources&&fittedExport.instances.length?[{name:'cliff_sources.json',data:JSON.stringify(fittedSources)}]:[]),
     ...(visualFile?[{name:visualFile,data:JSON.stringify(TDCliffShoulder.exportMesh(terrain.geometry,HALF,mn))}]:[]),
     ...(reliefFile?[{name:reliefFile,data:JSON.stringify(TDCliffRelief.exportMesh(cliffRelief.geometry,HALF,mn))}]:[]),
     { name: 'heightmap_r16.raw', data: heightRaw }, { name: 'walk_floor_r16.raw', data: floorRaw },
@@ -5972,7 +5973,7 @@ function captureCollisionPreparation(){
 function validFootprint(f){
  return f&&Number.isInteger(f.nx)&&Number.isInteger(f.nz)&&f.nx>0&&f.nz>0&&f.nx*f.nz<2e6&&((f.top instanceof Float32Array&&f.top.length===f.nx*f.nz&&f.top.every(Number.isFinite))||(f.fieldOnly===true&&f.top===undefined&&f.sink===0&&f.fields instanceof Map&&f.fields.size===1&&f.fields.has(20)))&&['x0','z0','R','sink'].every(k=>Number.isFinite(f[k]))&&f.fields instanceof Map;
 }
-function validFields(fields,n){return fields instanceof Map&&[...fields].every(([key,d])=>Number.isInteger(key)&&key>=0&&d.dist instanceof Float32Array&&d.dist.length===n&&(Array.isArray(d.edge)||d.edge instanceof Float64Array)&&d.edge.length%2===0&&d.edge.every(Number.isFinite)&&d.dist.every(Number.isFinite));}
+function validFields(fields,n){return fields instanceof Map&&[...fields].every(([key,d])=>Number.isInteger(key)&&key>=0&&(TDSavedBoundary.valid(d,n)||(d.dist instanceof Float32Array&&d.dist.length===n&&(Array.isArray(d.edge)||d.edge instanceof Float64Array)&&d.edge.length%2===0&&d.edge.every(Number.isFinite)&&d.dist.every(Number.isFinite))));}
 async function installCollisionPreparation(data,job){
  if(!data||data.version!==1||!Array.isArray(data.fitted)||!Array.isArray(data.prototypes))throw Error('衝突準備の形式が違います');
  const ids=new Map(props.map(p=>[p[8],p]));

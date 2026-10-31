@@ -12,7 +12,7 @@ namespace MapSharedProps.EditorTools
     {
         [Serializable] public class Entry { public string name, sha256; public long bytes; }
         [Serializable] public class Reference { public string format, bundleHash; public int schemaVersion; public Entry[] files; }
-        static readonly string[] Names = { "pine_wind.json", "shared_ground.json", "shared_props.json", "small_props_library.json" };
+        static readonly string[] Names = { "pine_wind.json", "shared_ground.json", "shared_props.json", "small_props_library.json", "cliff_sources.json" };
         public static string Hash(byte[] bytes)
         { using (var sha = SHA256.Create()) return BitConverter.ToString(sha.ComputeHash(bytes)).Replace("-", "").ToLowerInvariant(); }
         static void Check(bool ok, string why) { if (!ok) throw new InvalidDataException("共通資産: " + why); }

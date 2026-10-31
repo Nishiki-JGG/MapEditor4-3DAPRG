@@ -1,6 +1,6 @@
 (function(root) {
   'use strict';
-  const sharedNames = new Set(['shared_props.json', 'shared_ground.json', 'pine_wind.json']);
+  const sharedNames = new Set(['shared_props.json', 'shared_ground.json', 'pine_wind.json', 'cliff_sources.json']);
   const enc = new TextEncoder();
   const bytes = d => typeof d === 'string' ? enc.encode(d) : d;
   function partition(input, sha) {

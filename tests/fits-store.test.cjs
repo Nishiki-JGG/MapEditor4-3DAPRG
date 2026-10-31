@@ -13,3 +13,13 @@ affineLoaded.load(JSON.parse(JSON.stringify(history)),[p],'terrain1');
 assert.notEqual(affineLoaded.get(p),cached);assert.equal(disposed,1);
 assert.equal(hash(affineLoaded.get(p).geometry.attributes.position.array),hash(transformed.attributes.position.array));
 console.log(JSON.stringify({historyGeometryReused:true,externalRecordsValidated:true,invalidLoadPreservesGeometry:true}));
+
+// Reference export preserves non-TRS affine transforms, and never drops a real edit.
+const reference=affineLoaded.exportReferences([p],32,0);
+assert.equal(reference.formatVersion,2);assert.equal(reference.sources.assets.length,1);
+const source=reference.sources.assets[0],entry=reference.instances[0],full=new THREE.Matrix4().fromArray(entry.matrix),legacy=affineLoaded.export([p],32,0).instances[0];
+for(let i=0;i<source.positions.length;i+=3){const v=new THREE.Vector3().fromArray(source.positions,i).applyMatrix4(full);for(let j=0;j<3;j++)assert.ok(Math.abs(v.getComponent(j)-legacy.positions[i+j])<1e-5);}
+const live=affineLoaded.get(p).geometry.attributes.position.array,first=live[0];live[0]+=.2;
+assert.equal(affineLoaded.exportReferences([p],32,0).formatVersion,1);live[0]=first;
+assert.equal(store.exportReferences([p],32,0).formatVersion,1);
+console.log(JSON.stringify({referenceExport:true,affineWorldPositions:true,genuineEditRetained:true,nonAffineCompatible:true}));

@@ -26,7 +26,7 @@ def receive(folder, output=None, shared_dir=None):
         require(len(source_bytes)==link.get('bytes') and sha(source_bytes)==link.get('sha256'), '編集原稿とUnity用ZIPの内容が異なります。部屋セットを書き出し直してください。')
         package=checked_zip(maps[0]);require(set(package)=={'manifest.json','map.tdps'},'編集原稿の構成が不正です')
         header=json.loads(package['manifest.json']);payload=package['map.tdps']
-        require(header.get('format')=='map-editor-archive' and header.get('version')==1 and header.get('file')=='map.tdps' and header.get('requiredFeatures')==['affine-delta-v1','completed-state-v1'], '未対応の編集原稿です')
+        require(header.get('format')=='map-editor-archive' and header.get('version') in (1,2) and header.get('file')=='map.tdps' and header.get('requiredFeatures')==(['affine-delta-v1','completed-state-v1']+(['stored-buffers-v1'] if header.get('version')==2 else [])), '未対応の編集原稿です')
         require(len(payload)==header.get('bytes') and sha(payload)==header.get('sha256'), '編集原稿の検査値が一致しません')
         room_id=header.get('roomId');require(room_id==link.get('roomId'),'原稿参照の部屋ID不一致')
         source=None

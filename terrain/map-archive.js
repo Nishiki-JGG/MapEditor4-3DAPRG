@@ -21,13 +21,14 @@ function compactFits(data,resolve){
  for(const[id,r]of Object.entries(data.instances)){
   if(!r.affine){instances[id]=r;continue;}
   const source=resolve(r.type,r.sourceSha256),cached=fitCache.get(r);
+  if(r.geometry?.preparedAffineReference===1){matrix(r);instances[id]=r;continue;}
   if(cached?.source===source){instances[id]=cached.record;continue;}
   const g=source.clone().applyMatrix4(matrix(r));
   try{
    const ix=r.geometry.index||[],expected=g.index?.array||[];if(ix.length!==expected.length||ix.some((v,i)=>v!==expected[i]))throw Error('岩の面構成が違います');
    const attributes={};
    if(Object.keys(r.geometry.attributes).sort().join()!==Object.keys(g.attributes).filter(n=>!g.attributes[n].isInstancedBufferAttribute).sort().join())throw Error('岩の属性構成が違います');
-   for(const[name,v]of Object.entries(r.geometry.attributes)){
+   for(const[name,v]of Object.entries(r.geometry.attributes||{})){
     const a=g.attributes[name],actual=TDCliffFits.attributeArray(v);
     if(a.itemSize!==v.size)throw Error('岩の属性幅が違います');
     const d=deltaAttribute(bits(actual),bits(a.array),v.size);if(d)attributes[name]=d;
@@ -37,13 +38,29 @@ function compactFits(data,resolve){
  }
  return{formatVersion:1,instances};
 }
+// Existing rendering already uses the shared source + affine matrix. Omit only the
+// obsolete CPU-rounding deltas (<= .0001 m); retain genuinely edited geometry exactly.
+const referenceCache=new WeakMap();
+function referenceFits(data,resolve){
+ if(!data)return data;const packed=compactFits(data,resolve),instances={};
+ for(const[id,r]of Object.entries(packed.instances)){
+  if(!r.affine){instances[id]=r;continue;}
+  if(r.geometry?.preparedAffineReference===1){instances[id]=r;continue;}
+  const cached=referenceCache.get(r);if(cached){instances[id]=cached;continue;}
+  const g=resolve(r.type,r.sourceSha256).clone().applyMatrix4(matrix(r));let compatible=true;
+  try{for(const[n,d]of Object.entries(r.geometry.attributes||{})){const a=g.attributes[n],b=bits(a.array),limit=n==='position'||n==='normal'?1e-4:0;for(let i=0;i<b.length;i++){const delta=d.delta?d.delta[i]:d.values[d.indices[Math.floor(i/d.size)]*d.size+i%d.size];const v=new Uint32Array([((b[i]+delta)>>>0)]),old=new Float32Array(v.buffer)[0];if(!Number.isFinite(old)||Math.abs(old-a.array[i])>limit){compatible=false;break;}}if(!compatible)break;}}
+  finally{g.dispose();}
+  instances[id]=compatible?{...r,geometry:{preparedAffineReference:1}}:r;referenceCache.set(r,instances[id]);
+ }
+ return{formatVersion:1,instances};
+}
 function expandFits(data,resolve){
  if(!data)return data;const instances={};
  for(const[id,r]of Object.entries(data.instances)){
-  if(r.geometry?.preparedAffineDelta!==1){instances[id]=r;continue;}
+  if(r.geometry?.preparedAffineDelta!==1&&r.geometry?.preparedAffineReference!==1){instances[id]=r;continue;}
   const g=resolve(r.type,r.sourceSha256).clone().applyMatrix4(matrix(r));
   try{
-   for(const[name,v]of Object.entries(r.geometry.attributes)){
+   for(const[name,v]of Object.entries(r.geometry.attributes||{})){
     const a=g.attributes[name];if(!a||a.itemSize!==v.size)throw Error('完成岩の属性が一致しません');
     const direct=v.delta instanceof Int32Array&&v.delta.length===a.array.length,palette=v.values instanceof Int32Array&&v.indices instanceof Uint16Array&&v.indices.length===a.count&&v.values.length%v.size===0&&v.indices.every(i=>i<v.values.length/v.size);
     if(!direct&&!palette)throw Error('完成岩の差分が不正です');
@@ -60,7 +77,7 @@ function deferredFits(data,resolve){
  if(data.formatVersion!==1||!data.instances||Array.isArray(data.instances))throw Error('加工岩の版が違います');
  const instances={};
  for(const [id,r]of Object.entries(data.instances)){
-  if(r.geometry?.preparedAffineDelta!==1){instances[id]=r;continue;}
+  if(r.geometry?.preparedAffineDelta!==1&&r.geometry?.preparedAffineReference!==1){instances[id]=r;continue;}
   const source=resolve(r.type,r.sourceSha256);matrix(r);let description;
   const record={...r};Object.defineProperty(record,'geometry',{enumerable:true,get(){if(!description)description=expandFits({formatVersion:1,instances:{[id]:r}},resolve).instances[id].geometry;return description;}});
   fitCache.set(record,{source,record:r});instances[id]=record;
@@ -72,10 +89,10 @@ const completed=new WeakMap();
 function completedFor(map){return completed.get(map)||null;}
 async function create(map,value,resolve,makeZip){
  const {completedState,...source}=map;
- const compact={...source,cliffFits:compactFits(source.cliffFits,resolve)};
- const raw=TDPreparedCodec.encode({version:1,map:compact,completed:value});
+ const compact={...source,cliffFits:referenceFits(source.cliffFits,resolve)};
+ const raw=TDPreparedCodec.encode({version:1,map:compact,completed:await TDArchiveCompression.pack(value)});
  if(raw.length>LIMIT)throw Error('マップの展開サイズが256 MiBを超えています');
- const manifest={format:'map-editor-archive',version:1,roomId:map.roomId,requiredFeatures:['affine-delta-v1','completed-state-v1'],file:'map.tdps',bytes:raw.length,sha256:await hash(raw)};
+ const manifest={format:'map-editor-archive',version:2,roomId:map.roomId,requiredFeatures:['affine-delta-v1','completed-state-v1','stored-buffers-v1'],file:'map.tdps',bytes:raw.length,sha256:await hash(raw)};
  return makeZip([{name:'manifest.json',data:JSON.stringify(manifest)},{name:'map.tdps',data:raw}]);
 }
 // Read only our two bounded entries. Verify both ZIP headers, CRC and the payload SHA before decoding.
@@ -103,9 +120,9 @@ async function unzip(input){
 }
 async function read(input,resolve){
  const entries=await unzip(input),m=JSON.parse(dec.decode(entries.get('manifest.json'))),raw=entries.get('map.tdps');
- if(m.format!=='map-editor-archive'||m.version!==1||m.file!=='map.tdps'||JSON.stringify(m.requiredFeatures)!==JSON.stringify(['affine-delta-v1','completed-state-v1'])||m.bytes!==raw.length||m.sha256!==await hash(raw))throw Error('非対応または破損したマップです');
+ if(m.format!=='map-editor-archive'||![1,2].includes(m.version)||m.file!=='map.tdps'||JSON.stringify(m.requiredFeatures)!==JSON.stringify(m.version===1?['affine-delta-v1','completed-state-v1']:['affine-delta-v1','completed-state-v1','stored-buffers-v1'])||m.bytes!==raw.length||m.sha256!==await hash(raw))throw Error('非対応または破損したマップです');
  const d=TDPreparedCodec.decode(raw);if(d.version!==1||d.map?.format!=='map-editor-proto'||d.completed?.version!==1||d.map?.roomId!==m.roomId)throw Error('マップの内容が不正です');
- const map={...d.map,cliffFits:deferredFits(d.map.cliffFits,resolve)};completed.set(map,d.completed);return map;
+ const map={...d.map,cliffFits:deferredFits(d.map.cliffFits,resolve)};completed.set(map,m.version===2?await TDArchiveCompression.open(d.completed):d.completed);return map;
 }
 const api={create,read,completedFor,compactFits,expandFits};if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.TDMapArchive=api;
 })(globalThis);
