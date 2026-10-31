@@ -1,0 +1,62 @@
+{
+  "revision": 215,
+  "dataSha256": "87e2b86657bd9b60ce5f02e189f5c13b5d140642b12e595cdfbc9fe04f7f745d",
+  "static": {
+    "pass": true,
+    "changedAssets": [
+      "cnd015"
+    ],
+    "other19Exact": true,
+    "other19ExportAssetsExact": true,
+    "definitionsAndBoundsExact": true,
+    "originalAtlasExact": true,
+    "textureCountAdded": 1,
+    "triangleCount": 172,
+    "vertexCount": 190,
+    "closedManifold": true,
+    "normalDotMinimum": 0.8004062143906038,
+    "minimumTriangleArea": 0.00035839109263510294,
+    "vertexAlphaMinimum": 255,
+    "newAtlasRgbaMipEstimateBytes": 87381,
+    "geometryEstimateBytes": 9392,
+    "assetSha256": "87e2b86657bd9b60ce5f02e189f5c13b5d140642b12e595cdfbc9fe04f7f745d"
+  },
+  "web": {
+    "pass": true,
+    "saveReload": true,
+    "collisionAfterReload": true,
+    "collisionBeforeAfterExact": true,
+    "collisionActualMapEntriesCompared": true,
+    "beforeAfterStableIDs": true,
+    "instances": [
+      9,
+      225
+    ],
+    "instancedSharedMaterialTexture": true,
+    "gpuMeasured": false
+  },
+  "fullCaveTest": {
+    "revision": 212,
+    "scope": "same texture/registry/triangle counts; before final dome-only refinement",
+    "count": 20,
+    "saveReload": true,
+    "exported": 20,
+    "sharedArchive": {
+      "sharedCount": 5,
+      "sharedBytes": 60931717,
+      "roomHasLibrary": false
+    },
+    "placedMount": {
+      "id": "cnd012",
+      "height": 2.9042944431304933,
+      "bottom": 1.2000000476837158,
+      "ground": 0,
+      "visible": true
+    }
+  },
+  "limits": [
+    "Web underside below opaque ground is not visual evidence",
+    "Final regression215 captures immediately after rendering",
+    "Full-cave catalog test passed on212; final215 retested formal export and actual transformed save/Collider/9/225"
+  ]
+}

@@ -1,0 +1,88 @@
+{
+  "pass": true,
+  "other19Exact": true,
+  "other19AtlasShared": true,
+  "prefabReload": true,
+  "sceneReload": true,
+  "boundsExact": true,
+  "colliderUnchanged": true,
+  "formalBefore": 20,
+  "formalAfter": 20,
+  "placedBefore": 20,
+  "placedAfter": 20,
+  "triBefore": 24,
+  "triAfter": 172,
+  "beforeFolder": "Assets/MapSharedPropsGenerated/Pilot 39",
+  "afterFolder": "Assets/MapSharedPropsGenerated/Pilot 40",
+  "loads": [
+    {
+      "stage": "before",
+      "count": 9,
+      "visible": 9,
+      "meshes": 1,
+      "materials": 1,
+      "textures": 1,
+      "triangles": 24,
+      "meshBytes": 3312,
+      "cpuMedianMs": 0.5219
+    },
+    {
+      "stage": "before",
+      "count": 225,
+      "visible": 225,
+      "meshes": 1,
+      "materials": 1,
+      "textures": 1,
+      "triangles": 24,
+      "meshBytes": 3312,
+      "cpuMedianMs": 0.5897
+    },
+    {
+      "stage": "after",
+      "count": 9,
+      "visible": 9,
+      "meshes": 1,
+      "materials": 1,
+      "textures": 1,
+      "triangles": 172,
+      "meshBytes": 9392,
+      "cpuMedianMs": 0.5763
+    },
+    {
+      "stage": "after",
+      "count": 225,
+      "visible": 225,
+      "meshes": 1,
+      "materials": 1,
+      "textures": 1,
+      "triangles": 172,
+      "meshBytes": 9392,
+      "cpuMedianMs": 0.5823
+    }
+  ],
+  "limits": [
+    "Cave-decoration20 formal route, not whole catalog reimport",
+    "Existing cave decorative prefabs are visual-only; Web existing IDs/placement collider tested separately",
+    "GPU/mobile/Player not measured",
+    "CPU Camera.Render samples are diagnostic only",
+    "Manually mounted on existing timber; no automatic wall snapping"
+  ],
+  "dataSha256": "87e2b86657bd9b60ce5f02e189f5c13b5d140642b12e595cdfbc9fe04f7f745d",
+  "unityVersion": "6000.5.9f1",
+  "pipeline": "URP17.5 PC Forward+",
+  "exitCode": 0,
+  "targetMapPixels": [
+    128,
+    128
+  ],
+  "texturePngBytes": 26576,
+  "textureAdditionalRgbaMipsEstimate": 87381,
+  "earlier213Shutdown": {
+    "checksPass": true,
+    "exitCode": -1073741819,
+    "module": "D3D12Core.dll",
+    "exceptionCode": "c0000005"
+  },
+  "same213ProductRetest214ExitCode": 0,
+  "final215ExitCode": 0
+}
