@@ -15,7 +15,7 @@ function torch(){
  return makeGeo(p,705,{ao:.14});
 }
 const torchFire={origin:[0,1.69,0],width:.29,height:.48,power:1.8,range:8,sparkRate:7,smokeRate:2.5,radius:.045};
-const originalBuild=TDProps.build;TDProps.build=()=>originalBuild().map(t=>t.id==='torch'?{...t,preparationGeo:t.geo,geo:torch(),groundSink:.05,material:'default',fireEffect:torchFire,light:[0xffa04c,1.8,1.75]}:t);
+TDProps.decorate('torch',t=>({...t,preparationGeo:t.geo,geo:torch(),groundSink:.05,material:'default',fireEffect:torchFire,light:[0xffa04c,1.8,1.75]}));
 function brazier(){
  const p=[];
  // 鍛鉄の三脚。荷重を受ける足と炉床を別の部品として読める形にする。

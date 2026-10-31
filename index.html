@@ -83,6 +83,7 @@
   #toast{position:fixed;left:50%;top:52px;transform:translateX(-50%);background:#1d4f86;border-radius:6px;padding:6px 12px;opacity:0;transition:opacity .3s;pointer-events:none}
   #toast.show{opacity:1}
   #err{position:fixed;inset:auto 12px 12px auto;color:#ff8a80}
+#startupNotice{position:fixed;left:50%;top:45%;transform:translate(-50%,-50%);padding:20px;background:var(--panel);border-radius:10px;z-index:20}#assetProgress{position:fixed;right:12px;bottom:70px;width:260px;max-width:70vw;background:var(--panel);padding:12px;border:1px solid var(--line);border-radius:8px;z-index:30}#assetProgress progress{display:block;width:100%;margin-top:8px;accent-color:#4aa3ff}#assetProgress button{margin-top:8px}
 </style>
 </head>
 <body>
@@ -228,225 +229,229 @@
 <button id="runBtn" title="走る">走る</button>
 <button id="rotBtn" title="縦・横を切り替え">⟲ 縦横</button>
 <div id="toast"></div>
-<script src="three.min.js"></script>
-<script src="water.js?v=r23"></script>
-<script src="springs.js?v=spring2"></script>
-<script src="tunnels.js?v=tunnel4"></script>
-<script src="sea.js?v=sea7-continuous&rev=9c929f4f08ac"></script>
-<script src="props/common.js?v=r15c"></script>
-<script src="props/grounding.js?v=ground2&rev=23b4519947dd"></script>
-<script src="props/foliage.js?v=r15c"></script>
-<script src="props/foliage2.js?v=c6fe188ee25d"></script>
-<script src="props/detail.js?v=r15c"></script>
-<script src="props/shared/assets.js?v=natural-crowns2-shelf-rear1"></script>
-<script src="props/shared/rock-surface.js?v=angular6-contact2"></script>
-<script src="props/shared/cave-save-compat.js?v=rollback1"></script>
-<script src="props/shared/pine-wind.js?v=bare-soil1"></script>
-<script src="props/shared/root-surface.js?v=meadow3"></script>
-<script src="props/shared/shared.js?v=bush-light1"></script>
+<div id="startupNotice" role="status">マップエディターを準備しています…</div>
+<div id="assetProgress" role="status" aria-live="polite"><span>画面を準備しています</span><progress max="1"></progress><button hidden>再試行</button></div>
+<script defer data-presentation-only src="startup-assets.js?v=7dae19ff06c8"></script>
+<script defer data-presentation-only src="props/shared/startup-metadata.js?v=ba760618aac0"></script>
+<script defer src="three.min.js"></script>
+<script defer src="water.js?v=r23"></script>
+<script defer src="springs.js?v=spring2"></script>
+<script defer src="tunnels.js?v=tunnel4"></script>
+<script defer src="sea.js?v=sea7-continuous&rev=9c929f4f08ac"></script>
+<script defer data-preparation-key="props/common.js?v=r15c" src="props/common.js?v=265d7bfd15b8"></script>
+<script defer src="props/grounding.js?v=ground2&rev=23b4519947dd"></script>
+<script defer src="props/foliage.js?v=r15c"></script>
+<script defer src="props/foliage2.js?v=c6fe188ee25d"></script>
+<script defer src="props/detail.js?v=r15c"></script>
+<script type="application/x-map-asset" src="props/shared/assets.js?v=natural-crowns2-shelf-rear1"></script>
+<script type="application/x-map-asset" src="props/shared/rock-surface.js?v=angular6-contact2"></script>
+<script type="application/x-map-asset" src="props/shared/cave-save-compat.js?v=rollback1"></script>
+<script defer src="props/shared/pine-wind.js?v=bare-soil1"></script>
+<script defer src="props/shared/root-surface.js?v=meadow3"></script>
+<script defer src="props/shared/shared.js?v=bush-light1"></script>
 <!-- prop types, one file each; this order is the type order -->
-<script src="props/pine.js?v=trees1"></script>
-<script src="props/oak.js?v=trees1"></script>
-<script src="props/rock.js?v=r15c"></script>
-<script src="props/bush.js?v=bare-soil1"></script>
-<script src="props/cliff.js?v=clifffamily1"></script>
-<script src="props/pebble.js?v=r15c"></script>
-<script src="props/reed.js?v=groundplants1"></script>
-<script src="props/log.js?v=refine1"></script>
-<script src="props/stump.js?v=refine1"></script>
-<script src="props/deadtree.js?v=trees1"></script>
-<script src="props/flowers.js?v=groundplants1"></script>
-<script src="props/mushroom.js?v=understory1"></script>
-<script src="props/stalagmite.js?v=r15c"></script>
-<script src="props/crystal.js?v=r15c"></script>
-<script src="props/glowmush.js?v=r15c"></script>
-<script src="props/torch.js?v=r15c"></script>
-<script src="props/column.js?v=nightprops1"></script>
-<script src="props/brokencol.js?v=props-review2"></script>
-<script src="props/ruinwall.js?v=fracture2"></script>
-<script src="props/archgate.js?v=r15c"></script>
-<script src="props/small-prop-parts.js?v=anatomy1"></script>
-<script src="props/architecture-parts.js?v=nightarch2"></script>
-<script src="props/anatomy-parts.js?v=review1"></script>
-<script src="props/statue-parts.js?v=props-review2"></script>
-<script src="props/statue.js?v=props-review2"></script>
-<script src="props/stone-surface.js?v=grave-grain2&rev=b13d9f8dacad"></script>
-<script src="props/marker-parts.js?v=markers1&rev=4ac17ad5905d"></script>
-<script src="props/stele.js?v=markers1"></script>
-<script src="props/rubblepile.js?v=r15c"></script>
-<script src="props/gravestone.js?v=grave-stone2&rev=0481e45ab815"></script>
-<script src="props/crossgrave.js?v=grave-stone2&rev=5b7d0bf7aafd"></script>
-<script src="props/ironfence.js?v=r15c"></script>
-<script src="props/lantern.js?v=lantern-globe1&rev=bbeab0d3138b"></script>
-<script src="props/palm.js?v=trees1"></script>
-<script src="props/rowboat.js?v=bc1da495dc78"></script>
-<script src="props/driftwood.js?v=refine1"></script>
-<script src="props/shells.js?v=ground2&rev=c16f1f1c4c7a"></script>
-<script src="props/lighthouse.js?v=nightarch1"></script>
-<script src="props/pyramid.js?v=r15c"></script>
-<script src="props/obelisk.js?v=nightbatch3"></script>
-<script src="props/cactus.js?v=r15c"></script>
-<script src="props/barrelcactus.js?v=r15c"></script>
-<script src="props/bones.js?v=props-review2"></script>
-<script src="props/lavarock.js?v=r15c"></script>
-<script src="props/fumarole.js?v=r15c"></script>
-<script src="props/obsidian.js?v=r15c"></script>
-<script src="props/iceblock.js?v=r15c"></script>
-<script src="props/icespike.js?v=r15c"></script>
-<script src="props/snowman.js?v=nightsnow1"></script>
-<script src="props/kamakura.js?v=nightsnow1"></script>
-<script src="props/castlewall.js?v=nightarch2"></script>
-<script src="props/tower.js?v=nightarch2"></script>
-<script src="props/gatehouse.js?v=nightarch1"></script>
-<script src="props/banner.js?v=7deff215438d"></script>
-<script src="props/twisttree.js?v=trees1"></script>
-<script src="props/magiccircle.js?v=r15c"></script>
-<script src="props/demonspire.js?v=r15c"></script>
-<script src="props/bonepile.js?v=props-review2"></script>
-<script src="props/fern.js?v=r15c"></script>
-<script src="props/banana.js?v=trees1"></script>
-<script src="props/woodfence.js?v=refine1"></script>
-<script src="props/haystack.js?v=hay-fibre2"></script>
-<script src="props/mausoleum.js?v=nightarch1"></script>
-<script src="props/rootfan.js?v=refine1"></script>
-<script src="props/grass.js?v=plantpolish2"></script>
-<script src="props/birch.js?v=trees1"></script>
-<script src="props/willow.js?v=trees1"></script>
-<script src="props/scotspine.js?v=trees1"></script>
-<script src="props/hazel.js?v=trees1"></script>
-<script src="props/bramble.js?v=plantmotion1"></script>
-<script src="props/ivy.js?v=plantmotion1"></script>
-<script src="props/sedge.js?v=plantmotion1"></script>
-<script src="props/foxglove.js?v=plantmotion1"></script>
-<script src="props/horsetail.js?v=plantmotion1"></script>
-<script src="props/dock.js?v=plantmotion1"></script>
-<script src="props/cliff_split.js?v=clifffamily1"></script>
-<script src="props/cliff_shoulder.js?v=clifffamily1"></script>
-<script src="props/cliff_joint.js?v=clifffamily1"></script>
-<script src="props/cliff_slab.js?v=clifffamily1"></script>
-<script src="props/cliff_talus.js?v=clifffamily1"></script>
-<script src="props/rowan.js?v=trees1"></script>
-<script src="props/juniper.js?v=trees1"></script>
-<script src="props/clover.js?v=understory1"></script>
-<script src="props/shelfshroom.js?v=understory1"></script>
-<script src="props/mossrock.js?v=understory1"></script>
-<script src="props/meadowwhite.js?v=meadow1"></script>
-<script src="props/meadowyellow.js?v=meadow1"></script>
-<script src="props/meadowpink.js?v=meadow1"></script>
-<script src="props/meadowred.js?v=meadow1"></script>
-<script src="props/meadowviolet.js?v=meadow1"></script>
+<script defer src="props/pine.js?v=trees1"></script>
+<script defer src="props/oak.js?v=trees1"></script>
+<script defer src="props/rock.js?v=r15c"></script>
+<script defer src="props/bush.js?v=bare-soil1"></script>
+<script defer src="props/cliff.js?v=clifffamily1"></script>
+<script defer src="props/pebble.js?v=r15c"></script>
+<script defer src="props/reed.js?v=groundplants1"></script>
+<script defer src="props/log.js?v=refine1"></script>
+<script defer src="props/stump.js?v=refine1"></script>
+<script defer src="props/deadtree.js?v=trees1"></script>
+<script defer src="props/flowers.js?v=groundplants1"></script>
+<script defer src="props/mushroom.js?v=understory1"></script>
+<script defer src="props/stalagmite.js?v=r15c"></script>
+<script defer src="props/crystal.js?v=r15c"></script>
+<script defer src="props/glowmush.js?v=r15c"></script>
+<script defer src="props/torch.js?v=r15c"></script>
+<script defer src="props/column.js?v=nightprops1"></script>
+<script defer src="props/brokencol.js?v=props-review2"></script>
+<script defer src="props/ruinwall.js?v=fracture2"></script>
+<script defer src="props/archgate.js?v=r15c"></script>
+<script defer src="props/small-prop-parts.js?v=anatomy1"></script>
+<script defer src="props/architecture-parts.js?v=nightarch2"></script>
+<script defer src="props/anatomy-parts.js?v=review1"></script>
+<script defer src="props/statue-parts.js?v=props-review2"></script>
+<script defer src="props/statue.js?v=props-review2"></script>
+<script defer src="props/stone-surface.js?v=grave-grain2&rev=b13d9f8dacad"></script>
+<script defer src="props/marker-parts.js?v=markers1&rev=4ac17ad5905d"></script>
+<script defer src="props/stele.js?v=markers1"></script>
+<script defer src="props/rubblepile.js?v=r15c"></script>
+<script defer src="props/gravestone.js?v=grave-stone2&rev=0481e45ab815"></script>
+<script defer src="props/crossgrave.js?v=grave-stone2&rev=5b7d0bf7aafd"></script>
+<script defer src="props/ironfence.js?v=r15c"></script>
+<script defer src="props/lantern.js?v=lantern-globe1&rev=bbeab0d3138b"></script>
+<script defer src="props/palm.js?v=trees1"></script>
+<script defer src="props/rowboat.js?v=bc1da495dc78"></script>
+<script defer src="props/driftwood.js?v=refine1"></script>
+<script defer src="props/shells.js?v=ground2&rev=c16f1f1c4c7a"></script>
+<script defer src="props/lighthouse.js?v=nightarch1"></script>
+<script defer src="props/pyramid.js?v=r15c"></script>
+<script defer src="props/obelisk.js?v=nightbatch3"></script>
+<script defer src="props/cactus.js?v=r15c"></script>
+<script defer src="props/barrelcactus.js?v=r15c"></script>
+<script defer src="props/bones.js?v=props-review2"></script>
+<script defer src="props/lavarock.js?v=r15c"></script>
+<script defer src="props/fumarole.js?v=r15c"></script>
+<script defer src="props/obsidian.js?v=r15c"></script>
+<script defer src="props/iceblock.js?v=r15c"></script>
+<script defer src="props/icespike.js?v=r15c"></script>
+<script defer src="props/snowman.js?v=nightsnow1"></script>
+<script defer src="props/kamakura.js?v=nightsnow1"></script>
+<script defer src="props/castlewall.js?v=nightarch2"></script>
+<script defer src="props/tower.js?v=nightarch2"></script>
+<script defer src="props/gatehouse.js?v=nightarch1"></script>
+<script defer src="props/banner.js?v=7deff215438d"></script>
+<script defer src="props/twisttree.js?v=trees1"></script>
+<script defer src="props/magiccircle.js?v=r15c"></script>
+<script defer src="props/demonspire.js?v=r15c"></script>
+<script defer src="props/bonepile.js?v=props-review2"></script>
+<script defer src="props/fern.js?v=r15c"></script>
+<script defer src="props/banana.js?v=trees1"></script>
+<script defer src="props/woodfence.js?v=refine1"></script>
+<script defer src="props/haystack.js?v=hay-fibre2"></script>
+<script defer src="props/mausoleum.js?v=nightarch1"></script>
+<script defer src="props/rootfan.js?v=refine1"></script>
+<script defer src="props/grass.js?v=plantpolish2"></script>
+<script defer src="props/birch.js?v=trees1"></script>
+<script defer src="props/willow.js?v=trees1"></script>
+<script defer src="props/scotspine.js?v=trees1"></script>
+<script defer src="props/hazel.js?v=trees1"></script>
+<script defer src="props/bramble.js?v=plantmotion1"></script>
+<script defer src="props/ivy.js?v=plantmotion1"></script>
+<script defer src="props/sedge.js?v=plantmotion1"></script>
+<script defer src="props/foxglove.js?v=plantmotion1"></script>
+<script defer src="props/horsetail.js?v=plantmotion1"></script>
+<script defer src="props/dock.js?v=plantmotion1"></script>
+<script defer src="props/cliff_split.js?v=clifffamily1"></script>
+<script defer src="props/cliff_shoulder.js?v=clifffamily1"></script>
+<script defer src="props/cliff_joint.js?v=clifffamily1"></script>
+<script defer src="props/cliff_slab.js?v=clifffamily1"></script>
+<script defer src="props/cliff_talus.js?v=clifffamily1"></script>
+<script defer src="props/rowan.js?v=trees1"></script>
+<script defer src="props/juniper.js?v=trees1"></script>
+<script defer src="props/clover.js?v=understory1"></script>
+<script defer src="props/shelfshroom.js?v=understory1"></script>
+<script defer src="props/mossrock.js?v=understory1"></script>
+<script defer src="props/meadowwhite.js?v=meadow1"></script>
+<script defer src="props/meadowyellow.js?v=meadow1"></script>
+<script defer src="props/meadowpink.js?v=meadow1"></script>
+<script defer src="props/meadowred.js?v=meadow1"></script>
+<script defer src="props/meadowviolet.js?v=meadow1"></script>
 
-<script src="hero/hero.js?v=r15c"></script>
-<script src="hero/remy.js?public-label1&v=r15c"></script>
-<script src="props/maple.js?v=trees1"></script>
-<script src="props/cherry.js?v=trees1"></script>
-<script src="props/zelkova.js?v=trees1"></script>
-<script src="props/nara.js?v=trees1"></script>
-<script src="props/sugi.js?v=trees1"></script>
-<script src="props/hinoki.js?v=trees1"></script>
-<script src="props/islandash.js?v=trees1"></script>
-<script src="props/olive.js?v=trees1"></script>
-<script src="props/eucalyptus.js?v=trees1"></script>
-<script src="props/dragontree.js?v=trees1"></script>
-<script src="props/elftree.js?v=trees1"></script>
-<script src="props/worldtree.js?v=trees1"></script>
-<script src="props/meadowgrass.js?v=meadow3"></script>
-<script src="props/ground-cover.js?v=ground4"></script>
-<script src="props/scree.js?v=surfaces1"></script>
-<script src="props/dry-soil.js?v=unity1"></script>
-<script src="props/cave-save-compat.js?v=rollback1"></script>
-<script src="props/skullpile.js?v=props-review2"></script>
-<script src="props/statue_seated.js?v=props-review2"></script>
-<script src="props/statue_damaged.js?v=props-review2"></script>
-<script src="props/fibre-finish.js?v=1&rev=47d4d689f148"></script>
-<script src="props/practical-parts.js?v=nightpots1&rev=881f1402590d"></script>
-<script src="props/miningtools.js?v=tools-grounded2&rev=c6c110711d24"></script>
-<script src="props/supplycrate.js?v=practical1"></script>
-<script src="props/smallbarrel.js?v=barrel-contact1&rev=7fd520c0a8f0"></script>
-<script src="props/tiedsack.js?v=cloth-weight1"></script>
-<script src="props/coiledrope.js?v=rope-fibre1&rev=79f301028e14"></script>
-<script src="props/storagepot.js?v=nightpots1&rev=a438c4303041"></script>
-<script src="props/brokenpot.js?v=pot-floor-contact1&rev=a019b0eb7361"></script>
-<script src="props/braincoral.js?v=coral1"></script>
-<script src="props/staghorn.js?v=coral1"></script>
-<script src="props/pillarcoral.js?v=tip-joint1"></script>
-<script src="props/shell-surface.js?rev=d8250789cc78"></script>
-<script src="props/seafan-surface.js?v=3ad1b8c71a2b"></script>
-<script src="props/seafan.js?v=net-cutout1"></script>
-<script src="props/tablecoral.js?v=coral1"></script>
-<script src="props/roundcoral.js?v=coral1"></script>
-<script src="props/scallop.js?v=ear-joint1"></script>
-<script src="props/cowrie.js?v=strand1"></script>
-<script src="props/shellbits.js?v=strand1"></script>
-<script src="props/wrack.js?v=strand1"></script>
-<script src="props/column-parts.js?v=props-review1"></script>
-<script src="props/obsidian-reflection.js?v=db926e0da7a3"></script>
-<script src="props/small-prop-export.js?v=52b73a45e4a3"></script>
-<script data-presentation-only src="props/wall-torch-source.js?v=walltorch1"></script>
-<script data-presentation-only src="props/wall_torch.js?v=825d25e5f0b8"></script>
-<script data-presentation-only src="props/fire-fixtures.js?v=fire1"></script>
-<script src="terrain/paint.js?v=explicit-materials1"></script>
-<script src="terrain/grass.js?v=ground2"></script>
-<script src="terrain/dirt.js?v=ground2"></script>
-<script src="terrain/bedrock-data.js?v=bedrock3"></script>
-<script src="terrain/bedrock.js?v=bedrock3"></script>
-<script src="terrain/shared.js?v=meadow2"></script>
-<script src="terrain/cliff-shoulder.js?v=71e49d1ee7d8"></script>
-<script src="terrain/cliff-relief.js?v=cliff-fit10"></script>
-<script src="terrain/paving-mask.js?v=bare-soil1"></script>
-<script src="terrain/cliff-contact.js?v=cliff-fit10-startup1"></script>
-<script src="terrain/cliff-fits.js?v=2ba12fd76ba1" data-preparation-key="terrain/cliff-fits.js?v=e987a99aedb0"></script>
-<script src="terrain/cliff-layering.js?v=layer12-startup1"></script>
-<script src="terrain/preparation.js?v=da67a70b50fa"></script>
-<script src="terrain/prepared-codec.js?v=2a6e0c33597d&mapArchive=compact1"></script>
-<script src="terrain/prepared-samples.js?v=prepared1"></script>
-<script src="asset-registry.js?v=registry1&mapArchive=compact1"></script>
-<script src="map-storage.js?v=a4e13531a10d" data-preparation-key="map-storage.js?v=shared1"></script>
-<script src="map-package.js?v=8d1dece0e92a&mapArchive=compact1"></script>
-<script src="props/treasurechest.js?v=chest3"></script>
-<script src="props/chest-series.js?lid-ink1&v=series2"></script>
-<script data-presentation-only src="props/chest-relief.js?v=1&rev=2f6d152ccd4c"></script>
-<script data-presentation-only src="props/chest-presentation.js?v=relief2&rev=02d054f76798"></script>
-<script data-presentation-only src="props/chest-surface-data.js?material38"></script>
-<script data-presentation-only src="props/chest-gold-data.js?colour44"></script>
-<script data-presentation-only src="props/chest-gold-surface.js?colour44"></script>
-<script data-presentation-only src="props/chest-part-atlas-contract.js"></script>
-<script data-presentation-only src="props/chest-part-data.js?rev=1db60b32768e"></script>
-<script data-presentation-only src="props/chest-part-surface.js?rev=bf2906a85b97"></script>
-<script data-presentation-only src="props/chest-worn-contract.js"></script>
-<script data-presentation-only src="props/chest-worn-data.js"></script>
-<script data-presentation-only src="props/chest-worn-surface.js"></script>
-<script data-presentation-only src="props/chest-worn-geometry.js"></script>
-<script data-presentation-only src="props/chest-surface.js?material70&rev=bf7137cd3c64"></script>
-<script data-presentation-only src="props/chest-royal-data.js"></script>
-<script data-presentation-only src="props/chest-royal-contract.js"></script>
-<script data-presentation-only src="props/chest-royal-geometry.js"></script>
-<script data-presentation-only src="props/chest-royal-light-response.js"></script>
-<script data-presentation-only src="props/chest-royal-finish.js"></script>
-<script data-presentation-only src="props/chest-royal-ruby.js"></script>
-<script data-presentation-only src="props/chest-royal.js"></script>
-<script data-presentation-only src="props/chest-silver-trim.js?rev=618ccbf1842f"></script>
-<script data-presentation-only src="props/chest-sanctum-data.js?rev=cb5e96c1769b"></script>
-<script data-presentation-only src="props/chest-sanctum.js?v=374e42cb1827"></script>
-<script data-presentation-only src="props/mine-rails.js?v=a64ac22e284c"></script>
-<script data-presentation-only src="props/mine-rail-drag.js?v=7103ee81b1d1"></script>
-<script data-presentation-only src="props/mine-timber.js?v=6a6bb5c5cd65"></script>
-<script data-presentation-only src="props/minecart.js?v=9e387fe8173b"></script>
-<script data-presentation-only src="props/mine-spoil.js?v=efdde095fd8c"></script>
-<script data-presentation-only src="props/minecart-loaded.js?v=fd316b07809e"></script>
-<script data-presentation-only src="props/mine-cut-rock.js?v=bc0aa43a2cbb"></script>
-<script src="props/shared/cave-decor-data.js?v=5939db717735"></script>
-<script src="props/cave-decor.js?v=abf74ab0b789"></script>
-<script data-presentation-only src="props/mine-collapse-pbr.js?v=e90181e4ba56"></script>
-<script data-presentation-only src="props/mine-collapse.js?v=49ff2562ce9a"></script>
-<script data-presentation-only src="props/mine-lantern.js?v=87e69f27a2e1"></script>
-<script data-presentation-only src="props/mine-cobweb.js?v=abeb8091c733"></script>
-<script data-presentation-only src="terrain/vendor/meshopt_decoder.js?v=stored-buffers-1"></script>
-<script data-presentation-only src="terrain/surface-codec.js?v=stored-buffers-1"></script>
-<script data-presentation-only src="terrain/saved-boundary.js?v=stored-buffers-1"></script>
-<script data-presentation-only src="terrain/archive-compression.js?v=stored-buffers-1"></script>
-<script data-presentation-only src="terrain/map-archive.js?v=a069119599f1"></script>
-<script src="terrain/completed-state.js?v=41480e908365&mapArchive=fieldonly1"></script>
-<script src="app.js?v=b760c4d55fe9" data-preparation-key="app.js?v=41451b050877"></script>
+<script defer src="hero/hero.js?v=r15c"></script>
+<script type="application/x-map-asset" src="hero/remy.js?public-label1&v=r15c"></script>
+<script defer src="props/maple.js?v=trees1"></script>
+<script defer src="props/cherry.js?v=trees1"></script>
+<script defer src="props/zelkova.js?v=trees1"></script>
+<script defer src="props/nara.js?v=trees1"></script>
+<script defer src="props/sugi.js?v=trees1"></script>
+<script defer src="props/hinoki.js?v=trees1"></script>
+<script defer src="props/islandash.js?v=trees1"></script>
+<script defer src="props/olive.js?v=trees1"></script>
+<script defer src="props/eucalyptus.js?v=trees1"></script>
+<script defer src="props/dragontree.js?v=trees1"></script>
+<script defer src="props/elftree.js?v=trees1"></script>
+<script defer src="props/worldtree.js?v=trees1"></script>
+<script defer src="props/meadowgrass.js?v=meadow3"></script>
+<script defer src="props/ground-cover.js?v=ground4"></script>
+<script defer src="props/scree.js?v=surfaces1"></script>
+<script defer src="props/dry-soil.js?v=unity1"></script>
+<script defer src="props/cave-save-compat.js?v=rollback1"></script>
+<script defer src="props/skullpile.js?v=props-review2"></script>
+<script defer src="props/statue_seated.js?v=props-review2"></script>
+<script defer src="props/statue_damaged.js?v=props-review2"></script>
+<script defer src="props/fibre-finish.js?v=1&rev=47d4d689f148"></script>
+<script defer src="props/practical-parts.js?v=nightpots1&rev=881f1402590d"></script>
+<script defer src="props/miningtools.js?v=tools-grounded2&rev=c6c110711d24"></script>
+<script defer src="props/supplycrate.js?v=practical1"></script>
+<script defer src="props/smallbarrel.js?v=barrel-contact1&rev=7fd520c0a8f0"></script>
+<script defer src="props/tiedsack.js?v=cloth-weight1"></script>
+<script defer src="props/coiledrope.js?v=rope-fibre1&rev=79f301028e14"></script>
+<script defer src="props/storagepot.js?v=nightpots1&rev=a438c4303041"></script>
+<script defer src="props/brokenpot.js?v=pot-floor-contact1&rev=a019b0eb7361"></script>
+<script defer src="props/braincoral.js?v=coral1"></script>
+<script defer src="props/staghorn.js?v=coral1"></script>
+<script defer src="props/pillarcoral.js?v=tip-joint1"></script>
+<script defer src="props/shell-surface.js?rev=d8250789cc78"></script>
+<script defer src="props/seafan-surface.js?v=3ad1b8c71a2b"></script>
+<script defer src="props/seafan.js?v=net-cutout1"></script>
+<script defer src="props/tablecoral.js?v=coral1"></script>
+<script defer src="props/roundcoral.js?v=coral1"></script>
+<script defer src="props/scallop.js?v=ear-joint1"></script>
+<script defer src="props/cowrie.js?v=strand1"></script>
+<script defer src="props/shellbits.js?v=strand1"></script>
+<script defer src="props/wrack.js?v=strand1"></script>
+<script defer src="props/column-parts.js?v=props-review1"></script>
+<script defer src="props/obsidian-reflection.js?v=db926e0da7a3"></script>
+<script defer src="props/small-prop-export.js?v=52b73a45e4a3"></script>
+<script defer data-presentation-only src="props/wall-torch-source.js?v=walltorch1"></script>
+<script defer data-presentation-only src="props/wall_torch.js?v=825d25e5f0b8"></script>
+<script defer data-presentation-only src="props/fire-fixtures.js?v=72c460bb2bde"></script>
+<script defer src="terrain/paint.js?v=explicit-materials1"></script>
+<script defer src="terrain/grass.js?v=ground2"></script>
+<script defer src="terrain/dirt.js?v=ground2"></script>
+<script defer src="terrain/bedrock-data.js?v=bedrock3"></script>
+<script defer src="terrain/bedrock.js?v=bedrock3"></script>
+<script defer src="terrain/shared.js?v=meadow2"></script>
+<script defer src="terrain/cliff-shoulder.js?v=71e49d1ee7d8"></script>
+<script defer src="terrain/cliff-relief.js?v=cliff-fit10"></script>
+<script defer src="terrain/paving-mask.js?v=bare-soil1"></script>
+<script defer src="terrain/cliff-contact.js?v=cliff-fit10-startup1"></script>
+<script defer src="terrain/cliff-fits.js?v=2ba12fd76ba1" data-preparation-key="terrain/cliff-fits.js?v=e987a99aedb0"></script>
+<script defer src="terrain/cliff-layering.js?v=layer12-startup1"></script>
+<script defer src="terrain/preparation.js?v=da67a70b50fa"></script>
+<script defer src="terrain/prepared-codec.js?v=2a6e0c33597d&mapArchive=compact1"></script>
+<script defer src="terrain/prepared-samples.js?v=prepared1"></script>
+<script defer src="asset-registry.js?v=registry1&mapArchive=compact1"></script>
+<script defer src="map-storage.js?v=a4e13531a10d" data-preparation-key="map-storage.js?v=shared1"></script>
+<script defer src="map-package.js?v=8d1dece0e92a&mapArchive=compact1"></script>
+<script defer src="props/treasurechest.js?v=chest3"></script>
+<script defer src="props/chest-series.js?lid-ink1&v=series2"></script>
+<script defer data-presentation-only src="props/chest-relief.js?v=1&rev=2f6d152ccd4c"></script>
+<script defer data-presentation-only src="props/chest-presentation.js?v=a42bb9499368"></script>
+<script type="application/x-map-asset" data-presentation-only src="props/chest-surface-data.js?material38"></script>
+<script type="application/x-map-asset" data-presentation-only src="props/chest-gold-data.js?colour44"></script>
+<script defer data-presentation-only src="props/chest-gold-surface.js?colour44"></script>
+<script defer data-presentation-only src="props/chest-part-atlas-contract.js"></script>
+<script type="application/x-map-asset" data-presentation-only src="props/chest-part-data.js?rev=1db60b32768e"></script>
+<script defer data-presentation-only src="props/chest-part-surface.js?rev=bf2906a85b97"></script>
+<script defer data-presentation-only src="props/chest-worn-contract.js"></script>
+<script type="application/x-map-asset" data-presentation-only src="props/chest-worn-data.js"></script>
+<script defer data-presentation-only src="props/chest-worn-surface.js"></script>
+<script defer data-presentation-only src="props/chest-worn-geometry.js?v=5076f548ca22"></script>
+<script defer data-presentation-only src="props/chest-surface.js?material70&rev=bf7137cd3c64"></script>
+<script type="application/x-map-asset" data-presentation-only src="props/chest-royal-data.js"></script>
+<script defer data-presentation-only src="props/chest-royal-contract.js"></script>
+<script defer data-presentation-only src="props/chest-royal-geometry.js"></script>
+<script defer data-presentation-only src="props/chest-royal-light-response.js"></script>
+<script defer data-presentation-only src="props/chest-royal-finish.js"></script>
+<script defer data-presentation-only src="props/chest-royal-ruby.js"></script>
+<script defer data-presentation-only src="props/chest-royal.js?v=f89f73aa3d21"></script>
+<script defer data-presentation-only src="props/chest-silver-trim.js?v=bbf1024fb9d4"></script>
+<script type="application/x-map-asset" data-presentation-only src="props/chest-sanctum-data.js?rev=cb5e96c1769b"></script>
+<script defer data-presentation-only src="props/chest-sanctum.js?v=6de7209d5830"></script>
+<script defer data-presentation-only src="props/mine-rails.js?v=a64ac22e284c"></script>
+<script defer data-presentation-only src="props/mine-rail-drag.js?v=7103ee81b1d1"></script>
+<script defer data-presentation-only src="props/mine-timber.js?v=6a6bb5c5cd65"></script>
+<script defer data-presentation-only src="props/minecart.js?v=9e387fe8173b"></script>
+<script defer data-presentation-only src="props/mine-spoil.js?v=efdde095fd8c"></script>
+<script defer data-presentation-only src="props/minecart-loaded.js?v=fd316b07809e"></script>
+<script defer data-presentation-only src="props/mine-cut-rock.js?v=bc0aa43a2cbb"></script>
+<script type="application/x-map-asset" src="props/shared/cave-decor-data.js?v=5939db717735"></script>
+<script defer src="props/cave-decor.js?v=abf74ab0b789"></script>
+<script type="application/x-map-asset" data-presentation-only src="props/mine-collapse-pbr.js?v=e90181e4ba56"></script>
+<script defer data-presentation-only src="props/mine-collapse.js?v=49ff2562ce9a"></script>
+<script defer data-presentation-only src="props/mine-lantern.js?v=87e69f27a2e1"></script>
+<script defer data-presentation-only src="props/mine-cobweb.js?v=abeb8091c733"></script>
+<script defer data-presentation-only src="terrain/vendor/meshopt_decoder.js?v=stored-buffers-1"></script>
+<script defer data-presentation-only src="terrain/surface-codec.js?v=stored-buffers-1"></script>
+<script defer data-presentation-only src="terrain/saved-boundary.js?v=stored-buffers-1"></script>
+<script defer data-presentation-only src="terrain/archive-compression.js?v=stored-buffers-1"></script>
+<script defer data-presentation-only src="terrain/map-archive.js?v=a069119599f1"></script>
+<script defer src="terrain/completed-state.js?v=41480e908365&mapArchive=fieldonly1"></script>
+<script defer src="app.js?v=14ef077dd39e" data-preparation-key="app.js?v=41451b050877"></script>
 </body>
 </html>

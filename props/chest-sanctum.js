@@ -9,8 +9,7 @@ window.TDChestSanctum=(()=>{
    if(!Array.isArray(g.triangles)||!g.triangles.length||g.triangles.length%3||g.triangles.length>90000||g.triangles.some(x=>!Number.isInteger(x)||x<0||x>=n))throw Error('Sanctum index');
   }if(total>30000)throw Error('Sanctum budget');return d;
  }
- try{if(window.TDChestSanctumData)data=validate(TDChestSanctumData);}catch(e){error=e.message;console.warn('Optional rainbow ignored:',error);}
- function enabled(){return !!data;}
+ function enabled(){if(!data&&!error&&window.TDChestSanctumData)try{data=validate(TDChestSanctumData);}catch(e){error=e.message;console.warn('Optional rainbow ignored:',error);}return !!data;}
  function mesh(){if(geometry)return geometry;const p=[],n=[],uv=[],t=[],kind=[],ix=[];for(const g of data.groups){const offset=p.length/3;p.push(...g.positions);n.push(...g.normals);uv.push(...g.uv);t.push(...g.tangents);kind.push(...Array(g.positions.length/3).fill(kinds.indexOf(g.kind)));ix.push(...g.triangles.map(x=>x+offset));}geometry=new THREE.BufferGeometry();for(const[name,a,size]of [['position',p,3],['normal',n,3],['uv',uv,2],['tangent',t,4],['sanctumKind',kind,1],['color',Array(kind.length*3).fill(1),3],['glow',Array(kind.length).fill(0),1]])geometry.setAttribute(name,new THREE.Float32BufferAttribute(a,size));geometry.setAttribute('uv1',geometry.attributes.uv.clone());geometry.setIndex(ix);geometry.computeBoundingBox();geometry.computeBoundingSphere();return geometry;}
  const crystal=`vec2 cutUV=vec2(p.x+p.z*.63,p.y*.67-p.z*.54)*18.+viewOS.xy*.55;vec2 cutFold=abs(fract(vec2(cutUV.x+cutUV.y*.47,cutUV.y-cutUV.x*.39))-.5)*2.;float cut=pow(clamp(1.-max(cutFold.x,cutFold.y)*.82,0.,1.),2.);float edgeDepth=.18+.82*pow(abs(dot(normalize(viewOS),normalize(vec3(.35,.75,.55)))),2.);vec3 internal=mix(spectrum*vec3(.21,.10,.34),spectrum,cut);`;
  function material(time){phase.value=time.value;if(mat)return mat;const maps=TDChestRoyal.get();mat=new THREE.MeshStandardMaterial({color:0xffffff,metalness:.9,roughness:.16,normalMap:maps.textures[0],aoMap:maps.textures[1],aoMapIntensity:.25});mat.onBeforeCompile=sh=>{
@@ -42,7 +41,7 @@ vec3 sanctumTint=diffuseColor.rgb;vec3 p=vSanctumLocal,viewOS=normalize(vSanctum
    if(mat&&!mat.envMap&&window.__app?.renderer){if(scene.environment)mat.envMap=scene.environment;else{const es=new THREE.Scene();es.background=new THREE.Color(.30,.34,.42);for(const[x,y,z,w,h,c]of[[-3,2,3,3,4,0xffffff],[3,1,1,2,3,0x687994],[0,4,0,4,2,0xc7ddff]]){const m=new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({color:c,side:THREE.DoubleSide}));m.position.set(x,y,z);m.lookAt(0,.4,0);es.add(m);}const pm=new THREE.PMREMGenerator(__app.renderer);env=pm.fromScene(es,.08,.1,15);mat.envMap=env.texture;es.traverse(o=>{o.geometry?.dispose();o.material?.dispose();});pm.dispose();}mat.needsUpdate=true;}}
   return{group:inner.group,sync,updateLights,get metrics(){return{...inner.metrics,sanctumChests:rows.length,sanctumMotes:rows.length*36,sanctumActiveLights:lights.filter(l=>l.visible).length,sanctumLightCapacity:lights.length,sanctumFxCapacity:fx?.instanceMatrix.count||0};}};
  }
- const build=TDProps.build;TDProps.build=()=>build().map(t=>t.id===id&&enabled()?{...t,collisionGeo:t.collisionGeo||t.geo,geo:mesh()}:t);
+ TDProps.decorate(id,t=>enabled()?{...t,collisionGeo:t.collisionGeo||t.geo,geo:mesh()}:t);
  const legacyCreate=TDChestPresentation.create;TDChestPresentation.create=(scene,time)=>wrapCreate(legacyCreate,scene,time);
  return{id,enabled,validate,geometry:mesh,material,reflectionEnvironment:()=>mat?.envMap||null,export:descriptor,slots,lightState,stats:()=>({enabled:enabled(),error,vertices:data?data.groups.reduce((n,g)=>n+g.positions.length/3,0):0,motes:36,lightsPerChest:3,maxActiveLights:6})};
 })();

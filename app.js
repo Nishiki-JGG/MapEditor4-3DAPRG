@@ -1333,7 +1333,7 @@ function updateTerrain() {
 // Props (procedural low-poly assets, drawn instanced)
 // ============================================================
 // prop types: one file each in props/ (index.html loads them in type order); shared helpers in props/common.js
-const PROP = TDProps.build();
+const PROP = TDProps.build({lazy:true});
 const propMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .88, metalness: 0, flatShading: true });
 const heroMat = propMat.clone();
 heroMat.transparent = true;   // lets it be drawn last, on top of rock, while inside a tunnel
@@ -1528,7 +1528,7 @@ function preparePropMeshes() {
   for (const p of props) { normal[p[0]]++; if (ghosts.has(p)) faded[p[0]]++; }
   for (const [pool, counts, limit, create] of [[propMeshes, normal, CAP, createPropMesh], [ghostMeshes, faded, 256, createGhostMesh]]) {
     for (let i = 0; i < PROP.length; i++) {
-      const needed = PROP[i].geo.userData.groundParts ? 0 : Math.min(limit, counts[i]);
+      const needed = !counts[i] || PROP[i].geo.userData.groundParts ? 0 : Math.min(limit, counts[i]);
       const old = pool[i];
       if (old && (!needed || old.instanceMatrix.count < needed)) {
         scene.remove(old); old.dispose(); old.geometry.dispose(); delete pool[i];
@@ -1540,9 +1540,8 @@ function preparePropMeshes() {
 let ghosts = new Set();   // props currently faded because the player is inside them
 const VIS_R = PROP.map(t => t.vis);
 // 'common' parts appear under every biome in the palette
-for (const t of PROP) {
-  const sw = t.sway ?? 0;
-  if (sw) t.geo.setAttribute('sway', new THREE.Float32BufferAttribute(new Float32Array(t.geo.attributes.position.count).fill(sw), 1));
+function addPropSway(t) {
+  const sw=t.sway??0;if(sw)t.geo.setAttribute('sway',new THREE.Float32BufferAttribute(new Float32Array(t.geo.attributes.position.count).fill(sw),1));
 }   // visual footprint per prop type (x scale)
 const _m = new THREE.Matrix4(), _q = new THREE.Quaternion(), _p = new THREE.Vector3(), _s = new THREE.Vector3(), _c = new THREE.Color(), _up = new THREE.Vector3(0, 1, 0);
 // a small pool of real lights follows the glowing parts nearest to the view
@@ -2888,7 +2887,7 @@ function geoHero() {
 // 主人公の見た目（hero/）：ゲームの体（Remy、hero/remy.js）と簡易の人形（geoHero）。見た目だけで、歩きの判定（state.agent）と書き出しには関わらない
 const heroBox = new THREE.Mesh(geoHero(), heroMat);
 heroBox.castShadow = true;
-const heroBody = window.TDHero ? TDHero.build('remy') : null;   // null = hero/remy.js が無い（簡易の人形だけ）
+let heroBody = null;   // null = hero/remy.js が無い（簡易の人形だけ）
 const hero = new THREE.Group(); hero.add(heroBox); if (heroBody) hero.add(heroBody.group);
 hero.visible = false; scene.add(hero);
 const heroMats = [heroMat, ...(heroBody ? heroBody.mats : [])];
@@ -3339,7 +3338,7 @@ function canPlace(t, x, z, hash) {
   return ok;
 }
 function scatterAt(x, z, R = Math.random) {
-  const types = [...state.types].filter(i=>propVisible(i)&&!PROP[i].manualOnly); if (!types.length) return;
+  const types = [...state.types].filter(i=>PROP[i].ready&&propVisible(i)&&!PROP[i].manualOnly); if (!types.length) return;
   const r = state.radius, sq = state.brushShape === 'square', hash = buildPropHash(), n = Math.max(1, Math.round((sq ? 4 : Math.PI) * r * r * state.density * .22));
   for (let k = 0; k < n; k++) {
     const a = R() * Math.PI * 2, d = Math.sqrt(R()) * r, t = types[(R() * types.length) | 0];
@@ -3355,8 +3354,10 @@ function scatterAt(x, z, R = Math.random) {
   rebuildProps();
 }
 const TYPE = id => PROP.findIndex(t => t.id === id);
+let pendingGroundAssets=false;
 function regenGroundProps() {
-  refreshGroundWeights();
+  if(!TDStartupAssets.complete){pendingGroundAssets=true;return;}
+  pendingGroundAssets=false;refreshGroundWeights();
   props = props.filter(p => p[5] !== 2);
   const hash = buildPropHash(), add = (t, x, z, s) => { const p = [t, x, z, hash2(x * 31 | 0, z * 17 | 0) * 6.28, s, 2]; props.push(p); hash.add(p, x, z); };
   const free = (x, z, d) => { let ok = true; hash.query(x, z, 2.5, p => { if (ok && Math.hypot(p[1] - x, p[2] - z) < d) ok = false; }); return ok; };
@@ -3786,7 +3787,16 @@ function ensureIds() {
 
 // ---------- asset catalog: typeId -> assetKey and the proxy collider the editor uses for walkability
 const EXPORTER_VERSION = 'tdj-map-editor/2026.10.21-r18';
-for (const t of PROP) { t.geo.computeBoundingBox(); t.meshTop = +t.geo.boundingBox.max.y.toFixed(2); t.height = t.height ?? t.meshTop; t.base = { r: t.r, offs: t.offs, height: t.height }; t.offs = t.offs ? t.offs.map(o => [o, 0]) : null; if (t.shape && t.r > 0) t.footprint = shapeFootprint(t); }   // internal offsets are [x, z] (see applyCatalog)
+for(const t of PROP){t.base={r:t.r,offs:t.offs,height:t.height};t.offs=t.offs?t.offs.map(o=>[o,0]):null;}
+function finishPropAsset(t){
+ addPropSway(t);t.geo.computeBoundingBox();t.meshTop=+t.geo.boundingBox.max.y.toFixed(2);
+ t.base.height=t.base.height??t.meshTop;
+ if(!state.catalog.types[t.id]?.height)t.height=t.base.height;
+ if(t.shape&&t.base.r>0)t.footprint=shapeFootprint(t);
+ t.ready=true;
+}
+function propPreviewGeometry(i){return PROP[i]?.ready?(PROP[i].roomTorch?TDWallTorch.previewGeometry:PROP[i].geo):emptyPreviewGeometry;}
+   // internal offsets are [x, z] (see applyCatalog)
 const isNum = (v, ok) => typeof v === 'number' && Number.isFinite(v) && (!ok || ok(v));
 // version 1 catalogs were a flat {typeId: entry} map; version 2 has {types, floorLinks}
 function normalizeCatalog(d) {
@@ -4559,6 +4569,7 @@ function sha256(bytes) {
 const GROUND_EFFECT = { sand: 'slow_light', rubble: 'slow_light', swamp: 'slow', poison: 'poison', lava: 'lava', snowfield: 'slow_light', ice: 'ice' };
 const WEIGHT_LAYERS = ['grass', 'dirt', 'cobble', 'sand', 'rubble', 'swamp', 'poison', 'lava', 'snowfield', 'ice', 'cliff', 'bedrock', 'pureblack'];
 async function buildExport({sharedAssets = false, compact = false} = {}) {
+  await TDStartupAssets.ensureAll();
   const sourceBefore=TDMapPackage.authoringState(serialize());
   await TDChestSurface.prepare(); // Lazy atlases must be ready before their shared export, not at application startup.
   await TDMineCollapse.prepare(); // Export exactly the ready shared maps, or the intact fallback.
@@ -5092,7 +5103,7 @@ function useSlot(n) {
   if (sl.types) { state.types = new Set(sl.types.map(TYPE).filter(i => i >= 0)); syncTypesUI(); }
   if (sl.variant !== undefined) {
     state.variant[sl.tool] = sl.tool === 'place' ? Math.max(0, TYPE(sl.variant)) : sl.variant;
-    if (sl.tool === 'place') { preview.geometry = PROP[state.variant.place].roomTorch ? TDWallTorch.previewGeometry : PROP[state.variant.place].geo; state.placeScale = sl.placeScale ?? 1; state.placeRot = sl.placeRot ?? 0; syncPlaceUI(); }
+    if (sl.tool === 'place') { preview.geometry = propPreviewGeometry(state.variant.place); state.placeScale = sl.placeScale ?? 1; state.placeRot = sl.placeRot ?? 0; syncPlaceUI(); }
   }
   setTool(sl.tool); slotNow = n; renderSlots(); toast(`${n}：${slotLabel(sl)}`);
 }
@@ -5126,7 +5137,7 @@ function showVariants() {
     : tool === 'stairs' ? STAIR_TYPES.filter(([v]) => inPalette(STAIR_TAGS[v]))
     : tool === 'spring' ? Object.entries(TDSprings.PRESETS).map(([v, q]) => [v, q.name]) : tool === 'pool' ? POOL_TYPES : tool === 'tunnel' ? TUNNEL_STYLES
     : tool === 'place' ? PROP.map((t, i) => [i, t.name]).filter(([i]) => propVisible(i)) : null;
-  if (opts && opts.length && !opts.some(([v]) => v === state.variant[tool])) { state.variant[tool] = opts[0][0]; if (tool === 'place') preview.geometry = PROP[opts[0][0]].roomTorch ? TDWallTorch.previewGeometry : PROP[opts[0][0]].geo; }
+  if (opts && opts.length && !opts.some(([v]) => v === state.variant[tool])) { state.variant[tool] = opts[0][0]; if (tool === 'place') preview.geometry = propPreviewGeometry(opts[0][0]); }
   box.hidden = !opts; $('placeOpts').hidden = tool !== 'place';
   $('caveDecorHeightRow').hidden = tool !== 'place' || !PROP[state.variant.place]?.caveDecor;
   if (!opts) return;
@@ -5134,7 +5145,8 @@ function showVariants() {
   list.innerHTML = '';
   const button = (v, name, box) => {
     const b = document.createElement('button'); b.textContent = name; b.classList.toggle('on', state.variant[tool] === v);
-    b.onclick = () => { cancelRailDrag(); state.variant[tool] = v; showVariants(); if (tool === 'place') preview.geometry = PROP[v].roomTorch ? TDWallTorch.previewGeometry : PROP[v].geo; };
+    if(tool==='place'){b.dataset.assetType=v;b.disabled=!PROP[v].ready;b.title=b.disabled?'素材を読み込み中':'';}
+    b.onclick = () => { cancelRailDrag(); state.variant[tool] = v; showVariants(); if (tool === 'place') preview.geometry = propPreviewGeometry(v); };
     box.appendChild(b);
   };
   if (tool !== 'place') { for (const [v, name] of opts) button(v, name, list); return; }
@@ -5246,7 +5258,7 @@ $('walkView').onclick = () => setWalkView(!state.showWalk);
 if (heroBody) $('heroLookRemy').textContent = `Remy（ゲームの体・身長 ${heroBody.meta.height.toFixed(2)}m）`; else $('heroLookRemy').disabled = true;
 $('heroLook').onchange = e => setHeroLook(e.target.value);
 setHeroLook(heroBody ? 'remy' : 'box');
-$('refreshGroundProps').onclick = () => { pushUndo(); regenGroundProps(); toast('地面の塗りに合わせて草と小石を更新しました'); };
+$('refreshGroundProps').onclick = () => { if(!TDStartupAssets.complete){toast('草・小石の素材を読み込み中です');return;}pushUndo(); regenGroundProps(); toast('地面の塗りに合わせて草と小石を更新しました'); };
 $('autoRocks').onclick = () => prepareMap('rocks', Date.now());
 $('newSample').onclick = () => { if(SIZE!==64){reloadAtSize(64,'sample');return;}prepareMap('sample',(Math.random()*1e6)|0); };
 $('newSample2').onclick = () => { if(SIZE!==SAMPLE2_SIZE){reloadAtSize(SAMPLE2_SIZE,'sample2');return;}prepareMap('sample2',11); };
@@ -5413,8 +5425,8 @@ function updateRing() {
     return;
   }
   if (state.tool === 'place') {
-    const t = state.variant.place, s0 = (PROP[t].sc[0] + PROP[t].sc[1]) / 2 * state.placeScale;
-    preview.material=PROP[t].mineTimber?railPreviewMat:PROP[t].mineCobweb?cobwebPreviewMat:PROP[t].mineLantern?lanternPreviewMat:PROP[t].caveDecor?TDSharedProps.material(PROP[t].sharedAsset,true):PROP[t].mineCollapse?collapsePreviewMat:PROP[t].mineSpoil?spoilPreviewMat:PROP[t].mineCutRock?cutRockPreviewMat:PROP[t].mineCartLoad?cartLoadPreviewMat:PROP[t].mineCart?cartPreviewMat:PROP[t].mineRail?railPreviewMat:standardPreviewMat;
+    const t = state.variant.place;if(!PROP[t].ready){outline(circle(hit.x,hit.z,.5),0xffd27a,.15);return;}const s0 = (PROP[t].sc[0] + PROP[t].sc[1]) / 2 * state.placeScale;
+    preview.material=PROP[t].mineTimber?assetPreviewMaterial('railPreviewMat'):PROP[t].mineCobweb?assetPreviewMaterial('cobwebPreviewMat'):PROP[t].mineLantern?assetPreviewMaterial('lanternPreviewMat'):PROP[t].caveDecor?TDSharedProps.material(PROP[t].sharedAsset,true):PROP[t].mineCollapse?assetPreviewMaterial('collapsePreviewMat'):PROP[t].mineSpoil?assetPreviewMaterial('spoilPreviewMat'):PROP[t].mineCutRock?assetPreviewMaterial('cutRockPreviewMat'):PROP[t].mineCartLoad?assetPreviewMaterial('cartLoadPreviewMat'):PROP[t].mineCart?assetPreviewMaterial('cartPreviewMat'):PROP[t].mineRail?assetPreviewMaterial('railPreviewMat'):standardPreviewMat;
     if(PROP[t].mineRail&&PROP[t].id!=='mine_rail_end'&&state.mode==='edit'&&placementPointerType!=='touch'){const q=TDMineRailDrag.begin(hit.x,hit.z,state.placeRot*Math.PI/180,s0,props,PROP,floorAt),p=q.start;preview.geometry=PROP[TYPE('mine_rail_straight')].geo;preview.visible=true;preview.position.set(p.x,p.y,p.z);preview.rotation.y=p.rot;preview.scale.setScalar(s0);outline(circle(p.x,p.z,.14),q.startReason?0xff5555:q.snapped?0x68ffb0:0xffd27a,.18);return;}
     if(PROP[t].mineRail){preview.geometry=PROP[t].geo;const p=TDMineRails.placement(PROP[t].id,hit.x,hit.z,state.placeRot*Math.PI/180,s0,props,PROP,floorAt);preview.visible=true;preview.position.set(p.x,p.y,p.z);preview.rotation.y=p.rot;preview.scale.setScalar(s0);outline(circle(p.x,p.z,.14),!p.valid?0xff5555:p.snapped?0x68ffb0:0xffd27a,.18);return;}
     if(PROP[t].caveDecor){preview.visible=true;preview.position.set(hit.x,TDCaveDecor.baseY(PROP[t],heightAt(hit.x,hit.z),s0,+$('caveDecorHeight').value),hit.z);preview.rotation.y=state.placeRot*Math.PI/180;preview.scale.setScalar(s0);return;}
@@ -5449,16 +5461,21 @@ function updateRing() {
   ring.material.color.set(state.tool === 'erase' ? 0xff7a6a : state.tool === 'scatter' || state.tool === 'walkOn' ? 0x9cff8a : state.tool === 'walkOff' ? 0xff6ae0 : state.tool === 'secret' ? 0x6ee6ff : 0xffffff);
 }
 
-const preview = new THREE.Mesh(PROP[0].geo, new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, transparent: true, opacity: .6, depthWrite: false }));
-const standardPreviewMat=preview.material,railPreviewMat=TDMineRails.material().clone();railPreviewMat.transparent=true;railPreviewMat.opacity=.65;railPreviewMat.depthWrite=false;
-const cobwebPreviewMat=TDMineCobweb.material().clone();cobwebPreviewMat.opacity=.65;
-const lanternPreviewMat=TDMineLantern.material().clone();lanternPreviewMat.transparent=true;lanternPreviewMat.opacity=.65;lanternPreviewMat.depthWrite=false;
-const collapsePreviewMat=TDMineCollapse.material().clone();collapsePreviewMat.transparent=true;collapsePreviewMat.opacity=.65;collapsePreviewMat.depthWrite=false;
-const spoilPreviewMat=TDMineSpoil.material().clone();spoilPreviewMat.transparent=true;spoilPreviewMat.opacity=.65;spoilPreviewMat.depthWrite=false;
-const cutRockPreviewMat=TDMineCutRock.material().clone();cutRockPreviewMat.transparent=true;cutRockPreviewMat.opacity=.65;cutRockPreviewMat.depthWrite=false;
-const cartLoadPreviewMat=TDMineCartLoad.material().clone();cartLoadPreviewMat.onBeforeRender=TDMineCartLoad.material().onBeforeRender;cartLoadPreviewMat.transparent=true;cartLoadPreviewMat.opacity=.65;cartLoadPreviewMat.depthWrite=false;
-const cartPreviewMat=TDMineCart.material().clone();cartPreviewMat.onBeforeRender=TDMineCart.material().onBeforeRender;cartPreviewMat.transparent=true;cartPreviewMat.opacity=.65;cartPreviewMat.depthWrite=false;
-preview.visible = false; preview.renderOrder = 9; scene.add(preview);
+const emptyPreviewGeometry=new THREE.BufferGeometry();
+const preview = new THREE.Mesh(emptyPreviewGeometry, new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, transparent: true, opacity: .6, depthWrite: false }));
+const standardPreviewMat=preview.material;
+const lazyPreviewMaterials={};
+function assetPreviewMaterial(name){if(lazyPreviewMaterials[name])return lazyPreviewMaterials[name];
+ if(name==='railPreviewMat'){const railPreviewMat=TDMineRails.material().clone();railPreviewMat.transparent=true;railPreviewMat.opacity=.65;railPreviewMat.depthWrite=false;return lazyPreviewMaterials[name]=railPreviewMat;}
+ if(name==='cobwebPreviewMat'){const cobwebPreviewMat=TDMineCobweb.material().clone();cobwebPreviewMat.opacity=.65;return lazyPreviewMaterials[name]=cobwebPreviewMat;}
+ if(name==='lanternPreviewMat'){const lanternPreviewMat=TDMineLantern.material().clone();lanternPreviewMat.transparent=true;lanternPreviewMat.opacity=.65;lanternPreviewMat.depthWrite=false;return lazyPreviewMaterials[name]=lanternPreviewMat;}
+ if(name==='collapsePreviewMat'){const collapsePreviewMat=TDMineCollapse.material().clone();collapsePreviewMat.transparent=true;collapsePreviewMat.opacity=.65;collapsePreviewMat.depthWrite=false;return lazyPreviewMaterials[name]=collapsePreviewMat;}
+ if(name==='spoilPreviewMat'){const spoilPreviewMat=TDMineSpoil.material().clone();spoilPreviewMat.transparent=true;spoilPreviewMat.opacity=.65;spoilPreviewMat.depthWrite=false;return lazyPreviewMaterials[name]=spoilPreviewMat;}
+ if(name==='cutRockPreviewMat'){const cutRockPreviewMat=TDMineCutRock.material().clone();cutRockPreviewMat.transparent=true;cutRockPreviewMat.opacity=.65;cutRockPreviewMat.depthWrite=false;return lazyPreviewMaterials[name]=cutRockPreviewMat;}
+ if(name==='cartLoadPreviewMat'){const cartLoadPreviewMat=TDMineCartLoad.material().clone();cartLoadPreviewMat.onBeforeRender=TDMineCartLoad.material().onBeforeRender;cartLoadPreviewMat.transparent=true;cartLoadPreviewMat.opacity=.65;cartLoadPreviewMat.depthWrite=false;return lazyPreviewMaterials[name]=cartLoadPreviewMat;}
+ if(name==='cartPreviewMat'){const cartPreviewMat=TDMineCart.material().clone();cartPreviewMat.onBeforeRender=TDMineCart.material().onBeforeRender;cartPreviewMat.transparent=true;cartPreviewMat.opacity=.65;cartPreviewMat.depthWrite=false;return lazyPreviewMaterials[name]=cartPreviewMat;}
+ throw Error('Unknown preview material '+name);
+}
 const groundPreview=new THREE.Group(),previewGroundPose=[];groundPreview.visible=false;scene.add(groundPreview);
 function setGroundPreview(type,x,z,yaw,scale){
  const t=PROP[type];if(groundPreview.userData.type!==type){groundPreview.clear();TDPropGrounding.parts(t.geo).forEach(part=>{const m=new THREE.Mesh(part.geometry,t.surface?TDSmallPropSurface.material(preview.material,t.surface):preview.material);m.matrixAutoUpdate=false;m.frustumCulled=false;m.renderOrder=9;groundPreview.add(m);});groundPreview.userData.type=type;groundPreview.userData.fit=null;}
@@ -5466,7 +5483,7 @@ function setGroundPreview(type,x,z,yaw,scale){
 }
 // A separate preview group never enters props, snapshots, saves or exports.
 const railDragGroup=new THREE.Group();scene.add(railDragGroup);
-const railDragMaterial=railPreviewMat.clone();
+let railDragMaterial;
 const railDragGuide=new THREE.Line(new THREE.BufferGeometry().setAttribute('position',new THREE.BufferAttribute(new Float32Array(6),3)),new THREE.LineBasicMaterial({color:0xff5555,transparent:true,depthTest:false,depthWrite:false,toneMapped:false}));railDragGuide.visible=false;railDragGuide.frustumCulled=false;railDragGuide.renderOrder=EDITOR_GUIDE_ORDER;scene.add(railDragGuide);
 const railDragStatus=document.createElement('div');railDragStatus.id='railDragStatus';railDragStatus.hidden=true;
 railDragStatus.setAttribute('role','status');railDragStatus.style.cssText='position:fixed;bottom:52px;left:50%;transform:translateX(-50%);padding:8px 12px;background:#14202eee;color:white;border:1px solid #77ddaa;border-radius:6px;pointer-events:none;z-index:30;max-width:80vw';document.body.appendChild(railDragStatus);
@@ -5479,6 +5496,7 @@ function beginRailDrag(e){
 }
 function updateRailDrag(){
   const q=stroke.rail;if(!q)return;
+  railDragMaterial??=assetPreviewMaterial('railPreviewMat').clone();
   if(state.mode!=='edit'||state.tool!=='place'||state.variant.place!==q.type){cancelRailDrag();return;}
   TDMineRailDrag.update(q,hit,props,PROP,floorAt,(x,z,r)=>Math.abs(x)+r<=HALF&&Math.abs(z)+r<=HALF);
   while(railDragGroup.children.length>q.pieces.length)railDragGroup.remove(railDragGroup.children.at(-1));
@@ -5525,6 +5543,7 @@ function pick(cx, cy) {
 }
 function beginStroke(e) {
   if (!hit) return;
+  if(state.tool==='place'&&!PROP[state.variant.place]?.ready){toast('この素材は読み込み中です');return;}
   if(state.mode==='edit'&&state.tool==='place'&&PROP[state.variant.place]?.mineRail&&PROP[state.variant.place].id!=='mine_rail_end'&&e.pointerType!=='touch'&&e.pointerId!==undefined){beginRailDrag(e);return;}
   if(state.tool==='detail'){
    if(e.shiftKey&&selectedGroundDetail()){const p=selectedGroundDetail();adjustGroundDetail(hit.x,hit.z,p[3]*180/Math.PI,p[4]);}
@@ -5958,6 +5977,7 @@ function unlockPreparation(job){
  clearInterval(job.clock);for(const [el,disabled]of job.controls)el.disabled=disabled;
  // The loaded map may have changed outdoor lighting while controls were locked.
  $('timeOfDay').disabled=!state.sunOn;
+ updateAssetControls();
  preparationPanel.hidden=true;preparationPanel.style.display='none';keys.clear();stroke.active=false;
 }
 function cancelMapPreparation(restoreMap=true){
@@ -6036,6 +6056,7 @@ async function compilePreparedMap(job){
  for(;;){TDPreparation.check(job);const mode=job.requestedMode;setMode(mode,true);update(0);job.progress('初回の描画を準備',0,0);await renderer.compileAsync(scene,camera);await TDPreparation.pause(job);if(mode===job.requestedMode)break;}
 }
 async function prepareMap(kind,seed=7,options={}){
+ if(kind!=='flat'&&kind!=='restore') {try{await TDStartupAssets.ensureAll();}catch(e){toast(e.message);return false;}}
  cancelRailDrag();
  const previous=mapPreparation;
  const backup=previous?.backup||snapshot(),backupCollision=previous?.backupCollision||captureCollisionPreparation();
@@ -6130,10 +6151,22 @@ let bootData=null;if(bootPending?.[0]==='{')try{bootData=JSON.parse(bootPending)
 const bootReady=bootPending?.startsWith('prepared:')?prepareMap('pending',0,{token:bootPending.slice(9),boot:true}):bootData?prepareMap('load',0,{data:bootData,boot:true}):
   prepareMap(bootPending==='sample2'&&SIZE===SAMPLE2_SIZE?'sample2':bootPending==='sample'&&SIZE===64?'sample':'flat',bootPending==='sample2'?11:7,{boot:true});
 
+function updateAssetControls(){
+ for(const b of document.querySelectorAll('[data-asset-type]')){b.disabled=!PROP[+b.dataset.assetType].ready;b.title=b.disabled?'素材を読み込み中':'';}
+ if(state.tool==='place')preview.geometry=propPreviewGeometry(state.variant.place);
+}
+TDStartupAssets.configure(PROP,finishPropAsset,updateAssetControls,()=>{
+ if(!heroBody){heroBody=TDHero.build('remy');if(heroBody){hero.add(heroBody.group);heroMats.push(...heroBody.mats);$('heroLookRemy').disabled=false;$('heroLookRemy').textContent=`Remy（ゲームの体・身長 ${heroBody.meta.height.toFixed(2)}m）`;setHeroLook('remy');}}
+ if(pendingGroundAssets)regenGroundProps();
+});
+bootReady.then(()=>{
+ document.getElementById('startupNotice')?.remove();
+ TDStartupAssets.start().catch(()=>{});
+});
 // hooks for automated checks
 window.__app = {mineLanterns, chestPresentation, wallTorches, bedrockReady, splatAt,get tunnels() { return tunnels; }, set tunnels(v) { tunnels = v; }, get tunnelPrep() { return tunnelPrep; }, get tunnelLamps() { return tunnelLamps; }, placeTunnel, rebuildTunnels, tunnelGroup, tunnelHoleTex, cutU, refitFalls, placeFall, springFallGroup, fallGroup, get springs() { return springs; }, set springs(v) { springs = v; }, get pools() { return pools; }, get springRes() { return springRes; }, SC, placeSpring, placePool, applySprings, solveSprings, waterAt, springLevelAt, poolDist, poolWallAt, POOL_WALL, deckAt, fillGroundAll,buildPreparedSample,prepareMap,cancelMapPreparation,bootReady,get preparation(){return mapPreparation?{id:mapPreparation.id,phase:mapPreparation.phase,requestedMode:mapPreparation.requestedMode,elapsedMs:performance.now()-mapPreparation.start}:null;},get preparationStats(){return lastPreparedState;},
   propGrounding,groundedParts,groundedNormal,groundedGhost,groundPreview,setGroundPreview,propBaseY,get cliffContactProgress(){return cliffContactProgress;},cliffFits,effectiveGeometry,fitCliffContact,adoptCliffContact, cliffProtected,cliffProtectionReason,nearFeatureReason, get cliffContactStats(){return cliffContactStats;},
-  pickGroundDetail,adjustGroundDetail,selectedGroundDetail,updateTouch,touchStats, pavingMask, cliffRelief, rebuildCliffRelief, groundTrial, groundTexture, terrainSource:tGeo, terrain, renderer, camera, SIZE, state, H, S, O, F, C, propMeshes, ghostMeshes, cliffIndexAt, BIOMES, CLIFF_STYLES, applyCliffStyle, deckAt, linkDeckAt, runValidation, genSample, genSample2, secretRegions, secretLineX, passageGeometry, terrainRes, TERRAIN_RES, snapshot, sha256, LINK_KINDS, normalizeCatalog, catalogExport, valueIssues, areaIssue, deckAt, getColliders, PROP, get colliderMaxR() { return colliderMaxR; }, rebuildMarkers, portLanding, linkTrigger, linkArrival, LINK_SPEC, get markers() { return markers; }, placeMarker, ensureIds, applyCatalog, ATMOS, WEATHER, applyAtmo, makeCoast, glowLights, applyBiome, applyPalette, TIMES, timeId, propVisible, toolVisible, updateTerrain, rebuildProps, genFlat, floorAt, bridgeAt, stairsAt, placeSlope, placeStairs, placeBridge, pickTarget, regenGroundProps, rebuildBridges, get stairs() { return stairs; }, get bridges() { return bridges; }, get falls() { return falls; }, overrideAt, heroMat, hero, heroBody, get heroLook() { return heroLook; }, setHeroLook, heroStyle, heroGlow, get ghosts() { return ghosts; }, get props() { return props; }, cam, playCam, player, keys, setMode, setTool, update, heightAt, walkable, slope: slopeAt,
+  pickGroundDetail,adjustGroundDetail,selectedGroundDetail,updateTouch,touchStats, pavingMask, cliffRelief, rebuildCliffRelief, groundTrial, groundTexture, terrainSource:tGeo, terrain, renderer, camera, SIZE, state, H, S, O, F, C, propMeshes, ghostMeshes, cliffIndexAt, BIOMES, CLIFF_STYLES, applyCliffStyle, deckAt, linkDeckAt, runValidation, genSample, genSample2, secretRegions, secretLineX, passageGeometry, terrainRes, TERRAIN_RES, snapshot, sha256, LINK_KINDS, normalizeCatalog, catalogExport, valueIssues, areaIssue, deckAt, getColliders, PROP, get colliderMaxR() { return colliderMaxR; }, rebuildMarkers, portLanding, linkTrigger, linkArrival, LINK_SPEC, get markers() { return markers; }, placeMarker, ensureIds, applyCatalog, ATMOS, WEATHER, applyAtmo, makeCoast, glowLights, applyBiome, applyPalette, TIMES, timeId, propVisible, toolVisible, updateTerrain, rebuildProps, genFlat, floorAt, bridgeAt, stairsAt, placeSlope, placeStairs, placeBridge, pickTarget, regenGroundProps, rebuildBridges, get stairs() { return stairs; }, get bridges() { return bridges; }, get falls() { return falls; }, overrideAt, heroMat, hero, get heroBody(){return heroBody;}, get heroLook() { return heroLook; }, setHeroLook, heroStyle, heroGlow, get ghosts() { return ghosts; }, get props() { return props; }, cam, playCam, player, keys, setMode, setTool, update, heightAt, walkable, slope: slopeAt,
   stroke(x, z, frames = 20, opts = {}) {
     hit = new THREE.Vector3(x, heightAt(x, z), z); beginStroke({ shiftKey: !!opts.shift });
     for (let f = 0; f < frames; f++) { if (stroke.active && !['scatter', 'erase'].includes(state.tool)) { applyBrush(x, z, 1 / 60); } }

@@ -211,15 +211,24 @@ window.TDGeo = { clamp, lerp, hash2, rng, col, mixc, mat4, displace, makeGeo, sm
 
 // ---- prop registry. The order the files are loaded in (index.html) is the type order; saved maps also store the type ids
 // (propTypes), and loading maps them back by id, so reordering or adding files keeps old maps intact.
-const defs = [];
+const defs = [], decorators=[];
 window.TDProps = {
   add(def) {
     if (!def || typeof def.id !== 'string' || typeof def.build !== 'function') throw new Error('TDProps.add: id and build() are required');
     if (defs.some(d => d.id === def.id)) throw new Error('TDProps.add: duplicate id ' + def.id);
     defs.push(def);
   },
+  decorate(id,fn){decorators.push([id,fn]);},
   ids() { return defs.map(d => d.id); },
   // the PROP table of app.js: every field of the file, plus geo = build(); tags default to every biome ('common')
-  build() { return defs.map(({ build, ...t }) => ({ ...t, geo: build(), tags: t.tags || ['common'] })); },
+  build(options={}) { return defs.map(({ build, ...t }) => {
+    const entry={...t,tags:t.tags||['common']};let geometry;
+    const load=()=>{if(geometry)return;let value={...t,tags:t.tags||['common'],geo:build()};
+      for(const [id,fn] of decorators)if(id===t.id)value=fn(value);
+      geometry=value.geo;for(const [k,v]of Object.entries(value))if(k!=='geo'&&(!(k in t)||v!==t[k]))entry[k]=v;
+    };
+    Object.defineProperty(entry,'geo',{enumerable:true,get(){load();return geometry;}});
+    entry.ready=!options.lazy;if(!options.lazy)load();return entry;
+  }); },
 };
 })();

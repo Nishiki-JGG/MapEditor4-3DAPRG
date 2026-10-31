@@ -40,6 +40,6 @@ for(let i=0;i<p.count;i++)uv.push(Math.max(0,Math.min(1,p.getY(i)/h+.5)),Math.ma
  for(const x of [-.458,.458])for(const y of [.108,.48])for(const z of [-.328,.328]){const nail=new THREE.CylinderGeometry(.006,.008,.004,5);nail.rotateX(Math.PI/2);add(nail,x,y,z,0x493d31,false);}
  while(TDChestWornSurface.records.length<32)TDChestWornSurface.board(new THREE.BoxGeometry(1,1,1),1,1,0,0,false,false);cached=build(parts,55191,true);cached.computeBoundingBox();cached.computeBoundingSphere();cached.userData.chestWornVersion=1;return cached;
 }
-const original=TDProps.build;TDProps.build=()=>original().map(t=>t.id==='treasurechest_worn'?{...t,collisionGeo:t.geo,geo:geometry()}:t);
+TDProps.decorate('treasurechest_worn',t=>({...t,collisionGeo:t.geo,geo:geometry()}));
 return{geometry};
 })();
