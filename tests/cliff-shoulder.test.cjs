@@ -11,3 +11,18 @@ const shoreP=shore.attributes.position;let intermediate=0;
 for(let i=0;i<shoreP.count;i++){assert(shoreP.getY(i)>=.789999&&shoreP.getY(i)<=.810001);if(shoreP.getY(i)>.792&&shoreP.getY(i)<.808)intermediate++;}
 assert(intermediate>50,'shallow shoreline has no continuous transition');
 console.log(JSON.stringify({shallowShore:true,refinedCells:shore.userData.refinedCells,intermediate,sourceUnchanged:true}));
+
+// Small pools and one-cell water/land corridors must survive visual smoothing.
+for(const [name,height] of [
+ ['pool',(x,z)=>x===0&&z===0?-.6:1.4],
+ ['stream',(x,z)=>x===0?-.6:1.4],
+ ['landBridge',(x,z)=>x===0?1.4:-.6]
+]){
+ const original=make(33,height),smoothed=build(original,33,.5,{waterLevel:.8}),P=smoothed.attributes.position;
+ for(let j=0;j<33;j++)for(let i=0;i<33;i++){
+  const x=i*.5-8,z=j*.5-8,expected=height(x,z);let found=false;
+  for(let k=0;k<P.count;k++)if(P.getX(k)===x&&P.getZ(k)===z){assert.equal(P.getY(k)<.8,expected<.8,name+' changed wet/dry topology');found=true;break;}
+  assert(found,name+' missing grid vertex');
+ }
+}
+console.log(JSON.stringify({smallPools:true,narrowStreams:true,landBridges:true}));

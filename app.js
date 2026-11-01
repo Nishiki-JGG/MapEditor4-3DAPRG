@@ -696,7 +696,7 @@ function rebuildCliffRelief(){
   clearTimeout(cliffReliefTimer);cliffReliefTimer=0;
   // Reconstruct only steep cells and their shoulder ring; never change editable H.
   const oldSurface=terrain.geometry;
-  const visual=TDCliffShoulder.build(tGeo,N,CELL,{mask:shoulderMask(),waterLevel:state.water});
+  const visual=TDCliffShoulder.build(tGeo,N,CELL,{mask:shoulderMask(),shoreMask:shoulderMask(false),waterLevel:state.water});
   terrain.geometry=visual;if(oldSurface!==tGeo)oldSurface.dispose();
   rebuildSmoothWater(visual);
   const geometry=TDCliffRelief.build(visual,heightAt,HALF,fallReliefMask);cliffRelief.geometry.dispose();cliffRelief.geometry=geometry;
@@ -704,9 +704,9 @@ function rebuildCliffRelief(){
 }
 // Suppress height interpolation near links, the rim and fitted rocks.
 // Water uses the same derived surface, so its shoreline and the beach cannot separate.
-function shoulderMask(){
+function shoulderMask(keepRocks=true){
  const memo=new Map(),rocks=new SpatialHash(4);
- for(const p of props)if(cliffFits?.valid(p))rocks.add(p,p[1],p[2]);
+ if(keepRocks)for(const p of props)if(cliffFits?.valid(p))rocks.add(p,p[1],p[2]);
  return(x,z)=>{const key=Math.round(x*32)+','+Math.round(z*32);if(memo.has(key))return memo.get(key);let m=1;
   m*=sstep(0,.5,HALF-Math.max(Math.abs(x),Math.abs(z)));
   const keep=(distance,radius)=>{m=Math.min(m,sstep(radius,radius+.4,distance));};
@@ -3212,7 +3212,8 @@ const TOOLS = [
   { id: 'secret', name: '隠し通路', key: 'k', hint: '茂み・岩・崖の中を通り抜けられる隠し通路を塗ります（水色）。通路の床は入口と出口の地面の高さでつながり、キャラが入ると重なった物が透けます。' },
   { id: 'walkAuto', name: '自動に戻す', key: 'j', hint: '塗った所の上書きを消し、自動判定に戻します。' },
 ];
-let completedSerial=0,lastCompletedSerial=-1,lastCompleted=null;
+let completedSerial=0,lastCompletedSerial=-1,lastCompleted=null,surfaceUpgradeCount=0;
+const upgradedSurfaces=new WeakMap();
 function captureCompletedSurface(){
  // Finish only pending edits; an unchanged save/history capture has no generation work.
  if(waterTimer)refreshWaterData();if(cliffReliefTimer)rebuildCliffRelief();
@@ -3220,16 +3221,18 @@ function captureCompletedSurface(){
  const take=TDCompletedState.capture;
  const surfaces=TDCompletedState.share({base:take(tGeo,true),baseWater:take(wGeo,true),skirt:take(sGeo,true),terrain:take(terrain.geometry),water:take(water.geometry),relief:take(cliffRelief.geometry),sides:take(waterSides.geometry,true),spring:take(spGeo,true)},lastCompleted?.surfaces);
  const info=waterInfo?Object.fromEntries(['stats','wetCount','hasFlow','falls','inflows','warnings'].map(k=>[k,waterInfo[k]])):null;
- lastCompleted={version:1,vertices:N,surfaces,springResult:springRes,flow:TDCompletedState.share(WFLOW.slice(),lastCompleted?.flow),mask:TDCompletedState.share(WMASK.slice(),lastCompleted?.mask),info,waterUniforms:{flowMax:WATERU.uFlowMax.value,bankRange:WATERU.uBankRange.value,trailMax:WATERU.uTrailMax.value,fallCount:WATERU.uFallCount.value,springCount:WATERU.uSpringCount.value,falls:WATERU.uFalls.value.map(v=>v.toArray()),springs:WATERU.uSprings.value.map(v=>v.toArray())}};
+ lastCompleted={version:1,surfaceVersion:TDCliffShoulder.surfaceVersion,vertices:N,surfaces,springResult:springRes,flow:TDCompletedState.share(WFLOW.slice(),lastCompleted?.flow),mask:TDCompletedState.share(WMASK.slice(),lastCompleted?.mask),info,waterUniforms:{flowMax:WATERU.uFlowMax.value,bankRange:WATERU.uBankRange.value,trailMax:WATERU.uTrailMax.value,fallCount:WATERU.uFallCount.value,springCount:WATERU.uSpringCount.value,falls:WATERU.uFalls.value.map(v=>v.toArray()),springs:WATERU.uSprings.value.map(v=>v.toArray())}};
  lastCompletedSerial=completedSerial;return lastCompleted;
 }
 function validateCompletedSurface(v,vertices=N){
  if(v?.version!==1||v.vertices!==vertices)throw Error('完成地形のサイズが一致しません');
+ if(v.surfaceVersion!==undefined&&(!Number.isInteger(v.surfaceVersion)||v.surfaceVersion<1||v.surfaceVersion>TDCliffShoulder.surfaceVersion))throw Error('完成地形の表示版に対応していません');
  for(const k of ['base','baseWater','skirt','terrain','water','relief','sides','spring'])TDCompletedState.validate(v.surfaces?.[k]);
  if(v.surfaces.base.attributes.position.array.length!==vertices*vertices*3||v.surfaces.baseWater.attributes.position.array.length!==vertices*vertices*3||!(v.flow instanceof Uint8Array)||v.flow.length!==vertices*vertices*4||!(v.mask instanceof Uint8Array)||v.mask.length!==vertices*vertices*4)throw Error('完成地形の格子または水が不正です');
  const w=v.waterUniforms;if(!w||![w.flowMax,w.bankRange,w.trailMax,w.fallCount,w.springCount].every(Number.isFinite)||!Number.isInteger(w.fallCount)||w.fallCount<0||w.fallCount>8||!Number.isInteger(w.springCount)||w.springCount<0||w.springCount>8||![w.falls,w.springs].every(a=>Array.isArray(a)&&a.length===8&&a.every(v=>Array.isArray(v)&&v.length===4&&v.every(Number.isFinite))))throw Error('完成状態の水設定が不正です');
 }
 function installCompletedSurface(v){
+ v=upgradedSurfaces.get(v)||v;
  clearTimeout(cliffReliefTimer);clearTimeout(waterTimer);cliffReliefTimer=waterTimer=0;
  const put=TDCompletedState.copyInto,read=TDCompletedState.read,q=v.surfaces;
  for(let k=0;k<N*N;k++)if(tGeo.attributes.position.array[k*3+1]!==H[k])propGrounding.changed(k);
@@ -3243,6 +3246,10 @@ function installCompletedSurface(v){
  bedrockPainted=false;for(let k=0;k<N*N;k++)if(effectiveS[k*NS+9]>0){bedrockPainted=true;break;}setBedrockVariant(bedrockPainted&&bedrockPrepared);if(bedrockPainted&&!bedrockPrepared&&!bedrockPreparation)void bedrockReady().catch(()=>{});
  completedSerial++;lastCompletedSerial=completedSerial;lastCompleted=v;
  rebuildPoolWater();rebuildSpringFalls();rebuildSpringMarks();
+ if((v.surfaceVersion||1)<TDCliffShoulder.surfaceVersion){
+  // Upgrade only the derived renderer surface. Authoring, fitted rocks and collision remain intact.
+  rebuildCliffRelief();surfaceUpgradeCount++;upgradedSurfaces.set(v,captureCompletedSurface());
+ }
 }
 const undoStack = [], redoStack = [];
 const snapshot = () => {const completed=captureCompletedSurface();const value=({ VS:completed, ...(tunnels.length ? { TU: JSON.parse(JSON.stringify(tunnels)) } : {}), ...(springs.length ? { SP: springs.map(s => ({ ...s })) } : {}), ...(pools.length ? { PL: pools.map(p => ({ ...p })) } : {}), ...(SC.some(v => v) ? { SC: SC.slice() } : {}), H: H.slice(), S: S.slice(), O: O.slice(), C: C.slice(), CF: cliffFits.save(), P: props.map(p => p.slice()), F: falls.map(f => ({ ...f })), B: bridges.map(b => ({ ...b })), T: stairs.map(st => ({ ...st })), W: state.water, sp: { ...state.spawn }, bi: state.biome, at: { ...state.atmo }, sea: state.sea, we: { ...state.weather }, sun: state.sunOn, tod: state.timeOfDay, dk: state.darkness, M: markers.map(m => ({ ...m })), nid: state.nextId, rid: state.roomId, cat: JSON.stringify(state.catalog), ag: { ...state.agent }, cs: state.cliffStyle });Object.defineProperty(value,'runtimeFits',{value:new Map([...cliffFits.cache].map(([id,c])=>[id,{record:cliffFits.records.get(id),cache:c}]))});return value;};
@@ -6020,7 +6027,7 @@ function installWalkPreparation(w){
 // A data-preparation-key changes only when this script changes generation/collision semantics.
 // Actual model positions/indices and agent/profile settings are still hashed below.
 async function preparationKey(kind,seed,job){
- const config=JSON.stringify([kind,seed,SIZE,kind==='sample2'?'ruins':state.biome,state.agent,state.cliffStyle,state.catalog,TDPreparation.version,TDPreparedSamples.recipeVersion,[...document.scripts].filter(s=>!s.dataset.preparedSample&&!s.hasAttribute('data-presentation-only')).map(s=>(s.dataset.preparationKey||s.getAttribute('src')||'').replace(/&mapArchive=[a-z0-9-]+/,'').replace(/&collapsePBR=[a-f0-9]+/,'').replace(/&wallLamp=[a-f0-9]+/,'').replace(/&cobweb=[a-f0-9]+/,'').replace(/&mineCartLoad=[a-f0-9]+/,'').replace(/&cutRockSurface=[a-f0-9]+/,'').replace('moon-reflection1&','').replace('time-of-day1&','').replace(/app.js\?(walltorch1|firequality1)&/,'app.js?public-label1&')).filter(Boolean)]);
+ const config=JSON.stringify([kind,seed,SIZE,kind==='sample2'?'ruins':state.biome,state.agent,state.cliffStyle,state.catalog,TDPreparation.version,TDPreparedSamples.recipeVersion,TDCliffShoulder.surfaceVersion,[...document.scripts].filter(s=>!s.dataset.preparedSample&&!s.hasAttribute('data-presentation-only')).map(s=>(s.dataset.preparationKey||s.getAttribute('src')||'').replace(/&mapArchive=[a-z0-9-]+/,'').replace(/&collapsePBR=[a-f0-9]+/,'').replace(/&wallLamp=[a-f0-9]+/,'').replace(/&cobweb=[a-f0-9]+/,'').replace(/&mineCartLoad=[a-f0-9]+/,'').replace(/&cutRockSurface=[a-f0-9]+/,'').replace('moon-reflection1&','').replace('time-of-day1&','').replace(/app.js\?(walltorch1|firequality1)&/,'app.js?public-label1&')).filter(Boolean)]);
  if(preparationKeys.has(config))return preparationKeys.get(config);
  const hashes=[];
  await TDPreparation.each(PROP,async t=>{if(t.r<=0||t.manualOnly)return;const prep=t.preparationGeo||t.geo,a=prep.attributes.position.array,ix=prep.index?.array;const hash=async a=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new Uint8Array(a.buffer,a.byteOffset,a.byteLength))),v=>v.toString(16).padStart(2,'0')).join('');hashes.push([t.id,t.r,t.height,t.yawOffset,await hash(a),ix?await hash(ix):'']);},job);
@@ -6165,7 +6172,7 @@ bootReady.then(()=>{
  TDStartupAssets.start().catch(()=>{});
 });
 // hooks for automated checks
-window.__app = {mineLanterns, chestPresentation, wallTorches, bedrockReady, splatAt,get tunnels() { return tunnels; }, set tunnels(v) { tunnels = v; }, get tunnelPrep() { return tunnelPrep; }, get tunnelLamps() { return tunnelLamps; }, placeTunnel, rebuildTunnels, tunnelGroup, tunnelHoleTex, cutU, refitFalls, placeFall, springFallGroup, fallGroup, get springs() { return springs; }, set springs(v) { springs = v; }, get pools() { return pools; }, get springRes() { return springRes; }, SC, placeSpring, placePool, applySprings, solveSprings, waterAt, springLevelAt, poolDist, poolWallAt, POOL_WALL, deckAt, fillGroundAll,buildPreparedSample,prepareMap,cancelMapPreparation,bootReady,get preparation(){return mapPreparation?{id:mapPreparation.id,phase:mapPreparation.phase,requestedMode:mapPreparation.requestedMode,elapsedMs:performance.now()-mapPreparation.start}:null;},get preparationStats(){return lastPreparedState;},
+window.__app = {captureCompletedSurface,preparationKey,get surfaceUpgradeCount(){return surfaceUpgradeCount;},mineLanterns, chestPresentation, wallTorches, bedrockReady, splatAt,get tunnels() { return tunnels; }, set tunnels(v) { tunnels = v; }, get tunnelPrep() { return tunnelPrep; }, get tunnelLamps() { return tunnelLamps; }, placeTunnel, rebuildTunnels, tunnelGroup, tunnelHoleTex, cutU, refitFalls, placeFall, springFallGroup, fallGroup, get springs() { return springs; }, set springs(v) { springs = v; }, get pools() { return pools; }, get springRes() { return springRes; }, SC, placeSpring, placePool, applySprings, solveSprings, waterAt, springLevelAt, poolDist, poolWallAt, POOL_WALL, deckAt, fillGroundAll,buildPreparedSample,prepareMap,cancelMapPreparation,bootReady,get preparation(){return mapPreparation?{id:mapPreparation.id,phase:mapPreparation.phase,requestedMode:mapPreparation.requestedMode,elapsedMs:performance.now()-mapPreparation.start}:null;},get preparationStats(){return lastPreparedState;},
   propGrounding,groundedParts,groundedNormal,groundedGhost,groundPreview,setGroundPreview,propBaseY,get cliffContactProgress(){return cliffContactProgress;},cliffFits,effectiveGeometry,fitCliffContact,adoptCliffContact, cliffProtected,cliffProtectionReason,nearFeatureReason, get cliffContactStats(){return cliffContactStats;},
   pickGroundDetail,adjustGroundDetail,selectedGroundDetail,updateTouch,touchStats, pavingMask, cliffRelief, rebuildCliffRelief, groundTrial, groundTexture, terrainSource:tGeo, terrain, renderer, camera, SIZE, state, H, S, O, F, C, propMeshes, ghostMeshes, cliffIndexAt, BIOMES, CLIFF_STYLES, applyCliffStyle, deckAt, linkDeckAt, runValidation, genSample, genSample2, secretRegions, secretLineX, passageGeometry, terrainRes, TERRAIN_RES, snapshot, sha256, LINK_KINDS, normalizeCatalog, catalogExport, valueIssues, areaIssue, deckAt, getColliders, PROP, get colliderMaxR() { return colliderMaxR; }, rebuildMarkers, portLanding, linkTrigger, linkArrival, LINK_SPEC, get markers() { return markers; }, placeMarker, ensureIds, applyCatalog, ATMOS, WEATHER, applyAtmo, makeCoast, glowLights, applyBiome, applyPalette, TIMES, timeId, propVisible, toolVisible, updateTerrain, rebuildProps, genFlat, floorAt, bridgeAt, stairsAt, placeSlope, placeStairs, placeBridge, pickTarget, regenGroundProps, rebuildBridges, get stairs() { return stairs; }, get bridges() { return bridges; }, get falls() { return falls; }, overrideAt, heroMat, hero, get heroBody(){return heroBody;}, get heroLook() { return heroLook; }, setHeroLook, heroStyle, heroGlow, get ghosts() { return ghosts; }, get props() { return props; }, cam, playCam, player, keys, setMode, setTool, update, heightAt, walkable, slope: slopeAt,
   stroke(x, z, frames = 20, opts = {}) {
