@@ -1,7 +1,7 @@
 {
-  "release": "visible-lights-20261104",
+  "release": "bridge-underpass-20261104",
   "files": {
-    "app.js": "5692898fedd5ed890d4977b3d3709ed5dce3c350eac7ae65fd2bba70831ebff5",
+    "app.js": "66fa240df5c42a9865bc816640350c4df3e193214ee1232cfdc8d64f773b81d2",
     "props/chest-presentation.js": "02a2cc0c23060f822e0e1bfe5abfc5c6803cedee2e2deb0fdb4b5b445915b4d3",
     "props/chest-surface.js": "bf7137cd3c64c736bc50d0dbd2a7b62f4fce1c48db73f6473fc6b9522b24f025",
     "props/chest-relief.js": "2f6d152ccd4c0dfd43d34c9867118d5060704b01ea93cfeafcdf826c479e8f94",
@@ -41,8 +41,8 @@
     "unity/Assets/MapSharedProps/Editor/MineSpoilV1.cs": "18413514bdf454f98e9acc696b736cce2bf9017894b0b901ece2f597573f463e",
     "props/cave-decor.js": "abf74ab0b78918409e80854060e0291cda33f30ed758a7c4d46a29e12ddaead1",
     "props/shared/cave-decor-data.js": "467bcb904da21105e3259548308f566f92eb7751b024c02af10bd50d323490b5",
-    "index.html": "1e7c0e0d69acd611e181f83fe2b4154f7e256b75d07116e541a7a933940412e7",
-    "prepared/manifest.js": "e8eb7a235b6bfa5b5b1df6fbf468bcdc8134d41d6acf91b38b87a1fb7339924f",
+    "index.html": "fe6151f1918008677969a7034b179749e2e373677d51aab835ecbc5249298d05",
+    "prepared/manifest.js": "b811eb9321f3da330c30df5dbdb581c7b8e8e63066d150cfb4b7803588798ef8",
     "terrain/cliff-shoulder.js": "2a1e0acc3a8332758e2efd5dc3a954bf974999cdc8cf1e010169b4d6c5b62760",
     "props/mine-collapse.js": "49ff2562ce9a97766c4f664c3b283d0f25762b9edb6df370308c150769baafd8",
     "props/mine-collapse-pbr.js": "e90181e4ba56831e286649539dcc05197180e32199a07c675fb5d4da0630a6cd",
@@ -99,5 +99,5 @@
     "prepared/sample2-48-11-a877d168eaa8.js": "51b70b84a698302a3bfd11e9ce767ed164d3f97eaba5ed425fec69941c12c76b",
     "prepared/sample2-48-11-b9ee80d8b56c.js": "460e2752afc7406547526e440a9a4aadaeda1990aa260999559f860653d444e6"
   },
-  "sourceBase": "2f7fabd8fcae3f5293b623027291f38179e418ff"
+  "sourceBase": "9cae65a4bfc0b26264fbdf32787104bc38b94b5f"
 }

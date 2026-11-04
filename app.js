@@ -2182,14 +2182,52 @@ function bridgeProfile(b) {
   const [ak, amax] = BRIDGE_ARCH[b.type || 'wood'], arch = Math.sign(ak) * Math.min(amax, Math.abs(ak) * L);
   return { L, y1, y2, arch, y: t => lerp(y1, y2, t) + arch * Math.sin(Math.PI * t), dy: t => (y2 - y1) + arch * Math.PI * Math.cos(Math.PI * t) };
 }
-function bridgeAt(x, z, margin = 0) {   // margin: distance kept from the deck edge (0 = the deck itself)
+function bridgeAt(x, z, margin = 0, referenceY = null) {   // margin: distance kept from the deck edge (0 = the deck itself)
   for (const b of bridges) {
     const dx = b.x2 - b.x1, dz = b.z2 - b.z1, L2 = dx * dx + dz * dz, t = ((x - b.x1) * dx + (z - b.z1) * dz) / L2;
     if (t < -.02 || t > 1.02) continue;
     if (Math.abs((x - b.x1) * dz - (z - b.z1) * dx) / Math.sqrt(L2) > b.w / 2 - margin) continue;
-    return bridgeProfile(b).y(clamp(t, 0, 1));
+    const y = bridgeProfile(b).y(clamp(t, 0, 1));
+    if (referenceY !== null && y > referenceY + state.agent.maxStep + .05) continue;
+    return y;
   }
   return null;
+}
+
+// Underpass clearance is evaluated only during walking; export/overlay retain their top surface.
+function bridgeBodyClear(x, z, floorY) {
+  const ag=state.agent, head=floorY+ag.height, r=ag.radius;
+  for(const b of bridges){
+    const pr=bridgeProfile(b), dx=(b.x2-b.x1)/pr.L, dz=(b.z2-b.z1)/pr.L;
+    const along=(x-b.x1)*dx+(z-b.z1)*dz, side=(x-b.x1)*dz-(z-b.z1)*dx, type=b.type||'wood';
+    if(along < -r-.5 || along > pr.L+r+.5 || Math.abs(side)>b.w/2+r+.3)continue;
+    const t=clamp(along/pr.L,0,1), deck=pr.y(t);
+    if(floorY>=deck-.15)continue; // standing on the deck, not beneath it
+    // Include the body's leading/trailing edge on sloping and sagging spans.
+    for(const a of [Math.max(0,along-r),clamp(along,0,pr.L),Math.min(pr.L,along+r)]){
+      const q=clamp(a/pr.L,0,1), top=pr.y(q);
+      let bottom=top-({wood:.25,vine:.15,sus:.18,stone:.42,straight:.34,pier:.4}[type]??b.w*.58);
+      if(type==='arch')bottom=Math.min(top-.35,lerp(pr.y1,pr.y2,q)-.9+(pr.arch+.5)*Math.pow(Math.sin(Math.PI*q),.6))-.05;
+      if(head+.05>bottom)return false;
+    }
+    const box=(a,l,ha,hl)=>Math.hypot(Math.max(0,Math.abs(along-a)-ha),Math.max(0,Math.abs(side-l)-hl))<r;
+    if(type==='wood'){
+      const n=Math.max(2,Math.round(pr.L/1.4));
+      for(let k=1;k<n;k++)for(const sd of [-1,1])if(box(k*pr.L/n,sd*(b.w/2-.2),.1,.1))return false;
+      for(const a of [0,pr.L])if(box(a,0,.45,b.w/2+.3)&&head>pr.y(a/pr.L)-.65)return false;
+    }else if(type==='stone'||type==='straight'){
+      const n=Math.max(1,Math.round(pr.L/(type==='stone'?4:5)));
+      for(let k=1;k<n;k++){
+        if(type==='stone'){if(box(k*pr.L/n,0,.5,b.w*.425+.04))return false;}
+        else for(const sd of [-1,1])if(box(k*pr.L/n,sd*(b.w/2-.35),.225,.225))return false;
+      }
+    }else if(type==='pier'){
+      const t0=Math.max(.06,Math.min(.5,(pr.ramp||0)/pr.L)),n=Math.max(1,Math.round((1-t0)*pr.L/1.8));
+      // Pile pairs are joined by diagonal braces; keep the transverse frame solid.
+      for(let k=0;k<=n;k++)if(box((t0+(1-t0)*k/n)*pr.L,0,.16,b.w/2+.16))return false;
+    }
+  }
+  return true;
 }
 
 // UVs only: point the existing wood grain along each component's longest axis.
@@ -2993,7 +3031,7 @@ function linkDeckAt(x, z, margin) {
 }
 // footing on a bridge or stairs deck for a body of the given radius (null = no deck there)
 function deckAt(x, z, margin) {
-  if (bridges.length) { const y = bridgeAt(x, z, margin); if (y !== null) return { y, kind: 'bridge' }; }
+  if (bridges.length) { const y = bridgeAt(x, z, margin, walkRef); if (y !== null) return { y, kind: 'bridge' }; }
   if (stairs.length) { const y = stairsAt(x, z, margin); if (y !== null) return { y, kind: 'stairs' }; }
   if (pools.length) { const y = poolWallAt(x, z, margin); if (y !== null) return { y, kind: 'pool' }; }
   if (tunnelPrep.length) { const q = TDTunnels.query(tunnelPrep, x, z, margin); if (q && (walkRef === null || walkRef < q.y + q.h - .3)) return { y: q.y, kind: 'tunnel' }; }   // above its roof (walkRef) the ground
@@ -3009,13 +3047,14 @@ function bodyClear(x, z, y) {
   return ok;
 }
 // Priority: forced blocked > structure deck > forced walkable / secret passage > automatic ground check.
-// Where a deck exists (margin 0) its floor is the one used — by floorAt too — so the body must fit on it:
-// agent radius from the deck edge and no obstacle on the deck; otherwise the point is blocked (no fallback to the ground below).
+// During walking, only reachable bridge decks are selected. A high bridge leaves the lower floor available.
+// Deck edges still require the body to fit; low overhead spans and supports block the lower route.
 function walkable(x, z, autoCached) {
   if (!inBounds(x, z)) return false;
   const o = overrideAt(x, z);
   if (o === 2) return false;
   const d = deckAt(x, z, 0);
+  if (walkRef !== null && !bridgeBodyClear(x, z, floorAt(x, z))) return false;
   if (d) return !!deckAt(x, z, state.agent.radius) && bodyClear(x, z, d.y);
   if (o === 1 || o === 3) return true;
   return autoCached ?? autoWalkable(x, z);
@@ -3026,7 +3065,7 @@ function autoWalkable(x, z) {
   if (BIOME().lava && heightAt(x, z) < state.water + .05) return false;
   if (splatAt(x, z, 6) > .5) return false;
   if (slopeAt(x, z) > Math.tan(state.agent.maxSlopeDeg * Math.PI / 180)) return false;
-  return bodyClear(x, z);
+  return bodyClear(x, z, walkRef === null ? undefined : heightAt(x, z));
 }
 
 // walkability overlay: green = walkable, magenta = blocked, stripes = manual override
@@ -5885,7 +5924,7 @@ function update(dt) {
     walkRef = player.y;   // a tunnel's floor while in it, the ground while above its roof
     const depth = waterAt(player.x, player.z) - floorAt(player.x, player.z);
     const inTun = tunnelPrep.length ? TDTunnels.query(tunnelPrep, player.x, player.z) : null, tunHere = inTun && player.y < inTun.y + inTun.h - .3;
-    const onStruct = (bridges.length && bridgeAt(player.x, player.z) !== null) || (stairs.length && stairsAt(player.x, player.z) !== null) || !!tunHere;
+    const onStruct = (bridges.length && bridgeAt(player.x, player.z, 0, walkRef) !== null) || (stairs.length && stairsAt(player.x, player.z) !== null) || !!tunHere;
     let gs = 1; if (!onStruct) for (let c = 2; c < NS; c++) gs = Math.min(gs, lerp(1, GROUND_SPEED[c], clamp(splatAt(player.x, player.z, c) * 1.6, 0, 1)));
     state.onPoison = !onStruct && splatAt(player.x, player.z, 5) > .5;
     state.onLink = markers.find(m => isLink(m.kind) && (() => { const T = linkTrigger(m); return Math.hypot(player.x - T.x, player.z - T.z) < m.r + state.agent.radius; })()) || null;

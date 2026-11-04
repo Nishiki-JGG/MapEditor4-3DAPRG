@@ -1,0 +1,19 @@
+// 橋上・橋下の実歩行と、橋桁・支柱・上下の障害物・深水の回帰検査。
+const fs=require('fs'),path=require('path'),http=require('http'),assert=require('assert/strict');
+const root=path.resolve(__dirname,'..'),out=process.env.BRIDGE_CHECK_OUT,{withPage}=require('./cdp');
+const server=http.createServer((q,r)=>{const f=path.resolve(root,'.'+new URL(q.url,'http://x').pathname);if(!f.startsWith(root+path.sep))return r.writeHead(403).end();fs.readFile(f,(e,b)=>r.writeHead(e?404:200,{'Content-Type':f.endsWith('.js')?'text/javascript':f.endsWith('.html')?'text/html':'application/octet-stream'}).end(e?'404':b));});
+(async()=>{await new Promise(r=>server.listen(0,'127.0.0.1',r));try{const report={};for(const mode of ['after']){
+ report[mode]=await withPage('http://127.0.0.1:'+server.address().port+'/index.html#size=48',async p=>{
+  await p.eval('(async()=>{for(let i=0;i<600&&!window.__app;i++)await new Promise(r=>setTimeout(r,100));await __app.bootReady;await TDStartupAssets.ensureAll();window.requestAnimationFrame=()=>0;})()');
+  await p.eval(`(()=>{const A=__app;window.walkSegment=(x,z,y,dx,dz,steps)=>{A.keys.clear();Object.assign(A.player,{x,z,y});A.playCam.yaw=Math.atan2(-dx,-dz);A.keys.add('KeyW');const ys=[];for(let i=0;i<steps;i++){A.update(1/60);ys.push(A.player.y);}A.keys.clear();return{x:A.player.x,z:A.player.z,y:A.player.y,minY:Math.min(...ys),maxY:Math.max(...ys)};};})()`);
+  const synthetic=await p.eval(`(()=>{const A=__app;A.genFlat();A.H.fill(0);const N=Math.sqrt(A.H.length),size=A.SIZE;for(let j=0;j<N;j++)for(let i=0;i<N;i++){const x=-size/2+i*size/(N-1);if(Math.abs(x)>6)A.H[j*N+i]=5;}A.state.water=-10;A.bridges.push({x1:-10,z1:0,x2:10,z2:0,w:3,type:'sus',id:'overpass'});A.updateTerrain();A.rebuildProps();A.rebuildBridges();A.setMode('play');const under=walkSegment(0,4,0,0,-1,96),back=walkSegment(0,-4,0,0,1,96),over=walkSegment(-12,0,5,1,0,288);
+   const bridgeBefore=JSON.stringify(A.serialize().bridges);A.state.water=1.5;const deep=walkSegment(0,3,0,0,-1,72);A.state.water=-10;
+   for(let i=0;i<A.H.length;i++)if(A.H[i]>0)A.H[i]=2;A.updateTerrain();A.rebuildBridges();const low=walkSegment(0,3,0,0,-1,72);
+   A.cam.target.set(0,1,0);A.cam.dist=24;A.cam.yaw=.5;A.cam.pitch=.75;A.setMode('edit');A.update(0);A.render();return{under,back,over,deep,low,bridgeBefore,bridgeAfter:JSON.stringify(A.serialize().bridges),gl:A.renderer.getContext().getError()};})()`);
+  assert.deepEqual(p.errors,[]);assert.equal(synthetic.gl,0);if(mode==='after'){assert(synthetic.under.z<-3.8);assert(synthetic.back.z>3.8);assert(synthetic.under.maxY<.1);assert(synthetic.over.x>11.8);assert(synthetic.over.minY>3.9);assert(synthetic.deep.z>2.9);assert(synthetic.low.z>1.4);assert.equal(synthetic.bridgeBefore,synthetic.bridgeAfter);}
+  const obstacles=await p.eval(`(()=>{const A=__app;for(let i=0;i<A.H.length;i++)if(A.H[i]>0)A.H[i]=5;A.updateTerrain();A.bridges[0].type='stone';A.rebuildBridges();A.setMode('play');const pier=walkSegment(-2,3,0,0,-1,72);A.bridges[0].type='sus';A.rebuildBridges();const rock=A.PROP.findIndex(t=>t.id==='rock');A.props.push([rock,0,0,0,1,0,1,5,'overhead-rock']);A.rebuildProps();const overhead=walkSegment(0,4,0,0,-1,96);A.props[0][7]=0;A.rebuildProps();const grounded=walkSegment(0,4,0,0,-1,96);A.props.splice(0);A.rebuildProps();walkSegment(0,3,0,0,-1,36);A.playCam.yaw=.5;A.update(0);A.render();return{pier,overhead,grounded};})()`);
+  assert(obstacles.pier.z>1.4);assert(obstacles.overhead.z<-3.8);assert(obstacles.grounded.z>0);assert.deepEqual(p.errors,[]);
+  if(out)await p.screenshot(path.join(out,'underpass.png'));
+  return{synthetic,obstacles};
+ },{hardware:true,wait:500,w:1100,h:800,exactViewport:true});if(out)fs.writeFileSync(path.join(out,'regression.json'),JSON.stringify(report,null,2));console.log(JSON.stringify({mode,...report[mode]}));}
+ }finally{server.close();}})().catch(e=>{console.error(e);process.exitCode=1;});
