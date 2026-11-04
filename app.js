@@ -1076,9 +1076,10 @@ water.renderOrder = 2;
 scene.add(water);
 
 // 外周の水の断面だけを一つの帯にする。水中の体積や内陸の池の周囲は描かない。
+const LOCAL_LIGHT_COUNT=16;
 const waterSideLight = { value: new THREE.Vector3(1,1,1) };
-const waterSidePoints = { value: Array.from({length:6},()=>new THREE.Vector4()) };
-const waterSideColors = { value: Array.from({length:6},()=>new THREE.Vector3()) };
+const waterSidePoints = { value: Array.from({length:LOCAL_LIGHT_COUNT},()=>new THREE.Vector4()) };
+const waterSideColors = { value: Array.from({length:LOCAL_LIGHT_COUNT},()=>new THREE.Vector3()) };
 const waterSideMat = new THREE.ShaderMaterial({
   transparent:true, depthWrite:false, side:THREE.DoubleSide, forceSinglePass:true,
   uniforms:{uTime:timeU,uWaveH:waterMat.uniforms.uWaveH,uSea:BU.uSea,uShallow:BU.uShallow,uDeep:BU.uDeep,uDim:dimU,
@@ -1092,7 +1093,7 @@ const waterSideMat = new THREE.ShaderMaterial({
       w.y+=h*top; vBelow=(depth+h)*(1.-top);vDepth=depth;vSea=seaW;vWorld=w.xyz;
       gl_Position=projectionMatrix*viewMatrix*w;
     }`,
-  fragmentShader:`uniform vec3 uShallow,uDeep,uLight; uniform float uDim; uniform vec4 uLocal[6]; uniform vec3 uLocalColor[6];
+  fragmentShader:`uniform vec3 uShallow,uDeep,uLight; uniform float uDim; uniform vec4 uLocal[${LOCAL_LIGHT_COUNT}]; uniform vec3 uLocalColor[${LOCAL_LIGHT_COUNT}];
     varying float vDepth,vBelow,vSea; varying vec3 vWorld;
     ${DIM_GLSL}
     void main(){
@@ -1101,7 +1102,7 @@ const waterSideMat = new THREE.ShaderMaterial({
       col=mix(col,vec3(.72,.87,.97),vSea*.3*exp(-z/.5));col*=exp(-.25*z);
       col=mix(col,vec3(.85,.95,1.),.6*(1.-smoothstep(0.,.06,z)));
       vec3 local=vec3(0.);
-      for(int i=0;i<6;i++){float d=distance(vWorld,uLocal[i].xyz);float a=max(0.,1.-d/max(.01,uLocal[i].w));local+=uLocalColor[i]*a*a*.05;}
+      for(int i=0;i<${LOCAL_LIGHT_COUNT};i++){float d=distance(vWorld,uLocal[i].xyz);float a=max(0.,1.-d/max(.01,uLocal[i].w));local+=uLocalColor[i]*a*a*.05;}
       gl_FragColor=vec4(dimc(pow(col,vec3(2.2)))*(uLight+local),clamp(.90+.04*z,.90,.98));
       #include <tonemapping_fragment>
       #include <colorspace_fragment>
@@ -1109,7 +1110,7 @@ const waterSideMat = new THREE.ShaderMaterial({
 });
 const waterSides = new THREE.Mesh(new THREE.BufferGeometry(),waterSideMat);
 waterSides.name='Map water sides';waterSides.renderOrder=1;waterSides.visible=false;waterSides.frustumCulled=false;scene.add(waterSides);
-// 既存の松明の6灯を再利用する。側面のためにライトや毎フレームの地形計算は増やさない。
+// 既存の画面内光源を再利用する。側面のためにライトや毎フレームの地形計算は増やさない。
 const waterSideView=new THREE.Vector3();
 waterSides.onBeforeRender=(_renderer,_scene,viewCamera)=>{
   // Four planar edges, drawn far-to-near inside this one draw. Otherwise a far
@@ -1125,7 +1126,7 @@ waterSides.onBeforeRender=(_renderer,_scene,viewCamera)=>{
   const amount=(hemi.intensity*1.6+(sun.visible?sun.intensity:0)+(fill.visible?fill.intensity:0))/den;
   // Outdoor tint follows the water surface; an unlit cave must not retain the daytime brightness.
   waterSideLight.value.copy(waterTimeTint.value).multiplyScalar(amount/Math.max(.001,waterTimeTint.value.x,waterTimeTint.value.y,waterTimeTint.value.z));
-  for(let i=0;i<6;i++){const l=glowLights[i];waterSidePoints.value[i].set(l.position.x,l.position.y,l.position.z,l.distance);
+  for(let i=0;i<LOCAL_LIGHT_COUNT;i++){const l=glowLights[i];waterSidePoints.value[i].set(l.position.x,l.position.y,l.position.z,l.distance);
     waterSideColors.value[i].set(l.color.r,l.color.g,l.color.b).multiplyScalar(l.visible?l.intensity:0);}
 };
 function rebuildWaterSides(){
@@ -1544,25 +1545,11 @@ function addPropSway(t) {
   const sw=t.sway??0;if(sw)t.geo.setAttribute('sway',new THREE.Float32BufferAttribute(new Float32Array(t.geo.attributes.position.count).fill(sw),1));
 }   // visual footprint per prop type (x scale)
 const _m = new THREE.Matrix4(), _q = new THREE.Quaternion(), _p = new THREE.Vector3(), _s = new THREE.Vector3(), _c = new THREE.Color(), _up = new THREE.Vector3(0, 1, 0);
-// a small pool of real lights follows the glowing parts nearest to the view
-const glowLights = Array.from({ length: 6 }, () => { const l = new THREE.PointLight(0xffaa55, 0, 10, 1.7); l.userData.base = 0; scene.add(l); return l; });
-let glowTick = 0;
+// Stable light slots are selected by screen coverage; no shader recompilation when moving.
+const glowLights = Array.from({ length: LOCAL_LIGHT_COUNT }, () => { const l = new THREE.PointLight(0xffaa55, 0, 10, 1.7); l.userData.base = 0; scene.add(l); return l; });
 const wallTorches = TDWallTorch.create(scene);
 const mineLanterns=TDMineLantern.create(scene);
 const chestPresentation = TDChestPresentation.create(scene,timeU);
-function updateGlowLights(cx, cz) {
-  const cand = [];
-  for (const p of props) { const L = PROP[p[0]].light; if (!L) continue; const d = (p[1] - cx) ** 2 + (p[2] - cz) ** 2; if (d < 1600) cand.push([d, p]); }
-  for (const q of tunnelLamps) { const d = (q.x - cx) ** 2 + (q.z - cz) ** 2; if (d < 1600) cand.push([d, null, q]); }   // the tunnels' torches and lanterns
-  cand.sort((a, b) => a[0] - b[0]);
-  glowLights.forEach((l, k) => {
-    l.castShadow=false;
-    const c = cand[k]; if (!c) { l.userData.base = 0; l.intensity = 0; return; }
-    if (!c[1]) { const q = c[2]; l.color.setHex(q.color); l.userData.base = 2.4; l.position.set(q.x, q.y, q.z); return; }
-    const p = c[1], L = PROP[p[0]].light;
-    l.color.setHex(L[0]); l.userData.base = L[1] * p[4]; l.position.set(p[1], heightAt(p[1], p[2]) + L[2] * p[4], p[2]);
-  });
-}
 // ---- plants the hero brushes through (touch: true): each one is a damped spring. The hero's overlap pushes its top
 // away (and a little along the walk), and when the hero leaves it swings back with a few fading wobbles.
 // Visual only: walkability, saving and the export do not change.
@@ -1633,7 +1620,6 @@ function rebuildProps(visualOnly = false) {
   if(!visualOnly)TDMineRails.invalidate();
   refreshCliffFits(visualOnly);
   preparePropMeshes();
-  glowTick = 0;
   const cnt = PROP.map(() => 0), gcnt = PROP.map(() => 0);
   touchIdx.clear(); touchProps = [];touchGrid.clear();
   for (const p of props) {
@@ -5867,13 +5853,6 @@ function update(dt) {
     if (flash <= 0 && Math.random() < dt * .18 * state.weather.amount) flash = .4;
     if (flash > 0) { flash -= dt; const f = flash > .3 || (flash > .12 && flash < .2) ? 1 : 0; hemi.intensity = weatherHemi + f * 4; if (flash <= 0) hemi.intensity = weatherHemi; }
   }
-  const torchCenter = state.mode === 'edit' ? cam.target : player;
-  wallTorches.update(timeU.value, dt, camera, torchCenter, renderer.domElement.height);
-  if (wallTorches.metrics.count||mineLanterns.count) wallTorches.updateLights(glowLights, props, PROP, tunnelLamps, torchCenter, timeU.value, dt, dimU.value, heightAt,propBaseY);
-  else {
-    if (glowTick-- <= 0) { glowTick = 20; updateGlowLights(torchCenter.x, torchCenter.z); }
-    glowLights.forEach((l, k) => { l.intensity = l.userData.base * (.85 + .15 * Math.sin(timeU.value * 9 + k * 2.1)) * (1 - .5 * dimU.value); });
-  }
   for (const c of [...fallGroup.children, ...springFallGroup.children]) if (c.userData.mist) {
     const t = timeU.value * 1.3 + c.userData.ph; c.scale.setScalar(c.userData.base * (1 + .08 * Math.sin(t))); c.material.opacity = (.34 + .1 * Math.sin(t * .7)) * (1 - .6 * dimU.value);
   }
@@ -5950,6 +5929,9 @@ function update(dt) {
     placeCamera(playCam, _tgt);
     cutU.b.value.copy(camera.position);
   }
+  const torchCenter = state.mode === 'edit' ? cam.target : player;
+  wallTorches.update(timeU.value, dt, camera, torchCenter, renderer.domElement.height);
+  wallTorches.updateLights(glowLights, props, PROP, tunnelLamps, torchCenter, timeU.value, dt, dimU.value, heightAt,propBaseY,camera);
   updateTouch(dt);
   sun.target.position.set(0, 0, 0);
 }

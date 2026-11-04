@@ -74,7 +74,9 @@
       }`});
     let records = [], flame = null, sparks = null, smoke = null, capacity = 0, pool = null, lightTimer = 0;
     const m = new THREE.Matrix4(), local = new THREE.Matrix4(), pos = new THREE.Vector3(), scale = new THREE.Vector3(), q = new THREE.Quaternion();
-    const metrics = { count: 0, activeEmitters: 0, sparks: 0, smoke: 0, lights: 0, updateMs: 0 };
+    const viewFrustum=new THREE.Frustum(),viewMatrix=new THREE.Matrix4(),lightSphere=new THREE.Sphere();
+    function updateView(camera){if(!camera)return false;camera.updateMatrixWorld();viewMatrix.multiplyMatrices(camera.projectionMatrix,camera.matrixWorldInverse);viewFrustum.setFromProjectionMatrix(viewMatrix);return true;}
+    const metrics = { candidates:0, visibleLights:0, count: 0, activeEmitters: 0, sparks: 0, smoke: 0, lights: 0, updateMs: 0 };
     function reserve(n) {
       if (n <= capacity) return;
       capacity = Math.max(16, 2 ** Math.ceil(Math.log2(n)));
@@ -129,11 +131,13 @@
     }
     function update(time, dt, camera, center, pixelHeight) {
       if (!records.length) return;
+      const hasView=updateView(camera);
       const start = performance.now(); sparks.count = smoke.count = 0; metrics.activeEmitters = 0;
       for (let i = 0; i < records.length; i++) {
         const r = records[i], f = flicker(time, r.phase);
         for(let layer=0;layer<3;layer++){const h=r.fire.height*lerp(.92,1.08,f)*(1-layer*.04),w=r.fire.width;scale.set(w,h,1);pos.set(r.fire.origin[0]+Math.sin(layer*2.4+r.phase*6)*w*.10,r.fire.origin[1]+h*.5,r.fire.origin[2]+Math.cos(layer*2.4)*w*.10);q.setFromAxisAngle(new THREE.Vector3(0,1,0),layer*Math.PI/3+r.phase*2);local.compose(pos,q,scale);m.multiplyMatrices(r.matrix,local);flame.setMatrixAt(i*3+layer,m);flameGeo.attributes.firePhase.setX(i*3+layer,r.phase*17+layer*1.7);}
-        const distance = Math.hypot(r.p[1] - center.x, r.p[2] - center.z), target = 1 - smooth(Math.max(0, Math.min(1, (distance - 18) / 14)));
+        lightSphere.center.set(r.p[1],r.y+1,r.p[2]);lightSphere.radius=3;
+        const distance = Math.hypot(r.p[1] - center.x, r.p[2] - center.z), target = hasView&&viewFrustum.intersectsSphere(lightSphere) ? 1 : 1 - smooth(Math.max(0, Math.min(1, (distance - 18) / 14)));
         r.fade = lerp(r.fade, target, 1 - Math.exp(-Math.max(0, dt) * 5));
         if (r.fade > .001) { metrics.activeEmitters++; particles(sparks, r, time, r.fade); particles(smoke, r, time, r.fade); }
       }
@@ -142,28 +146,31 @@
       for (const p of [sparks, smoke]) { const g = p.object.geometry; g.setDrawRange(0, p.count); p.object.material.uniforms.pixelHeight.value = pixelHeight; for (const a of Object.values(g.attributes)) a.needsUpdate = true; }
       metrics.sparks = sparks.count; metrics.smoke = smoke.count; metrics.updateMs = performance.now() - start;
     }
-    function updateLights(lights, props, types, tunnelLamps, center, time, dt, dim, groundHeight,baseY) {
+    function updateLights(lights, props, types, tunnelLamps, center, time, dt, dim, groundHeight,baseY,camera) {
       pool = lights;
       if ((lightTimer -= dt) <= 0) {
-        lightTimer = .2; const candidates = [];
+        lightTimer = .1; const candidates = [],hasView=updateView(camera);
         for (const p of props) {
           const t = types[p[0]], L = t.light; if (!L) continue;
-          const d = Math.hypot(p[1] - center.x, p[2] - center.z); if (d >= 40) continue;
+          const d = Math.hypot(p[1] - center.x, p[2] - center.z); if (!hasView && d >= 40) continue;
           const torch = t.roomTorch||t.fireEffect, r = torch ? records.find(r => r.p === p) : null;
           const lamp=t.mineLantern?TDMineLantern.lightPose(p,t,baseY(p)):null;
-          candidates.push({ lamp:!!lamp,id: p[8]||"light-"+props.indexOf(p), d, x: lamp?lamp.x:p[1], y: lamp?lamp.y:r ? r.y + (r.fire.origin[1]+r.fire.height*.4) * p[4] * (p[6] ?? 1) : groundHeight(p[1], p[2]) + L[2] * p[4], z: lamp?lamp.z:p[2],
+          candidates.push({ lamp:!!lamp,id: p[8]||"light-"+props.indexOf(p), decor:['glowmush','crystal'].includes(t.id), d, x: lamp?lamp.x:p[1], y: lamp?lamp.y:r ? r.y + (r.fire.origin[1]+r.fire.height*.4) * p[4] * (p[6] ?? 1) : groundHeight(p[1], p[2]) + L[2] * p[4], z: lamp?lamp.z:p[2],
             p, L, r, color: torch ? sourceColor(S.light.color) : new THREE.Color(L[0]), range: lamp?TDMineLantern.range*p[4]:r?r.fire.range:10,
             base: r?r.fire.power:L[1] * p[4] });
         }
-        for (let i = 0; i < tunnelLamps.length; i++) { const p = tunnelLamps[i], d = Math.hypot(p.x - center.x, p.z - center.z); if (d < 40) candidates.push({ id: 'tunnel-' + i, ...p, d, base: 2.4, range: 10, color: new THREE.Color(p.color) }); }
+        for (let i = 0; i < tunnelLamps.length; i++) { const p = tunnelLamps[i], d = Math.hypot(p.x - center.x, p.z - center.z); if (hasView || d < 40) candidates.push({ id: 'tunnel-' + i, ...p, d, base: 2.4, range: 10, color: new THREE.Color(p.color) }); }
+        // Prioritize the visible fixtures, not decorative clusters nearest to the player.
+        for(let i=candidates.length-1;i>=0;i--){const c=candidates[i];lightSphere.center.set(c.x,c.y,c.z);lightSphere.radius=c.range+2;c.onScreen=hasView&&viewFrustum.containsPoint(lightSphere.center);if(hasView&&!viewFrustum.intersectsSphere(lightSphere))candidates.splice(i,1);}
         const current = new Set(lights.map(l => l.userData.torchSlot?.target?.id));
-        candidates.sort((a, b) => (a.d - (current.has(a.id) ? 1.5 : 0)) - (b.d - (current.has(b.id) ? 1.5 : 0)));
-        // 壁面の裏へ漏らさないため、新壁灯は影付き二枠に限定する。
-        const selected=[];let lampCount=0;for(const c of candidates){if(c.lamp&&lampCount>=2)continue;selected.push(c);if(c.lamp)lampCount++;if(selected.length===lights.length)break;}
-        const lamps=selected.filter(c=>c.lamp),unused=new Map(selected.map(c=>[c.id,c]));
+        const score=c=>(c.onScreen?0:1000)+(c.decor?100:0)+c.d-(current.has(c.id)?1.5:0);
+        candidates.sort((a,b)=>score(a)-score(b));
+        const selected=candidates.slice(0,lights.length);
+        metrics.candidates=candidates.length;metrics.visibleLights=selected.filter(c=>c.onScreen).length;
+        const lamps=selected.filter(c=>c.lamp).sort((a,b)=>a.d-b.d).slice(0,2),shadowIds=new Set(lamps.map(c=>c.id)),unused=new Map(selected.map(c=>[c.id,c]));
         for (const l of lights) { const s = l.userData.torchSlot || (l.userData.torchSlot = { gain: 0, target: null, next: null });
-          if (s.target && unused.has(s.target.id) && (!!unused.get(s.target.id).lamp === (lights.indexOf(l)<lamps.length))) { s.next = unused.get(s.target.id); unused.delete(s.target.id); } else s.next = null; }
-        for (const l of lights) { const s = l.userData.torchSlot; if (!s.next) { s.next = [...unused.values()].find(c=>!!c.lamp===(lights.indexOf(l)<lamps.length)) || null; if (s.next) unused.delete(s.next.id); } }
+          if (s.target && unused.has(s.target.id) && (shadowIds.has(s.target.id) === (lights.indexOf(l)<lamps.length))) { s.next = unused.get(s.target.id); unused.delete(s.target.id); } else s.next = null; }
+        for (const l of lights) { const s = l.userData.torchSlot; if (!s.next) { s.next = [...unused.values()].find(c=>shadowIds.has(c.id)===(lights.indexOf(l)<lamps.length)) || null; if (s.next) unused.delete(s.next.id); } }
       }
       metrics.lights = 0;
       for (let i = 0; i < lights.length; i++) {
