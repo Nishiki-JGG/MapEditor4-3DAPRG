@@ -1,6 +1,8 @@
 // Shared GPU plant wind. Canonical wind XZ uses Unity axes; editor Z is reflected.
 (() => {
 const spec={version:2,id:'pine',minY:2.15,maxY:6.408,maxDisplacementMetres:.16,waves:[1.7,.65,2.9,.35],phase:[.17,.13],response:{version:1,linear:.25,quadratic:.75,mean:.65,gust:.35},mask:'canonical uv.y > .5 (needle region only)',verticalDisplacement:0};
+// response is the legacy import contract; animationResponse is the current GPU presentation.
+spec.animationResponse={version:2,maxStrength:1.1,maxResponse:3,gain:2.6,linear:.7,quadratic:.3,mean:.2,gust:.8};
 const uniforms={uPineWind:{value:new THREE.Vector4()},uPineBand:{value:new THREE.Vector4(spec.minY,spec.maxY,spec.maxDisplacementMetres,1)},uPineWaves:{value:new THREE.Vector4(...spec.waves)},uPinePhase:{value:new THREE.Vector2(...spec.phase)}};
 const rootGLSL=`
 #ifdef ROOT_GROUND
@@ -11,7 +13,7 @@ float sharedRootRise(mat4 m){vec4 p=m*vec4(position,1.);return dot(rootSlope,p.x
 const GLSL=rootGLSL+`uniform vec4 uPineWind,uPineBand,uPineWaves; uniform vec2 uPinePhase;
 #ifdef PLANT_WEIGHTS
 attribute vec2 plantWeight; uniform float uPlantPhase,uPlantCombinedLimit;
-vec2 plantCombinedOffset(vec2 wind,vec2 touch,float scale,vec2 weights){vec2 d=wind+touch;float limit=uPlantCombinedLimit*scale*max(weights.x,weights.y),n=dot(d,d);if(uPlantCombinedLimit>0.&&n>limit*limit)return d*(limit*inversesqrt(n));return d;}
+vec2 plantCombinedOffset(vec2 wind,vec2 touch,float scale,vec2 weights){vec2 d=wind+touch;float limit=(uPlantCombinedLimit+2.*uPineBand.z)*scale*max(weights.x,weights.y),n=dot(d,d);if(uPlantCombinedLimit>0.&&n>limit*limit)return d*(limit*inversesqrt(n));return d;}
 #endif
 vec2 pineOffset(float y,float uvY,vec2 origin){
  if(uPineWind.z<=0.||uvY<=(uPineBand.w>1.5?-1.:.5)) return vec2(0.);
@@ -20,9 +22,9 @@ vec2 pineOffset(float y,float uvY,vec2 origin){
 #ifdef PLANT_WEIGHTS
  if(plantWeight.x<=0.)return vec2(0.);w=plantWeight.x; ph+=uPlantPhase;
 #endif
- float gust=uPineWaves.y*sin(uPineWind.w*uPineWaves.x+ph)+uPineWaves.w*sin(uPineWind.w*uPineWaves.z+ph);
- float s=clamp(uPineWind.z,0.,1.);
- return uPineWind.xy*(s*(.25+.75*s)*uPineBand.z*w*(.65+.35*gust));
+ float s=clamp(uPineWind.z,0.,1.1),time=uPineWind.w*(1.+.65*s);
+ float gust=uPineWaves.y*sin(time*uPineWaves.x+ph)+uPineWaves.w*sin(time*uPineWaves.z+ph);
+ return uPineWind.xy*(2.6*s*(.7+.3*s)*uPineBand.z*w*(.2+.8*gust));
 }`;
 const projection=`#include <project_vertex>
 vec4 pineOrigin=modelMatrix*vec4(0.,0.,0.,1.);
@@ -65,7 +67,7 @@ rootNormalMatrix=modelMatrix*instanceMatrix;
 float rootNormalY=objectNormal.y*rootWeight/max(length(rootNormalMatrix[1].xyz),.0001);
 objectNormal.x-=rootNormalY*dot(rootSlope,rootNormalMatrix[0].xz);objectNormal.z-=rootNormalY*dot(rootSlope,rootNormalMatrix[2].xz);
 #endif
-`).replace('#include <project_vertex>',projection).replace('#include <worldpos_vertex>',THREE.ShaderChunk.worldpos_vertex.replace('worldPosition = modelMatrix * worldPosition;','worldPosition = modelMatrix * worldPosition; worldPosition.xz+=vec2(pineDelta.x,-pineDelta.y); worldPosition.y+=rootRise;'));};m.customProgramCacheKey=()=> (weighted?'shared-plant-motion/3':'shared-plant-wind/2')+(root?'/root-ground/1':'');return m;}
+`).replace('#include <project_vertex>',projection).replace('#include <worldpos_vertex>',THREE.ShaderChunk.worldpos_vertex.replace('worldPosition = modelMatrix * worldPosition;','worldPosition = modelMatrix * worldPosition; worldPosition.xz+=vec2(pineDelta.x,-pineDelta.y); worldPosition.y+=rootRise;'));};m.customProgramCacheKey=()=> (weighted?'shared-plant-motion/4':'shared-plant-wind/3')+(root?'/root-ground/1':'');return m;}
 const touchGLSL=`
 #ifdef USE_INSTANCING
 vec2 plantTouchWorld=touch.xy*plantWeight.y;
@@ -77,6 +79,6 @@ function advance(st,tx,tz,max,dt){const total=Math.min(.1,Math.max(0,dt)),n=Math
 function target(dx,dz,r,mvx,mvz,max){const d=Math.hypot(dx,dz);if(d>=r)return[0,0];const speed=Math.hypot(mvx,mvz),mv=speed>20?0:speed,mx=mv>.1?mvx/mv:0,mz=mv>.1?mvz/mv:0,nx=d>.05?dx/d:mx,nz=d>.05?dz/d:mz,k=(1-d/r)*max*1.6;return[(nx*.8+mx*.45*Math.min(1,mv/3))*k,(nz*.8+mz*.45*Math.min(1,mv/3))*k];}
 const shadows=new WeakMap();
 function shadowMaterial(base,distance=false){const key=distance?'distance':'depth';let pair=shadows.get(base);if(!pair){pair=new Map();shadows.set(base,pair);}if(!pair.has(key)){const m=distance?new THREE.MeshDistanceMaterial():new THREE.MeshDepthMaterial({depthPacking:THREE.RGBADepthPacking});m.map=base.map;m.alphaTest=base.alphaTest;m.side=base.side;attach(m,base.userData.sharedWind||null,!!base.userData.sharedWeighted,!!base.userData.sharedRootGrounding);if(base.userData.touchVertex){m.defines={...(m.defines||{}),PLANT_TOUCH:''};const compile=m.onBeforeCompile;m.onBeforeCompile=sh=>{compile(sh);base.userData.touchVertex(sh);};}if(window.TDRootSurface&&base.userData.rootSurfaceSpec)TDRootSurface.attach(m,base.userData.rootSurfaceSpec,true);pair.set(key,m);}return pair.get(key);}
-function set(time,x,z,strength){const n=Math.hypot(x,z)||1;uniforms.uPineWind.value.set(x/n,z/n,Math.max(0,Math.min(1,strength)),time);}
+function set(time,x,z,strength){const n=Math.hypot(x,z)||1;uniforms.uPineWind.value.set(x/n,z/n,Math.max(0,Math.min(1.1,strength)),time);}
 window.TDPineWind={spec,uniforms,GLSL,touchGLSL,attach,touchMaterial,advance,target,shadowMaterial,set,exportJson:()=>JSON.stringify(spec)};
 })();

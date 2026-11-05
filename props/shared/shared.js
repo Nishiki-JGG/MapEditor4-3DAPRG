@@ -31,7 +31,7 @@ function geometry(id) {
   if(a.motionWeights)g.setAttribute('plantWeight',new THREE.Float32BufferAttribute(a.motionWeights,2));if(a.glow)g.setAttribute('sharedGlow',new THREE.Float32BufferAttribute(a.glow,1));
   if(a.rootWood)g.setAttribute('rootWood',new THREE.Float32BufferAttribute(a.rootWood,1));
   if(a.rootWeights)g.setAttribute('rootWeight',new THREE.Float32BufferAttribute(a.rootWeights,1));
-  g.computeBoundingBox(); g.computeBoundingSphere();if(a.wind||id==='pine'){const pad=(a.wind||TDPineWind.spec).maxDisplacementMetres+(a.contact?.maxDisplacementMetres||0);g.boundingBox.min.x-=pad;g.boundingBox.min.z-=pad;g.boundingBox.max.x+=pad;g.boundingBox.max.z+=pad;g.boundingSphere.radius+=pad;}
+  g.computeBoundingBox(); g.computeBoundingSphere();if(a.wind||id==='pine'){const pad=3*(a.wind||TDPineWind.spec).maxDisplacementMetres+(a.contact?.maxDisplacementMetres||0);g.boundingBox.min.x-=pad;g.boundingBox.min.z-=pad;g.boundingBox.max.x+=pad;g.boundingBox.max.z+=pad;g.boundingSphere.radius+=pad;}
   return g;
 }
 // 薄い葉の表裏を同じ上側の法線で照らす。樹皮・枝・根は既存の照明を保つ。
