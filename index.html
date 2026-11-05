@@ -143,8 +143,14 @@
       <div class="row variants" id="tunnelSlopes"></div>
     </div>
     <div id="markerOpts" hidden>
+      <div id="enemyRankRow" hidden>
+        <label class="sel"><span>敵の格</span><select id="enemyRank" aria-label="敵の格">
+          <option value="common">コモンエネミー</option><option value="miniboss">中ボス</option><option value="floorBoss">フロアボス</option><option value="dungeonBoss">ダンジョンボス</option>
+        </select></label>
+        <div class="hint">格を選んで配置。高い格ほど大きく、多重のサークルで表示します。</div>
+      </div>
       <label class="sel"><span>タグ</span><input id="markerTag" type="text" placeholder="例: field, boss, north" style="width:100%;background:#232a33;color:var(--text);border:1px solid #3a4452;border-radius:6px;padding:5px 6px;font:inherit"></label>
-      <div class="hint">出入口: 接続先を選ぶためのタグ。敵の候補: グループ名など。</div>
+      <div class="hint">出入口: 接続先を選ぶためのタグ。敵の出現スポット: グループ名など。</div>
     </div>
     <div id="placeOpts" hidden>
       <div class="hint">「置く」選択中 Ctrl＋ホイール：置く物の大きさ ／ Q・E：向き</div>
@@ -452,6 +458,6 @@
 <script defer data-presentation-only src="terrain/archive-compression.js?v=stored-buffers-1"></script>
 <script defer data-presentation-only src="terrain/map-archive.js?v=a069119599f1"></script>
 <script defer src="terrain/completed-state.js?v=41480e908365&mapArchive=fieldonly1"></script>
-<script defer src="app.js?v=66fa240df5c4" data-preparation-key="app.js?v=41451b050877"></script>
+<script defer src="app.js?v=567844caf32d" data-preparation-key="app.js?v=41451b050877"></script>
 </body>
 </html>

@@ -32,7 +32,7 @@ const state = {
   roomId: '', nextId: 1, revision: 0, lastExportHash: '', catalog: { types: {}, floorLinks: {} },
   agent: { radius: .3, height: 1.8, maxSlopeDeg: 51.3, maxWaterDepth: .9, maxStep: .5, arrivalClearance: .5 },   // who the walkability is computed for
   biome: 'forest', palette: 'all', cliffStyle: 'standard', sunOn: true, timeOfDay: 'day', darkness: 'dark', mapName: '', sea: false, weather: { kind: 'none', amount: .7 }, atmo: { kind: 'none', amount: .6, height: 3 },
-  variant: { bridge: 'wood', stairs: 'stone', place: 0, marker: 'port', link: 'warp', cliffpaint: 1, spring: 'brook', pool: 'rect', tunnel: 'rock' }, tunnelSize: 'normal', tunnelSlope: 'flat', placeScale: 1, placeRot: 0, placeRandom: true,
+  enemyRank: 'common', variant: { bridge: 'wood', stairs: 'stone', place: 0, marker: 'port', link: 'warp', cliffpaint: 1, spring: 'brook', pool: 'rect', tunnel: 'rock' }, tunnelSize: 'normal', tunnelSlope: 'flat', placeScale: 1, placeRot: 0, placeRandom: true,
   mode: 'edit', tool: 'plateau', radius: 4, strength: .6, density: .6, brushShape: 'circle',
   types: new Set([0, 1]), water: .8, spawn: { x: 0, z: 22 },
 };
@@ -3895,7 +3895,18 @@ function catalogExport() {
 }
 
 // ---------- game markers
-const MARKER_KINDS = [['port', '出入口'], ['enemy', '敵の候補'], ['chest', '宝箱の候補'], ['nobattle', '戦闘禁止範囲'], ['nospawn', '出現禁止範囲']];
+const MARKER_KINDS = [['port', '出入口'], ['enemy', '敵の出現スポット'], ['chest', '宝箱の候補'], ['nobattle', '戦闘禁止範囲'], ['nospawn', '出現禁止範囲']];
+// enemyRank is independent of reserve radius, tags and stable marker IDs.
+const ENEMY_RANKS = [
+  { id: 'common', name: 'コモンエネミー', scale: 1, rings: 1, points: 0 },
+  { id: 'miniboss', name: '中ボス', scale: 1.45, rings: 2, points: 4 },
+  { id: 'floorBoss', name: 'フロアボス', scale: 1.95, rings: 3, points: 6 },
+  { id: 'dungeonBoss', name: 'ダンジョンボス', scale: 2.5, rings: 4, points: 8 },
+];
+const enemyRank = m => ENEMY_RANKS.find(q => q.id === (m.enemyRank || 'common')) || ENEMY_RANKS[0];
+const markerName = m => m.kind === 'enemy' ? enemyRank(m).name : markerLabel(m.kind);
+const enemyVisualRadius = m => Math.max(.6, m.r) * enemyRank(m).scale;
+const markerSaved = m => m.kind === 'enemy' ? { ...m, enemyRank: enemyRank(m).id } : { ...m };
 const MARKER_COL = { port: 0x3fd8ff, enemy: 0xff4a4a, chest: 0xffcc33, nobattle: 0x5a8cff, nospawn: 0xff9a3a, warp: 0xb48cff, up: 0x7dffb0, down: 0xffa86b };
 // floor links (dungeon level transitions): stored in `markers` so ids, undo, save and delete work the same way.
 // Local frame: +z (forward) points to the side the player approaches from; the structure extends toward -z.
@@ -3915,7 +3926,7 @@ const linkAssetKey = k => LINK_SPEC[k].assetKey;
 const linkLocal = (m, lx, lz) => { const s = Math.sin(m.rot), c = Math.cos(m.rot); return { x: m.x + lx * c + lz * s, z: m.z - lx * s + lz * c }; };
 const linkTrigger = m => linkLocal(m, ...LINK_SPEC[m.kind].trigger);
 const linkArrival = m => linkLocal(m, 0, LINK_SPEC[m.kind].arrive);
-const markerRadius = m => m.kind === 'port' ? m.w / 2 : isLink(m.kind) ? 1.6 : m.r;
+const markerRadius = m => m.kind === 'port' ? m.w / 2 : isLink(m.kind) ? 1.6 : m.kind === 'enemy' ? enemyVisualRadius(m) : m.r;
 const portInward = m => [Math.sin(m.rot), Math.cos(m.rot)];
 const portLanding = m => { const [ix, iz] = portInward(m); return { x: m.x + ix * 1.5, z: m.z + iz * 1.5 }; };
 const markerGroup = new THREE.Group(); scene.add(markerGroup);
@@ -4046,8 +4057,35 @@ function buildLink(m) {
   }
   g.position.set(m.x, heightAt(m.x, m.z), m.z); g.rotation.y = m.rot; g.userData.m = m; linkGroup.add(g);
 }
+function enemyRing(m, radius, width, color) {
+  const positions = [], indices = [], segments = 80;
+  for (let i = 0; i <= segments; i++) {
+    const a = i / segments * Math.PI * 2;
+    for (const r of [radius - width / 2, radius + width / 2]) {
+      const x = m.x + Math.cos(a) * r, z = m.z + Math.sin(a) * r;
+      positions.push(x, Math.max(floorAt(x, z), state.water) + .16, z);
+    }
+    if (i < segments) { const n = i * 2; indices.push(n, n+2, n+1, n+1, n+2, n+3); }
+  }
+  const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3)); geo.setIndex(indices);
+  const mat = unlit(color); mat.side = THREE.DoubleSide;
+  const mesh = new THREE.Mesh(geo, mat); mesh.renderOrder = 10; return mesh;
+}
+function enemyMarker(m, color) {
+  const rank = enemyRank(m), level = rank.rings - 1, radius = enemyVisualRadius(m), g = new THREE.Group();
+  g.userData.enemyRank = rank.id; g.userData.markerId = m.id; g.userData.visualRadius = radius;
+  for (let i = 0; i < rank.rings; i++) g.add(enemyRing(m, radius - i * .22, .055 + level * .02, color));
+  const gem = new THREE.Mesh(new THREE.OctahedronGeometry(.35 + level * .10), unlit(color));
+  gem.position.set(m.x, floorAt(m.x, m.z) + 1.3 + level * .2, m.z); gem.scale.y = 1.5; g.add(gem);
+  for (let i = 0; i < rank.points; i++) {
+    const a = i / rank.points * Math.PI * 2, x = m.x + Math.cos(a) * radius, z = m.z + Math.sin(a) * radius;
+    const point = new THREE.Mesh(new THREE.OctahedronGeometry(.13 + level * .045), unlit(color));
+    point.position.set(x, Math.max(floorAt(x, z), state.water) + .3, z); point.scale.y = 1.7; g.add(point);
+  }
+  return g;
+}
 function rebuildMarkers() {
-  for (const c of [...markerGroup.children]) { c.traverse(o => { if (o.geometry) o.geometry.dispose(); }); markerGroup.remove(c); }
+  for (const c of [...markerGroup.children]) { c.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); }); markerGroup.remove(c); }
   for (const c of [...linkGroup.children]) { c.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material && ![stoneMat, stoneDark, voidMat, daisMat, mossStone, vortexMat, sparkMat].includes(o.material)) o.material.dispose(); }); linkGroup.remove(c); }
   linkSpin.length = 0; colliders = null; walkDirty = true;
   { let n = 0; const pt = LINK_SPEC.down.pit;
@@ -4070,7 +4108,7 @@ function rebuildMarkers() {
       const L = portLanding(m); markerGroup.add(groundRing(L.x, L.z, .5, c)); markerGroup.add(groundRing(L.x, L.z, m.r, c, .08));
       continue;
     }
-    if (m.kind === 'enemy') { const d = new THREE.Mesh(new THREE.OctahedronGeometry(.35), unlit(c)); d.position.y = 1.3; d.scale.y = 1.5; g.add(d); }
+    if (m.kind === 'enemy') { markerGroup.add(enemyMarker(m, c)); continue; }
     else if (m.kind === 'chest') { const b = new THREE.Mesh(new THREE.BoxGeometry(.7, .45, .45), unlit(c)); b.position.y = .25; g.add(b); }
     else { const disc = new THREE.Mesh(new THREE.CircleGeometry(m.r, 40), unlit(c)); disc.material.opacity = .22; disc.rotation.x = -Math.PI / 2; disc.position.y = .1; g.add(disc); }
     g.position.set(m.x, y, m.z); markerGroup.add(g); markerGroup.add(groundRing(m.x, m.z, m.r, c));
@@ -4086,7 +4124,7 @@ function placeMarker(kind, a, c) {
     let dx = c ? c.x - a.x : -a.x, dz = c ? c.z - a.z : -a.z;
     if (Math.hypot(dx, dz) < .5) { dx = -a.x; dz = -a.z; }
     m.rot = +Math.atan2(dx, dz).toFixed(4); m.w = LINK_SPEC[kind].size[0]; m.r = LINK_SPEC[kind].tr;
-  } else if (kind === 'enemy') m.r = 1.5;
+  } else if (kind === 'enemy') { m.r = 1.5; m.enemyRank = state.enemyRank || 'common'; }
   else if (kind === 'chest') m.r = 1;
   else m.r = +clamp(state.radius, 1, 14).toFixed(2);
   m.id = newId(markerPrefix(kind));
@@ -4129,6 +4167,7 @@ function valueIssues(src,size=SIZE) {
   (src.markers || []).forEach((m, i) => {
     const id = m?.id || `markers[${i}]`;
     if (!m || !(MARKER_KINDS.some(k => k[0] === m.kind) || isLink(m.kind))) return bad(id, `種類 ${m?.kind} が不明です`);
+    if (m.kind === 'enemy' && m.enemyRank != null && !ENEMY_RANKS.some(q => q.id === m.enemyRank)) bad(id, '敵の格が不正です');
     if (!inMap(m.x, m.z)) bad(id, '座標が不正かマップの外です');
     if (!FIN(m.rot)) bad(id, '向きが不正です');
     if (!(FIN(m.r) && m.r >= 0)) bad(id, `半径 ${m.r} が不正です`);
@@ -4451,7 +4490,7 @@ function serialize() {
   return {
     format: 'map-editor-proto', version: 2, size: SIZE, resolution: RES, vertices: N,
     roomId: (ensureIds(), state.roomId), nextId: state.nextId, revision: state.revision, lastExportHash: state.lastExportHash, agent: { ...state.agent }, catalog: structuredClone(state.catalog),
-    markers: markers.map(m => ({ ...m })),
+    markers: markers.map(markerSaved),
     waterLevel: state.water, spawn: {...state.spawn}, biome: state.biome, cliffStyle: state.cliffStyle, sea: state.sea, atmosphere: { ...state.atmo }, weather: { ...state.weather }, sunlight: state.sunOn, timeOfDay: state.timeOfDay, darkness: state.darkness, name: state.mapName,
     heightsF32: b64(new Uint8Array(H.slice().buffer)), splat: b64(S), walkOverride: b64(O), cliffMap: b64(C),   // exact heights: save → load → export reproduces the RAW
     propTypes: PROP.map(p => p.id),
@@ -4698,7 +4737,7 @@ async function buildExport({sharedAssets = false, compact = false} = {}) {
   const groundedData={version:1,units:'metres',axes:'Unity X/Y/Z',surface:'heightmap_r16.raw',assets:[...new Set(groundedInstances.map(p=>p[0]))].map(t=>TDPropGrounding.exportAsset(PROP[t])),instances:groundedInstances.map(p=>{const t=PROP[p[0]],v=.86+.28*hash2(p[1]*97|0,p[2]*89|0);return{instanceId:p[8],type:t.id,assetKey:t.assetKey,source:{position:P3(p[1],propBaseY(p),p[2]),yaw:U.yaw(p[3]),scale:[p[4],p[4]*(p[6]??1),p[4]]},tint:[v*(.95+.1*hash2(p[1]*13|0,7)),v,v*(.95+.1*hash2(3,p[2]*17|0))],parts:groundedExportPose(p).map((m,i)=>({id:TDPropGrounding.parts(t.geo)[i].id,...TDPropGrounding.exportPose(m,new THREE.Vector3(HALF,-mn,HALF))}))};})};
   const spawnY = floorAt(state.spawn.x, state.spawn.z);
   const portOut = m => { const [ix, iz] = portInward(m), L = portLanding(m); return { id: m.id, tag: m.tag || '', position: P3(m.x, floorAt(m.x, m.z), m.z), yawDeg: U.yaw(m.rot), inward: [+ix.toFixed(4), +(-iz).toFixed(4)], width: m.w, landing: P3(L.x, floorAt(L.x, L.z), L.z), safeRadius: m.r }; };
-  const spotOut = m => ({ id: m.id, tag: m.tag || '', position: P3(m.x, floorAt(m.x, m.z), m.z), reserveRadius: m.r });
+  const spotOut = m => ({ id: m.id, tag: m.tag || '', position: P3(m.x, floorAt(m.x, m.z), m.z), reserveRadius: m.r, ...(m.kind === 'enemy' ? { enemyRank: enemyRank(m).id } : {}) });
   const linkOut = m => {
     const sp = LINK_SPEC[m.kind], T = linkTrigger(m), A = linkArrival(m);
     const y0 = heightAt(m.x, m.z);
@@ -5159,6 +5198,9 @@ function showVariants() {
   $('groundDetailOpts').hidden = tool !== 'detail';
   if(tool==='detail')syncGroundDetailUI();
   $('markerOpts').hidden = tool !== 'marker' && tool !== 'link';
+  $('enemyRankRow').hidden = tool !== 'marker' || state.variant.marker !== 'enemy';
+  $('enemyRank').value = state.enemyRank || 'common';
+  $('enemyRank').onchange = e => { state.enemyRank = e.target.value; };
   $('tunnelOpts').hidden = tool !== 'tunnel';
   if (tool === 'tunnel') for (const [boxId, list, key] of [['tunnelSizes', TDTunnels.SIZES, 'tunnelSize'], ['tunnelSlopes', TDTunnels.SLOPES, 'tunnelSlope']]) {
     const el = $(boxId); el.innerHTML = '';
@@ -5554,7 +5596,7 @@ function pickTarget(x, z) {
   for (const b of bridges) { const d = distToPolyline(x, z, [[b.x1, b.z1], [b.x2, b.z2]]); if (d < b.w / 2 + .3) offer('bridge', b, d / (b.w / 2 + .3) * .9, BRIDGE_TYPES.find(t => t[0] === (b.type || 'wood'))[1]); }
   for (const st of stairs) { const d = distToPolyline(x, z, [[st.x1, st.z1], [st.x2, st.z2]]); if (d < st.w / 2 + .3) offer('stairs', st, d / (st.w / 2 + .3) * .9, STAIR_TYPES.find(t => t[0] === st.type)[1]); }
   for (const f of falls) { const r = f.w * .6 + .6, d = Math.hypot(f.x - x, f.z - z); if (d < r) offer('fall', f, d / r, '滝'); }
-  for (const m of markers) { const r = Math.max(markerRadius(m), 1), d = Math.hypot(m.x - x, m.z - z); if (d < r) offer('marker', m, d / r * .8, markerLabel(m.kind)); }
+  for (const m of markers) { const r = Math.max(markerRadius(m), 1), d = Math.hypot(m.x - x, m.z - z); if (d < r) offer('marker', m, d / r * .8, markerName(m)); }
   return best;
 }
 
@@ -5616,9 +5658,9 @@ function beginStroke(e) {
     if (e.shiftKey) {
       stroke.active = false; let best = null, bd = 1e9;
       for (const m of markers) { if (isLink(m.kind) !== (state.tool === 'link')) continue; const d = Math.hypot(m.x - hit.x, m.z - hit.z); if (d < Math.max(markerRadius(m), 1.2) && d < bd) { bd = d; best = m; } }
-      if (best) { markers = markers.filter(m => m !== best); rebuildMarkers(); toast(markerLabel(best.kind) + 'を消しました'); } else toast('近くにありません');
+      if (best) { markers = markers.filter(m => m !== best); rebuildMarkers(); toast(markerName(best) + 'を消しました'); } else toast('近くにありません');
     } else if (state.tool === 'link' || state.variant.marker === 'port') stroke.dragStart = { x: hit.x, z: hit.z };
-    else { stroke.active = false; placeMarker(state.variant.marker, hit); toast(MARKER_KINDS.find(k => k[0] === state.variant.marker)[1] + 'を置きました'); }
+    else { stroke.active = false; placeMarker(state.variant.marker, hit); toast(markerName(markers[markers.length - 1]) + 'を置きました'); }
     return;
   }
   if (state.tool === 'stairs' && e.shiftKey) {
@@ -6195,7 +6237,7 @@ bootReady.then(()=>{
 // hooks for automated checks
 window.__app = {captureCompletedSurface,preparationKey,get surfaceUpgradeCount(){return surfaceUpgradeCount;},mineLanterns, chestPresentation, wallTorches, bedrockReady, splatAt,get tunnels() { return tunnels; }, set tunnels(v) { tunnels = v; }, get tunnelPrep() { return tunnelPrep; }, get tunnelLamps() { return tunnelLamps; }, placeTunnel, rebuildTunnels, tunnelGroup, tunnelHoleTex, cutU, refitFalls, placeFall, springFallGroup, fallGroup, get springs() { return springs; }, set springs(v) { springs = v; }, get pools() { return pools; }, get springRes() { return springRes; }, SC, placeSpring, placePool, applySprings, solveSprings, waterAt, springLevelAt, poolDist, poolWallAt, POOL_WALL, deckAt, fillGroundAll,buildPreparedSample,prepareMap,cancelMapPreparation,bootReady,get preparation(){return mapPreparation?{id:mapPreparation.id,phase:mapPreparation.phase,requestedMode:mapPreparation.requestedMode,elapsedMs:performance.now()-mapPreparation.start}:null;},get preparationStats(){return lastPreparedState;},
   propGrounding,groundedParts,groundedNormal,groundedGhost,groundPreview,setGroundPreview,propBaseY,get cliffContactProgress(){return cliffContactProgress;},cliffFits,effectiveGeometry,fitCliffContact,adoptCliffContact, cliffProtected,cliffProtectionReason,nearFeatureReason, get cliffContactStats(){return cliffContactStats;},
-  pickGroundDetail,adjustGroundDetail,selectedGroundDetail,updateTouch,touchStats, pavingMask, cliffRelief, rebuildCliffRelief, groundTrial, groundTexture, terrainSource:tGeo, terrain, renderer, camera, SIZE, state, H, S, O, F, C, propMeshes, ghostMeshes, cliffIndexAt, BIOMES, CLIFF_STYLES, applyCliffStyle, deckAt, linkDeckAt, runValidation, genSample, genSample2, secretRegions, secretLineX, passageGeometry, terrainRes, TERRAIN_RES, snapshot, sha256, LINK_KINDS, normalizeCatalog, catalogExport, valueIssues, areaIssue, deckAt, getColliders, PROP, get colliderMaxR() { return colliderMaxR; }, rebuildMarkers, portLanding, linkTrigger, linkArrival, LINK_SPEC, get markers() { return markers; }, placeMarker, ensureIds, applyCatalog, ATMOS, WEATHER, applyAtmo, makeCoast, glowLights, applyBiome, applyPalette, TIMES, timeId, propVisible, toolVisible, updateTerrain, rebuildProps, genFlat, floorAt, bridgeAt, stairsAt, placeSlope, placeStairs, placeBridge, pickTarget, regenGroundProps, rebuildBridges, get stairs() { return stairs; }, get bridges() { return bridges; }, get falls() { return falls; }, overrideAt, heroMat, hero, get heroBody(){return heroBody;}, get heroLook() { return heroLook; }, setHeroLook, heroStyle, heroGlow, get ghosts() { return ghosts; }, get props() { return props; }, cam, playCam, player, keys, setMode, setTool, update, heightAt, walkable, slope: slopeAt,
+  pickGroundDetail,adjustGroundDetail,selectedGroundDetail,updateTouch,touchStats, pavingMask, cliffRelief, rebuildCliffRelief, groundTrial, groundTexture, terrainSource:tGeo, terrain, renderer, camera, SIZE, state, H, S, O, F, C, propMeshes, ghostMeshes, cliffIndexAt, BIOMES, CLIFF_STYLES, applyCliffStyle, deckAt, linkDeckAt, runValidation, genSample, genSample2, secretRegions, secretLineX, passageGeometry, terrainRes, TERRAIN_RES, snapshot, sha256, LINK_KINDS, normalizeCatalog, catalogExport, valueIssues, areaIssue, deckAt, getColliders, PROP, get colliderMaxR() { return colliderMaxR; }, rebuildMarkers, enemyRank, enemyVisualRadius, markerGroup, portLanding, linkTrigger, linkArrival, LINK_SPEC, get markers() { return markers; }, placeMarker, ensureIds, applyCatalog, ATMOS, WEATHER, applyAtmo, makeCoast, glowLights, applyBiome, applyPalette, TIMES, timeId, propVisible, toolVisible, updateTerrain, rebuildProps, genFlat, floorAt, bridgeAt, stairsAt, placeSlope, placeStairs, placeBridge, pickTarget, regenGroundProps, rebuildBridges, get stairs() { return stairs; }, get bridges() { return bridges; }, get falls() { return falls; }, overrideAt, heroMat, hero, get heroBody(){return heroBody;}, get heroLook() { return heroLook; }, setHeroLook, heroStyle, heroGlow, get ghosts() { return ghosts; }, get props() { return props; }, cam, playCam, player, keys, setMode, setTool, update, heightAt, walkable, slope: slopeAt,
   stroke(x, z, frames = 20, opts = {}) {
     hit = new THREE.Vector3(x, heightAt(x, z), z); beginStroke({ shiftKey: !!opts.shift });
     for (let f = 0; f < frames; f++) { if (stroke.active && !['scatter', 'erase'].includes(state.tool)) { applyBrush(x, z, 1 / 60); } }
