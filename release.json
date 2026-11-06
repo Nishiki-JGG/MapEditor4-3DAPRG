@@ -1,7 +1,7 @@
 {
-  "release": "ruins-kit-30-20261106",
+  "release": "ruins-grid-delete-20261106",
   "files": {
-    "app.js": "7d37c3a543abbe19b5e8673a99ed16c316890280ceb7b3bb503649321b99342a",
+    "app.js": "c852458cf43cefb205a6fa686506e8418ca224bfe8aace2ecb28d78b92dee66e",
     "props/chest-presentation.js": "02a2cc0c23060f822e0e1bfe5abfc5c6803cedee2e2deb0fdb4b5b445915b4d3",
     "props/chest-surface.js": "bf7137cd3c64c736bc50d0dbd2a7b62f4fce1c48db73f6473fc6b9522b24f025",
     "props/chest-relief.js": "2f6d152ccd4c0dfd43d34c9867118d5060704b01ea93cfeafcdf826c479e8f94",

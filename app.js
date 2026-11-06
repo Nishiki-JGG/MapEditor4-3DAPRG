@@ -3215,7 +3215,36 @@ const ruinsMaterials=[TDRuinsSurface.material(false),TDRuinsSurface.material(tru
 const ruinsSoilTexture=new THREE.TextureLoader().load('data:'+TDGroundData.dirt.mime+';base64,'+TDGroundData.dirt.imageBase64);ruinsSoilTexture.colorSpace=THREE.SRGBColorSpace;ruinsSoilTexture.wrapS=ruinsSoilTexture.wrapT=THREE.RepeatWrapping;
 const ruinsSoilMaterial=new THREE.MeshStandardMaterial({map:ruinsSoilTexture,roughness:1,color:0xffffff});
 const ruinsGhostMat=new THREE.MeshBasicMaterial({color:0x68ffb0,wireframe:true,depthTest:false});
-const ruinsGrid=new THREE.GridHelper(SIZE,SIZE*2,0x87999a,0x485958);ruinsGrid.material.transparent=true;ruinsGrid.material.opacity=.45;ruinsGrid.visible=false;scene.add(ruinsGrid);
+const ruinsGrid=new THREE.LineSegments(new THREE.BufferGeometry(),new THREE.LineBasicMaterial({color:0xa6c4cb,transparent:true,opacity:.4,depthWrite:false}));ruinsGrid.visible=false;scene.add(ruinsGrid);
+const ruinsSelectionBox=new THREE.BoxHelper(undefined,0xffd35c);ruinsSelectionBox.material.depthTest=false;ruinsSelectionBox.material.depthWrite=false;ruinsSelectionBox.renderOrder=10;ruinsSelectionBox.visible=false;scene.add(ruinsSelectionBox);
+let ruinsGridSerial=-1,ruinsGridModel=null;
+// 0.5m の格子を地表に沿わせる。カーソルの高さで地図全体を上下させない。
+function updateRuinsGrid(){
+ ruinsGrid.visible=state.mode==='edit'&&state.tool==='ruins'&&document.getElementById('ruinsShowGrid').checked;
+ if(!ruinsGrid.visible||ruinsGridSerial===completedSerial&&ruinsGridModel===ruins)return;
+ const points=[],step=.5;
+ const line=(x,z,xx,zz)=>points.push(x,heightAt(x,z)+.035,z,xx,heightAt(xx,zz)+.035,zz);
+ for(let i=0;i<=SIZE/step;i++)for(let j=0;j<SIZE/step;j++){const a=-HALF+i*step,b=-HALF+j*step;line(a,b,a,b+step);line(b,a,b+step,a);}
+ // 高床は地図全体から探索せず、各高床の範囲だけ描く。
+ for(const raw of ruins.items.filter(p=>p.kind==='platform')){
+  const p=TDRuins.resolved(raw,ruins),model={items:[p]},b=TDRuins.footprint(p),x0=Math.ceil(Math.max(-HALF,b[0])/step),x1=Math.floor(Math.min(HALF,b[1])/step),z0=Math.ceil(Math.max(-HALF,b[4])/step),z1=Math.floor(Math.min(HALF,b[5])/step);
+  const top=(x,z,xx,zz)=>{const a=TDRuins.floor(model,x,z),b=TDRuins.floor(model,xx,zz);if(a&&b)points.push(x,a.y+.035,z,xx,b.y+.035,zz);};
+  for(let x=x0;x<=x1;x++)for(let z=z0;z<=z1;z++){if(x<x1)top(x*step,z*step,(x+1)*step,z*step);if(z<z1)top(x*step,z*step,x*step,(z+1)*step);}
+ }
+ ruinsGrid.geometry.dispose();ruinsGrid.geometry=new THREE.BufferGeometry();ruinsGrid.geometry.setAttribute('position',new THREE.Float32BufferAttribute(points,3));ruinsGrid.geometry.computeBoundingSphere();ruinsGridSerial=completedSerial;ruinsGridModel=ruins;
+}
+function syncRuinsSelection(){
+ const object=ruinsGroup.children.find(o=>o.userData.ruinsId===ruinsSelected);
+ ruinsSelectionBox.visible=!!object&&state.mode==='edit'&&state.tool==='ruins';if(object)ruinsSelectionBox.setFromObject(object);
+ for(const id of ['ruinsDelete','ruinsApply','ruinsMove'])document.getElementById(id).disabled=!object;
+}
+function selectRuinsAtPointer(){
+ cancelRuins();const ground=ray.intersectObject(terrain,false)[0];const h=ray.intersectObjects(ruinsGroup.children,false).find(h=>h.object.userData.ruinsId&&(!ground||h.distance<=ground.distance+.001));
+ ruinsSelected=h?.object.userData.ruinsId||null;document.getElementById('ruinsSelected').value=ruinsSelected||'';
+ const p=ruins.items.find(p=>p.id===ruinsSelected);if(p)ruinsFillControls(p);syncRuinsSelection();
+ document.getElementById('ruinsReason').textContent=p?TDRuins.TYPES[p.kind]+'を選択しました。「選択を削除」で消せます。':'壁や部材をクリックして選択してください';
+}
+
 let ruinsDraft=null,ruinsPending=false,ruinsSelected=null,ruinsLastPreview='',ruinsLastSnap=null,ruinsInputKey='';
 function clearRuinsGroup(g){const seen=new Set();for(const o of [...g.children]){if(o.geometry&&!seen.has(o.geometry)){o.geometry.dispose();seen.add(o.geometry);}g.remove(o);}}
 function ruinsGeometry(g){const b=new THREE.BufferGeometry();b.setAttribute('position',new THREE.Float32BufferAttribute(g.positions,3));b.setAttribute('normal',new THREE.Float32BufferAttribute(g.normals,3));b.setAttribute('uv',new THREE.Float32BufferAttribute(g.uv,2));b.setAttribute('uv2',new THREE.Float32BufferAttribute(g.uv,2));b.computeBoundingSphere();return b;}
@@ -3261,15 +3290,17 @@ function ruinsWalk(x,z){const q=TDRuins.floor(ruins,x,z);if(!q)return null;const
 }
 function ruinsMoveAllowed(x0,z0,x1,z1){const n=Math.max(1,Math.ceil(Math.hypot(x1-x0,z1-z0)/.08));let y=floorAt(x0,z0);for(let k=1;k<=n;k++){const x=lerp(x0,x1,k/n),z=lerp(z0,z1,k/n),v=floorAt(x,z);if(!walkable(x,z)||Math.abs(v-y)>state.agent.maxStep+.00001)return false;y=v;}return true;}
 function cancelRuins(){ruinsPending=false;ruinsDraft=null;ruinsLastSnap=null;ruinsLastPreview='';ruinsInputKey='';clearRuinsGroup(ruinsPreview);}
-function refreshRuinsSelection(){const el=document.getElementById('ruinsSelected'),old=ruinsSelected;el.innerHTML='<option value="">新しく配置</option>';for(const p of ruins.items){const o=document.createElement('option');o.value=p.id;o.textContent=p.id+' '+(p.finish==='carved'?'装飾：':'')+TDRuins.TYPES[p.kind];el.appendChild(o);}el.value=ruins.items.some(p=>p.id===old)?old:'';ruinsSelected=el.value||null;}
+function refreshRuinsSelection(){const el=document.getElementById('ruinsSelected'),old=ruinsSelected;el.innerHTML='<option value="">新しく配置</option>';for(const p of ruins.items){const o=document.createElement('option');o.value=p.id;o.textContent=p.id+' '+(p.finish==='carved'?'装飾：':'')+TDRuins.TYPES[p.kind];el.appendChild(o);}el.value=ruins.items.some(p=>p.id===old)?old:'';ruinsSelected=el.value||null;syncRuinsSelection();}
 function ruinsControlItem(){const old=ruins.items.find(p=>p.id===ruinsSelected),kind=document.getElementById('ruinsKind').value.split(':')[0],p={...(old||TDRuins.defaults(kind)),kind};for(const [key,id]of [['length','ruinsLength'],['width','ruinsWidth'],['height','ruinsHeight']])p[key]=+document.getElementById(id).value;p.rot=+document.getElementById('ruinsRot').value*Math.PI/180;p.finish=p.kind==='soil_bank'?'worn':document.getElementById('ruinsFinish').value;delete p.stoneVariation;if(['wall','wall_broken','wall_ruined'].includes(p.kind))p.stoneVariation=document.getElementById('ruinsStoneVariation').checked;delete p.burialDepth;delete p.fracture;delete p.joined;if(p.kind==='paving'||p.kind==='paving_broken')p.burialDepth=+document.getElementById('ruinsBurial').value;if(p.kind==='wall_ruined')p.fracture=document.getElementById('ruinsFracture').checked;if(p.kind==='stone_beam')p.joined=document.getElementById('ruinsJoined').checked;return p;}
 function ruinsFillControls(p){document.getElementById('ruinsStoneVariation').checked=!!p.stoneVariation;document.getElementById('ruinsStoneVariation').disabled=!['wall','wall_broken','wall_ruined'].includes(p.kind);document.getElementById('ruinsBurial').value=p.burialDepth||0;document.getElementById('ruinsBurial').disabled=!['paving','paving_broken'].includes(p.kind);document.getElementById('ruinsFracture').checked=!!p.fracture;document.getElementById('ruinsFracture').disabled=p.kind!=='wall_ruined';document.getElementById('ruinsJoined').checked=!!p.joined;document.getElementById('ruinsJoined').disabled=p.kind!=='stone_beam';document.getElementById('ruinsFinish').disabled=p.kind==='soil_bank';for(const [key,id]of [['kind','ruinsKind'],['length','ruinsLength'],['width','ruinsWidth'],['height','ruinsHeight'],['finish','ruinsFinish']])document.getElementById(id).value=key==='kind'&&p.finish==='carved'?p.kind+':carved':p[key];document.getElementById('ruinsRot').value=((p.rot*180/Math.PI)%360+360)%360;document.getElementById('ruinsWidth').disabled=!['platform','stairs','soil_bank'].includes(p.kind);document.getElementById('ruinsLength').disabled=['buttress_wall','offering_table','window_wall','balustrade','wall_niche','corner_in','corner_out','tee','end','pier','pier_broken','paving','paving_broken','column_base','column_shaft','column_capital','edge_corner','edge_end'].includes(p.kind);document.getElementById('ruinsHeight').disabled=['buttress_wall','offering_table','balustrade','stone_beam','stairs','paving','paving_broken','column_base','column_capital'].includes(p.kind);}
-function updateRuinsPreview(){ruinsPreview.visible=state.mode==='edit'&&state.tool==='ruins';ruinsGrid.visible=state.mode==='edit'&&state.tool==='ruins'&&document.getElementById('ruinsShowGrid')?.checked;ruinsGrid.position.y=(hit?floorAt(hit.x,hit.z):heightAt(cam.target.x,cam.target.z))+.025;if(!ruinsPreview.visible||!hit)return;
+function updateRuinsPreview(){updateRuinsGrid();syncRuinsSelection();ruinsPreview.visible=state.mode==='edit'&&state.tool==='ruins'&&!document.getElementById('ruinsSelectMode').checked;if(!ruinsPreview.visible||!hit)return;
  let p=ruinsControlItem();p.x=hit.x;p.z=hit.z;delete p.supportId;delete p.upperId;delete p.mountId;delete p.beamSupports;p.y=heightAt(p.x,p.z);
  const q=TDRuins.floor({...ruins,items:ruins.items.filter(v=>v.id!==p.id)},p.x,p.z);if(q&&q.kind==='platform'&&p.kind!=='platform'&&p.kind!=='stairs'&&q.id!==p.id)p.supportId=q.id;
  if(p.kind==='stairs'){const c=Math.cos(p.rot),s=Math.sin(p.rot),x=p.x+s*p.length/2,z=p.z+c*p.length/2;const high=TDRuins.floor(ruins,x,z);if(high?.kind==='platform')p.upperId=high.id;}
  const sn=TDRuins.snap(ruins,p,{grid:document.getElementById('ruinsGridSnap').checked,join:document.getElementById('ruinsPartSnap').checked,previous:ruinsLastSnap});p=sn.item;ruinsLastSnap=sn.key||null;
- // 格子吸着後に支持面・階段上端を確定する。
+ // 格子吸着後の座標で地面の高さと支持面を取り直す。
+ if(!p.mountId&&!p.beamSupports)p.y=heightAt(p.x,p.z);delete p.supportId;const support=TDRuins.floor({...ruins,items:ruins.items.filter(v=>v.id!==p.id)},p.x,p.z);if(support?.kind==='platform'&&p.kind!=='platform'&&p.kind!=='stairs'&&!p.mountId&&!p.beamSupports)p.supportId=support.id;
+ // 格子吸着後に階段上端を確定する。
  if(p.kind==='stairs'){delete p.upperId;const c=Math.cos(p.rot),s=Math.sin(p.rot),h=TDRuins.floor(ruins,p.x+s*p.length/2,p.z+c*p.length/2);if(h?.kind==='platform')p.upperId=h.id;}
  const inputKey=JSON.stringify(p)+'|'+state.water;if(inputKey===ruinsInputKey)return;ruinsInputKey=inputKey;
  let reason='';try{TDRuins.transaction(ruins,{type:'put',item:p},ruinsEnv());}catch(e){reason=e.message;}
@@ -3281,18 +3312,20 @@ function ruinsBrushProtected(x,z,r){return ruins.items.some(p=>{const b=TDRuins.
 function setupRuinsUI(){
  ruinsRendererReady=true;
  const kind=document.getElementById('ruinsKind');for(const [id,name]of Object.entries(TDRuins.TYPES)){const o=document.createElement('option');o.value=id;o.textContent=name;kind.appendChild(o);}const decorated=document.createElement('optgroup');decorated.label='装飾された遺跡部材';for(const id of ['buttress_wall','offering_table','window_wall','balustrade','wall_niche','opening','opening_broken','stone_beam','wall','wall_broken','wall_ruined','pier','pier_broken','arch','arch_broken','paving','paving_broken','corner_in','corner_out','tee','end','stairs','column_base','column_shaft','column_capital','platform','edge','edge_corner','edge_end']){const o=document.createElement('option');o.value=id+':carved';o.textContent='装飾：'+TDRuins.TYPES[id];decorated.appendChild(o);}kind.appendChild(decorated);ruinsFillControls(TDRuins.defaults('wall'));refreshRuinsSelection();
- kind.onchange=()=>{ruinsSelected=null;document.getElementById('ruinsSelected').value='';const parts=kind.value.split(':'),p=TDRuins.defaults(parts[0]);if(parts[1])p.finish=parts[1];if(p.kind==='opening')p.height=3;ruinsFillControls(p);cancelRuins();};
- document.getElementById('ruinsSelected').onchange=e=>{cancelRuins();ruinsSelected=e.target.value||null;const p=ruins.items.find(v=>v.id===ruinsSelected);if(p)ruinsFillControls(p);};
+ kind.onchange=()=>{document.getElementById('ruinsSelectMode').checked=false;ruinsSelected=null;document.getElementById('ruinsSelected').value='';const parts=kind.value.split(':'),p=TDRuins.defaults(parts[0]);if(parts[1])p.finish=parts[1];if(p.kind==='opening')p.height=3;ruinsFillControls(p);cancelRuins();};
+ document.getElementById('ruinsSelected').onchange=e=>{cancelRuins();document.getElementById('ruinsSelectMode').checked=!!e.target.value;ruinsSelected=e.target.value||null;const p=ruins.items.find(v=>v.id===ruinsSelected);if(p)ruinsFillControls(p);syncRuinsSelection();};
+ document.getElementById('ruinsSelectMode').onchange=()=>{cancelRuins();updateRuinsPreview();};
+ document.getElementById('ruinsMove').onclick=()=>{document.getElementById('ruinsSelectMode').checked=false;cancelRuins();toast('移動先をクリックしてください');};
  document.getElementById('ruinsApply').onclick=()=>{const p=ruins.items.find(v=>v.id===ruinsSelected);if(!p)return toast('編集対象を選んでください');const r=commitRuins({type:'put',item:{...ruinsControlItem(),x:p.x,z:p.z}});toast(r.ok?'寸法・仕上げを更新しました':r.reason);};
- document.getElementById('ruinsDelete').onclick=()=>{if(!ruinsSelected)return;const r=commitRuins({type:'delete',id:ruinsSelected});toast(r.ok?'構造を削除しました':r.reason);};
- document.getElementById('ruinsCopy').onclick=()=>{ruinsSelected=null;document.getElementById('ruinsSelected').value='';cancelRuins();toast('次の配置で新しい構造を作ります');};
+ document.getElementById('ruinsDelete').onclick=()=>{if(!ruinsSelected)return;const r=commitRuins({type:'delete',id:ruinsSelected});document.getElementById('ruinsReason').textContent=r.ok?'削除しました。Ctrl+Zで元に戻せます。':r.reason;toast(r.ok?'構造を削除しました':r.reason);};
+ document.getElementById('ruinsCopy').onclick=()=>{document.getElementById('ruinsSelectMode').checked=false;ruinsSelected=null;document.getElementById('ruinsSelected').value='';cancelRuins();toast('次の配置で新しい構造を作ります');};
  for(const [id,d]of [['ruinsLeft',-90],['ruinsRight',90]])document.getElementById(id).onclick=()=>{const el=document.getElementById('ruinsRot');el.value=(+el.value+d+360)%360;updateRuinsPreview();};
  for(const id of ['ruinsShowGrid','ruinsGridSnap','ruinsPartSnap','ruinsLength','ruinsWidth','ruinsHeight','ruinsRot','ruinsFinish','ruinsBurial','ruinsFracture','ruinsJoined','ruinsStoneVariation'])document.getElementById(id).addEventListener('change',updateRuinsPreview);
  window.addEventListener('blur',cancelRuins);canvas.addEventListener('lostpointercapture',cancelRuins);canvas.addEventListener('pointercancel',cancelRuins);canvas.addEventListener('pointermove',e=>{if(e.pointerType!=='touch'&&ruinsPending&&e.buttons!==1)cancelRuins();});canvas.addEventListener('pointerdown',e=>{if(e.button!==0)cancelRuins();},true);
 }
 
 const TOOLS = [
-  {id:'ruins',name:'遺跡を組む',key:'',hint:'格子と接合点に合わせて石造構造を配置。Q/Eは90度回転。選択欄で既存構造を選び、クリックで再配置できます。分割柱は接合ONで柱礎→柱身→柱頭の順に配置。'},
+  {id:'ruins',name:'遺跡を組む',key:'',hint:'格子と接合点に合わせて石造構造を配置。Q/Eは90度回転。地図で選択をONにして壁をクリックし、選択を削除。移動は選択を移動から。分割柱は接合ONで柱礎→柱身→柱頭の順に配置。'},
   { id: 'plateau', name: '台地', key: '1', hint: 'ドラッグ: 一段高い台地（崖つき）。Shift+ドラッグ: 一段低く。' },
   { id: 'raise', name: '上げる', key: '2', hint: 'なだらかに盛り上げます。' },
   { id: 'lower', name: '下げる', key: '3', hint: 'なだらかに掘り下げます。水位より下は水になります。' },
@@ -5746,6 +5779,7 @@ function pick(cx, cy) {
   return h ? h.point : null;
 }
 function beginStroke(e) {
+  if(state.tool==='ruins'&&document.getElementById('ruinsSelectMode').checked){selectRuinsAtPointer();return;}
   if (!hit) return;
   if(state.tool==='ruins'){updateRuinsPreview();ruinsPending=true;return;}
   if(ruins.items.length&&['pool','spring','tunnel','bridge','stairs','slope','coast','fall'].includes(state.tool)){toast('遺跡構造を含む地図では水・通路の新設は未対応です');return;}
