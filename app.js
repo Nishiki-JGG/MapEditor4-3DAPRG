@@ -6059,7 +6059,7 @@ function cancelMapPreparation(restoreMap=true){
 function captureCollisionPreparation(){
  const fitted=[];for(const [id,c]of cliffFits.cache){if(c.footprint)fitted.push([id,{pose:cliffFits.records.get(id)?.pose,input:cliffFits.input,footprint:TDCompletedState.compactFittedFootprint(c.footprint),y0:c.y0,y1:c.y1}]);}
  const prototypes=PROP.map(t=>t.footprint?[t.id,t.footprint.fields]:null).filter(Boolean);
- return {version:1,fitted,prototypes,walk:walkDirty?undefined:{signature:walkPreparationSignature(),auto:A.slice(),floor:F.slice(),walk:Uint8Array.from(wkGeo.attributes.walk.array),forced:Uint8Array.from(wkGeo.attributes.forced.array),secret:Uint8Array.from(wkGeo.attributes.secret.array)}};
+ return {version:1,fitted,prototypes,walk:walkDirty?undefined:{signatureVersion:2,signature:walkPreparationSignature(),auto:A.slice(),floor:F.slice(),walk:Uint8Array.from(wkGeo.attributes.walk.array),forced:Uint8Array.from(wkGeo.attributes.forced.array),secret:Uint8Array.from(wkGeo.attributes.secret.array)}};
 }
 function validFootprint(f){
  return f&&Number.isInteger(f.nx)&&Number.isInteger(f.nz)&&f.nx>0&&f.nz>0&&f.nx*f.nz<2e6&&((f.top instanceof Float32Array&&f.top.length===f.nx*f.nz&&f.top.every(Number.isFinite))||(f.fieldOnly===true&&f.top===undefined&&f.sink===0&&f.fields instanceof Map&&f.fields.size===1&&f.fields.has(20)))&&['x0','z0','R','sink'].every(k=>Number.isFinite(f[k]))&&f.fields instanceof Map;
@@ -6078,10 +6078,21 @@ async function installPrototypePreparation(data,job){
  const entries=[];await TDPreparation.each(data.prototypes,([id,fields])=>{const f=PROP.find(t=>t.id===id)?.footprint;if(!f||!validFields(fields,f.top.length))throw Error('元部品の衝突準備が違います');entries.push([f,fields]);},job);
  for(const[f,fields]of entries)for(const[key,v]of fields)f.fields.set(key,v);
 }
-function walkPreparationSignature(){return cliffInputSignature()+'/'+sha256(O)+'/'+sha256(S)+'/'+sha256(new TextEncoder().encode(JSON.stringify([props,bridges,stairs,markers,state.agent,state.biome])));}
+function walkPreparationSignature(savedMarkers=markers.map(markerSaved)){return cliffInputSignature()+'/'+sha256(O)+'/'+sha256(S)+'/'+sha256(new TextEncoder().encode(JSON.stringify([props,bridges,stairs,savedMarkers,state.agent,state.biome])));}
 function installWalkPreparation(w){
  const count=N*N,flags=a=>a instanceof Uint8Array&&a.length===count&&a.every(x=>x<=1);
- if(!w||w.signature!==walkPreparationSignature()||!flags(w.auto)||!flags(w.walk)||!flags(w.forced)||!flags(w.secret)||!(w.floor instanceof Float32Array)||w.floor.length!==count||!w.floor.every(Number.isFinite))throw Error('通行準備とマップが一致しません');
+ if(!w||![undefined,2].includes(w.signatureVersion)||typeof w.signature!=='string'||!flags(w.auto)||!flags(w.walk)||!flags(w.forced)||!flags(w.secret)||!(w.floor instanceof Float32Array)||w.floor.length!==count||!w.floor.every(Number.isFinite))throw Error('通行準備とマップが一致しません');
+ const expected=walkPreparationSignature();
+ if(w.signature!==expected&&!(w.signatureVersion===undefined&&w.signature===walkPreparationSignature(markers))){
+  // Legacy saves added enemyRank=common only to the serialized markers, after
+  // hashing their unnormalized runtime form. Never trust the mismatching walk
+  // arrays. Rebuild only walkability from the verified map; keep saved surfaces
+  // and fitted rocks intact. The next save stores a canonical v2 signature.
+  const oldParts=w.signature.split('/'),parts=expected.split('/');
+  const legacyRankMismatch=w.signatureVersion===undefined&&oldParts.length===5&&oldParts.every(v=>/^[a-f0-9]{64}$/.test(v))&&oldParts.slice(0,4).every((v,i)=>v===parts[i])&&markers.some(m=>m.kind==='enemy'&&m.enemyRank==='common');
+  if(!legacyRankMismatch)throw Error('通行準備とマップが一致しません');
+  walkDirty=true;if(mapPreparation)mapPreparation.walkCompatibilityRepair='legacy-enemy-rank';return;
+ }
  A.set(w.auto);F.set(w.floor);wkGeo.attributes.walk.array.set(w.walk);wkGeo.attributes.forced.array.set(w.forced);wkGeo.attributes.secret.array.set(w.secret);
  const pos=wkGeo.attributes.position.array;for(let j=0;j<N;j++)for(let i=0;i<N;i++){const k=idx(i,j);pos[k*3]=vx(i);pos[k*3+1]=Math.max(H[k],state.water)+.06;pos[k*3+2]=vx(j);}
  for(const n of ['position','walk','forced','secret'])wkGeo.attributes[n].needsUpdate=true;wkGeo.computeBoundingSphere();walkDirty=false;
@@ -6196,7 +6207,7 @@ async function prepareMap(kind,seed=7,options={}){
   await compilePreparedMap(job);TDPreparation.check(job);job.progress('最初の画面を描画',0,0);await TDPreparation.pause(job);const firstRender=performance.now();renderer.render(scene,camera);job.firstRenderMs=performance.now()-firstRender;await TDPreparation.pause(job);
   if(kind==='pending'){await TDPreparation.clearPending(options.token);if(sessionStorage.getItem('me_pending')==='prepared:'+options.token)sessionStorage.removeItem('me_pending');TDPreparation.check(job);}
   if(!options.boot){undoStack.push(backup);redoStack.length=0;trimHistory();if(kind!=='rocks'&&kind!=='load')forgetSaveTarget(kind==='sample'?'サンプル':kind==='sample2'?'サンプル2（隠し通路）':'');}
-  lastPreparedState={kind,seed,cacheHit:cacheHit&&preparedSource==='cache',persistent,persistentStored,preparedSource,bundleBytes,walkReused,elapsedMs:performance.now()-job.start,firstRenderMs:job.firstRenderMs,props:props.length,fits:cliffFits.records.size,fitStats};
+  lastPreparedState={kind,seed,cacheHit:cacheHit&&preparedSource==='cache',persistent,persistentStored,preparedSource,bundleBytes,walkReused,walkCompatibilityRepair:job.walkCompatibilityRepair||null,elapsedMs:performance.now()-job.start,firstRenderMs:job.firstRenderMs,props:props.length,fits:cliffFits.records.size,fitStats};
   mapPreparation=null;unlockPreparation(job);hud();toast(kind==='restore'?'元のマップに戻しました':'準備が完了しました（'+(lastPreparedState.elapsedMs/1000).toFixed(1)+'秒）');return true;
  }catch(e){
   for(const c of staged?.cache.values()||[])c.geometry.dispose();
