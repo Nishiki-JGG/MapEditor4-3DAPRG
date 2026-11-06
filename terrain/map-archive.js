@@ -92,7 +92,7 @@ async function create(map,value,resolve,makeZip){
  const compact={...source,cliffFits:referenceFits(source.cliffFits,resolve)};
  const raw=TDPreparedCodec.encode({version:1,map:compact,completed:await TDArchiveCompression.pack(value)});
  if(raw.length>LIMIT)throw Error('マップの展開サイズが256 MiBを超えています');
- const manifest={format:'map-editor-archive',version:2,roomId:map.roomId,requiredFeatures:['affine-delta-v1','completed-state-v1','stored-buffers-v1'],file:'map.tdps',bytes:raw.length,sha256:await hash(raw)};
+ const manifest={format:'map-editor-archive',version:map.ruins?3:2,roomId:map.roomId,requiredFeatures:['affine-delta-v1','completed-state-v1','stored-buffers-v1',...(map.ruins?['ruinsStructuresV1']:[])],file:'map.tdps',bytes:raw.length,sha256:await hash(raw)};
  return makeZip([{name:'manifest.json',data:JSON.stringify(manifest)},{name:'map.tdps',data:raw}]);
 }
 // Read only our two bounded entries. Verify both ZIP headers, CRC and the payload SHA before decoding.
@@ -120,9 +120,10 @@ async function unzip(input){
 }
 async function read(input,resolve){
  const entries=await unzip(input),m=JSON.parse(dec.decode(entries.get('manifest.json'))),raw=entries.get('map.tdps');
- if(m.format!=='map-editor-archive'||![1,2].includes(m.version)||m.file!=='map.tdps'||JSON.stringify(m.requiredFeatures)!==JSON.stringify(m.version===1?['affine-delta-v1','completed-state-v1']:['affine-delta-v1','completed-state-v1','stored-buffers-v1'])||m.bytes!==raw.length||m.sha256!==await hash(raw))throw Error('非対応または破損したマップです');
- const d=TDPreparedCodec.decode(raw);if(d.version!==1||d.map?.format!=='map-editor-proto'||d.completed?.version!==1||d.map?.roomId!==m.roomId)throw Error('マップの内容が不正です');
- const map={...d.map,cliffFits:deferredFits(d.map.cliffFits,resolve)};completed.set(map,m.version===2?await TDArchiveCompression.open(d.completed):d.completed);return map;
+ if(m.format!=='map-editor-archive'||![1,2,3].includes(m.version)||m.file!=='map.tdps'||JSON.stringify(m.requiredFeatures)!==JSON.stringify(m.version===1?['affine-delta-v1','completed-state-v1']:['affine-delta-v1','completed-state-v1','stored-buffers-v1',...(m.version===3?['ruinsStructuresV1']:[])])||m.bytes!==raw.length||m.sha256!==await hash(raw))throw Error('非対応または破損したマップです');
+ const d=TDPreparedCodec.decode(raw);if(d.version!==1||d.map?.format!==(m.version===3?'map-editor-ruins':'map-editor-proto')||d.completed?.version!==1||d.map?.roomId!==m.roomId)throw Error('マップの内容が不正です');
+ if(m.version===3){if(!d.map.ruins)throw Error('必須の遺跡構造がありません');TDRuins.validate(d.map.ruins);}
+ const map={...d.map,cliffFits:deferredFits(d.map.cliffFits,resolve)};completed.set(map,m.version>=2?await TDArchiveCompression.open(d.completed):d.completed);return map;
 }
 const api={create,read,completedFor,compactFits,expandFits};if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.TDMapArchive=api;
 })(globalThis);

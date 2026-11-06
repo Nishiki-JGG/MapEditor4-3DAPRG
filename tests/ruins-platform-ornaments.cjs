@@ -1,0 +1,16 @@
+const assert=require('assert/strict'),fs=require('fs'),crypto=require('crypto'),R=require('../ruins.js');
+const hashes=require('./fixtures/ruins-before-platform-ornaments.json'),rows=[];let probes=0;
+for(const [key,hash]of Object.entries(hashes)){const [kind,finish]=key.split(':');assert.equal(crypto.createHash('sha256').update(JSON.stringify(R.mesh({...R.defaults(kind),finish}))).digest('hex'),hash);}
+for(const kind of ['platform','edge'])for(const rot of [0,Math.PI/2,Math.PI,Math.PI*1.5])for(const height of kind==='platform'?[.3,2.2,4]:[.1,.3,1]){
+ const p={...R.defaults(kind),id:'ruins_1',finish:'carved',rot,height},m={version:1,nextId:2,items:[p]},plain={...m,items:[{...p,finish:'stone'}]};R.validate(m);
+ const a=R.mesh(p),b=R.mesh(plain.items[0]);assert.deepEqual(a.positions,b.positions);assert.deepEqual(a.normals,b.normals);assert.deepEqual(R.sockets(p),R.sockets(plain.items[0]));assert.notDeepEqual(a.uv,b.uv);assert(a.uv.every(Number.isFinite));for(let i=0;i<a.uv.length;i+=2){if(a.uv[i]<-96){assert(Math.abs(a.uv[i]+128-b.uv[i])<1e-10);assert(Math.abs(a.uv[i+1]-Math.floor(a.uv[i+1]/64)*64-16-b.uv[i+1])<1e-10);}else assert.deepEqual(a.uv.slice(i,i+2),b.uv.slice(i,i+2));}
+ for(let i=0;i<a.uv.length;i+=2)if(a.uv[i]<-96)assert([12,13,14].includes(Math.floor(a.uv[i+1]/64)));
+ for(let x=-2.2;x<=2.2;x+=.2)for(let z=-2.2;z<=2.2;z+=.2){assert.deepEqual(R.floor(m,x,z),R.floor(plain,x,z));assert.equal(R.blocked(m,x,z,.25,.1,1.6),R.blocked(plain,x,z,.25,.1,1.6));probes++;}
+ const E=R.exportData(m,24,33,()=>0),P=R.exportData(plain,24,33,()=>0);assert.deepEqual(E.holes,P.holes);assert.deepEqual(E.cap,P.cap);assert.deepEqual(E.items[0].positions,P.items[0].positions);assert.deepEqual(E.items[0].triangles,P.items[0].triangles);assert.deepEqual(R.exportData(JSON.parse(JSON.stringify(m)),24,33,()=>0),E);
+ if(rot===0)rows.push({kind,height,triangles:a.positions.length/9,taggedVertices:a.uv.filter((v,i)=>i%2===0&&v<-96).length});
+}
+let m=R.empty();m=R.transaction(m,{type:'put',item:{...R.defaults('platform',0,2),width:3,finish:'carved'}});const platform=m.items[0];m=R.transaction(m,{type:'put',item:{...R.defaults('stairs',0,-1),finish:'carved',upperId:platform.id}});m=R.transaction(m,{type:'put',item:{...R.defaults('edge',-1.75,2),length:3,rot:Math.PI/2,finish:'carved',supportId:platform.id}});
+const before=JSON.stringify(m);assert.throws(()=>R.transaction(m,{type:'put',item:{...platform,height:5}}));assert.equal(JSON.stringify(m),before);assert.throws(()=>R.transaction(m,{type:'delete',id:platform.id}));
+const taller=R.transaction(m,{type:'put',item:{...platform,height:2.3}});assert.equal(R.resolved(taller.items[1],taller).height,2.3);assert.equal(R.resolved(taller.items[2],taller).y,2.3);
+for(const rot of [0,Math.PI/2,Math.PI,Math.PI*1.5]){const e={...R.defaults('edge'),rot,finish:'carved',id:'ruins_1'},a={version:1,nextId:2,items:[e]},s=R.sockets(e)[1],candidate={...R.defaults('edge',s.x+s.dx*1.08,s.z+s.dz*1.08),rot,finish:'carved'};const snap=R.snap(a,candidate,{grid:true,join:true});assert(snap.snapped);R.transaction(a,{type:'put',item:snap.item});}
+const result={pass:true,oldCases:Object.keys(hashes).length,geometryColliderTerrainUnchanged:true,rotatedDimensionCases:24,probes,edgeSnaps:4,supportHeightAndDeleteAtomic:true,rows};console.log(result);

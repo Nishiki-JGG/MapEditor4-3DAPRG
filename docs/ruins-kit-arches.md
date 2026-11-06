@@ -1,0 +1,15 @@
+# Weathered ruins arch variants (local candidate 21)
+
+`arch` is a new modular masonry arch, not a replacement for the existing `archgate` prop or `opening` structure. It uses eleven wedge-shaped ring stones, supported jambs and masonry spandrels. `arch_broken` removes the central crown rather than leaving unsupported floating ring stones; the remaining shoulders and two fallen stones use the same shared weathered material.
+
+Default overall length 4 m, height 3.5 m, wall thickness 0.5 m. Accepted length 3..8 m in existing 0.5 m increments, height 3.2..5 m; unsupported free scaling/thickness is rejected. The jamb opening is 2 m wide. Spring height is total height minus 1.5 m; the inner arc has a nominal 1 m radius with eleven polygon segments. Central clearance is approximately spring height plus 1 m, not the overall wall height. The character test uses radius 0.25 m and height 1.6 m. This is a static ruin kit, not a physically simulated load-bearing arch.
+
+Both end sockets are at +/-length/2, at the same base height, wall thickness and total-height contract as neighboring walls. Grid-only, part-only and combined alignment use the existing snap logic; mismatched height is rejected for snapping. Confirmed placement does not follow later neighboring edits. 90-degree rotation is supported, diagonal/free scale is not. Broken-side rubble projects toward the front beyond the 0.5 m wall thickness; its actual mesh/bounds appear in the preview and collision model. Keep this foot area clear when placing the broken variant.
+
+Visual triangles and native MeshCollider come from the same saved formal export. Web collision uses the corresponding convex stone pieces; arch ceilings are deliberately not returned as walkable floors. Only the two fallen pieces contribute their exact top triangles to Web floor queries. A visible missing crown has no invisible overhead collider. The ordinary terrain remains the floor in the opening.
+
+Default triangles: arch 2,350; broken arch including two fallen stones 1,496. No new material or texture: the existing two stone materials and three 512 px maps remain shared. Identical arches share one geometry/material in the Web 9-instance test. These are resource-sharing observations, not GPU/mobile performance measurements.
+
+Save kind IDs are `arch` and `arch_broken` under ruins structures v1. Update `ruins.js` and `RuinsStructureImporter.cs` together, export again and import into a new dedicated output directory. The old whitelist rejects unknown kinds; old binary readers were not run. Existing generic arch/column/ruinwall and old-kit geometry remain unchanged. No original-game integration or publication was performed.
+
+Current limitations: finite shared atlas, coarse fracture facets at very close range, manual placement of additional rubble, no arch physics, no automatic pillar stacking or pillar-to-wall attachment. Independent base/capital pieces and additional nonrectangular architectural families are not part of this batch.

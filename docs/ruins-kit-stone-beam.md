@@ -1,0 +1,11 @@
+# Column-supported stone lintel
+
+`stone_beam`: stone/worn/carved choices, intact lintel including integrated carved ends. Existing shared wall/column parts and prior placements are not replaced. Column-center span is 2–4 m in 0.5 m steps; width/height 0.5 m, 0.28 m terminal extension at each support. 90-degree rotation only. No structural engineering claim is made by this game prop.
+
+Place two equal-height intact piers or assembled column capitals at the requested span. Point to their midpoint and enable part snapping; the preview binds both support IDs. With snapping off, an exact valid midpoint is still required. Grid mode requires both support centers on the grid. A missing, duplicate, misaligned, uneven or displaced support is rejected. Save stores both IDs; derived height follows valid supports. Individual support height/position edits that would break the pair are atomically rejected; remove the beam first to rebuild the pair. No cascading horizontal move or implicit rotation occurs.
+
+The beam is overhead collision geometry and does not generate a phantom walkable roof. It is not a bridge. No unsupported/cantilever placement, automatic wall bearing, chained beam spans, arbitrary width, or standalone end cap is included. Its terminal ornament is integrated because a separate end piece would add an unsupported fragment and unnecessary renderer.
+
+End revision: the larger flat diagonal cut was replaced with two unequal local impacts that interrupt the carved edging. The underside bearing plane and support contract are unchanged. Beam geometry is 200 triangles (previous 118); no new renderer, material or texture. Closed-edge checks include collinear subdivision boundaries. Dedicated validation retains the 36 bearing rays and under-beam capsule traversal. The small impact faces remain stylized at extreme close-up.
+
+Use updated ruins.js, app.js and RuinsStructureImporter; the prior Web reader rejects the unknown kind in a regression test; the prior Unity whitelist is checked by source, not by running an old binary. Dedicated Unity baked geometry, collider, material sharing and persistence are validated; original game integration and mobile/GPU performance are not measured.

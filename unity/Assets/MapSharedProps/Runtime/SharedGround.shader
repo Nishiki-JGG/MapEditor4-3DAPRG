@@ -1,5 +1,5 @@
 Shader "MapSharedGround/Grass" {
- Properties { _GroundMap("Raw sRGB JPEG (manual decode)",2D)="white"{} _GroundParams("Tile m / mix / cos / sin",Vector)=(4,.4,.8660254,.5) _GroundOffset("Second UV offset",Vector)=(.37,.21,0,0) _EditorZero("Unity XZ of editor origin",Vector)=(0,0,0,0) _WaveA("Wave A",Vector)=(.47,.29,.045,0) _WaveB("Wave B",Vector)=(-.21,.53,.025,0) _Decode("Decode exponent",Float)=2.2 _Unlit("Albedo reference",Float)=0
+ Properties { [Toggle(_SOIL_DETAIL)] _SoilDetail("Detailed soil (opt-in)",Float)=0  _GroundMap("Raw sRGB JPEG (manual decode)",2D)="white"{} _GroundParams("Tile m / mix / cos / sin",Vector)=(4,.4,.8660254,.5) _GroundOffset("Second UV offset",Vector)=(.37,.21,0,0) _EditorZero("Unity XZ of editor origin",Vector)=(0,0,0,0) _WaveA("Wave A",Vector)=(.47,.29,.045,0) _WaveB("Wave B",Vector)=(-.21,.53,.025,0) _Decode("Decode exponent",Float)=2.2 _Unlit("Albedo reference",Float)=0
   _DirtMap("Raw sRGB soil",2D)="white"{} _DirtParams("Tile m / mix / cos / sin",Vector)=(2,.35,.8660254,.5) _DirtOffset("Soil second UV offset",Vector)=(.19,.43,0,0) _DirtWeight("Painted soil amount",Range(0,1))=0 _VertexDirt("Use vertex red soil amount",Float)=0
   _PureBlackMask("Export mask_3 blue (linear)",2D)="black"{} _PureBlackMapSize("Map size metres XZ",Vector)=(1,1,0,0) _PureBlackEnabled("Use opaque unlit black floor",Float)=0 }
  SubShader {
@@ -7,6 +7,7 @@ Shader "MapSharedGround/Grass" {
   Pass {
    Tags {"LightMode"="UniversalForward"}
    HLSLPROGRAM
+   #pragma shader_feature_local_fragment _SOIL_DETAIL
    #pragma vertex Vert
    #pragma fragment Frag
    #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE
@@ -25,6 +26,15 @@ Shader "MapSharedGround/Grass" {
    float ValueNoise(float2 p){float2 i=floor(p),f=frac(p);f=f*f*(3-2*f);return lerp(lerp(Hash21(i),Hash21(i+float2(1,0)),f.x),lerp(Hash21(i+float2(0,1)),Hash21(i+float2(1,1)),f.x),f.y);}
    float SoilWeight(float2 p,float paint){float a=.5,s=0;p=p*1.6+5;for(int i=0;i<4;i++){s+=a*ValueNoise(p);p=p*2.03+17.1;a*=.5;}return smoothstep(.2,.55,paint+(s-.5)*.35);}
    float3 Dirt(float2 p){float2 uv=p/_DirtParams.x;float2 q=float2(uv.x*_DirtParams.z-uv.y*_DirtParams.w,uv.x*_DirtParams.w+uv.y*_DirtParams.z)+_DirtOffset.xy;return lerp(SAMPLE_TEXTURE2D(_DirtMap,sampler_DirtMap,uv).rgb,SAMPLE_TEXTURE2D(_DirtMap,sampler_DirtMap,q).rgb,_DirtParams.y)*(1+.022*sin(dot(p,float2(.47,.29)))+.014*sin(dot(p,float2(-.21,.53))));}
+#if defined(_SOIL_DETAIL)
+#define ROOT_DIRT(uv) SAMPLE_TEXTURE2D(_DirtMap,sampler_DirtMap,uv).rgb
+float SoilDetailNoise(float2 p){float2 i=floor(p),f=frac(p);f=f*f*(3-2*f);float4 n=frac(sin(float4(dot(i,float2(127.1,311.7)),dot(i+float2(1,0),float2(127.1,311.7)),dot(i+float2(0,1),float2(127.1,311.7)),dot(i+float2(1,1),float2(127.1,311.7))))*43758.5453);return lerp(lerp(n.x,n.y,f.x),lerp(n.z,n.w,f.x),f.y);}
+float3 SoilDetailGrain(float2 p){float2 cell=floor(p*5.5),f=frac(p*5.5);float seed=frac(sin(dot(cell,float2(127.1,311.7)))*43758.5453);float2 centre=.25+.5*float2(frac(seed*71.3),frac(seed*113.7));float r=length((f-centre)*float2(1,1.35)),aa=max(fwidth(r),.008),radius=.035+.055*frac(seed*29);float stone=(1-smoothstep(radius-aa,radius+aa,r))*step(.72,seed);return float3(stone,seed,(1-smoothstep(0,radius+aa,r))*step(.72,seed));}
+float3 DetailedDirt(float2 p){float2 uv=p/_DirtParams.x;float2 q=float2(uv.x*_DirtParams.z-uv.y*_DirtParams.w,uv.x*_DirtParams.w+uv.y*_DirtParams.z)+_DirtOffset.xy;float3 c=lerp(ROOT_DIRT(uv),ROOT_DIRT(q),_DirtParams.y),fine=ROOT_DIRT(p/.47+float2(.37,.81));c*=.82+.36*saturate(dot(fine,float3(.333,.333,.333))/.5);float mottle=SoilDetailNoise(p*.9+float2(8.2,3.7)),grain=SoilDetailNoise(p*23);c*=.83+.30*mottle;c=lerp(c,c*float3(.80,.78,.72),smoothstep(.57,.78,SoilDetailNoise(p*3.8+13))*.35);c*=.90+.20*grain;float3 g=SoilDetailGrain(p);return lerp(c,lerp(float3(.37,.32,.24),float3(.69,.63,.51),g.y),g.x*.68);}
+#undef ROOT_DIRT
+
+#endif
+
    float3 Grass(float2 p){
     float2 uv=p/_GroundParams.x;
     float2 q=float2(uv.x*_GroundParams.z-uv.y*_GroundParams.w,uv.x*_GroundParams.w+uv.y*_GroundParams.z)+_GroundOffset.xy;
@@ -37,7 +47,15 @@ Shader "MapSharedGround/Grass" {
      // Opaque floor, not a hole or a black PBR albedo. No lighting or fog on full coverage.
      float black=0;
      if(_PureBlackEnabled>.5){float2 uv=saturate(i.positionWS.xz/_PureBlackMapSize.xy);uv=uv*(1-_PureBlackMask_TexelSize.xy)+.5*_PureBlackMask_TexelSize.xy;black=saturate(SAMPLE_TEXTURE2D(_PureBlackMask,sampler_PureBlackMask,uv).b);if(black>=1)return half4(0,0,0,1);}
-    float2 p=float2(i.positionWS.x-_EditorZero.x,_EditorZero.y-i.positionWS.z);half3 c=pow(lerp(Grass(p),Dirt(p),SoilWeight(p,i.dirt)),_Decode);
+    float2 p=float2(i.positionWS.x-_EditorZero.x,_EditorZero.y-i.positionWS.z);
+#if defined(_SOIL_DETAIL)
+ half3 c=lerp(Grass(p),DetailedDirt(p),SoilWeight(p,i.dirt));
+#ifndef UNITY_COLORSPACE_GAMMA
+ c=pow(c,_Decode);
+#endif
+#else
+ half3 c=pow(lerp(Grass(p),Dirt(p),SoilWeight(p,i.dirt)),_Decode);
+#endif
      if(_Unlit>.5)return half4(c*(1-black),1);
     InputData input=(InputData)0;input.positionWS=i.positionWS;input.shadowCoord=TransformWorldToShadowCoord(i.positionWS);input.normalWS=normalize(i.normalWS);input.viewDirectionWS=GetWorldSpaceNormalizeViewDir(i.positionWS);input.bakedGI=SampleSH(input.normalWS);input.shadowMask=half4(1,1,1,1);input.normalizedScreenSpaceUV=GetNormalizedScreenSpaceUV(i.positionCS);
     SurfaceData surface=(SurfaceData)0;surface.albedo=c;surface.metallic=0;surface.specular=half3(.04,.04,.04);surface.smoothness=.08;surface.normalTS=half3(0,0,1);surface.occlusion=1;surface.alpha=1;
