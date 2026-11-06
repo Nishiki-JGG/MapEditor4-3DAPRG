@@ -1,7 +1,7 @@
 {
-  "release": "bridge-underpass-20261104",
+  "release": "ruins-kit-30-20261106",
   "files": {
-    "app.js": "66fa240df5c42a9865bc816640350c4df3e193214ee1232cfdc8d64f773b81d2",
+    "app.js": "7d37c3a543abbe19b5e8673a99ed16c316890280ceb7b3bb503649321b99342a",
     "props/chest-presentation.js": "02a2cc0c23060f822e0e1bfe5abfc5c6803cedee2e2deb0fdb4b5b445915b4d3",
     "props/chest-surface.js": "bf7137cd3c64c736bc50d0dbd2a7b62f4fce1c48db73f6473fc6b9522b24f025",
     "props/chest-relief.js": "2f6d152ccd4c0dfd43d34c9867118d5060704b01ea93cfeafcdf826c479e8f94",
@@ -41,8 +41,8 @@
     "unity/Assets/MapSharedProps/Editor/MineSpoilV1.cs": "18413514bdf454f98e9acc696b736cce2bf9017894b0b901ece2f597573f463e",
     "props/cave-decor.js": "abf74ab0b78918409e80854060e0291cda33f30ed758a7c4d46a29e12ddaead1",
     "props/shared/cave-decor-data.js": "467bcb904da21105e3259548308f566f92eb7751b024c02af10bd50d323490b5",
-    "index.html": "fe6151f1918008677969a7034b179749e2e373677d51aab835ecbc5249298d05",
-    "prepared/manifest.js": "b811eb9321f3da330c30df5dbdb581c7b8e8e63066d150cfb4b7803588798ef8",
+    "index.html": "928fb2f986332a8877f37369d9f3d2c0ea2e381ab45cf45efe9dffd7c61df653",
+    "prepared/manifest.js": "2a6f251987bfe899a20b913b97341872b87770d24236eb1205fe6953da34ba1e",
     "terrain/cliff-shoulder.js": "2a1e0acc3a8332758e2efd5dc3a954bf974999cdc8cf1e010169b4d6c5b62760",
     "props/mine-collapse.js": "49ff2562ce9a97766c4f664c3b283d0f25762b9edb6df370308c150769baafd8",
     "props/mine-collapse-pbr.js": "e90181e4ba56831e286649539dcc05197180e32199a07c675fb5d4da0630a6cd",
@@ -66,9 +66,9 @@
     "terrain/preparation.js": "da67a70b50fa0d0cb0b35af74fd0e2352b6a6d56ae447eaed2723604e86757ac",
     "map-package.js": "9e782b5128d9de1b338bb536349a6e9431ee9abdd3460d908b71787db5fbe650",
     "asset-registry.js": "aaccc295ff957a8acfcc91ccdb5fedc3324b20400ff42980dd5732f8bbbf7d3e",
-    "terrain/map-archive.js": "26fe78341621b5c03aa5061399fbec819273bb1b019d4afaeb9935b1b5d8822b",
+    "terrain/map-archive.js": "40fd7540d93dc94333b1559abee33e00d0f92447a9819d0558e9fab7db9b8450",
     "unity/Assets/MapSharedProps/Editor/SharedImportCache.cs": "8d3c51c09400e7e27db7fcff7ef13330573152b742c297ecd5eb050f1399cef7",
-    "unity/Assets/MapSharedProps/Editor/MapSharedPropsBuilder.cs": "5c32de60f368aabf501efe6bef4ec776439d247392a4f04a540725587e2983c2",
+    "unity/Assets/MapSharedProps/Editor/MapSharedPropsBuilder.cs": "18e98ec6143f05568da59946f7d5cbbc1d98aed78d9647e40e54e4c629bafb20",
     "unity/Assets/MapSharedProps/Editor/SmallPropsV1.cs": "67adec3f6a77bd549932c213f4eb84a58de46bfe0b1911ab61bda1c16ff3d7c3",
     "props/mine-timber.js": "6a6bb5c5cd650f4ba5cb750113069deccdb9fc338be479db529bb2c796f6a1c9",
     "unity/Assets/MapSharedProps/Editor/MineTimberV1.cs": "5cd9375fe835f65de9b98a89a138e790a0630b2e503cdf61657f7fe800f78aa1",
@@ -97,7 +97,22 @@
     "prepared/sample2-48-11-120b6b123ed7.js": "5dcbb80d8f5436a6a6ecb11915b743ab6b57e2cce16e7084d7c1708e9c153404",
     "prepared/sample2-48-11-64c3ed35b328.js": "c3aec44b1c41072f91d564633e3936779a613774faeebfbcb628b5b707e534df",
     "prepared/sample2-48-11-a877d168eaa8.js": "51b70b84a698302a3bfd11e9ce767ed164d3f97eaba5ed425fec69941c12c76b",
-    "prepared/sample2-48-11-b9ee80d8b56c.js": "460e2752afc7406547526e440a9a4aadaeda1990aa260999559f860653d444e6"
+    "prepared/sample2-48-11-b9ee80d8b56c.js": "460e2752afc7406547526e440a9a4aadaeda1990aa260999559f860653d444e6",
+    "ruins.js": "6359608fa2338951bb705a8b84770ee4581e4c940088dacb68389536b7682d9c",
+    "ruins-surface.js": "00ea843dfaf33d298324b71678de5626c13ace570bafe0152d57297ea7605a4f",
+    "unity/Assets/MapRuins/Editor/RuinsStructureImporter.cs": "b7123d64506b0af0eef1bbeac2b43e9389971e14d2ee5ed24452ad7210458b52",
+    "unity/Assets/MapRuins/Shaders/RuinsAgedLimestone.shader": "8f2b76289e88df44518240899e9c0029d26e7f2e36ae95aa3d638a74b77809ea",
+    "unity/Assets/MapRuins/Shaders/RuinsSoilGround.shader": "8f8d30fbf6746d611601af2658ae34931597d1ef1cd662348e4b856a3215c838",
+    "unity/Assets/MapRuins/Shaders/RuinsSoilGround.shader.meta": "8710aec3b6ae61277cf06cc9850096c347f7018297a1c3a134e1840451ebdf8b",
+    "unity/Assets/MapRuins/Shaders/RuinsTerrainCap.shader": "e861c817381505034c1801e55c8fbb47000aa0b73964e74fe0136613bed6de76",
+    "unity/Assets/MapRuins/Shaders/RuinsTerrainCapAdd.shader": "2d89e620b51b40cc7a6a05fea433c8425d0fd7d861891e3f37babbf7b35200b8",
+    "unity/Assets/MapRuins.meta": "54959eedf52e7d1636641674d6551a1ea3d195f4dcf6ca054408ceef943e7c3d",
+    "unity/Assets/MapRuins/Editor.meta": "9248ffb335d99371c24dd4c8532a3ffad1c497959ec0f06dd8c96bafccf1442c",
+    "unity/Assets/MapRuins/Editor/RuinsStructureImporter.cs.meta": "18050e1b83533b463e83d330ed72c953e20ace9a0e54d546a5eac57c135afc32",
+    "unity/Assets/MapRuins/Shaders.meta": "3232b2b003228cb28f6d104982009f4b1aa19bcf2a986f984d91ad0bcf32650d",
+    "unity/Assets/MapRuins/Shaders/RuinsAgedLimestone.shader.meta": "c55155da8d24db35fa3e1c4fa1b7f7dc6d6609a3f5f680e8d8f269df8b7f401d",
+    "unity/Assets/MapRuins/Shaders/RuinsTerrainCap.shader.meta": "d59105f9790b0545a145dbcdd47d2d2a0d0ef10b2681d0a558687f07a4c24f0b",
+    "unity/Assets/MapRuins/Shaders/RuinsTerrainCapAdd.shader.meta": "01e55c220038f7c0fb7ee58078f613b95099f0698f063f6e3a9038abbfaf4395"
   },
-  "sourceBase": "9cae65a4bfc0b26264fbdf32787104bc38b94b5f"
+  "sourceBase": "9a776b8ee0dd8565e198b0c55639e9ef5f535d1c"
 }

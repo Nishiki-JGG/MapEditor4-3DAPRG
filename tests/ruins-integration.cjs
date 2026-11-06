@@ -1,0 +1,15 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict'),crypto=require('node:crypto');
+const R=require('../ruins.js'),app=fs.readFileSync(require.resolve('../app.js'),'utf8');
+assert.equal(Object.keys(R.TYPES).length,30);
+assert(!R.TYPES.drain_channel,'未採用排水路を含めない');
+const signature=app.split('function walkPreparationSignature(')[1].split('\n')[0];
+const c={cliffInputSignature:()=> 'terrain',sha256:v=>crypto.createHash('sha256').update(v).digest('hex'),O:new Uint8Array(1),S:new Uint8Array(1),TextEncoder,props:[],bridges:[],stairs:[],markers:[],markerSaved:m=>m,state:{agent:{radius:.3},biome:'ruins'},ruins:R.empty()};
+vm.createContext(c);vm.runInContext('function signature('+signature,c);
+const original=c.signature();
+c.ruins=R.transaction(R.empty(),{type:'put',item:R.defaults('wall')},{height:()=>0,half:32});
+const placed=c.signature();assert.notEqual(original,placed,'遺跡変更で保存歩行キャッシュを無効化');
+c.ruins=R.empty();assert.equal(c.signature(),original,'遺跡なしは既存署名を維持');
+const deck=app.slice(app.indexOf('function deckAt('),app.indexOf('// no collider',app.indexOf('function deckAt(')));
+const d={TDRuins:R,ruins:R.empty(),bridges:[{}],stairs:[],pools:[],tunnelPrep:[],markers:[],walkRef:0,bridgeAt:(x,z,m,ref)=>ref===0?null:5};vm.createContext(d);vm.runInContext(deck,d);assert.equal(d.deckAt(0,0,0),null,'橋の下を維持');d.walkRef=5;assert.equal(d.deckAt(0,0,0).y,5,'橋上を維持');
+d.ruins=R.transaction(R.empty(),{type:'put',item:R.defaults('platform')},{height:()=>0,half:32});assert.equal(d.deckAt(0,0,0).kind,'ruins');
+console.log(JSON.stringify({pass:true,kinds:30,ruinsWalkCacheInvalidated:true,legacySignatureUnchanged:true,bridgeUnderpassPreserved:true}));

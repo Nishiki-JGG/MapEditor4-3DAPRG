@@ -6216,7 +6216,7 @@ async function installPrototypePreparation(data,job,replace=false){
  TDPreparation.check(job);
  for(const[f,fields]of entries){if(replace)f.fields=new Map(fields);else for(const[key,v]of fields)f.fields.set(key,v);}
 }
-function walkPreparationSignature(savedMarkers=markers.map(markerSaved)){return cliffInputSignature()+'/'+sha256(O)+'/'+sha256(S)+'/'+sha256(new TextEncoder().encode(JSON.stringify([props,bridges,stairs,savedMarkers,state.agent,state.biome])));}
+function walkPreparationSignature(savedMarkers=markers.map(markerSaved)){return cliffInputSignature()+'/'+sha256(O)+'/'+sha256(S)+'/'+sha256(new TextEncoder().encode(JSON.stringify([props,bridges,stairs,savedMarkers,state.agent,state.biome,...(ruins.items.length?[ruins]:[])])));}
 function installWalkPreparation(w){
  const count=N*N,flags=a=>a instanceof Uint8Array&&a.length===count&&a.every(x=>x<=1);
  if(!w||![undefined,2].includes(w.signatureVersion)||typeof w.signature!=='string'||!flags(w.auto)||!flags(w.walk)||!flags(w.forced)||!flags(w.secret)||!(w.floor instanceof Float32Array)||w.floor.length!==count||!w.floor.every(Number.isFinite))throw Error('通行準備とマップが一致しません');
