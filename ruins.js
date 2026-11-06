@@ -607,10 +607,23 @@ function snap(m,item,options={}){let p={...item};const step=options.grid?GRID:0;
    const key='mount:'+other.id;choices.push({item:{...p,x:b.x,z:b.z,y:b.y+b.height,supportId:undefined,mountId:other.id},snapped:true,key,d,priority:options.previous===key?-1:0,reason:'柱の支持面に接合'});
   }choices.sort((a,b)=>a.priority-b.priority||a.d-b.d||a.key.localeCompare(b.key));if(choices.length)return choices[0];if(why)return{item:p,snapped:false,reason:why};
  }
-const candidates=[],source=sockets(resolved(p,m));let rejected='';
- for(const other of m.items){if(other.id===p.id)continue;for(const b of sockets(resolved(other,m)))for(const a of source){const d=Math.hypot(a.x-b.x,a.z-b.z);if(d>.3||(a.family||'wall')!==(b.family||'wall'))continue;
+const straight=q=>['wall','wall_broken','wall_ruined','opening','opening_broken','window_wall','wall_niche','balustrade','edge'].includes(q.kind);
+  const candidates=[],source=sockets(resolved(p,m)),rawSource=sockets(resolved(item,m));let rejected='';
+  // 壁厚の半分だけずらし、直交する壁の外角と端面を合わせる。
+  if(straight(p))for(const other of m.items){
+   if(other.id===p.id||!straight(other))continue;
+   for(const b of sockets(resolved(other,m)))for(const a of rawSource){
+    if(Math.abs(a.dx*b.dx+a.dz*b.dz)>EPS||Math.abs(a.y-b.y)>EPS||Math.abs(a.height-b.height)>EPS)continue;
+    const x=b.x-b.dx*a.thickness/2-a.dx*b.thickness/2,z=b.z-b.dz*a.thickness/2-a.dz*b.thickness/2,d=Math.hypot(a.x-x,a.z-z);
+    if(d>.4)continue;const q={...p,x:item.x+x-a.x,z:item.z+z-a.z};
+    if(step&&gridPoints(q).some(v=>Math.abs(v.x/(step/2)-Math.round(v.x/(step/2)))>EPS||Math.abs(v.z/(step/2)-Math.round(v.z/(step/2)))>EPS))continue;
+    const key='corner:'+b.id+':'+b.index+':'+a.index;
+    candidates.push({item:q,snapped:true,key,d,priority:options.previous===key?-1:0,reason:'直角の壁端に一致（壁厚の半分を補正）'});
+   }
+  }
+ for(const other of m.items){if(other.id===p.id)continue;for(const b of sockets(resolved(other,m)))for(const a of (straight(p)&&straight(other)?rawSource:source)){const d=Math.hypot(a.x-b.x,a.z-b.z);if(d>.3||(a.family||'wall')!==(b.family||'wall'))continue;
   if(Math.abs(a.y-b.y)>EPS||Math.abs(a.height-b.height)>EPS){rejected='高さ不一致';continue;}if(a.dx*b.dx+a.dz*b.dz>-.9999){rejected='接合方向不一致';continue;}
-  const q={...p,x:p.x+b.x-a.x,z:p.z+b.z-a.z};if(step&&gridPoints(q).some(v=>Math.abs(v.x/step-Math.round(v.x/step))>EPS||Math.abs(v.z/step-Math.round(v.z/step))>EPS)){rejected='格子外の接合点';continue;}
+  const origin=straight(p)&&straight(other)?item:p,q={...p,x:origin.x+b.x-a.x,z:origin.z+b.z-a.z},joinStep=straight(p)&&straight(other)?step/2:step;if(step&&gridPoints(q).some(v=>Math.abs(v.x/joinStep-Math.round(v.x/joinStep))>EPS||Math.abs(v.z/joinStep-Math.round(v.z/joinStep))>EPS)){rejected='格子外の接合点';continue;}
   const key=b.id+':'+b.index+':'+a.index;candidates.push({item:q,snapped:true,key,d,priority:options.previous===key&&d<.3?-1:0});}}
  candidates.sort((a,b)=>a.priority-b.priority||a.d-b.d||a.key.localeCompare(b.key));return candidates[0]||{item:p,snapped:false,reason:rejected};}
 // 軸整列した箱の和集合から内部面を除く。階段・角・T字の重複面を残さない。

@@ -1,5 +1,5 @@
 {
-  "release": "ruins-grid-delete-20261106",
+  "release": "ruins-corner-snap-20261106",
   "files": {
     "app.js": "c852458cf43cefb205a6fa686506e8418ca224bfe8aace2ecb28d78b92dee66e",
     "props/chest-presentation.js": "02a2cc0c23060f822e0e1bfe5abfc5c6803cedee2e2deb0fdb4b5b445915b4d3",
@@ -98,7 +98,7 @@
     "prepared/sample2-48-11-64c3ed35b328.js": "c3aec44b1c41072f91d564633e3936779a613774faeebfbcb628b5b707e534df",
     "prepared/sample2-48-11-a877d168eaa8.js": "51b70b84a698302a3bfd11e9ce767ed164d3f97eaba5ed425fec69941c12c76b",
     "prepared/sample2-48-11-b9ee80d8b56c.js": "460e2752afc7406547526e440a9a4aadaeda1990aa260999559f860653d444e6",
-    "ruins.js": "6359608fa2338951bb705a8b84770ee4581e4c940088dacb68389536b7682d9c",
+    "ruins.js": "1f8b1df3058c2fb94ced342248e924954d299ffc17bcb9265b3a30cc444de799",
     "ruins-surface.js": "00ea843dfaf33d298324b71678de5626c13ace570bafe0152d57297ea7605a4f",
     "unity/Assets/MapRuins/Editor/RuinsStructureImporter.cs": "b7123d64506b0af0eef1bbeac2b43e9389971e14d2ee5ed24452ad7210458b52",
     "unity/Assets/MapRuins/Shaders/RuinsAgedLimestone.shader": "8f2b76289e88df44518240899e9c0029d26e7f2e36ae95aa3d638a74b77809ea",

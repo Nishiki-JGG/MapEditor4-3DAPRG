@@ -169,13 +169,13 @@
     <label class="sel"><span>部材</span><select id="ruinsKind"></select></label>
     <label><input type="checkbox" id="ruinsShowGrid" checked> 0.5m格子を表示</label><br>
     <label><input type="checkbox" id="ruinsGridSnap" checked> 接合点を0.5m格子に合わせる</label><br>
-    <label><input type="checkbox" id="ruinsPartSnap" checked> パーツを接合</label>
+    <label><input type="checkbox" id="ruinsPartSnap" checked> パーツを接合（直線・直角）</label>
     <div class="agent"><label>接合長 m<input id="ruinsLength" type="number" min="0.5" max="32" step="0.5"></label><label>幅 m<input id="ruinsWidth" type="number" min="0.5" max="32" step="0.5"></label><label>高さ m<input id="ruinsHeight" type="number" min="0.1" max="8" step="0.1"></label><label>向き<select id="ruinsRot"><option>0</option><option>90</option><option>180</option><option>270</option></select></label></div>
     <label><input id="ruinsStoneVariation" type="checkbox">別の石目（壁部材）</label>
     <div class="agent"><label>敷石の埋没 m<input id="ruinsBurial" type="number" min="0" max="0.1" step="0.01" value="0"></label><label><input id="ruinsFracture" type="checkbox">不規則な大破断</label><label><input id="ruinsJoined" type="checkbox">直線連続梁（張出しなし）</label></div>
     <label class="sel"><span>仕上げ</span><select id="ruinsFinish"><option value="stone">石材</option><option value="worn">風化した石材</option><option value="carved">風化した彫刻装飾</option></select></label>
     <div class="row"><button id="ruinsLeft">左90°</button><button id="ruinsRight">右90°</button><button id="ruinsApply">寸法・仕上げ適用</button><button id="ruinsCopy">新しく配置</button><button id="ruinsMove">選択を移動</button><button id="ruinsDelete">選択を削除</button></div>
-    <div class="hint">Q/E：90°。「選択を移動」後に地図をクリックで再配置。格子吸着は部材の中心ではなく接合点が基準です。高床に壁を置くと支持床へ関連付けます。階段上端を高床の縁へ合わせてください。自由拡縮・水・トンネルとの重複は未対応です。</div><div id="ruinsReason" class="hint" role="status"></div>
+    <div class="hint">Q/E：90°。「選択を移動」後に地図をクリックで再配置。格子吸着は接合点が基準です。直角につなぐときは壁厚の半分（0.25m）を自動補正します。高床に壁を置くと支持床へ関連付けます。階段上端を高床の縁へ合わせてください。自由拡縮・水・トンネルとの重複は未対応です。</div><div id="ruinsReason" class="hint" role="status"></div>
   </div>
   <div id="groundDetailOpts" hidden>
     <h2>選んだ地表小物</h2><div id="groundDetailName" class="hint"></div>
@@ -258,7 +258,7 @@
 <script defer src="three.min.js"></script>
 <script defer src="water.js?v=r23"></script>
 <script defer src="springs.js?v=spring2"></script>
-<script defer src="ruins.js?v=6359608fa233" data-preparation-key="ruins.js?v=ruins1"></script>
+<script defer src="ruins.js?v=1f8b1df3058c" data-preparation-key="ruins.js?v=ruins1"></script>
 <script src="ruins-surface.js"></script>
 <script defer src="tunnels.js?v=tunnel4"></script>
 <script defer src="sea.js?v=sea7-continuous&rev=9c929f4f08ac"></script>
