@@ -3307,7 +3307,7 @@ function updateRuinsPreview(){updateRuinsGrid();syncRuinsSelection();ruinsPrevie
  ruinsDraft={item:p,valid:!reason,reason};document.getElementById('ruinsReason').textContent=reason||sn.reason||(sn.snapped?'接合点に一致':'配置できます');
  const key=JSON.stringify(ruinsDraft);if(key===ruinsLastPreview)return;ruinsLastPreview=key;clearRuinsGroup(ruinsPreview);try{const g=TDRuins.mesh(TDRuins.resolved(p,ruins)),o=new THREE.Mesh(ruinsGeometry(g),ruinsGhostMat);ruinsGhostMat.color.setHex(reason?0xff5555:0x68ffb0);ruinsPreview.add(o);}catch{};
 }
-function finishRuins(){if(!ruinsPending)return;ruinsPending=false;updateRuinsPreview();if(!ruinsDraft?.valid){toast(ruinsDraft?.reason||'配置位置がありません');return;}const result=commitRuins({type:'put',item:ruinsDraft.item});toast(result.ok?'遺跡構造を配置しました':result.reason);}
+function finishRuins(){if(!ruinsPending)return;ruinsPending=false;updateRuinsPreview();if(!ruinsDraft?.valid){toast(ruinsDraft?.reason||'配置位置がありません');return;}const result=commitRuins({type:'put',item:ruinsDraft.item});toast(result.ok?'建造物を配置しました':result.reason);}
 function ruinsBrushProtected(x,z,r){return ruins.items.some(p=>{const b=TDRuins.footprint(TDRuins.resolved(p,ruins));return x+r>b[0]-.5&&x-r<b[1]+.5&&z+r>b[4]-.5&&z-r<b[5]+.5;});}
 function setupRuinsUI(){
  ruinsRendererReady=true;
@@ -3325,7 +3325,6 @@ function setupRuinsUI(){
 }
 
 const TOOLS = [
-  {id:'ruins',name:'遺跡を組む',key:'',hint:'格子と接合点に合わせて石造構造を配置。Q/Eは90度回転。地図で選択をONにして壁をクリックし、選択を削除。移動は選択を移動から。分割柱は接合ONで柱礎→柱身→柱頭の順に配置。'},
   { id: 'plateau', name: '台地', key: '1', hint: 'ドラッグ: 一段高い台地（崖つき）。Shift+ドラッグ: 一段低く。' },
   { id: 'raise', name: '上げる', key: '2', hint: 'なだらかに盛り上げます。' },
   { id: 'lower', name: '下げる', key: '3', hint: 'なだらかに掘り下げます。水位より下は水になります。' },
@@ -3364,6 +3363,7 @@ const TOOLS = [
   { id: 'walkOff', name: '通行不可', key: 'h', hint: '塗った所を、自動判定に関係なく「通れない」にします（赤紫の斜線）。見えない壁などに使います。' },
   { id: 'secret', name: '隠し通路', key: 'k', hint: '茂み・岩・崖の中を通り抜けられる隠し通路を塗ります（水色）。通路の床は入口と出口の地面の高さでつながり、キャラが入ると重なった物が透けます。' },
   { id: 'walkAuto', name: '自動に戻す', key: 'j', hint: '塗った所の上書きを消し、自動判定に戻します。' },
+  {id:'ruins',name:'建造物を組む',key:'',hint:'格子と接合点に合わせて石造構造を配置。Q/Eは90度回転。地図で選択をONにして壁をクリックし、選択を削除。移動は選択を移動から。分割柱は接合ONで柱礎→柱身→柱頭の順に配置。'},
 ];
 let completedSerial=0,lastCompletedSerial=-1,lastCompleted=null,surfaceUpgradeCount=0;
 const upgradedSurfaces=new WeakMap();
@@ -5254,13 +5254,13 @@ $('cliffStyle').onchange = e => { pushUndo(); state.cliffStyle = e.target.value;
 // prop types as a folding tree: one group per kind, a group's box checks all its (shown) types
 const placeOpen = new Set();   // groups of the 置く list the user opened
 const PROP_GROUPS = [
-  ['洞窟装飾', TDCaveDecor.ids],
   ['木・倒木', ['pine', 'oak', 'scotspine', 'birch', 'willow', 'hazel', 'rowan', 'juniper', 'deadtree', 'twisttree', 'palm', 'banana', 'maple', 'cherry', 'zelkova', 'nara', 'sugi', 'hinoki', 'islandash', 'olive', 'eucalyptus', 'dragontree', 'elftree', 'worldtree', 'log', 'stump', 'rootfan', 'driftwood']],
   ['草花・低木', ['shortgrass', 'meadowgrass', 'groundlitter', 'grass', 'meadowwhite', 'meadowyellow', 'meadowpink', 'meadowred', 'meadowviolet', 'bush', 'fern', 'bramble', 'ivy', 'sedge', 'foxglove', 'horsetail', 'dock', 'clover', 'reed', 'flowers', 'mushroom', 'glowmush', 'shelfshroom', 'cactus', 'barrelcactus']],
   ['岩・崖', ['drysoil_curl','drysoil_cup','drysoil_flake','scree', 'rock', 'mossrock', 'pebble', 'cliff', 'cliff_split', 'cliff_shoulder', 'cliff_joint', 'cliff_slab', 'cliff_talus', 'rubblepile', 'stalagmite', 'crystal', 'lavarock', 'obsidian', 'fumarole', 'iceblock', 'icespike']],
   ['遺跡・墓', ['column', 'brokencol', 'ruinwall', 'archgate', 'statue', 'statue_seated', 'statue_damaged', 'stele', 'obelisk', 'pyramid', 'gravestone', 'crossgrave', 'mausoleum', 'bones', 'bonepile', 'skullpile', 'magiccircle', 'demonspire']],
   ['海の生き物', ['braincoral', 'staghorn', 'pillarcoral', 'seafan', 'tablecoral', 'roundcoral', 'scallop', 'cowrie', 'shellbits', 'wrack', 'shells']],
   ['坑道小物', ['mine_rail_straight','mine_rail_curve','mine_rail_end','minecart','minecart_loaded','mine_cut_rock','mine_spoil','mine_collapsed_wall','mine_wall_lantern','mine_cobweb','mine_timber_frame']],
+  ['洞窟装飾', TDCaveDecor.ids],
   ['建物・道具', ['wall_torch', 'torch', 'brazier', 'lantern', 'banner', 'woodfence', 'ironfence', 'castlewall', 'tower', 'gatehouse', 'lighthouse', 'rowboat', 'haystack', 'miningtools', 'supplycrate', 'treasurechest_worn', 'treasurechest', 'treasurechest_reinforced', 'treasurechest_ornate', 'treasurechest_silver', 'treasurechest_gold', 'treasurechest_rainbow', 'smallbarrel', 'tiedsack', 'coiledrope', 'storagepot', 'brokenpot', 'snowman', 'kamakura']],
 ];
 // [group name, type indices]; types not in PROP_GROUPS (added later) land in "その他"
@@ -5783,7 +5783,7 @@ function beginStroke(e) {
   if (!hit) return;
   if(state.tool==='ruins'){updateRuinsPreview();ruinsPending=true;return;}
   if(ruins.items.length&&['pool','spring','tunnel','bridge','stairs','slope','coast','fall'].includes(state.tool)){toast('遺跡構造を含む地図では水・通路の新設は未対応です');return;}
-  if(ruins.items.length&&ruinsBrushProtected(hit.x,hit.z,state.radius*1.4)&&state.tool!=='place'&&state.tool!=='detail'&&state.tool!=='pick'&&state.tool!=='spawn'&&state.tool!=='marker'&&!GROUND.includes(state.tool)){toast('建築領域は「遺跡を組む」の寸法・仕上げで編集してください');return;}
+  if(ruins.items.length&&ruinsBrushProtected(hit.x,hit.z,state.radius*1.4)&&state.tool!=='place'&&state.tool!=='detail'&&state.tool!=='pick'&&state.tool!=='spawn'&&state.tool!=='marker'&&!GROUND.includes(state.tool)){toast('建築領域は「建造物を組む」の寸法・仕上げで編集してください');return;}
   if(state.tool==='place'&&!PROP[state.variant.place]?.ready){toast('この素材は読み込み中です');return;}
   if(state.mode==='edit'&&state.tool==='place'&&PROP[state.variant.place]?.mineRail&&PROP[state.variant.place].id!=='mine_rail_end'&&e.pointerType!=='touch'&&e.pointerId!==undefined){beginRailDrag(e);return;}
   if(state.tool==='detail'){
