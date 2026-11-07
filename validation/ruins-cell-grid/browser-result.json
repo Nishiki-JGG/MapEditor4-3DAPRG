@@ -1,0 +1,74 @@
+{
+  "pass": true,
+  "realMousePlacement": true,
+  "previewBoundsAligned": true,
+  "undoRedo": true,
+  "items": [
+    {
+      "kind": "wall",
+      "x": 0,
+      "z": 0.25,
+      "y": 0,
+      "rot": 0,
+      "length": 2,
+      "width": 0.5,
+      "height": 2.2,
+      "finish": "stone",
+      "stoneVariation": false,
+      "id": "ruins_1"
+    },
+    {
+      "kind": "wall",
+      "x": 0.7500000000000001,
+      "z": -1,
+      "y": 0,
+      "rot": 1.5707963267948966,
+      "length": 2,
+      "width": 0.5,
+      "height": 2.2,
+      "finish": "stone",
+      "stoneVariation": false,
+      "id": "ruins_2"
+    },
+    {
+      "kind": "wall",
+      "x": 0.7500000000000003,
+      "z": -3,
+      "y": 0,
+      "rot": 1.5707963267948966,
+      "length": 2,
+      "width": 0.5,
+      "height": 2.2,
+      "finish": "stone",
+      "stoneVariation": false,
+      "id": "ruins_3"
+    },
+    {
+      "kind": "wall",
+      "x": -2.25,
+      "z": 2.75,
+      "y": 0,
+      "rot": 0,
+      "length": 1.5,
+      "width": 0.5,
+      "height": 2.2,
+      "finish": "stone",
+      "stoneVariation": false,
+      "id": "ruins_4"
+    },
+    {
+      "kind": "wall",
+      "x": -3.25,
+      "z": -1.25,
+      "y": 0,
+      "rot": 1.5707963267948966,
+      "length": 1.5,
+      "width": 0.5,
+      "height": 2.2,
+      "finish": "stone",
+      "stoneVariation": false,
+      "id": "ruins_5"
+    }
+  ],
+  "errors": []
+}

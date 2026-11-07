@@ -589,7 +589,12 @@ function floor(m,x,z,margin=0){let result=null;for(const raw of m.items){if(raw.
   if(p.kind==='stairs'){const h=stairSurface(p,a,b);if(h===null)continue;y=p.y+h;}
   if(!result||y>result.y)result={y,id:p.id,kind:p.kind};}return result;}
 function blocked(m,x,z,r,y,h){for(const raw of m.items){if(raw.kind==='soil_bank'||raw.kind==='platform'||raw.kind==='stairs'||raw.kind==='paving'||raw.kind==='paving_broken')continue;const p=resolved(raw,m),[a,b]=local(p,x,z);if(p.kind==='buttress_wall'){if(buttressGeometry(p).some(g=>convexBlocked(g,p,a,b,r,y,h)))return true;continue;}if(p.kind==='offering_table'){if(offeringGeometry(p).some(g=>convexBlocked(g,p,a,b,r,y,h)))return true;continue;}if(p.kind==='wall_ruined'&&p.fracture){if(collapseGeometry(p).some(g=>convexBlocked(g,p,a,b,r,y,h)))return true;continue;}if(COLUMN_PARTS.includes(p.kind)){if(columnGeometry(p).some(g=>convexBlocked(g,p,a,b,r,y,h)))return true;continue;}if(p.kind==='arch'||p.kind==='arch_broken'){if(archGeometry(p).some(g=>convexBlocked(g,p,a,b,r,y,h)))return true;continue;}if(p.kind==='pier'||p.kind==='pier_broken'){if(pierGeometry(p).some(g=>convexBlocked(g,p,a,b,r,y,h)))return true;continue;}for(const q of boxes(p)){if(q.length>6){if(fragmentBlocked(p,q,a,b,r,y,h))return true;continue;}const roof=p.y+q[3];if(y+h<=p.y+q[2]+EPS||y>=roof-EPS)continue;const cx=(q[0]+q[1])/2,cz=(q[4]+q[5])/2,c=Math.cos(q[6]||0),s=Math.sin(q[6]||0),ax=cx+(a-cx)*c-(b-cz)*s,bz=cz+(a-cx)*s+(b-cz)*c,dx=Math.max(q[0]-ax,0,ax-q[1]),dz=Math.max(q[4]-bz,0,bz-q[5]);if(dx*dx+dz*dz<r*r-EPS)return true;}}return false;}
-function gridPoints(p){if(p.kind==='offering_table')return[{x:p.x,z:p.z}];if(p.kind==='stone_beam')return[-1,1].map(sign=>{const a=world(p,sign*p.length/2,0);return{x:a[0],z:a[1]};});if(COLUMN_PARTS.includes(p.kind))return[{x:p.x,z:p.z}];const s=sockets(p);if(s.length)return s;const b=footprint(p);return[{x:b[0],z:b[4]},{x:b[1],z:b[5]}];}
+// Align the structural wall rectangle with cell boundaries, not its end-face centers.
+// Use sockets rather than debris/ornaments: those are not the wall's placement footprint.
+const straightWall=p=>['wall','wall_broken','wall_ruined','opening','opening_broken','window_wall','wall_niche','balustrade','edge','arch','arch_broken','buttress_wall'].includes(p.kind);
+function wallGridPoints(p){return sockets(p).flatMap(a=>[-1,1].map(sign=>({x:a.x-sign*a.dz*a.thickness/2,z:a.z+sign*a.dx*a.thickness/2})));}
+function onGrid(p,step){return gridPoints(p).every(v=>Math.abs(v.x/step-Math.round(v.x/step))<EPS&&Math.abs(v.z/step-Math.round(v.z/step))<EPS);}
+function gridPoints(p){if(straightWall(p))return wallGridPoints(p);if(p.kind==='offering_table')return[{x:p.x,z:p.z}];if(p.kind==='stone_beam')return[-1,1].map(sign=>{const a=world(p,sign*p.length/2,0);return{x:a[0],z:a[1]};});if(COLUMN_PARTS.includes(p.kind))return[{x:p.x,z:p.z}];const s=sockets(p);if(s.length)return s;const b=footprint(p);return[{x:b[0],z:b[4]},{x:b[1],z:b[5]}];}
 function snap(m,item,options={}){let p={...item};const step=options.grid?GRID:0;if(step){const a=gridPoints(p)[0];p.x+=Math.round(a.x/step)*step-a.x;p.z+=Math.round(a.z/step)*step-a.z;}
 
  if(p.kind==='stone_beam'){
@@ -616,14 +621,14 @@ const straight=q=>['wall','wall_broken','wall_ruined','opening','opening_broken'
     if(Math.abs(a.dx*b.dx+a.dz*b.dz)>EPS||Math.abs(a.y-b.y)>EPS||Math.abs(a.height-b.height)>EPS)continue;
     const x=b.x-b.dx*a.thickness/2-a.dx*b.thickness/2,z=b.z-b.dz*a.thickness/2-a.dz*b.thickness/2,d=Math.hypot(a.x-x,a.z-z);
     if(d>.4)continue;const q={...p,x:item.x+x-a.x,z:item.z+z-a.z};
-    if(step&&gridPoints(q).some(v=>Math.abs(v.x/(step/2)-Math.round(v.x/(step/2)))>EPS||Math.abs(v.z/(step/2)-Math.round(v.z/(step/2)))>EPS))continue;
+    if(step&&!onGrid(q,step)){rejected="格子外の接合点";continue;}
     const key='corner:'+b.id+':'+b.index+':'+a.index;
     candidates.push({item:q,snapped:true,key,d,priority:options.previous===key?-1:0,reason:'直角の壁端に一致（壁厚の半分を補正）'});
    }
   }
  for(const other of m.items){if(other.id===p.id)continue;for(const b of sockets(resolved(other,m)))for(const a of (straight(p)&&straight(other)?rawSource:source)){const d=Math.hypot(a.x-b.x,a.z-b.z);if(d>.3||(a.family||'wall')!==(b.family||'wall'))continue;
   if(Math.abs(a.y-b.y)>EPS||Math.abs(a.height-b.height)>EPS){rejected='高さ不一致';continue;}if(a.dx*b.dx+a.dz*b.dz>-.9999){rejected='接合方向不一致';continue;}
-  const origin=straight(p)&&straight(other)?item:p,q={...p,x:origin.x+b.x-a.x,z:origin.z+b.z-a.z},joinStep=straight(p)&&straight(other)?step/2:step;if(step&&gridPoints(q).some(v=>Math.abs(v.x/joinStep-Math.round(v.x/joinStep))>EPS||Math.abs(v.z/joinStep-Math.round(v.z/joinStep))>EPS)){rejected='格子外の接合点';continue;}
+  const origin=straight(p)&&straight(other)?item:p,q={...p,x:origin.x+b.x-a.x,z:origin.z+b.z-a.z};if(step&&!onGrid(q,step)){rejected='格子外の接合点';continue;}
   const key=b.id+':'+b.index+':'+a.index;candidates.push({item:q,snapped:true,key,d,priority:options.previous===key&&d<.3?-1:0});}}
  candidates.sort((a,b)=>a.priority-b.priority||a.d-b.d||a.key.localeCompare(b.key));return candidates[0]||{item:p,snapped:false,reason:rejected};}
 // 軸整列した箱の和集合から内部面を除く。階段・角・T字の重複面を残さない。

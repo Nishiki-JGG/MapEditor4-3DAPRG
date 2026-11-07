@@ -3222,7 +3222,7 @@ let ruinsGridSerial=-1,ruinsGridModel=null;
 function updateRuinsGrid(){
  ruinsGrid.visible=state.mode==='edit'&&state.tool==='ruins'&&document.getElementById('ruinsShowGrid').checked;
  if(!ruinsGrid.visible||ruinsGridSerial===completedSerial&&ruinsGridModel===ruins)return;
- const points=[],step=.5;
+ const points=[],step=TDRuins.GRID;
  const line=(x,z,xx,zz)=>points.push(x,heightAt(x,z)+.035,z,xx,heightAt(xx,zz)+.035,zz);
  for(let i=0;i<=SIZE/step;i++)for(let j=0;j<SIZE/step;j++){const a=-HALF+i*step,b=-HALF+j*step;line(a,b,a,b+step);line(b,a,b+step,a);}
  // 高床は地図全体から探索せず、各高床の範囲だけ描く。

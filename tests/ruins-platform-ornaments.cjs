@@ -1,3 +1,4 @@
+// Legacy center-line fixtures intentionally use free placement; cell-aligned grid joins are covered by ruins-cell-grid.cjs.
 const assert=require('assert/strict'),fs=require('fs'),crypto=require('crypto'),R=require('../ruins.js');
 const hashes=require('./fixtures/ruins-before-platform-ornaments.json'),rows=[];let probes=0;
 for(const [key,hash]of Object.entries(hashes)){const [kind,finish]=key.split(':');assert.equal(crypto.createHash('sha256').update(JSON.stringify(R.mesh({...R.defaults(kind),finish}))).digest('hex'),hash);}
@@ -12,5 +13,5 @@ for(const kind of ['platform','edge'])for(const rot of [0,Math.PI/2,Math.PI,Math
 let m=R.empty();m=R.transaction(m,{type:'put',item:{...R.defaults('platform',0,2),width:3,finish:'carved'}});const platform=m.items[0];m=R.transaction(m,{type:'put',item:{...R.defaults('stairs',0,-1),finish:'carved',upperId:platform.id}});m=R.transaction(m,{type:'put',item:{...R.defaults('edge',-1.75,2),length:3,rot:Math.PI/2,finish:'carved',supportId:platform.id}});
 const before=JSON.stringify(m);assert.throws(()=>R.transaction(m,{type:'put',item:{...platform,height:5}}));assert.equal(JSON.stringify(m),before);assert.throws(()=>R.transaction(m,{type:'delete',id:platform.id}));
 const taller=R.transaction(m,{type:'put',item:{...platform,height:2.3}});assert.equal(R.resolved(taller.items[1],taller).height,2.3);assert.equal(R.resolved(taller.items[2],taller).y,2.3);
-for(const rot of [0,Math.PI/2,Math.PI,Math.PI*1.5]){const e={...R.defaults('edge'),rot,finish:'carved',id:'ruins_1'},a={version:1,nextId:2,items:[e]},s=R.sockets(e)[1],candidate={...R.defaults('edge',s.x+s.dx*1.08,s.z+s.dz*1.08),rot,finish:'carved'};const snap=R.snap(a,candidate,{grid:true,join:true});assert(snap.snapped);R.transaction(a,{type:'put',item:snap.item});}
+for(const rot of [0,Math.PI/2,Math.PI,Math.PI*1.5]){const e={...R.defaults('edge'),rot,finish:'carved',id:'ruins_1'},a={version:1,nextId:2,items:[e]},s=R.sockets(e)[1],candidate={...R.defaults('edge',s.x+s.dx*1.08,s.z+s.dz*1.08),rot,finish:'carved'};const snap=R.snap(a,candidate,{grid:false,join:true});assert(snap.snapped);R.transaction(a,{type:'put',item:snap.item});}
 const result={pass:true,oldCases:Object.keys(hashes).length,geometryColliderTerrainUnchanged:true,rotatedDimensionCases:24,probes,edgeSnaps:4,supportHeightAndDeleteAtomic:true,rows};console.log(result);

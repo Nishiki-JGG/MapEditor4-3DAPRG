@@ -1,3 +1,4 @@
+// Legacy center-line fixtures intentionally use free placement; cell-aligned grid joins are covered by ruins-cell-grid.cjs.
 const fs=require('fs'),assert=require('assert/strict'),R=require('../ruins.js'),crypto=require('crypto'),oldHashes=require('./fixtures/ruins-existing-meshes-before-arch.json');
 const env={height:()=>0,half:32,agent:{maxStep:.5}},results=[];
 for(const kind of ['arch','arch_broken'])for(const length of[3,4,6,8])for(const height of[3.2,3.5,5]){
@@ -8,7 +9,7 @@ for(const kind of ['arch','arch_broken'])for(const length of[3,4,6,8])for(const 
  assert.equal(R.floor(m,0,0),null,'Overhead arch must not become a walking floor');
  assert.equal(R.blocked(m,0,0,.1,0,height),kind==='arch','Intact crown blocks excessive head height; broken crown is absent');
  const wall={...R.defaults('wall'),id:'ruins_2',length:2,height,x:length/2+1},attached={...m,nextId:3,items:[p,wall]};R.validate(attached,env);
- const snapped=R.snap(m,{...wall,id:undefined,x:wall.x+.16},{grid:true,join:true});assert.equal(snapped.snapped,true);assert.ok(Math.abs(snapped.item.x-wall.x)<1e-9);
+ const snapped=R.snap(m,{...wall,id:undefined,x:wall.x+.16},{grid:false,join:true});assert.equal(snapped.snapped,true);assert.ok(Math.abs(snapped.item.x-wall.x)<1e-9);
  const wrong=R.snap(m,{...wall,id:undefined,height:height-.5},{grid:false,join:true});assert.equal(wrong.snapped,false);
  assert.throws(()=>R.transaction(m,{type:'put',item:{...p,width:1}},env));assert.throws(()=>R.transaction(m,{type:'put',item:{...p,height:2.5}},env));
  assert.equal(R.exportData(m,24,65,()=>0).items[0].positions.length,g.positions.length);results.push({kind,length,height,triangles:g.positions.length/9});

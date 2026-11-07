@@ -15,7 +15,7 @@ for(const length of [1.5,2,4])for(let r=0;r<4;r++)for(const turn of [1,3])for(co
  const joined=R.snap(m,extend,{grid:true,join:true});assert.equal(joined.snapped,true);assert.ok(!joined.key.startsWith('corner:'));
  R.transaction(m,{type:'put',item:joined.item},env);
  const off=R.snap({ ...m,items:[m.items[0]] },raw,{grid:true,join:false});assert.equal(off.snapped,false);
- for(const e of R.sockets(off.item)){near(e.x/.5,Math.round(e.x/.5));near(e.z/.5,Math.round(e.z/.5));}
+ for(const i of [0,1,4,5]){const v=R.footprint(off.item)[i];near(v/.5,Math.round(v/.5));}
  assert.equal(R.snap({ ...m,items:[m.items[0]] },{...raw,height:3},{grid:true,join:true}).snapped,false);
  cases++;
 }
