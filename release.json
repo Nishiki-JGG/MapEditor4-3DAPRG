@@ -1,7 +1,7 @@
 {
-  "release": "ruins-cell-footprint-20261107",
+  "release": "boss-doors-20261107",
   "files": {
-    "app.js": "6953ba40812b980fcf1221a7c9263ac503156595eae50bd1c64c6072d1f4c92b",
+    "app.js": "0c87993c8f98eea8e0883e8e6911aecdc7d1259ca244702e3a3056c2292dfbce",
     "props/chest-presentation.js": "02a2cc0c23060f822e0e1bfe5abfc5c6803cedee2e2deb0fdb4b5b445915b4d3",
     "props/chest-surface.js": "bf7137cd3c64c736bc50d0dbd2a7b62f4fce1c48db73f6473fc6b9522b24f025",
     "props/chest-relief.js": "2f6d152ccd4c0dfd43d34c9867118d5060704b01ea93cfeafcdf826c479e8f94",
@@ -23,7 +23,7 @@
     "props/practical-parts.js": "881f1402590d3c41bb236da6b4497a544b3222a91e102bb923d23b4b0739d16b",
     "props/storagepot.js": "a438c43030411e625765317acecc89ee1cf0e7beec47bcfa7dd7a65296747fe3",
     "props/brokenpot.js": "a019b0eb7361c61d282ea6b32555df59b432c70e554858dd6439b3072d657a6b",
-    "props/small-prop-export.js": "52b73a45e4a3f80ec0b65a6cf7a7b3517aec42359d16e7132d54619369588bde",
+    "props/small-prop-export.js": "d0bae2673a8319e41ea77330d6ed2a1a5d30aebca7a17fe91948f74bd72db719",
     "props/lantern.js": "bbeab0d3138ba12c9d1b9242d0f5c241d8b8d0e476ece144fd727da5a6be3168",
     "props/miningtools.js": "c6c110711d24f5aa00298099790c77c146f94461614964f24bbf599793e09057",
     "props/coiledrope.js": "79f301028e149761ad4451a038929e2f55fc2fd8bed97e6062651c06bad22916",
@@ -41,7 +41,7 @@
     "unity/Assets/MapSharedProps/Editor/MineSpoilV1.cs": "18413514bdf454f98e9acc696b736cce2bf9017894b0b901ece2f597573f463e",
     "props/cave-decor.js": "abf74ab0b78918409e80854060e0291cda33f30ed758a7c4d46a29e12ddaead1",
     "props/shared/cave-decor-data.js": "467bcb904da21105e3259548308f566f92eb7751b024c02af10bd50d323490b5",
-    "index.html": "928fb2f986332a8877f37369d9f3d2c0ea2e381ab45cf45efe9dffd7c61df653",
+    "index.html": "de4dd55c983167452e8012bfab03592b68707893c586aa0f97e01756ab8ccbfb",
     "prepared/manifest.js": "2a6f251987bfe899a20b913b97341872b87770d24236eb1205fe6953da34ba1e",
     "terrain/cliff-shoulder.js": "2a1e0acc3a8332758e2efd5dc3a954bf974999cdc8cf1e010169b4d6c5b62760",
     "props/mine-collapse.js": "49ff2562ce9a97766c4f664c3b283d0f25762b9edb6df370308c150769baafd8",
@@ -69,7 +69,7 @@
     "terrain/map-archive.js": "40fd7540d93dc94333b1559abee33e00d0f92447a9819d0558e9fab7db9b8450",
     "unity/Assets/MapSharedProps/Editor/SharedImportCache.cs": "8d3c51c09400e7e27db7fcff7ef13330573152b742c297ecd5eb050f1399cef7",
     "unity/Assets/MapSharedProps/Editor/MapSharedPropsBuilder.cs": "18e98ec6143f05568da59946f7d5cbbc1d98aed78d9647e40e54e4c629bafb20",
-    "unity/Assets/MapSharedProps/Editor/SmallPropsV1.cs": "67adec3f6a77bd549932c213f4eb84a58de46bfe0b1911ab61bda1c16ff3d7c3",
+    "unity/Assets/MapSharedProps/Editor/SmallPropsV1.cs": "965121b44759eafc05f5e5eb8721f031d9a5d149c678709604cb9965bd51e327",
     "props/mine-timber.js": "6a6bb5c5cd650f4ba5cb750113069deccdb9fc338be479db529bb2c796f6a1c9",
     "unity/Assets/MapSharedProps/Editor/MineTimberV1.cs": "5cd9375fe835f65de9b98a89a138e790a0630b2e503cdf61657f7fe800f78aa1",
     "unity/Assets/MapSharedProps/Editor/SharedAssetFiles.cs": "4095c16b8b8c971929713a38f2778d13623b2d1fe20b3f10ed0f008ab00a2e25",
@@ -112,7 +112,12 @@
     "unity/Assets/MapRuins/Shaders.meta": "3232b2b003228cb28f6d104982009f4b1aa19bcf2a986f984d91ad0bcf32650d",
     "unity/Assets/MapRuins/Shaders/RuinsAgedLimestone.shader.meta": "c55155da8d24db35fa3e1c4fa1b7f7dc6d6609a3f5f680e8d8f269df8b7f401d",
     "unity/Assets/MapRuins/Shaders/RuinsTerrainCap.shader.meta": "d59105f9790b0545a145dbcdd47d2d2a0d0ef10b2681d0a558687f07a4c24f0b",
-    "unity/Assets/MapRuins/Shaders/RuinsTerrainCapAdd.shader.meta": "01e55c220038f7c0fb7ee58078f613b95099f0698f063f6e3a9038abbfaf4395"
+    "unity/Assets/MapRuins/Shaders/RuinsTerrainCapAdd.shader.meta": "01e55c220038f7c0fb7ee58078f613b95099f0698f063f6e3a9038abbfaf4395",
+    "props/boss-doors.js": "310fdf0e03e7c3060fae1bef03d683bd928e3adb178e3ee365aa4f7072127057",
+    "unity/Assets/MapSharedProps/Editor/BossDoorsV1.cs": "97016139f517729827e495cbf44a09e2e99506a396bb297605bb681ac9c95253",
+    "unity/Assets/MapSharedProps/Editor/BossDoorsV1.cs.meta": "08fb262408dfd62d3a3cad6dd8087531f5e3b88971834479f43959b1a7547601",
+    "unity/Assets/MapSharedProps/Runtime/BossDoor.shader": "a97806c1d29904d59bc803d83effc2be8b4c385a9ae26f0cd48cfba83c0b46e6",
+    "unity/Assets/MapSharedProps/Runtime/BossDoor.shader.meta": "c6a8ee832d9cd63bd0217af9e5ac758f27e6cf840fc434a354c92d0df52f4e50"
   },
-  "sourceBase": "9a776b8ee0dd8565e198b0c55639e9ef5f535d1c"
+  "sourceBase": "9f4239c"
 }
