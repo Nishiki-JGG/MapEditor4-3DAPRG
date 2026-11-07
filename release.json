@@ -1,7 +1,7 @@
 {
-  "release": "boss-doors-20261107",
+  "release": "stair-interiors-20261107",
   "files": {
-    "app.js": "0c87993c8f98eea8e0883e8e6911aecdc7d1259ca244702e3a3056c2292dfbce",
+    "app.js": "95974e8e3aa67f4c1bc2ca57df366c686331b317c136cc4cffd7eb818fa0857e",
     "props/chest-presentation.js": "02a2cc0c23060f822e0e1bfe5abfc5c6803cedee2e2deb0fdb4b5b445915b4d3",
     "props/chest-surface.js": "bf7137cd3c64c736bc50d0dbd2a7b62f4fce1c48db73f6473fc6b9522b24f025",
     "props/chest-relief.js": "2f6d152ccd4c0dfd43d34c9867118d5060704b01ea93cfeafcdf826c479e8f94",
@@ -41,7 +41,7 @@
     "unity/Assets/MapSharedProps/Editor/MineSpoilV1.cs": "18413514bdf454f98e9acc696b736cce2bf9017894b0b901ece2f597573f463e",
     "props/cave-decor.js": "abf74ab0b78918409e80854060e0291cda33f30ed758a7c4d46a29e12ddaead1",
     "props/shared/cave-decor-data.js": "467bcb904da21105e3259548308f566f92eb7751b024c02af10bd50d323490b5",
-    "index.html": "cd2168d2452481899408bb89aea1656bd27bf3d903cc71d7ef806d6772942be8",
+    "index.html": "e7a26641284154a63c80a34b787e889513085d0dcc68ff21e677fe2d3447de2c",
     "prepared/manifest.js": "2a6f251987bfe899a20b913b97341872b87770d24236eb1205fe6953da34ba1e",
     "terrain/cliff-shoulder.js": "2a1e0acc3a8332758e2efd5dc3a954bf974999cdc8cf1e010169b4d6c5b62760",
     "props/mine-collapse.js": "49ff2562ce9a97766c4f664c3b283d0f25762b9edb6df370308c150769baafd8",
@@ -121,7 +121,15 @@
     "unity/Assets/MapSharedProps/Editor/BossDoorArticulation.cs": "34b280c0235ef3f6bef986be51b85ea1feb6e04426c618efa8be20ecff6a45d4",
     "unity/Assets/MapSharedProps/Editor/BossDoorArticulation.cs.meta": "0b5e2bb825148abd285d658535cb284f6656ed2e0e6181849bf12cf99e2d0bb1",
     "unity/Assets/MapSharedProps/Runtime/BossDoorController.cs": "cdd9a45f1f5a1181254e32a678f3055b0cca1941809d8c8c893f3847526d74b3",
-    "unity/Assets/MapSharedProps/Runtime/BossDoorController.cs.meta": "f78f046df74e58b159236ec2faed9af7bc543f72f50b59cf6a8e470e58b0718c"
+    "unity/Assets/MapSharedProps/Runtime/BossDoorController.cs.meta": "f78f046df74e58b159236ec2faed9af7bc543f72f50b59cf6a8e470e58b0718c",
+    "unity/Assets/MapFloorLinks.meta": "c2c1106ee5c967351a0ff16b56b0cc2dd0c7c5b8643822d4f1194aecafa71c57",
+    "unity/Assets/MapFloorLinks/Editor/MapFloorLinksBuilder.cs": "8f51d86b0106407eb1f31293ef83ed6f6732c108ee41363ab13af730dcb6fe89",
+    "unity/Assets/MapFloorLinks/Editor/MapFloorLinksBuilder.cs.meta": "60fe3804328f51955d8b60f3f943c34ce949a31531a7e21335de0b5d80ec912d",
+    "unity/Assets/MapFloorLinks/Editor.meta": "cd4af9274dd8bd42fdc80da43ad90d513fe631d89046b3e98367607c9cf3b15b",
+    "unity/Assets/MapFloorLinks/Runtime/Shaders/FloorStairPortal.shader": "99095527d250cb419f6fcc62c45d07ec4639ec41b3ea1ad350dfa444524aaa01",
+    "unity/Assets/MapFloorLinks/Runtime/Shaders/FloorStairPortal.shader.meta": "c25a7ffb890c86522f39d56c9a3a99c43f7eda5623acdea8bd15feaabe374425",
+    "unity/Assets/MapFloorLinks/Runtime/Shaders.meta": "8c89886ecf5b2c3a03edc6976b61c28c90347e278ab012690528a33684fea093",
+    "unity/Assets/MapFloorLinks/Runtime.meta": "e588eea1da1e7450a8eee4003378900721192af1a3872ec16a259bfff267f3ed"
   },
-  "sourceBase": "9f4239c"
+  "sourceBase": "ff597b9"
 }

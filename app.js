@@ -3010,7 +3010,7 @@ function getColliders() {
     else add(p[1], p[2], r, y0, y1);
   }
   cur = null;
-  for (const m of markers) if (isLink(m.kind)) { const sp = LINK_SPEC[m.kind], y0 = heightAt(m.x, m.z); for (const [lx, lz, r] of sp.solid) { const q = linkLocal(m, lx, lz); add(q.x, q.z, r, y0, y0 + sp.height); } }
+  for (const m of markers) if (isLink(m.kind)) { const sp = LINK_SPEC[m.kind], y0 = heightAt(m.x, m.z); for (const [lx, lz, r] of sp.solid) { const q = linkLocal(m, lx, lz); add(q.x, q.z, r, y0 - (sp.pit?.depth || 0), y0 + sp.height); } }
   return colliders;
 }
 // the generators keep a map edge entrance's landing free: every solid prop whose stone or collider reaches the circle the
@@ -3026,13 +3026,13 @@ function clearPortLandings() {
 }
 const inBounds = (x, z) => Math.abs(x) <= HALF - .8 && Math.abs(z) <= HALF - .8;
 function overrideAt(x, z) { return O[idx(clamp(Math.round((x + HALF) * RES), 0, N - 1), clamp(Math.round((z + HALF) * RES), 0, N - 1))]; }
-// the walkable steps of a 'stairs up' floor link: height above its base at editor-local z (null = off the steps)
-function linkDeckAt(x, z, margin) {
+// Both floor links have real treads and a reachable landing; custom collision catalogs remain respected.
+function linkDeckAt(x, z, margin = 0) {
   for (const m of markers) {
-    if (m.kind !== 'up') continue;
-    const dk = LINK_SPEC.up.deck, dx = x - m.x, dz = z - m.z, c = Math.cos(m.rot), s = Math.sin(m.rot), lx = dx * c - dz * s, lz = dx * s + dz * c;
+    const dk = LINK_SPEC[m.kind]?.deck; if (!dk) continue;
+    const dx = x - m.x, dz = z - m.z, c = Math.cos(m.rot), s = Math.sin(m.rot), lx = dx * c - dz * s, lz = dx * s + dz * c;
     if (Math.abs(lx) > dk.halfWidth - margin || lz > dk.front || lz < dk.back + margin) continue;
-    const i = Math.floor((dk.front - lz) / dk.run);
+    const i = Math.floor((dk.front - lz) / dk.run + 1e-8);
     return heightAt(m.x, m.z) + Math.min(i + 1, dk.steps) * dk.rise;
   }
   return null;
@@ -4017,8 +4017,8 @@ function catalogExport() {
     floorLinks: Object.fromEntries(LINK_KINDS.map(([k, name]) => { const sp = LINK_SPEC[k]; return [sp.id, {
       name, kind: sp.game, assetKey: sp.assetKey, yawOffsetDeg: sp.yawOffset || 0, height: sp.height,
       footprint: { width: sp.size[0], length: sp.size[1] }, solid: sp.solidPrefab.map(([x, z, r]) => [r3(x), r3(z), r3(r)]),
-      trigger: { center: pl(...sp.trigger, sp.yawOffset), radius: sp.tr }, arrival: pl(0, sp.arrive, sp.yawOffset),
-      ...(sp.deck ? { walkSurface: { kind: 'steps', note: 'prefab-local, yawOffsetDeg 0: steps start at z = -front and climb toward +Z; the player walks up them to the trigger on the landing', front: -sp.deck.front, back: -sp.deck.back, width: 2 * sp.deck.halfWidth, steps: sp.deck.steps, run: sp.deck.run, rise: sp.deck.rise } } : {}),
+      trigger: { center: pl(...sp.trigger, sp.yawOffset).map((v,i)=>i===1&&sp.deck?sp.deck.steps*sp.deck.rise:v), radius: sp.tr }, arrival: pl(0, sp.arrive, sp.yawOffset),
+      ...(sp.deck ? { walkSurface: { kind: 'steps', note: 'prefab-local, yawOffsetDeg 0: steps start at z = -front and run toward +Z; signed rise is positive for up and negative for down; trigger is on the landing', front: -sp.deck.front, back: -sp.deck.back, width: 2 * sp.deck.halfWidth, steps: sp.deck.steps, run: sp.deck.run, rise: sp.deck.rise } } : {}),
       ...(sp.pit ? { pit: { note: 'prefab-local, yawOffsetDeg 0: a pit below ground level; the export opens terrain holes over it (meta.floorLinks[].pitHoleCells) and the prefab must line the pit and cover those hole cells', zFrom: -sp.pit.front, zTo: -sp.pit.back, width: 2 * sp.pit.halfWidth, depth: sp.pit.depth } } : {}),
     }]; })),
   };
@@ -4043,11 +4043,18 @@ const MARKER_COL = { port: 0x3fd8ff, enemy: 0xff4a4a, chest: 0xffcc33, nobattle:
 const LINK_KINDS = [['warp', '魔法陣'], ['up', '上り階段'], ['down', '下り階段']];
 const LINK_SPEC = {
   warp: { id: 'floor_magic_circle', game: 'magicCircle', trigger: [0, 0], tr: 1.2, arrive: 2.4, size: [3.6, 3.6], height: .3, solid: [] },
-  up: { id: 'floor_stairs_up', game: 'stairsUp', trigger: [0, -1.95], tr: .7, arrive: 3.1, size: [3.6, 4.6], height: 5.6, deck: { halfWidth: 1.1, front: 1.25, back: -2.6, run: .5, rise: .4, steps: 6 },
-    solid: [[-1.3, .7, .4], [1.3, .7, .4], [-1.3, -.3, .4], [1.3, -.3, .4], [-1.3, -1.45, .45], [1.3, -1.45, .45], [-1.5, -2.2, .3], [1.5, -2.2, .3], [-.7, -2.85, .35], [0, -2.85, .35], [.7, -2.85, .35]] },
-  down: { id: 'floor_stairs_down', game: 'stairsDown', trigger: [0, .6], tr: .9, arrive: 2.6, size: [2.9, 3.4], height: 1.4, pit: { halfWidth: 1.1, front: .9, back: -2.0, depth: 2.6 },
-    solid: [[0, -.45, .95], [0, -1.45, .95], [-1.3, -1.3, .35], [-1.3, -.2, .35], [-1.3, .8, .35], [1.3, -1.3, .35], [1.3, -.2, .35], [1.3, .8, .35]] },
+  up: { id: 'floor_stairs_up', game: 'stairsUp', trigger: [0, -2.85], tr: .55, arrive: 2.3, size: [3.6, 5.7], height: 5.4,
+    deck: { halfWidth: 1.1, front: 1.25, back: -3.55, run: .3, rise: .2, steps: 12 }, solid: [] },
+  down: { id: 'floor_stairs_down', game: 'stairsDown', trigger: [0, -3.0], tr: .55, arrive: 2.0, size: [3.6, 5.7], height: 1.1,
+    deck: { halfWidth: 1.1, front: .9, back: -3.9, run: .3, rise: -.2, steps: 12 },
+    pit: { halfWidth: 1.1, front: .9, back: -3.9, depth: 2.4 }, solid: [] },
 };
+// Continuous side guards and a closed rear; never place a solid across the entrance or stairwell.
+for (const kind of ['up', 'down']) {
+  const sp = LINK_SPEC[kind], d = sp.deck;
+  for (let z = d.back; z <= d.front + .12; z += .32) for (const side of [-1, 1]) sp.solid.push([side * 1.4, z, .25]);
+  for (let x = -1.12; x <= 1.13; x += .28) sp.solid.push([x, d.back - .2, .22]);
+}
 for (const k in LINK_SPEC) { const sp = LINK_SPEC[k]; sp.base = { solid: sp.solid.map(q => q.slice()), height: sp.height }; sp.assetKey = `tdj/${sp.id}`; }
 const isLink = k => !!LINK_SPEC[k];
 const markerPrefix = k => k === 'port' ? 'port' : isLink(k) ? 'link' : 'mk';
@@ -4153,6 +4160,73 @@ function addGate(g, cy, cz, R, seed, floorY = 0) {
   return gate;
 }
 function box(g, mat, w, hgt, d, x, y, z) { const b = new THREE.Mesh(new THREE.BoxGeometry(w, hgt, d), mat); b.position.set(x, y, z); b.castShadow = b.receiveShadow = true; g.add(b); return b; }
+// Bevelled, coursed stonework. Geometry is also exported to Unity, rather than maintained as a second model.
+const stairStoneMats = [0x888b82, 0x96988e, 0x7b8078, 0xa0a297].map(color => new THREE.MeshStandardMaterial({color,roughness:.94,flatShading:true}));
+function stairBlock(g, w, h, d, x, y, z, tone = 0, name = 'stone') {
+  const bevel = Math.min(.035, w*.12, h*.16, d*.12), shape = new THREE.Shape();
+  shape.moveTo(-w/2+bevel,-h/2+bevel);shape.lineTo(w/2-bevel,-h/2+bevel);shape.lineTo(w/2-bevel,h/2-bevel);shape.lineTo(-w/2+bevel,h/2-bevel);shape.closePath();
+  const geo = new THREE.ExtrudeGeometry(shape,{depth:d-2*bevel,bevelEnabled:true,bevelThickness:bevel,bevelSize:bevel,bevelSegments:1,steps:1,curveSegments:1});
+  geo.translate(0,0,-d/2+bevel);
+  const mesh=new THREE.Mesh(geo,stairStoneMats[((tone%4)+4)%4]);mesh.position.set(x,y,z);mesh.name=name;mesh.castShadow=mesh.receiveShadow=true;g.add(mesh);return mesh;
+}
+function buildStairStonework(g,m) {
+  const sp=LINK_SPEC[m.kind],d=sp.deck,down=m.kind==='down',endY=d.steps*d.rise,endZ=d.front-d.steps*d.run,back=d.back,landLen=endZ-back;
+  // Solid foundations underneath the slabs. No invisible block fills the descending passage.
+  for(let i=0;i<d.steps;i++) {
+    const top=(i+1)*d.rise,z=d.front-(i+.5)*d.run,base=down?endY-.2:-.15;
+    box(g,stairStoneMats[2],2.2,Math.max(.08,top-base-.08),d.run,0,(top+base-.08)/2,z).name='stair-foundation';
+    for(let j=0;j<3;j++)stairBlock(g,(2.2-.018*2)/3,.11,d.run+.025,(j-1)*(2.2+.018)/3,top-.055,z,(i+j)%4,'tread');
+  }
+  box(g,stairStoneMats[2],2.2,.22,landLen,0,endY-.11,(endZ+back)/2).name='landing';
+  for(let j=0;j<3;j++)stairBlock(g,(2.2-.036)/3,.1,landLen-.02,(j-1)*(2.2+.018)/3,endY-.05,(endZ+back)/2,j,'landing-slab');
+  // Masonry side courses keep the silhouette legible from the entrance and above.
+  const sections=12,run=(d.front-back)/sections;
+  for(const side of [-1,1])for(let i=0;i<sections;i++) {
+    const z=d.front-(i+.5)*run,step=Math.min(d.steps,Math.floor((d.front-z)/d.run)+1)*d.rise;
+    const low=down?endY-.22:-.15,top=down?.66:step+.62,count=Math.ceil((top-low)/.42),course=(top-low)/count;
+    box(g,stairStoneMats[2],.38,top-low,run+.002,side*1.335,(low+top)/2,z).name='wall-core';
+    for(let row=0;row<count;row++)stairBlock(g,.43,course-.014,run-.012,side*1.335,low+(row+.5)*course,z,i+row+(side>0?1:0),'side-wall');
+    stairBlock(g,.54,.12,run+.012,side*1.335,top+.06,z,i%2,'coping');
+  }
+  for(const side of [-1,1]) {
+    stairBlock(g,.62,.18,.62,side*1.335,.04,d.front+.08,2,'entrance-base');
+    stairBlock(g,.43,.82,.43,side*1.335,.51,d.front+.08,0,'entrance-post');
+    stairBlock(g,.58,.15,.58,side*1.335,.995,d.front+.08,1,'entrance-cap');
+  }
+  // A stone sill and arch frame a full-height portal at the far end of the landing.
+  const gateZ=back+.18;
+  for(const side of [-1,1])for(let i=0;i<3;i++)stairBlock(g,.4,.4,.42,side*1.18,endY+(i+.5)*.4,gateZ,i,'portal-jamb');
+  for(let i=0;i<13;i++) {
+    const a=i*Math.PI/12,mesh=stairBlock(g,.31,.4,.46,Math.cos(a)*1.18,endY+1.2+Math.sin(a)*1.18,gateZ,i,'portal-arch');mesh.rotation.z=a-Math.PI/2;
+  }
+  stairBlock(g,2.9,.28,.42,0,endY-.08,back-.18,2,'rear-sill');
+  const rearLow=down?endY-.2:-.15,rearTop=down?.78:endY+2.15,rows=Math.ceil((rearTop-rearLow)/.4),rh=(rearTop-rearLow)/rows;
+  box(g,stairStoneMats[2],2.9,rearTop-rearLow,.21,0,(rearLow+rearTop)/2,back-.28).name='rear-core';
+  for(let row=0;row<rows;row++){const edges=row%2?[-1.45,-1.0875,-.3625,.3625,1.0875,1.45]:[-1.45,-.725,0,.725,1.45];for(let col=0;col<edges.length-1;col++)stairBlock(g,edges[col+1]-edges[col]-.012,rh-.012,.28,(edges[col]+edges[col+1])/2,rearLow+(row+.5)*rh,back-.28,row+col,'rear-wall');}
+  const disc=new THREE.Mesh(new THREE.PlaneGeometry(2.15,2.45),vortexMat);disc.position.set(0,endY+1.22,gateZ-.04);disc.renderOrder=5;disc.name='portal-vfx';g.add(disc);
+  // The viewport uses tread heights; Unity colliders use the same stone geometry.
+  g.userData.stairKind=m.kind;
+  // Batch stone by material: four stone draw calls, rather than one per masonry block.
+  for(const mat of stairStoneMats){
+    const parts=g.children.filter(o=>o.isMesh&&o.material===mat),positions=[],normals=[];
+    for(const mesh of parts){mesh.updateMatrix();const geo=mesh.geometry.index?mesh.geometry.toNonIndexed():mesh.geometry.clone();geo.applyMatrix4(mesh.matrix);positions.push(...geo.attributes.position.array);normals.push(...geo.attributes.normal.array);geo.dispose();mesh.geometry.dispose();g.remove(mesh);}
+    const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));geo.setAttribute('normal',new THREE.Float32BufferAttribute(normals,3));geo.computeBoundingSphere();
+    const mesh=new THREE.Mesh(geo,mat);mesh.name='stair-stone-'+stairStoneMats.indexOf(mat);mesh.castShadow=mesh.receiveShadow=true;g.add(mesh);
+  }
+}
+function exportFloorStairs(){
+  const r=v=>Math.round(v*1e6)/1e6;
+  return {schemaVersion:1,frame:'unity-local',assets:['up','down'].map(kind=>{
+    const g=new THREE.Group();buildStairStonework(g,{kind});const sp=LINK_SPEC[kind],parts=[];
+    for(const mesh of g.children){if(!stairStoneMats.includes(mesh.material)){mesh.geometry.dispose();continue;}
+      const p=mesh.geometry.attributes.position.array,n=mesh.geometry.attributes.normal.array,positions=[],normals=[],indices=[];
+      for(let i=0;i<p.length;i+=3){positions.push(r(p[i]),r(p[i+1]),r(-p[i+2]));normals.push(r(n[i]),r(n[i+1]),r(-n[i+2]));}
+      for(let i=0;i<p.length/3;i+=3)indices.push(i,i+2,i+1);
+      parts.push({name:mesh.name,positions,normals,indices,color:mesh.material.color.toArray().map(r),roughness:mesh.material.roughness,collider:true,render:true});mesh.geometry.dispose();
+    }
+    return {id:sp.id,assetKey:sp.assetKey,parts,portal:{center:[0,r(sp.deck.steps*sp.deck.rise+1.22),r(-(sp.deck.back+.18)+.04)],size:[2.15,2.45]}};
+  })};
+}
 function buildLink(m) {
   const g = new THREE.Group();
   if (m.kind === 'warp') {
@@ -4162,28 +4236,8 @@ function buildLink(m) {
     const inner = new THREE.Mesh(new THREE.PlaneGeometry(1.9, 1.9), glowMat(0x3fc8ff, runeTex, .6)); inner.rotation.x = -Math.PI / 2; inner.position.y = .17; inner.renderOrder = 6; g.add(inner);
     const beam = new THREE.Mesh(new THREE.CylinderGeometry(1.35, 1.5, 2.6, 32, 1, true), glowMat(0x7a55ff, beamTex, .5)); beam.position.y = 1.45; beam.renderOrder = 7; g.add(beam);
     linkSpin.push([disc, .25], [inner, -.5], [beam, .3]);
-  } else if (m.kind === 'up') {
-    // six steps climbing away from the player (toward -z) up to a landing with an otherworld gate
-    for (let i = 0; i < 6; i++) box(g, i % 2 ? stoneMat : stoneDark, 2.2, (i + 1) * .4, .5, 0, (i + 1) * .2, 1.0 - i * .5);
-    box(g, stoneMat, 2.6, 2.4, .9, 0, 1.2, -2.15);                         // landing
-    for (const sd of [-1, 1]) {
-      box(g, stoneDark, .4, 1.1, 1.0, sd * 1.3, .55, .7);
-      box(g, stoneDark, .4, 2.0, 1.0, sd * 1.3, 1.0, -.3);
-      box(g, stoneDark, .4, 2.8, 1.3, sd * 1.3, 1.4, -1.45);
-    }
-    addGate(g, 2.4 + 1.25, -2.2, 1.2, (m.x * 31 + m.z * 17) | 0);
   } else {
-    // a pit cut into the ground (the terrain is hidden inside it): steps go down to a landing, the gate stands at the bottom
-    const pt = LINK_SPEC.down.pit, D = pt.depth, w2 = pt.halfWidth, L = pt.front - pt.back, zc = (pt.front + pt.back) / 2;
-    box(g, stoneDark, 2 * w2 + .2, .2, L + .2, 0, -D - .1, zc);                                      // pit floor
-    for (const sd of [-1, 1]) box(g, stoneDark, .12, D + .05, L + .2, sd * (w2 + .04), -D / 2, zc);   // side walls
-    box(g, stoneDark, 2 * w2 + .2, D + .05, .12, 0, -D / 2, pt.back - .04);                          // back wall
-    for (let i = 0; i < 6; i++) { const top = -(i + 1) * .4, z1 = pt.front - i * .35; box(g, i % 2 ? stoneMat : stoneDark, 2 * w2, top + D, .35, 0, (top - D) / 2, z1 - .175); }
-    for (const sd of [-1, 1]) box(g, stoneDark, .4, .75, L + .2, sd * 1.3, .37, zc);                 // low walls above ground
-    for (const sd of [-1, 1]) box(g, stoneMat, .55, 1.15, .55, sd * 1.3, .57, pt.front + .1);         // posts at the top of the steps
-    box(g, stoneDark, 2.9, .5, .4, 0, .25, pt.back - .2);                                            // back kerb
-    const gt = addGate(g, -D + 1.0, pt.back + .45, .85, (m.x * 31 + m.z * 17) | 0, -D);
-    gt.rotation.x = -.55;   // leaning back, so the vortex faces the player looking down into the pit
+    buildStairStonework(g, m);
   }
   g.position.set(m.x, heightAt(m.x, m.z), m.z); g.rotation.y = m.rot; g.userData.m = m; linkGroup.add(g);
 }
@@ -4216,7 +4270,7 @@ function enemyMarker(m, color) {
 }
 function rebuildMarkers() {
   for (const c of [...markerGroup.children]) { c.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); }); markerGroup.remove(c); }
-  for (const c of [...linkGroup.children]) { c.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material && ![stoneMat, stoneDark, voidMat, daisMat, mossStone, vortexMat, sparkMat].includes(o.material)) o.material.dispose(); }); linkGroup.remove(c); }
+  for (const c of [...linkGroup.children]) { c.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material && ![stoneMat, stoneDark, voidMat, daisMat, mossStone, vortexMat, sparkMat, ...stairStoneMats].includes(o.material)) o.material.dispose(); }); linkGroup.remove(c); }
   linkSpin.length = 0; colliders = null; walkDirty = true;
   { let n = 0; const pt = LINK_SPEC.down.pit;
     for (const m of markers) if (m.kind === 'down' && n < 8) { BU.uPitA.value[n].set(m.x, m.z, Math.cos(m.rot), Math.sin(m.rot)); BU.uPitB.value[n].set(pt.halfWidth - .02, (pt.front - pt.back) / 2 - .02, (pt.front + pt.back) / 2, 0); n++; }
@@ -4897,7 +4951,7 @@ async function buildExport({sharedAssets = false, compact = false} = {}) {
     return { id: m.id, kind: sp.game, assetKey: linkAssetKey(m.kind), catalogId: sp.id, tag: m.tag || '', position: P3(m.x, heightAt(m.x, m.z), m.z), yawDeg: U.yaw(m.rot),
       forward: [+Math.sin(m.rot).toFixed(4), +(-Math.cos(m.rot)).toFixed(4)], trigger: { center: P3(T.x, floorAt(T.x, T.z), T.z), radius: m.r },
       arrival: P3(A.x, floorAt(A.x, A.z), A.z), footprint: { width: sp.size[0], length: sp.size[1] },
-      colliders: sp.solid.map(([lx, lz, r]) => { const q = linkLocal(m, lx, lz); return { center: P3(q.x, y0, q.z), radius: r, height: sp.height }; }),
+      colliders: sp.solid.map(([lx, lz, r]) => { const q = linkLocal(m, lx, lz); return { center: P3(q.x, y0 - (sp.pit?.depth || 0), q.z), radius: r, height: sp.height + (sp.pit?.depth || 0) }; }),
       ...(m.kind === 'down' ? { pitHoleCells: pitCells[m.id] || 0 } : {}) };
   };
   const zoneOut = m => ({ id: m.id, kind: m.kind === 'nobattle' ? 'noBattle' : 'noSpawn', center: P3(m.x, floorAt(m.x, m.z), m.z), radius: m.r });
@@ -5007,6 +5061,7 @@ async function buildExport({sharedAssets = false, compact = false} = {}) {
     shape: p.type === 'round' ? 'ellipse inscribed in size (x, z), the kerb wall is `wall` m thick inside that outline' : 'axis-aligned rectangle of size (x, z), the kerb wall is `wall` m thick inside it',
     note: 'kerb of dressed stone from floor - 0.35 m (into the ground) to rim; the floor inside is levelled to floor and paved (cobble paint). The notch (about 0.7-0.9 m wide, top just under waterLevel) faces the lowest ground outside: overflow leaves there when a spring is inside. walkable.png marks the kerb top 40; the water inside is walkable when no deeper than agentProfile.maxWaterDepth.' }));
   const meta = {
+    ...(markers.some(m=>m.kind==='up'||m.kind==='down')?{floorStairsV1:exportFloorStairs()}:{}),
     format: 'tdj-map-export', schemaVersion: 3, exporterVersion: EXPORTER_VERSION, roomId: state.roomId, manifest: 'manifest.json',
     coordinateSystem: {
       units: 'm', upAxis: '+Y', handedness: 'left (Unity)', origin: 'terrain corner = minimum x and z; y = 0 at the lowest encoded height',
@@ -6138,7 +6193,7 @@ function update(dt) {
     walkRef = player.y;   // a tunnel's floor while in it, the ground while above its roof
     const depth = waterAt(player.x, player.z) - floorAt(player.x, player.z);
     const inTun = tunnelPrep.length ? TDTunnels.query(tunnelPrep, player.x, player.z) : null, tunHere = inTun && player.y < inTun.y + inTun.h - .3;
-    const onStruct = (bridges.length && bridgeAt(player.x, player.z, 0, walkRef) !== null) || (stairs.length && stairsAt(player.x, player.z) !== null) || !!tunHere;
+    const onStruct = (bridges.length && bridgeAt(player.x, player.z, 0, walkRef) !== null) || (stairs.length && stairsAt(player.x, player.z) !== null) || !!tunHere || linkDeckAt(player.x,player.z,0)!==null;
     let gs = 1; if (!onStruct) for (let c = 2; c < NS; c++) gs = Math.min(gs, lerp(1, GROUND_SPEED[c], clamp(splatAt(player.x, player.z, c) * 1.6, 0, 1)));
     state.onPoison = !onStruct && splatAt(player.x, player.z, 5) > .5;
     state.onLink = markers.find(m => isLink(m.kind) && (() => { const T = linkTrigger(m); return Math.hypot(player.x - T.x, player.z - T.z) < m.r + state.agent.radius; })()) || null;
@@ -6431,7 +6486,7 @@ bootReady.then(()=>{
 // hooks for automated checks
 window.__app = {ruinsPropPlacement,refreshRuinsCaps,get ruins(){return structuredClone(ruins);},commitRuins,rebuildRuins,ruinsGroup,ruinsWalk,ruinsMoveAllowed,cancelRuins,updateRuinsPreview, get ruinsDraft(){return ruinsDraft;},captureCompletedSurface,preparationKey,get surfaceUpgradeCount(){return surfaceUpgradeCount;},mineLanterns, chestPresentation, wallTorches, bedrockReady, splatAt,get tunnels() { return tunnels; }, set tunnels(v) { tunnels = v; }, get tunnelPrep() { return tunnelPrep; }, get tunnelLamps() { return tunnelLamps; }, placeTunnel, rebuildTunnels, tunnelGroup, tunnelHoleTex, cutU, refitFalls, placeFall, springFallGroup, fallGroup, get springs() { return springs; }, set springs(v) { springs = v; }, get pools() { return pools; }, get springRes() { return springRes; }, SC, placeSpring, placePool, applySprings, solveSprings, waterAt, springLevelAt, poolDist, poolWallAt, POOL_WALL, deckAt, fillGroundAll,buildPreparedSample,prepareMap,cancelMapPreparation,bootReady,get preparation(){return mapPreparation?{id:mapPreparation.id,phase:mapPreparation.phase,requestedMode:mapPreparation.requestedMode,elapsedMs:performance.now()-mapPreparation.start}:null;},get preparationStats(){return lastPreparedState;},
   propGrounding,groundedParts,groundedNormal,groundedGhost,groundPreview,setGroundPreview,propBaseY,get cliffContactProgress(){return cliffContactProgress;},cliffFits,effectiveGeometry,fitCliffContact,adoptCliffContact, cliffProtected,cliffProtectionReason,nearFeatureReason, get cliffContactStats(){return cliffContactStats;},
-  pickGroundDetail,adjustGroundDetail,selectedGroundDetail,updateTouch,touchStats, pavingMask, cliffRelief, rebuildCliffRelief, groundTrial, groundTexture, terrainSource:tGeo, terrain, renderer, camera, SIZE, state, H, S, O, F, C, propMeshes, ghostMeshes, cliffIndexAt, BIOMES, CLIFF_STYLES, applyCliffStyle, deckAt, linkDeckAt, runValidation, genSample, genSample2, secretRegions, secretLineX, passageGeometry, terrainRes, TERRAIN_RES, snapshot, sha256, LINK_KINDS, normalizeCatalog, catalogExport, valueIssues, areaIssue, deckAt, getColliders, PROP, get colliderMaxR() { return colliderMaxR; }, rebuildMarkers, enemyRank, enemyVisualRadius, markerGroup, portLanding, linkTrigger, linkArrival, LINK_SPEC, get markers() { return markers; }, placeMarker, ensureIds, applyCatalog, ATMOS, WEATHER, applyAtmo, makeCoast, glowLights, applyBiome, applyPalette, TIMES, timeId, propVisible, toolVisible, updateTerrain, rebuildProps, genFlat, floorAt, bridgeAt, stairsAt, placeSlope, placeStairs, placeBridge, pickTarget, regenGroundProps, rebuildBridges, get stairs() { return stairs; }, get bridges() { return bridges; }, get falls() { return falls; }, overrideAt, heroMat, hero, get heroBody(){return heroBody;}, get heroLook() { return heroLook; }, setHeroLook, heroStyle, heroGlow, get ghosts() { return ghosts; }, get props() { return props; }, cam, playCam, player, keys, setMode, setTool, update, heightAt, walkable, slope: slopeAt,
+  pickGroundDetail,adjustGroundDetail,selectedGroundDetail,updateTouch,touchStats, pavingMask, cliffRelief, rebuildCliffRelief, groundTrial, groundTexture, terrainSource:tGeo, terrain, renderer, camera, SIZE, state, H, S, O, F, C, propMeshes, ghostMeshes, cliffIndexAt, BIOMES, CLIFF_STYLES, applyCliffStyle, deckAt, linkDeckAt, runValidation, genSample, genSample2, secretRegions, secretLineX, passageGeometry, terrainRes, TERRAIN_RES, snapshot, sha256, linkGroup, exportFloorStairs, LINK_KINDS, normalizeCatalog, catalogExport, valueIssues, areaIssue, deckAt, getColliders, PROP, get colliderMaxR() { return colliderMaxR; }, rebuildMarkers, enemyRank, enemyVisualRadius, markerGroup, portLanding, linkTrigger, linkArrival, LINK_SPEC, get markers() { return markers; }, placeMarker, ensureIds, applyCatalog, ATMOS, WEATHER, applyAtmo, makeCoast, glowLights, applyBiome, applyPalette, TIMES, timeId, propVisible, toolVisible, updateTerrain, rebuildProps, genFlat, floorAt, bridgeAt, stairsAt, placeSlope, placeStairs, placeBridge, pickTarget, regenGroundProps, rebuildBridges, get stairs() { return stairs; }, get bridges() { return bridges; }, get falls() { return falls; }, overrideAt, heroMat, hero, get heroBody(){return heroBody;}, get heroLook() { return heroLook; }, setHeroLook, heroStyle, heroGlow, get ghosts() { return ghosts; }, get props() { return props; }, cam, playCam, player, keys, setMode, setTool, update, heightAt, walkable, slope: slopeAt,
   stroke(x, z, frames = 20, opts = {}) {
     hit = new THREE.Vector3(x, heightAt(x, z), z); beginStroke({ shiftKey: !!opts.shift });
     for (let f = 0; f < frames; f++) { if (stroke.active && !['scatter', 'erase'].includes(state.tool)) { applyBrush(x, z, 1 / 60); } }
