@@ -7,7 +7,7 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEditor;
 namespace MapSharedProps.EditorTools {
-// 任意の静的扉拡張。旧マップの基本素材は変更しない。
+// 任意の両開き扉拡張。旧マップの基本素材は変更しない。
 public static class BossDoorsV1 {
  [Serializable] public class Maps {public int width,height;public string colour,packed;}
  [Serializable] public class Data {public int version;public string units,axes;public Maps textures;public SmallPropsV1.Asset[] assets;}
@@ -48,8 +48,7 @@ public static class BossDoorsV1 {
   foreach(var a in d.assets){
    var mesh=SmallPropsV1.MeshOf(a.positions,a.normals,a.colors,a.triangles,a.glow);var uv=new Vector2[a.uv.Length/2];for(int i=0;i<uv.Length;i++)uv[i]=new Vector2(a.uv[i*2],1-a.uv[i*2+1]);mesh.uv=uv;
    mesh=SharedImportCache.StoreMesh(mesh,"boss-doors/1\n"+JsonUtility.ToJson(a));
-   var root=new GameObject(a.id);root.AddComponent<MeshFilter>().sharedMesh=mesh;var renderer=root.AddComponent<MeshRenderer>();renderer.sharedMaterial=material;renderer.shadowCastingMode=ShadowCastingMode.On;renderer.receiveShadows=true;renderer.reflectionProbeUsage=ReflectionProbeUsage.BlendProbes;
-   SmallPropsV1.Collider(root,a,mesh);
+   var root=new GameObject(a.id);BossDoorArticulation.Build(root,a,mesh,material);
    var prefab=PrefabUtility.SaveAsPrefabAsset(root,folder+"/small-"+a.id+".prefab");prefabs.Add(a.id,prefab);UnityEngine.Object.DestroyImmediate(root);
   }
   int placed=0;foreach(var line in File.ReadAllLines(Path.Combine(directory,"props.csv"))){var row=line.Split(',');if(row.Length!=11||!d.assets.Any(a=>a.id==row[1]&&a.assetKey==row[2]))continue;float sx=Number(row[7]),sy=Number(row[8]);Check(sx>0&&sy>0,"positive scales");var obj=(GameObject)PrefabUtility.InstantiatePrefab(prefabs[row[1]],parent);obj.name=row[0];obj.transform.localPosition=new Vector3(Number(row[3]),Number(row[4]),Number(row[5]));obj.transform.localRotation=Quaternion.Euler(0,Number(row[6]),0);obj.transform.localScale=new Vector3(sx,sy,sx);placed++;}
