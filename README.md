@@ -1,6 +1,6 @@
 # MapEditor4-3DAPRG
 
-自作の洞窟装飾20種（シダ・苔・根・蔦・キノコ・朽ち木など）を追加しました。[素材一覧・配置方法・Unity書き出し](docs/CAVE_DECOR.md)。購入素材は含みません。
+洞窟装飾20種（シダ・苔・根・蔦・キノコ・朽ち木など）を追加しました。[素材一覧・配置方法・Unity書き出し](docs/CAVE_DECOR.md)。
 
 宝箱の金属材質・彫金・朽木形状を更新しました。[Unity 導入・Reflection Probe・検証範囲](docs/CHEST_RELEASE.md)。
 
