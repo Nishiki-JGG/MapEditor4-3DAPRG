@@ -41,7 +41,7 @@
     "unity/Assets/MapSharedProps/Editor/MineSpoilV1.cs": "18413514bdf454f98e9acc696b736cce2bf9017894b0b901ece2f597573f463e",
     "props/cave-decor.js": "abf74ab0b78918409e80854060e0291cda33f30ed758a7c4d46a29e12ddaead1",
     "props/shared/cave-decor-data.js": "467bcb904da21105e3259548308f566f92eb7751b024c02af10bd50d323490b5",
-    "index.html": "de4dd55c983167452e8012bfab03592b68707893c586aa0f97e01756ab8ccbfb",
+    "index.html": "cd2168d2452481899408bb89aea1656bd27bf3d903cc71d7ef806d6772942be8",
     "prepared/manifest.js": "2a6f251987bfe899a20b913b97341872b87770d24236eb1205fe6953da34ba1e",
     "terrain/cliff-shoulder.js": "2a1e0acc3a8332758e2efd5dc3a954bf974999cdc8cf1e010169b4d6c5b62760",
     "props/mine-collapse.js": "49ff2562ce9a97766c4f664c3b283d0f25762b9edb6df370308c150769baafd8",
@@ -113,11 +113,11 @@
     "unity/Assets/MapRuins/Shaders/RuinsAgedLimestone.shader.meta": "c55155da8d24db35fa3e1c4fa1b7f7dc6d6609a3f5f680e8d8f269df8b7f401d",
     "unity/Assets/MapRuins/Shaders/RuinsTerrainCap.shader.meta": "d59105f9790b0545a145dbcdd47d2d2a0d0ef10b2681d0a558687f07a4c24f0b",
     "unity/Assets/MapRuins/Shaders/RuinsTerrainCapAdd.shader.meta": "01e55c220038f7c0fb7ee58078f613b95099f0698f063f6e3a9038abbfaf4395",
-    "props/boss-doors.js": "310fdf0e03e7c3060fae1bef03d683bd928e3adb178e3ee365aa4f7072127057",
+    "props/boss-doors.js": "669a8a15d8c1b78688bf66626f1abb625b93fb55811ad1dfe2c27f5de7f019e4",
     "unity/Assets/MapSharedProps/Editor/BossDoorsV1.cs": "97016139f517729827e495cbf44a09e2e99506a396bb297605bb681ac9c95253",
-    "unity/Assets/MapSharedProps/Editor/BossDoorsV1.cs.meta": "08fb262408dfd62d3a3cad6dd8087531f5e3b88971834479f43959b1a7547601",
+    "unity/Assets/MapSharedProps/Editor/BossDoorsV1.cs.meta": "4260ec6a2831bb34afe31f3ac74577751879152d1e5e0fb88ea7a7b6a5d211f7",
     "unity/Assets/MapSharedProps/Runtime/BossDoor.shader": "a97806c1d29904d59bc803d83effc2be8b4c385a9ae26f0cd48cfba83c0b46e6",
-    "unity/Assets/MapSharedProps/Runtime/BossDoor.shader.meta": "c6a8ee832d9cd63bd0217af9e5ac758f27e6cf840fc434a354c92d0df52f4e50"
+    "unity/Assets/MapSharedProps/Runtime/BossDoor.shader.meta": "575c58584810ca5d51900945cb1f7fc2215eba3792220f6e91a8caab8e3850ca"
   },
   "sourceBase": "9f4239c"
 }
